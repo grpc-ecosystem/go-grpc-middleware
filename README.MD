@@ -5,7 +5,7 @@
 [![GoDoc](http://img.shields.io/badge/GoDoc-Reference-blue.svg)](https://godoc.org/github.com/mwitkow/go-grpc-middleware)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-[gRPC Go](https://github.com/grpc/grpc-go) Interceptor middleware. Chain them, wrap them... arrange
+[gRPC Go](https://github.com/grpc/grpc-go) Interceptor [middleware](https://medium.com/@matryer/writing-middleware-in-golang-and-how-go-makes-it-so-much-fun-4375c1246e81#.gv7tdlghs). Chain them, wrap them... arrange
 them in any pattern that normal `http.Handler` middleware would do :)
 
 ## Interceptors
@@ -26,23 +26,20 @@ Simple way of turning a multiple interceptors into a single interceptor. E.g.
 
 ```go
 import "github.com/mwitkow/go-grpc-middleware"
-...
+
 myServer := grpc.NewServer(
     grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(loggingStream, monitoringStream, authStream)),
     grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(loggingUnary, monitoringUnary, authUnary),
 )
-...
 ```
 
 or more simply when initializing a server:
 
-```
-...
+```go
 myServer := grpc.NewServer(
     grpc_middleware.WithStreamServerChain(loggingStream, monitoringStream, authStream),
     grpc_middleware.WithUnaryServerChain(loggingUnary, monitoringUnary, authUnary),
 )
-...
 ```
 
 These interceptors will be executed from left to right: logging, monitoring and auth.
@@ -64,7 +61,7 @@ func FakeAuthUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.U
 }
 ```
 
-### Streaming RPCs
+### Streaming (N:1, 1:M, N:M) RPCs
 
 Unfortunately, it's not as easy for streaming RPCs. These have the `context.Context` embedded within
 the `grpc.ServerStream` object. To pass values through context, a wrapper (`WrappedServerStream`) is
