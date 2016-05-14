@@ -1,0 +1,11 @@
+language: go
+go:
+  - 1.6
+
+install:
+  - go get google.golang.org/grpc
+  - go get golang.org/x/net/context
+  - go get github.com/stretchr/testify
+
+script:
+ - go test -race -v ./...
