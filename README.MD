@@ -1,7 +1,7 @@
 # Go gRPC Middleware - Interceptor Helpers
 
 [![Travis Build](https://travis-ci.org/mwitkow/go-grpc-middleware.svg)](https://travis-ci.org/mwitkow/go-grpc-middleware)
-[![Go Report Card](http://goreportcard.com/badge/mwitkow/go-flagz)](https://goreportcard.com/badge/github.com/mwitkow/go-grpc-middleware)
+[![Go Report Card](https://goreportcard.com/badge/github.com/mwitkow/go-grpc-middleware)](http://goreportcard.com/badge/mwitkow/go-flagz)
 [![GoDoc](http://img.shields.io/badge/GoDoc-Reference-blue.svg)](https://godoc.org/github.com/mwitkow/go-grpc-middleware)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
