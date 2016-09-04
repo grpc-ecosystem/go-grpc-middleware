@@ -4,11 +4,12 @@
 package grpc_middleware
 
 import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"testing"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestWrapServerStream(t *testing.T) {
@@ -22,12 +23,12 @@ func TestWrapServerStream(t *testing.T) {
 
 type fakeServerStream struct {
 	grpc.ServerStream
-	ctx context.Context
+	ctx         context.Context
 	recvMessage interface{}
 	sentMessage interface{}
 }
 
-func (f * fakeServerStream) Context() context.Context {
+func (f *fakeServerStream) Context() context.Context {
 	return f.ctx
 }
 
@@ -44,4 +45,8 @@ func (f *fakeServerStream) RecvMsg(m interface{}) error {
 		return grpc.Errorf(codes.NotFound, "fakeServerStream has no message, sorry")
 	}
 	return nil
+}
+
+type fakeClientStream struct {
+	grpc.ClientStream
 }

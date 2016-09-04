@@ -66,6 +66,26 @@ func ChainUnaryClient(interceptors ...grpc.UnaryClientInterceptor) grpc.UnaryCli
 	}
 }
 
+// ChainStreamClient creates a single interceptor out of a chain of many interceptors.
+// Execution is done in left-to-right order, including passing of context.
+// For example ChainStreamClient(one, two, three) will execute one before two before three.
+func ChainStreamClient(interceptors ...grpc.StreamClientInterceptor) grpc.StreamClientInterceptor {
+	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+		buildChain := func(current grpc.StreamClientInterceptor, next grpc.Streamer) grpc.Streamer {
+			return func(currentCtx context.Context, currentDesc *grpc.StreamDesc, currentConn *grpc.ClientConn, currentMethod string, currentOpts ...grpc.CallOption) (grpc.ClientStream, error) {
+				return current(currentCtx, currentDesc, currentConn, currentMethod, next, currentOpts...)
+			}
+		}
+		chain := streamer
+		for i := len(interceptors) - 1; i >= 0; i-- {
+			chain = buildChain(interceptors[i], chain)
+		}
+		return chain(ctx, desc, cc, method, opts...)
+	}
+}
+
+// Chain creates a single interceptor out of a chain of many interceptors.
+
 // WithUnaryServerChain is a grpc.Server config option that accepts multiple unary interceptors.
 // Basically syntactic sugar.
 func WithUnaryServerChain(interceptors ...grpc.UnaryServerInterceptor) grpc.ServerOption {
