@@ -93,7 +93,7 @@ func TestChainStreamServer(t *testing.T) {
 	require.Equal(t, sentMessage, fakeStream.sentMessage, "handler's sent message must propagate to stream")
 }
 
-func TestChainClientUnary(t *testing.T) {
+func TestChainUnaryClient(t *testing.T) {
 	ignoredMd := metadata.Pairs("foo", "bar")
 	parentOpts := []grpc.CallOption{grpc.Header(&ignoredMd)}
 	reqMessage := "request"
@@ -116,7 +116,7 @@ func TestChainClientUnary(t *testing.T) {
 		return invoker(wrappedCtx, method, req, reply, cc, wrappedOpts...)
 	}
 	invoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
-		require.Equal(t, someServiceName, method, "handler must know someService")
+		require.Equal(t, someServiceName, method, "invoker must know someService")
 		requireContextValue(t, ctx, "parent", "invoker must know the parent context value")
 		requireContextValue(t, ctx, "first", "invoker must know the first context value")
 		requireContextValue(t, ctx, "second", "invoker must know the second context value")
@@ -126,6 +126,43 @@ func TestChainClientUnary(t *testing.T) {
 	chain := ChainUnaryClient(first, second)
 	err := chain(parentContext, someServiceName, reqMessage, replyMessage, nil, invoker, parentOpts...)
 	require.Equal(t, outputError, err, "chain must return invokers's error")
+}
+
+func TestChainStreamClient(t *testing.T) {
+	ignoredMd := metadata.Pairs("foo", "bar")
+	parentOpts := []grpc.CallOption{grpc.Header(&ignoredMd)}
+	clientStream := &fakeClientStream{}
+	fakeStreamDesc := &grpc.StreamDesc{ClientStreams: true, ServerStreams: true, StreamName: someServiceName}
+
+	first := func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+		requireContextValue(t, ctx, "parent", "first must know the parent context value")
+		require.Equal(t, someServiceName, method, "first must know someService")
+		require.Len(t, opts, 1, "first should see parent CallOptions")
+		wrappedCtx := context.WithValue(ctx, "first", 1)
+		return streamer(wrappedCtx, desc, cc, method, opts...)
+	}
+	second := func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+		requireContextValue(t, ctx, "parent", "second must know the parent context value")
+		require.Equal(t, someServiceName, method, "second must know someService")
+		require.Len(t, opts, 1, "second should see parent CallOptions")
+		wrappedOpts := append(opts, grpc.FailFast(true))
+		wrappedCtx := context.WithValue(ctx, "second", 1)
+		return streamer(wrappedCtx, desc, cc, method, wrappedOpts...)
+	}
+	streamer := func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+		require.Equal(t, someServiceName, method, "streamer must know someService")
+		require.Equal(t, fakeStreamDesc, desc, "streamer must see the right StreamDesc")
+
+		requireContextValue(t, ctx, "parent", "streamer must know the parent context value")
+		requireContextValue(t, ctx, "first", "streamer must know the first context value")
+		requireContextValue(t, ctx, "second", "streamer must know the second context value")
+		require.Len(t, opts, 2, "streamer should see both CallOpts from second and parent")
+		return clientStream, nil
+	}
+	chain := ChainStreamClient(first, second)
+	someStream, err := chain(parentContext, fakeStreamDesc, nil, someServiceName, streamer, parentOpts...)
+	require.NoError(t, err, "chain must not return an error as nothing there reutrned it")
+	require.Equal(t, clientStream, someStream, "chain must return invokers's clientstream")
 }
 
 func requireContextValue(t *testing.T, ctx context.Context, key string, msg ...interface{}) {
