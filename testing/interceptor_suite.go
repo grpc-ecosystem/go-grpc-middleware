@@ -12,12 +12,19 @@ import (
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"flag"
 )
+
+var (
+	flagTls = flag.Bool("use_tls", false, "whether all gRPC middleware tests should use tls")
+)
+
 
 // InterceptorTestSuite is a testify/Suite that starts a gRPC PingService server and a client.
 type InterceptorTestSuite struct {
 	suite.Suite
 
+	TestService pb_testproto.TestServiceServer
 	ServerOpts []grpc.ServerOption
 	ClientOpts []grpc.DialOption
 
@@ -25,7 +32,6 @@ type InterceptorTestSuite struct {
 	Server         *grpc.Server
 	clientConn     *grpc.ClientConn
 	Client         pb_testproto.TestServiceClient
-	ctx            context.Context
 }
 
 func (s *InterceptorTestSuite) SetupSuite() {
@@ -35,16 +41,23 @@ func (s *InterceptorTestSuite) SetupSuite() {
 
 	// This is the point where we hook up the interceptor
 	s.Server = grpc.NewServer(s.ServerOpts...)
-	pb_testproto.RegisterTestServiceServer(s.Server, &TestPingService{T: s.T()})
+	// Crete a service of the instantiator hasn't provided one.
+	if s.TestService == nil {
+		s.TestService = &TestPingService{T: s.T()}
+	}
+	pb_testproto.RegisterTestServiceServer(s.Server, s.TestService)
 
 	go func() {
 		s.Server.Serve(s.ServerListener)
 	}()
-	clientOpts := append(s.ClientOpts, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(2*time.Second))
-	s.clientConn, err = grpc.Dial(s.ServerAddr(), clientOpts...)
-	require.NoError(s.T(), err, "must not error on client Dial")
-	s.Client = pb_testproto.NewTestServiceClient(s.clientConn)
+	s.Client = s.NewClient(s.ClientOpts...)
+}
 
+func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) pb_testproto.TestServiceClient {
+	newDialOpts := append(dialOpts, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(2*time.Second))
+	clientConn, err := grpc.Dial(s.ServerAddr(), newDialOpts...)
+	require.NoError(s.T(), err, "must not error on client Dial")
+	return pb_testproto.NewTestServiceClient(clientConn)
 }
 
 func (s *InterceptorTestSuite) ServerAddr() string {
@@ -57,8 +70,9 @@ func (s *InterceptorTestSuite) SimpleCtx() context.Context {
 }
 
 func (s *InterceptorTestSuite) TearDownSuite() {
+	time.Sleep(10 * time.Millisecond)
 	if s.ServerListener != nil {
-		s.Server.Stop()
+		s.Server.GracefulStop()
 		s.T().Logf("stopped grpc.Server at: %v", s.ServerAddr())
 		s.ServerListener.Close()
 
