@@ -18,28 +18,28 @@ func TestAuthFromMD(t *testing.T) {
 		msg     string
 	}{
 		{
-			md:    metadata.Pairs(":authorization", "bearer some_token"),
+			md:    metadata.Pairs("authorization", "bearer some_token"),
 			value: "some_token",
 			msg:   "must extract simple bearer tokens without case checking",
 		},
 		{
-			md:    metadata.Pairs(":authorization", "Bearer some_token"),
+			md:    metadata.Pairs("authorization", "Bearer some_token"),
 			value: "some_token",
 			msg:   "must extract simple bearer tokens with case checking",
 		},
 		{
-			md:    metadata.Pairs(":authorization", "Bearer some multi string bearer"),
+			md:    metadata.Pairs("authorization", "Bearer some multi string bearer"),
 			value: "some multi string bearer",
 			msg:   "must handle string based bearers",
 		},
 		{
-			md:      metadata.Pairs(":authorization", "Basic login:passwd"),
+			md:      metadata.Pairs("authorization", "Basic login:passwd"),
 			value:   "",
 			errCode: codes.Unauthenticated,
 			msg:     "must check authentication type",
 		},
 		{
-			md:      metadata.Pairs(":authorization", "Basic login:passwd", ":authorization", "bearer some_token"),
+			md:      metadata.Pairs("authorization", "Basic login:passwd", "authorization", "bearer some_token"),
 			value:   "",
 			errCode: codes.Unauthenticated,
 			msg:     "must not allow multiple authentication methods",

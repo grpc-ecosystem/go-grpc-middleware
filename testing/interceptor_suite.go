@@ -12,7 +12,13 @@ import (
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"flag"
 )
+
+var (
+	flagTls = flag.Bool("use_tls", false, "whether all gRPC middleware tests should use tls")
+)
+
 
 // InterceptorTestSuite is a testify/Suite that starts a gRPC PingService server and a client.
 type InterceptorTestSuite struct {
@@ -64,8 +70,9 @@ func (s *InterceptorTestSuite) SimpleCtx() context.Context {
 }
 
 func (s *InterceptorTestSuite) TearDownSuite() {
+	time.Sleep(10 * time.Millisecond)
 	if s.ServerListener != nil {
-		s.Server.Stop()
+		s.Server.GracefulStop()
 		s.T().Logf("stopped grpc.Server at: %v", s.ServerAddr())
 		s.ServerListener.Close()
 
