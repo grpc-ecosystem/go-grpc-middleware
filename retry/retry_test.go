@@ -25,7 +25,7 @@ var (
 	retriableErrors = []codes.Code{codes.Unavailable, codes.DataLoss}
 	goodPing        = &pb_testproto.PingRequest{Value: "something"}
 	noSleep         = 0 * time.Second
-	retryTimeout    = 5 * time.Millisecond
+	retryTimeout    = 50 * time.Millisecond
 )
 
 type failingService struct {
@@ -166,12 +166,12 @@ func (s *RetrySuite) TestUnary_PerCallDeadline_Succeeds() {
 
 func (s *RetrySuite) TestUnary_PerCallDeadline_FailsOnParent() {
 	// This tests that the parent context (passed to the invocation) takes precedence over retries.
-	// The parent context has 25 milliseconds of deadline.
-	// Each failed call sleeps for 10milliseconds, and there is 5 milliseconds between each one.
+	// The parent context has 150 milliseconds of deadline.
+	// Each failed call sleeps for 100milliseconds, and there is 5 milliseconds between each one.
 	// This means that unlike in TestUnary_PerCallDeadline_Succeeds, the fifth successful call won't
 	// be made.
-	parentDeadline := 25 * time.Millisecond
-	deadlinePerCall := 5 * time.Millisecond
+	parentDeadline := 150 * time.Millisecond
+	deadlinePerCall := 50 * time.Millisecond
 	// All 0-4 requests should have 10 millisecond sleeps and deadline, while the last one works.
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
 	ctx, _ := context.WithTimeout(context.TODO(), parentDeadline)
@@ -198,9 +198,9 @@ func (s *RetrySuite) TestServerStream_OverrideFromContext() {
 }
 
 func (s *RetrySuite) TestServerStream_PerCallDeadline_Succeeds() {
-	// This tests 5 requests, with first 4 sleeping for 10 millisecond, and the retry logic firing
-	// a retry call with a 5 millisecond deadline. The 5th one doesn't sleep and succeeds.
-	deadlinePerCall := 5 * time.Millisecond
+	// This tests 5 requests, with first 4 sleeping for 100 millisecond, and the retry logic firing
+	// a retry call with a 50 millisecond deadline. The 5th one doesn't sleep and succeeds.
+	deadlinePerCall := 50 * time.Millisecond
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
 	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing, grpc_retry.WithPerRetryTimeout(deadlinePerCall),
 		grpc_retry.WithMax(5))
@@ -211,12 +211,12 @@ func (s *RetrySuite) TestServerStream_PerCallDeadline_Succeeds() {
 
 func (s *RetrySuite) TestServerStream_PerCallDeadline_FailsOnParent() {
 	// This tests that the parent context (passed to the invocation) takes precedence over retries.
-	// The parent context has 25 milliseconds of deadline.
-	// Each failed call sleeps for 10milliseconds, and there is 5 milliseconds between each one.
+	// The parent context has 150 milliseconds of deadline.
+	// Each failed call sleeps for 50milliseconds, and there is 25 milliseconds between each one.
 	// This means that unlike in TestServerStream_PerCallDeadline_Succeeds, the fifth successful call won't
 	// be made.
-	parentDeadline := 25 * time.Millisecond
-	deadlinePerCall := 5 * time.Millisecond
+	parentDeadline := 150 * time.Millisecond
+	deadlinePerCall := 50 * time.Millisecond
 	// All 0-4 requests should have 10 millisecond sleeps and deadline, while the last one works.
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
 	parentCtx, _ := context.WithTimeout(context.TODO(), parentDeadline)
