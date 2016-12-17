@@ -1,13 +1,20 @@
+// Copyright 2016 Michal Witkowski. All Rights Reserved.
+// See LICENSE for licensing terms.
+
 package grpc_retry
 
 import (
-	"context"
 	"time"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
 
 var (
+	// DefaultRetriableCodes is a set of well known types gRPC codes that should be retri-able.
+	//
+	// `ResourceExhausted` means that the user quota, e.g. per-RPC limits, have been reached.
+	// `Unavailable` means that system is currently unavailable and the client should retry again.
 	DefaultRetriableCodes = []codes.Code{codes.ResourceExhausted, codes.Unavailable}
 
 	defaultOptions = &options{
@@ -19,48 +26,60 @@ var (
 	}
 )
 
-// BackoffFunc is a function that returns the backoff time between calls of retry.
+// BackoffFunc denotes a family of functions that controll the backoff duration between call retries.
+//
+// They are called with an identifier of the attempt, and should return a time the system client should
+// hold off for. If the time returned is longer than the `context.Context.Deadline` of the request
+// the deadline of the request takes precedence and the wait will be interrupted before proceeding
+// with the next iteration.
 type BackoffFunc func(attempt uint) time.Duration
 
 // Disable disables the retry behaviour on this call, or this interceptor.
-// The same as WithMax(0)
-func Disable() optionsFunc {
+//
+// Its semantically the same to `WithMax`
+func Disable() CallOption {
 	return WithMax(0)
 }
 
 // WithMax sets the maximum number of retries on this call, or this interceptor.
-func WithMax(maxRetries uint) optionsFunc {
-	return func(o *options) {
+func WithMax(maxRetries uint) CallOption {
+	return CallOption{applyFunc: func(o *options) {
 		o.max = maxRetries
-	}
+	}}
 }
 
-// WithBackoff sets the BackoffFunc used to control time between retries.
-func WithBackoff(bf BackoffFunc) optionsFunc {
-	return func(o *options) {
+// WithBackoff sets the `BackoffFunc `used to control time between retries.
+func WithBackoff(bf BackoffFunc) CallOption {
+	return CallOption{applyFunc: func(o *options) {
 		o.backoffFunc = bf
-	}
+	}}
 }
 
 // WithCodes sets which codes should be retried.
-// You cannot autmatically retry on Cancelled and Deadline.
-func WithCodes(retryCodes ...codes.Code) optionsFunc {
-	return func(o *options) {
+//
+// Please *use with care*, as you may be retrying non-idempotend calls.
+//
+// You cannot automatically retry on Cancelled and Deadline, please use `WithPerRetryTimeout` for these.
+func WithCodes(retryCodes ...codes.Code) CallOption {
+	return CallOption{applyFunc: func(o *options) {
 		o.codes = retryCodes
-	}
+	}}
 }
 
 // WithPerRetryTimeout sets the RPC timeout per call (including initial call) on this call, or this interceptor.
+//
 // The context.Deadline of the call takes precedence and sets the maximum time the whole invocation
 // will take, but WithPerCallTimeout can be used to limit the RPC time per each call.
+//
 // For example, with context.Deadline = now + 10s, and WithPerCallTimeout(3 * time.Seconds), each
 // of the retry calls (including the initial one) will have a deadline of now + 3s.
+//
 // A value of 0 disables the timeout overrides completely and returns to each retry call using the
-// parent context.Deadline.
-func WithPerRetryTimeout(timeout time.Duration) optionsFunc {
-	return func(o *options) {
+// parent `context.Deadline`.
+func WithPerRetryTimeout(timeout time.Duration) CallOption {
+	return CallOption{applyFunc: func(o *options) {
 		o.perCallTimeout = timeout
-	}
+	}}
 }
 
 type options struct {
@@ -71,30 +90,31 @@ type options struct {
 	backoffFunc    BackoffFunc
 }
 
-type optionsFunc func(*options)
+// callOption is a grpc.CallOption that is local to grpc_retry.
+type CallOption struct {
+	grpc.CallOption // anonymously implement it, without knowing the private fields.
+	applyFunc       func(opt *options)
+}
 
-func applyOptionFuncsOrReuse(opt *options, optFuncs []optionsFunc) *options {
-	if len(optFuncs) == 0 {
+func reuseOrNewWithCallOptions(opt *options, callOptions []CallOption) *options {
+	if len(callOptions) == 0 {
 		return opt
 	}
 	optCopy := &options{}
 	*optCopy = *opt
-	for _, f := range optFuncs {
-		f(optCopy)
+	for _, f := range callOptions {
+		f.applyFunc(optCopy)
 	}
 	return optCopy
 }
 
-// Context sets per-call options, that allow to override the interceptor defaults.
-func Context(ctx context.Context, optFuncs ...optionsFunc) context.Context {
-	funcs := append(fromContext(ctx), optFuncs...)
-	return context.WithValue(ctx, optionFuncMarker, funcs)
-}
-
-func fromContext(ctx context.Context) []optionsFunc {
-	funcs, ok := ctx.Value(optionFuncMarker).([]optionsFunc)
-	if !ok {
-		return emptyOptionsFunc
+func filterCallOptions(callOptions []grpc.CallOption) (grpcOptions []grpc.CallOption, retryOptions []CallOption) {
+	for _, opt := range callOptions {
+		if co, ok := opt.(CallOption); ok {
+			retryOptions = append(retryOptions, co)
+		} else {
+			grpcOptions = append(grpcOptions, opt)
+		}
 	}
-	return funcs
+	return grpcOptions, retryOptions
 }

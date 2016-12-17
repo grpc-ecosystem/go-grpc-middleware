@@ -120,7 +120,7 @@ func (s *RetrySuite) SetupTest() {
 	s.srv.resetFailingConfiguration( /* don't fail */ 0, codes.OK, noSleep)
 }
 
-func (s *RetrySuite) xTestUnary_FailsOnNonRetriableError() {
+func (s *RetrySuite) TestUnary_FailsOnNonRetriableError() {
 	s.srv.resetFailingConfiguration(5, codes.Internal, noSleep)
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	require.Error(s.T(), err, "error must occur from the failing service")
@@ -136,7 +136,7 @@ func (s *RetrySuite) TestServerStream_FailsOnNonRetriableError() {
 	require.Equal(s.T(), codes.Internal, grpc.Code(err), "failure code must come from retrier")
 }
 
-func (s *RetrySuite) xTestUnary_SucceedsOnRetriableError() {
+func (s *RetrySuite) TestUnary_SucceedsOnRetriableError() {
 	s.srv.resetFailingConfiguration(3, codes.DataLoss, noSleep) // see retriable_errors
 	out, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "the third invocation should succeed")
@@ -144,31 +144,27 @@ func (s *RetrySuite) xTestUnary_SucceedsOnRetriableError() {
 	require.EqualValues(s.T(), 3, s.srv.requestCount(), "three requests should have been made")
 }
 
-func (s *RetrySuite) xTestUnary_OverrideFromContext() {
+func (s *RetrySuite) TestUnary_OverrideFromDialOpts() {
 	s.srv.resetFailingConfiguration(5, codes.ResourceExhausted, noSleep) // default is 3 and retriable_errors
-	ctx := grpc_retry.Context(s.SimpleCtx(), grpc_retry.WithCodes(codes.ResourceExhausted), grpc_retry.WithMax(5))
-	out, err := s.Client.Ping(ctx, goodPing)
+	out, err := s.Client.Ping(s.SimpleCtx(), goodPing, grpc_retry.WithCodes(codes.ResourceExhausted), grpc_retry.WithMax(5))
 	require.NoError(s.T(), err, "the fifth invocation should succeed")
 	require.NotNil(s.T(), out, "Pong must be not nill")
 	require.EqualValues(s.T(), 5, s.srv.requestCount(), "five requests should have been made")
 }
 
-func (s *RetrySuite) xTestUnary_PerCallDeadline_Succeeds() {
+func (s *RetrySuite) TestUnary_PerCallDeadline_Succeeds() {
 	// This tests 5 requests, with first 4 sleeping for 10 millisecond, and the retry logic firing
 	// a retry call with a 5 millisecond deadline. The 5th one doesn't sleep and succeeds.
 	deadlinePerCall := 5 * time.Millisecond
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
-	ctx := grpc_retry.Context(
-		s.SimpleCtx(),
-		grpc_retry.WithPerRetryTimeout(deadlinePerCall),
+	out, err := s.Client.Ping(s.SimpleCtx(), goodPing, grpc_retry.WithPerRetryTimeout(deadlinePerCall),
 		grpc_retry.WithMax(5))
-	out, err := s.Client.Ping(ctx, goodPing)
 	require.NoError(s.T(), err, "the fifth invocation should succeed")
 	require.NotNil(s.T(), out, "Pong must be not nill")
 	require.EqualValues(s.T(), 5, s.srv.requestCount(), "five requests should have been made")
 }
 
-func (s *RetrySuite) xTestUnary_PerCallDeadline_FailsOnParent() {
+func (s *RetrySuite) TestUnary_PerCallDeadline_FailsOnParent() {
 	// This tests that the parent context (passed to the invocation) takes precedence over retries.
 	// The parent context has 25 milliseconds of deadline.
 	// Each failed call sleeps for 10milliseconds, and there is 5 milliseconds between each one.
@@ -178,12 +174,9 @@ func (s *RetrySuite) xTestUnary_PerCallDeadline_FailsOnParent() {
 	deadlinePerCall := 5 * time.Millisecond
 	// All 0-4 requests should have 10 millisecond sleeps and deadline, while the last one works.
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
-	parentCtx, _ := context.WithTimeout(context.TODO(), parentDeadline)
-	ctx := grpc_retry.Context(
-		parentCtx,
-		grpc_retry.WithPerRetryTimeout(deadlinePerCall),
+	ctx, _ := context.WithTimeout(context.TODO(), parentDeadline)
+	_, err := s.Client.Ping(ctx, goodPing, grpc_retry.WithPerRetryTimeout(deadlinePerCall),
 		grpc_retry.WithMax(5))
-	_, err := s.Client.Ping(ctx, goodPing)
 	require.Error(s.T(), err, "the retries must fail due to context deadline exceeded")
 	require.Equal(s.T(), codes.DeadlineExceeded, grpc.Code(err), "failre code must be a gRPC error of Deadline class")
 }
@@ -198,8 +191,7 @@ func (s *RetrySuite) TestServerStream_SucceedsOnRetriableError() {
 
 func (s *RetrySuite) TestServerStream_OverrideFromContext() {
 	s.srv.resetFailingConfiguration(5, codes.ResourceExhausted, noSleep) // default is 3 and retriable_errors
-	ctx := grpc_retry.Context(s.SimpleCtx(), grpc_retry.WithCodes(codes.ResourceExhausted), grpc_retry.WithMax(5))
-	stream, err := s.Client.PingList(ctx, goodPing)
+	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing, grpc_retry.WithCodes(codes.ResourceExhausted), grpc_retry.WithMax(5))
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
 	s.assertPingListWasCorrect(stream)
 	require.EqualValues(s.T(), 5, s.srv.requestCount(), "three requests should have been made")
@@ -210,11 +202,8 @@ func (s *RetrySuite) TestServerStream_PerCallDeadline_Succeeds() {
 	// a retry call with a 5 millisecond deadline. The 5th one doesn't sleep and succeeds.
 	deadlinePerCall := 5 * time.Millisecond
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
-	ctx := grpc_retry.Context(
-		s.SimpleCtx(),
-		grpc_retry.WithPerRetryTimeout(deadlinePerCall),
+	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing, grpc_retry.WithPerRetryTimeout(deadlinePerCall),
 		grpc_retry.WithMax(5))
-	stream, err := s.Client.PingList(ctx, goodPing)
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
 	s.assertPingListWasCorrect(stream)
 	require.EqualValues(s.T(), 5, s.srv.requestCount(), "three requests should have been made")
@@ -231,11 +220,8 @@ func (s *RetrySuite) TestServerStream_PerCallDeadline_FailsOnParent() {
 	// All 0-4 requests should have 10 millisecond sleeps and deadline, while the last one works.
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
 	parentCtx, _ := context.WithTimeout(context.TODO(), parentDeadline)
-	ctx := grpc_retry.Context(
-		parentCtx,
-		grpc_retry.WithPerRetryTimeout(deadlinePerCall),
+	stream, err := s.Client.PingList(parentCtx, goodPing, grpc_retry.WithPerRetryTimeout(deadlinePerCall),
 		grpc_retry.WithMax(5))
-	stream, err := s.Client.PingList(ctx, goodPing)
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
 	_, err = stream.Recv()
 	require.Equal(s.T(), codes.DeadlineExceeded, grpc.Code(err), "failre code must be a gRPC error of Deadline class")

@@ -1,10 +1,13 @@
+// Copyright 2016 Michal Witkowski. All Rights Reserved.
+// See LICENSE for licensing terms.
+
 package grpc_retry
 
 import (
-	"time"
 	"fmt"
-	"sync"
 	"io"
+	"sync"
+	"time"
 
 	"github.com/mwitkow/go-grpc-middleware/util/metautils"
 	"golang.org/x/net/context"
@@ -14,25 +17,22 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-var (
-	emptyOptionsFunc = []optionsFunc{}
-	optionFuncMarker = "retry_options"
-)
-
 const (
-	retryHeader = "x-retry-attempty"
+	AttemptMetadataKey = "x-retry-attempty"
 )
 
 // UnaryClientInterceptor returns a new retrying unary client interceptor.
+//
 // The default configuration of the interceptor is to not retry *at all*. This behaviour can be
-// changed through options (e.g. WithMax) on creation of the interceptor or on invocation context.
-func UnaryClientInterceptor(optFuncs ...optionsFunc) grpc.UnaryClientInterceptor {
-	intOpts := applyOptionFuncsOrReuse(defaultOptions, optFuncs)
+// changed through options (e.g. WithMax) on creation of the interceptor or on call (through grpc.CallOptions).
+func UnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterceptor {
+	intOpts := reuseOrNewWithCallOptions(defaultOptions, optFuncs)
 	return func(parentCtx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		callOpts := applyOptionFuncsOrReuse(intOpts, fromContext(parentCtx))
+		grpcOpts, retryOpts := filterCallOptions(opts)
+		callOpts := reuseOrNewWithCallOptions(intOpts, retryOpts)
 		// short circuit for simplicity, and avoiding allocations.
 		if callOpts.max == 0 {
-			return invoker(parentCtx, method, req, reply, cc, opts...)
+			return invoker(parentCtx, method, req, reply, cc, grpcOpts...)
 		}
 		var lastErr error
 		for attempt := uint(0); attempt < callOpts.max; attempt++ {
@@ -40,7 +40,7 @@ func UnaryClientInterceptor(optFuncs ...optionsFunc) grpc.UnaryClientInterceptor
 				return nil
 			}
 			callCtx := perCallContext(parentCtx, callOpts, attempt)
-			lastErr = invoker(callCtx, method, req, reply, cc, opts...)
+			lastErr = invoker(callCtx, method, req, reply, cc, grpcOpts...)
 			// TODO(mwitkow): Maybe dial and transport errors should be retriable?
 			if lastErr == nil {
 				return nil
@@ -66,22 +66,28 @@ func UnaryClientInterceptor(optFuncs ...optionsFunc) grpc.UnaryClientInterceptor
 }
 
 // StreamClientInterceptor returns a new retrying stream client interceptor for server side streaming calls.
+//
 // The default configuration of the interceptor is to not retry *at all*. This behaviour can be
-// changed through options (e.g. WithMax) on creation of the interceptor or on invocation context.
-func StreamClientInterceptor(optFuncs ...optionsFunc) grpc.StreamClientInterceptor {
-	intOpts := applyOptionFuncsOrReuse(defaultOptions, optFuncs)
+// changed through options (e.g. WithMax) on creation of the interceptor or on call (through grpc.CallOptions).
+//
+// Retry logic is available *only for ServerStreams*, i.e. 1:n streams, as the internal logic needs
+// to buffer the messages sent by the client. If retry is enabled on any other streams (ClientStreams,
+// BidiStreams), the retry interceptor will fail the call.
+func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientInterceptor {
+	intOpts := reuseOrNewWithCallOptions(defaultOptions, optFuncs)
 	return func(parentCtx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-		callOpts := applyOptionFuncsOrReuse(intOpts, fromContext(parentCtx))
+		grpcOpts, retryOpts := filterCallOptions(opts)
+		callOpts := reuseOrNewWithCallOptions(intOpts, retryOpts)
 		// short circuit for simplicity, and avoiding allocations.
 		if callOpts.max == 0 {
-			return streamer(parentCtx, desc, cc, method, opts...)
+			return streamer(parentCtx, desc, cc, method, grpcOpts...)
 		}
 		if desc.ClientStreams {
 			return nil, grpc.Errorf(codes.Unimplemented, "grpc_retry: cannot retry on ClientStreams, set grpc_retry.Disable()")
 		}
 		logTrace(parentCtx, "grpc_retry attempt: %d, no backoff for this call", 0)
 		callCtx := perCallContext(parentCtx, callOpts, 0)
-		newStreamer, err := streamer(callCtx, desc, cc, method, opts...)
+		newStreamer, err := streamer(callCtx, desc, cc, method, grpcOpts...)
 		if err != nil {
 			// TODO(mwitkow): Maybe dial and transport errors should be retriable?
 			return nil, err
@@ -91,7 +97,7 @@ func StreamClientInterceptor(optFuncs ...optionsFunc) grpc.StreamClientIntercept
 			callOpts:     callOpts,
 			parentCtx:    parentCtx,
 			streamerCall: func(ctx context.Context) (grpc.ClientStream, error) {
-				return streamer(ctx, desc, cc, method, opts...)
+				return streamer(ctx, desc, cc, method, grpcOpts...)
 			},
 		}
 		return retryingStreamer, nil
@@ -262,7 +268,7 @@ func perCallContext(parentCtx context.Context, callOpts *options, attempt uint) 
 		ctx, _ = context.WithTimeout(ctx, callOpts.perCallTimeout)
 	}
 	if attempt > 0 && callOpts.includeHeader {
-		ctx = metautils.SetSingle(ctx, retryHeader, fmt.Sprintf("%d", attempt))
+		ctx = metautils.SetSingle(ctx, AttemptMetadataKey, fmt.Sprintf("%d", attempt))
 	}
 	return ctx
 }
