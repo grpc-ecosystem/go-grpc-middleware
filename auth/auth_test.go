@@ -19,6 +19,9 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"golang.org/x/oauth2"
+	"time"
+	"google.golang.org/grpc/credentials/oauth"
 )
 
 var (
@@ -104,6 +107,13 @@ func (s *AuthTestSuite) TestUnary_PassesAuth() {
 	require.NoError(s.T(), err, "no error must occur")
 }
 
+func (s *AuthTestSuite) TestUnary_PassesWithPerRpcCredentials() {
+	grpcCreds := oauth.TokenSource{&fakeOAuth2TokenSource{accessToken: commonAuthToken}}
+	client := s.NewClient(grpc.WithPerRPCCredentials(grpcCreds))
+	_, err := client.Ping(s.SimpleCtx(), goodPing)
+	require.NoError(s.T(), err, "no error must occur")
+}
+
 func (s *AuthTestSuite) TestStream_NoAuth() {
 	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
@@ -122,6 +132,16 @@ func (s *AuthTestSuite) TestStream_BadAuth() {
 
 func (s *AuthTestSuite) TestStream_PassesAuth() {
 	stream, err := s.Client.PingList(ctxWithToken(s.SimpleCtx(), "Bearer", commonAuthToken), goodPing)
+	require.NoError(s.T(), err, "should not fail on establishing the stream")
+	pong, err := stream.Recv()
+	require.NoError(s.T(), err, "no error must occur")
+	require.NotNil(s.T(), pong, "pong must not be nil")
+}
+
+func (s *AuthTestSuite) TestStream_PassesWithPerRpcCredentials() {
+	grpcCreds := oauth.TokenSource{&fakeOAuth2TokenSource{accessToken: commonAuthToken}}
+	client := s.NewClient(grpc.WithPerRPCCredentials(grpcCreds))
+	stream, err := client.PingList(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	pong, err := stream.Recv()
 	require.NoError(s.T(), err, "no error must occur")
@@ -167,4 +187,18 @@ func (s *AuthOverrideTestSuite) TestStream_PassesAuth() {
 	pong, err := stream.Recv()
 	require.NoError(s.T(), err, "no error must occur")
 	require.NotNil(s.T(), pong, "pong must not be nil")
+}
+
+// fakeOAuth2TokenSource implements a fake oauth2.TokenSource for the purpose of credentials test.
+type fakeOAuth2TokenSource struct {
+	accessToken string
+}
+
+func (ts *fakeOAuth2TokenSource) Token() (*oauth2.Token, error) {
+	t := &oauth2.Token {
+		AccessToken: ts.accessToken,
+		Expiry: time.Now().Add(1 * time.Minute),
+		TokenType: "bearer",
+	}
+	return t, nil
 }
