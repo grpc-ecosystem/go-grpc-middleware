@@ -4,9 +4,8 @@
 package grpc_auth_test
 
 import (
-	"context"
-
 	"github.com/mwitkow/go-grpc-middleware/auth"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
