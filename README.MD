@@ -34,15 +34,19 @@ myServer := grpc.NewServer(
 
 *Please send a PR to add new interceptors or middleware to this list*
 
- * Auth
+#### Auth
    * [`grpc_auth`](auth/README.md) - a customizable (via `AuthFunc) piece of auth middleware 
- * Logging
- * Client
+
+#### Logging
+
+#### Monitoring
+   * [`grpc_prometheus`⚡](https://github.com/grpc-ecosystem/go-grpc-prometheus) - Prometheus client-side and server-side monitoring middleware
+   * [`otgrpc`⚡](https://github.com/grpc-ecosystem/grpc-opentracing/tree/master/go/otgrpc) - [OpenTracing](http://opentracing.io/) client-side and server-side interceptors
+
+#### Client
    * [`grpc_retry`](`retry/README.md`) - a generic gRPC response code retry mechanism
- * Monitoring
-   * [`grpc_prometheus` 🔗](https://github.com/grpc-ecosystem/go-grpc-prometheus) - Prometheus client-side and server-side monitoring middleware
-   * [`otgrpc` 🔗](https://github.com/grpc-ecosystem/grpc-opentracing/tree/master/go/otgrpc) - [OpenTracing](http://opentracing.io/) client-side and server-side interceptors
- * Input
+
+#### Server
    * [`grpc_validator`](validator/README.md) - codegen inbound message validation from `.proto` options 
 
 
