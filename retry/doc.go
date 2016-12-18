@@ -1,9 +1,10 @@
 // Copyright 2016 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-// Client Side Request Retry Interceptor
 /*
 `grpc_retry` provides client-side request retry logic for gRPC.
+
+Client-Side Request Retry Interceptor
 
 It allows for automatic retry, inside the generated gRPC code of requests based on the gRPC status
 of the reply. It supports unary (1:1), and server stream (1:n) requests.

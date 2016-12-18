@@ -1,10 +1,6 @@
 // Copyright 2016 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-/*
-Package `grpc_auther` provides an easy way to hook Bearer-token and TLS credentials authorization to your gRPC server.
-*/
-
 package grpc_auth
 
 import (
@@ -14,16 +10,20 @@ import (
 )
 
 // AuthFunc is the pluggable function that performs authentication.
+//
 // The passed in `Context` will contain the gRPC metadata.MD object (for header-based authentication) and
 // the peer.Peer information that can contain transport-based credentials (e.g. `credentials.AuthInfo`).
+//
 // The returned context will be propagated to handlers, allowing user changes to `Context`. However,
 // please make sure that the `Context` returned is a child `Context` of the one passed in.
+//
 // If error is returned, its `grpc.Code()` will be returned to the user as well as the verbatim message.
 // Please make sure you use `codes.Unauthenticated` (lacking auth) and `codes.PermissionDenied`
 // (authed, but lacking perms) appropriately.
 type AuthFunc func(ctx context.Context) (context.Context, error)
 
 // ServiceAuthFuncOverride allows a given gRPC service implementation to override the global `AuthFunc`.
+//
 // If a service implements the AuthFuncOverride method, it takes precedence over the `AuthFunc` method,
 // and will be called instead of AuthFunc for all method invocations within that service.
 type ServiceAuthFuncOverride interface {
