@@ -1,17 +1,6 @@
 // Copyright 2016 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-/*
-Package `grpc_validator` provides an easy way to hook protobuf message validation as a gRPC
-interceptor across all your APIs.
-
-It primarily meant to be used with https://github.com/mwitkow/go-proto-validators, which code-gen
-assertions about allowed values from `.proto` files.
-
-Basically this will invoke a .Validate() method on incoming message of the stream, if such method is
-defined. If that method returns an error, an `INVALID_ARGUMENT` gRPC status code is returned.
-*/
-
 package grpc_validator
 
 import (
@@ -25,6 +14,8 @@ type validator interface {
 }
 
 // UnaryServerInterceptor returns a new unary server interceptors that validates incoming messages.
+//
+// Invalid messages will be rejected with `InvalidArgument` before reaching any userspace handlers.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		if v, ok := req.(validator); ok {
@@ -37,7 +28,11 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 }
 
 // StreamServerInterceptor returns a new streaming server interceptors that validates incoming messages.
-// The validation happens on message receives.
+//
+// The stage at which invalid messages will be rejected with `InvalidArgument` varies based on the
+// type of the RPC. For `ServerStream` (1:m) requests, it will happen before reaching any userspace
+// handlers. For `ClientStream` (n:1) or `BidiStream` (n:m) RPCs, the messages will be rejected on
+// calls to `stream.Recv()`.
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		wrapper := &recvWrapper{stream}

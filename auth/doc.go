@@ -2,7 +2,7 @@
 // See LICENSE for licensing terms.
 
 /*
-`grpc_auth` a generic provides server-side auth middleware for gRPC.
+`grpc_auth` a generic server-side auth middleware for gRPC.
 
 Server Side Auth Middleware
 
