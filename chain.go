@@ -11,6 +11,7 @@ import (
 )
 
 // ChainUnaryServer creates a single interceptor out of a chain of many interceptors.
+//
 // Execution is done in left-to-right order, including passing of context.
 // For example ChainUnaryServer(one, two, three) will execute one before two before three, and three
 // will see context changes of one and two.
@@ -30,6 +31,7 @@ func ChainUnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnarySer
 }
 
 // ChainStreamServer creates a single interceptor out of a chain of many interceptors.
+//
 // Execution is done in left-to-right order, including passing of context.
 // For example ChainUnaryServer(one, two, three) will execute one before two before three.
 // If you want to pass context between interceptors, use WrapServerStream.
@@ -49,6 +51,7 @@ func ChainStreamServer(interceptors ...grpc.StreamServerInterceptor) grpc.Stream
 }
 
 // ChainUnaryClient creates a single interceptor out of a chain of many interceptors.
+//
 // Execution is done in left-to-right order, including passing of context.
 // For example ChainUnaryClient(one, two, three) will execute one before two before three.
 func ChainUnaryClient(interceptors ...grpc.UnaryClientInterceptor) grpc.UnaryClientInterceptor {
@@ -67,6 +70,7 @@ func ChainUnaryClient(interceptors ...grpc.UnaryClientInterceptor) grpc.UnaryCli
 }
 
 // ChainStreamClient creates a single interceptor out of a chain of many interceptors.
+//
 // Execution is done in left-to-right order, including passing of context.
 // For example ChainStreamClient(one, two, three) will execute one before two before three.
 func ChainStreamClient(interceptors ...grpc.StreamClientInterceptor) grpc.StreamClientInterceptor {
@@ -85,7 +89,7 @@ func ChainStreamClient(interceptors ...grpc.StreamClientInterceptor) grpc.Stream
 }
 
 // Chain creates a single interceptor out of a chain of many interceptors.
-
+//
 // WithUnaryServerChain is a grpc.Server config option that accepts multiple unary interceptors.
 // Basically syntactic sugar.
 func WithUnaryServerChain(interceptors ...grpc.UnaryServerInterceptor) grpc.ServerOption {
