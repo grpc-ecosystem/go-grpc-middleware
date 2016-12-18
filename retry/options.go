@@ -22,7 +22,7 @@ var (
 		perCallTimeout: 0, // disabled
 		includeHeader:  true,
 		codes:          DefaultRetriableCodes,
-		backoffFunc:    BackoffLinear(50 * time.Millisecond),
+		backoffFunc:    BackoffLinearWithJitter(50 * time.Millisecond /*jitter*/, 0.10),
 	}
 )
 
