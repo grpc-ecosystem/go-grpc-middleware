@@ -1,6 +1,6 @@
 # Go gRPC Middleware
 
-[![Travis Build](https://travis-ci.org/mwitkow/go-grpc-middleware.svg)](https://travis-ci.org/mwitkow/go-grpc-middleware)
+[![Travis Build](https://travis-ci.org/mwitkow/go-grpc-middleware.svg?branch=master)](https://travis-ci.org/mwitkow/go-grpc-middleware)
 [![Go Report Card](https://goreportcard.com/badge/github.com/mwitkow/go-grpc-middleware)](https://goreportcard.com/report/github.com/mwitkow/go-grpc-middleware)
 [![GoDoc](http://img.shields.io/badge/GoDoc-Reference-blue.svg)](https://godoc.org/github.com/mwitkow/go-grpc-middleware)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
