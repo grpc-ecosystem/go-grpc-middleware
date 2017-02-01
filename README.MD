@@ -13,13 +13,13 @@
 [gRPC Go](https://github.com/grpc/grpc-go) recently acquired support for
 Interceptors, i.e. [middleware](https://medium.com/@matryer/writing-middleware-in-golang-and-how-go-makes-it-so-much-fun-4375c1246e81#.gv7tdlghs) 
 that is executed either on the gRPC Server before the request is passed onto the user's application logic, or on the gRPC client either around the user call. It is a perfect way to implement
-common patters: auth, logging, message, validation, retries or monitoring.
+common patterns: auth, logging, message, validation, retries or monitoring.
 
 These are generic building blocks that make it easy to build multiple microservices easily.
 The purpose of this repository is to act as a go-to point for such reusable functionality. It contains
 some of them itself, but also will link to useful external repos.
 
-`grpc_middleware` itself provides support for chaining interceptors. Se [Documentation](doc.md), but here's a simple example:
+`grpc_middleware` itself provides support for chaining interceptors. See the [Documentation](doc.md), but here's a simple example:
 
 ```go
 import "github.com/mwitkow/go-grpc-middleware"
