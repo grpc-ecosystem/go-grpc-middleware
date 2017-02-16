@@ -34,6 +34,9 @@ func AuthFromMD(ctx context.Context, expectedScheme string) (string, error) {
 		return "", grpc.Errorf(codes.Unauthenticated, "Request contains multiple authorization headers")
 	}
 	splits := strings.SplitN(slice[0], " ", 2)
+	if len(splits) < 2 {
+		return "", grpc.Errorf(codes.Unauthenticated, "Bad authorization string")
+	}
 	if strings.ToLower(splits[0]) != strings.ToLower(expectedScheme) {
 		return "", grpc.Errorf(codes.Unauthenticated, "Request unauthenticated with "+expectedScheme)
 	}
