@@ -47,6 +47,18 @@ func TestAuthFromMD(t *testing.T) {
 			errCode: codes.Unauthenticated,
 			msg:     "must not allow multiple authentication methods",
 		},
+		{
+			md:      metadata.Pairs("authorization", ""),
+			value:   "",
+			errCode: codes.Unauthenticated,
+			msg:     "authorization string must not be empty",
+		},
+		{
+			md:      metadata.Pairs("authorization", "Bearer"),
+			value:   "",
+			errCode: codes.Unauthenticated,
+			msg:     "bearer token must not be empty",
+		},
 	} {
 		ctx := metadata.NewContext(context.TODO(), run.md)
 		out, err := AuthFromMD(ctx, "bearer")
