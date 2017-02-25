@@ -15,7 +15,7 @@ override the number of retries (setting them to more than 0) with a `grpc.Client
  myclient.Ping(ctx, goodPing, grpc_retry.WithMax(5))
 
 Other default options are: retry on `ResourceExhausted` and `Unavailable` gRPC codes, use a 50ms
-linear backoff.
+linear backoff with 10% jitter.
 
 Please see examples for more advanced use.
 */

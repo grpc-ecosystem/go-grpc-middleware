@@ -8,6 +8,9 @@ install:
   - go get google.golang.org/grpc
   - go get golang.org/x/net/context
   - go get github.com/stretchr/testify
+  # for auth
+  - go get golang.org/x/oauth2
+  - go get cloud.google.com/go/compute/metadata
   # for logs/zap
   - go get go.uber.org/zap
 
