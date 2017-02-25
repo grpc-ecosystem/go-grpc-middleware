@@ -2,11 +2,14 @@ sudo: false
 language: go
 go:
   - 1.7
+  - 1.8
 
 install:
   - go get google.golang.org/grpc
   - go get golang.org/x/net/context
   - go get github.com/stretchr/testify
+  # for logs/zap
+  - go get go.uber.org/zap
 
 script:
  - go test -race -v ./...
