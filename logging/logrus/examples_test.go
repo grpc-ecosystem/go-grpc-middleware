@@ -33,12 +33,13 @@ func Example_initialization(logrusLogger *logrus.Logger, customFunc grpc_logrus.
 }
 
 // Simple unary handler that adds custom fields to the requests's context. These will be used for all log statements.
-func Example_handlerUsageUnaryPing() {
-	_ := func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
+func Example_handlerUsageUnaryPing() interface{} {
+	x := func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
 		// Add fields to all log statements, including the final one made by the interceptor.
 		grpc_logrus.AddFields(ctx, logrus.Fields{"custom_string": "something", "custom_int": 1337})
 		// Extract a request-scoped zap.Logger and log a message.
 		grpc_logrus.Extract(ctx).Info("some ping")
 		return &pb_testproto.PingResponse{Value: ping.Value}, nil
 	}
+	return x
 }
