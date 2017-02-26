@@ -32,12 +32,13 @@ func Example_initialization(zapLogger *zap.Logger, customFunc grpc_zap.CodeToLev
 }
 
 // Simple unary handler that adds custom fields to the requests's context. These will be used for all log statements.
-func Example_handlerUsageUnaryPing() {
-	_ := func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
+func Example_handlerUsageUnaryPing() interface{} {
+	x := func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
 		// Add fields to all log statements, including the final one made by the interceptor.
 		grpc_zap.AddFields(ctx, zap.String("custom_string", "something"), zap.Int("custom_int", 1337))
 		// Extract a request-scoped zap.Logger and log a message.
 		grpc_zap.Extract(ctx).Info("some ping")
 		return &pb_testproto.PingResponse{Value: ping.Value}, nil
 	}
+	return x
 }
