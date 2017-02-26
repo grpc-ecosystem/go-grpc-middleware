@@ -35,11 +35,11 @@ myServer := grpc.NewServer(
 *Please send a PR to add new interceptors or middleware to this list*
 
 #### Auth
-   * [`grpc_auth`](auth/README.md) - a customizable (via `AuthFunc) piece of auth middleware 
+   * [`grpc_auth`](auth) - a customizable (via `AuthFunc) piece of auth middleware 
 
 #### Logging
-   * [`grpc_zap`](logging/zap/README.md) - integration of [zap](https://github.com/uber-go/zap) logging library into gRPC handlers.
-   * [`grpc_logrus`](logging/logrus/README.md) - integration of [logrus](https://github.com/Sirupsen/logrus) logging library into gRPC handlers.
+   * [`grpc_zap`](logging/zap/) - integration of [zap](https://github.com/uber-go/zap) logging library into gRPC handlers.
+   * [`grpc_logrus`](logging/logrus/) - integration of [logrus](https://github.com/Sirupsen/logrus) logging library into gRPC handlers.
 
 
 #### Monitoring
@@ -47,10 +47,10 @@ myServer := grpc.NewServer(
    * [`otgrpc`⚡](https://github.com/grpc-ecosystem/grpc-opentracing/tree/master/go/otgrpc) - [OpenTracing](http://opentracing.io/) client-side and server-side interceptors
 
 #### Client
-   * [`grpc_retry`](`retry/README.md`) - a generic gRPC response code retry mechanism
+   * [`grpc_retry`](retry/) - a generic gRPC response code retry mechanism
 
 #### Server
-   * [`grpc_validator`](validator/README.md) - codegen inbound message validation from `.proto` options 
+   * [`grpc_validator`](validator/) - codegen inbound message validation from `.proto` options 
 
 
 ## Status
