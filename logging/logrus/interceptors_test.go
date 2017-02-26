@@ -1,9 +1,10 @@
 // Copyright 2017 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-package grpc_zap_test
+package grpc_logrus_test
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -16,16 +17,13 @@ import (
 
 	"fmt"
 
-	"runtime"
-
+	"github.com/Sirupsen/logrus"
 	"github.com/mwitkow/go-grpc-middleware/logging"
-	"github.com/mwitkow/go-grpc-middleware/logging/zap"
+	"github.com/mwitkow/go-grpc-middleware/logging/logrus"
 	"github.com/mwitkow/go-grpc-middleware/testing"
 	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
@@ -38,18 +36,18 @@ type loggingPingService struct {
 	pb_testproto.TestServiceServer
 }
 
-func customCodeToLevel(c codes.Code) zapcore.Level {
+func customCodeToLevel(c codes.Code) logrus.Level {
 	if c == codes.Unauthenticated {
 		// Make this a special case for tests, and an error.
-		return zap.DPanicLevel
+		return logrus.ErrorLevel
 	}
-	level := grpc_zap.DefaultCodeToLevel(c)
+	level := grpc_logrus.DefaultCodeToLevel(c)
 	return level
 }
 
 func (s *loggingPingService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
-	grpc_zap.AddFields(ctx, zap.String("custom_string", "something"), zap.Int("custom_int", 1337))
-	grpc_zap.Extract(ctx).Info("some ping")
+	grpc_logrus.AddFields(ctx, logrus.Fields{"custom_string": "something", "custom_int": 1337})
+	grpc_logrus.Extract(ctx).Info("some ping")
 	return s.TestServiceServer.Ping(ctx, ping)
 }
 
@@ -58,74 +56,56 @@ func (s *loggingPingService) PingError(ctx context.Context, ping *pb_testproto.P
 }
 
 func (s *loggingPingService) PingList(ping *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
-	grpc_zap.AddFields(stream.Context(), zap.String("custom_string", "something"), zap.Int("custom_int", 1337))
-	grpc_zap.Extract(stream.Context()).Info("some pinglist")
+	grpc_logrus.AddFields(stream.Context(), logrus.Fields{"custom_string": "something", "custom_int": 1337})
+	grpc_logrus.Extract(stream.Context()).Info("some pinglist")
 	return s.TestServiceServer.PingList(ping, stream)
 }
 
 func (s *loggingPingService) PingEmpty(ctx context.Context, empty *pb_testproto.Empty) (*pb_testproto.PingResponse, error) {
+	// This hijacks the PingEmpty to test whether the given interceptor implements the grpc_logging metadata.
 	grpc_logging.ExtractMetadata(ctx).AddFieldsFromMiddleware(
 		[]string{"middleware_1", "middleware_2"},
 		[]interface{}{1410, "some_content"})
 	return s.TestServiceServer.PingEmpty(ctx, empty)
 }
 
-type bufferWriteSyncer struct {
-	*bytes.Buffer
-}
-
-func (*bufferWriteSyncer) Sync() error {
-	return nil // no op
-}
-
-func TestZapLoggingSuite(t *testing.T) {
+func TestLogrusLoggingSuite(t *testing.T) {
 	if runtime.Version() == "go1.7" {
 		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
 		return
 	}
-	b := &bufferWriteSyncer{&bytes.Buffer{}}
-	zap.NewDevelopmentConfig()
-	jsonEncoder := zapcore.NewJSONEncoder(zapcore.EncoderConfig{
-		TimeKey:        "ts",
-		LevelKey:       "level",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		MessageKey:     "msg",
-		StacktraceKey:  "stacktrace",
-		EncodeLevel:    zapcore.LowercaseLevelEncoder,
-		EncodeTime:     zapcore.EpochTimeEncoder,
-		EncodeDuration: zapcore.SecondsDurationEncoder,
-	})
-	core := zapcore.NewCore(jsonEncoder, b, zap.LevelEnablerFunc(func(zapcore.Level) bool { return true }))
-	log := zap.New(core)
-	opts := []grpc_zap.Option{
-		grpc_zap.WithLevels(customCodeToLevel),
+	b := &bytes.Buffer{}
+	log := logrus.New()
+	log.Out = b
+	log.Formatter = &logrus.JSONFormatter{DisableTimestamp: true}
+	opts := []grpc_logrus.Option{
+		grpc_logrus.WithLevels(customCodeToLevel),
 	}
-	s := &ZapLoggingSuite{
-		log:    log,
-		buffer: b.Buffer,
+	s := &LogrusLoggingSuite{
+		log:    logrus.NewEntry(log),
+		buffer: b,
 		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
 			TestService: &loggingPingService{&grpc_testing.TestPingService{T: t}},
 			ServerOpts: []grpc.ServerOption{
-				grpc.StreamInterceptor(grpc_zap.StreamServerInterceptor(log, opts...)),
-				grpc.UnaryInterceptor(grpc_zap.UnaryServerInterceptor(log, opts...)),
+				grpc.StreamInterceptor(grpc_logrus.StreamServerInterceptor(logrus.NewEntry(log), opts...)),
+				grpc.UnaryInterceptor(grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(log), opts...)),
 			},
 		},
 	}
 	suite.Run(t, s)
 }
 
-type ZapLoggingSuite struct {
+type LogrusLoggingSuite struct {
 	*grpc_testing.InterceptorTestSuite
 	buffer *bytes.Buffer
-	log    *zap.Logger
+	log    *logrus.Entry
 }
 
-func (s *ZapLoggingSuite) SetupTest() {
+func (s *LogrusLoggingSuite) SetupTest() {
 	s.buffer.Reset()
 }
 
-func (s *ZapLoggingSuite) getOutputJSONs() []string {
+func (s *LogrusLoggingSuite) getOutputJSONs() []string {
 	ret := []string{}
 	dec := json.NewDecoder(s.buffer)
 	for {
@@ -135,7 +115,7 @@ func (s *ZapLoggingSuite) getOutputJSONs() []string {
 			break
 		}
 		if err != nil {
-			s.T().Fatalf("failed decoding output from ZAP JSON: %v", err)
+			s.T().Fatalf("failed decoding output from Logrus JSON: %v", err)
 		}
 		out, _ := json.MarshalIndent(val, "", "  ")
 		ret = append(ret, string(out))
@@ -143,7 +123,7 @@ func (s *ZapLoggingSuite) getOutputJSONs() []string {
 	return ret
 }
 
-func (s *ZapLoggingSuite) TestPing_WithCustomTags() {
+func (s *LogrusLoggingSuite) TestPing_WithCustomTags() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
 	msgs := s.getOutputJSONs()
@@ -163,31 +143,31 @@ func (s *ZapLoggingSuite) TestPing_WithCustomTags() {
 	assert.Contains(s.T(), msgs[1], `"grpc_time_ns":`, "interceptor log statement should contain execution time")
 }
 
-func (s *ZapLoggingSuite) TestPingError_WithCustomLevels() {
+func (s *LogrusLoggingSuite) TestPingError_WithCustomLevels() {
 	for _, tcase := range []struct {
 		code  codes.Code
-		level zapcore.Level
+		level logrus.Level
 		msg   string
 	}{
 		{
 			code:  codes.Internal,
-			level: zap.ErrorLevel,
+			level: logrus.ErrorLevel,
 			msg:   "Internal must remap to ErrorLevel in DefaultCodeToLevel",
 		},
 		{
 			code:  codes.NotFound,
-			level: zap.InfoLevel,
+			level: logrus.InfoLevel,
 			msg:   "NotFound must remap to InfoLevel in DefaultCodeToLevel",
 		},
 		{
 			code:  codes.FailedPrecondition,
-			level: zap.WarnLevel,
+			level: logrus.WarnLevel,
 			msg:   "FailedPrecondition must remap to WarnLevel in DefaultCodeToLevel",
 		},
 		{
 			code:  codes.Unauthenticated,
-			level: zap.DPanicLevel,
-			msg:   "Unauthenticated is overwritten to DPanicLevel with customCodeToLevel override, which probably didn't work",
+			level: logrus.ErrorLevel,
+			msg:   "Unauthenticated is overwritten to ErrorLevel with customCodeToLevel override, which probably didn't work",
 		},
 	} {
 		s.buffer.Reset()
@@ -205,7 +185,7 @@ func (s *ZapLoggingSuite) TestPingError_WithCustomLevels() {
 	}
 }
 
-func (s *ZapLoggingSuite) TestPingList_WithCustomTags() {
+func (s *LogrusLoggingSuite) TestPingList_WithCustomTags() {
 	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	for {
@@ -232,7 +212,7 @@ func (s *ZapLoggingSuite) TestPingList_WithCustomTags() {
 	assert.Contains(s.T(), msgs[1], `"grpc_time_ns":`, "interceptor log statement should contain execution time")
 }
 
-func (s *ZapLoggingSuite) TestPingEmpty_WithMetadataTags() {
+func (s *LogrusLoggingSuite) TestPingEmpty_WithMetadataTags() {
 	_, err := s.Client.PingEmpty(s.SimpleCtx(), &pb_testproto.Empty{})
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
 	msgs := s.getOutputJSONs()

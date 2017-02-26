@@ -1,21 +1,16 @@
 // Copyright 2016 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-package grpc_zap
+package grpc_logrus
 
 import (
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"golang.org/x/net/context"
+	"github.com/Sirupsen/logrus"
 	"github.com/mwitkow/go-grpc-middleware/logging"
-)
-
-var (
-	nullLogger = zap.NewNop()
+	"golang.org/x/net/context"
 )
 
 type holder struct {
-	*zap.Logger
+	*logrus.Entry
 }
 
 // AddFieldsFromMiddleware implements grpc_logging.Metadata on this holder.
@@ -23,43 +18,43 @@ func (h *holder) AddFieldsFromMiddleware(keys []string, values []interface{}) {
 	if len(keys) != len(values) {
 		panic("AddFieldsFromMiddleware length of keys doesn't match length of values")
 	}
-	fields := []zapcore.Field{}
+	fields := logrus.Fields{}
 	for i := range keys {
-		fields = append(fields, zap.Any(keys[i], values[i]))
+		fields[keys[i]] = values[i]
 	}
-	h.Logger = h.Logger.With(fields...)
+	h.Entry = h.Entry.WithFields(fields)
 }
 
-// Extract takes the call-scoped Logger from grpc_zap middleware.
+// Extract takes the call-scoped logrus.Entry from grpc_logrus middleware.
 //
-// If the grpc_zap middleware wasn't used, a null `zap.Logger` is returned. This makes it safe to
+// If the grpc_logrus middleware wasn't used, a no-op `logrus.Entry` is returned. This makes it safe to
 // use regardless.
-func Extract(ctx context.Context) *zap.Logger {
+func Extract(ctx context.Context) *logrus.Entry {
 	h, ok := ctx.Value(grpc_logging.InternalContextMarker).(*holder)
 	if !ok {
-		return nullLogger
+		return logrus.NewEntry(nullLogger)
 	}
-	return h.Logger
+	return h.Entry
 }
 
-// AddFields adds zap.Fields to *all* usages of the logger, both upstream (to handler) and downstream.
+// AddFields adds logrus.Fields to *all* usages of the logger, both upstream (to handler) and downstream (to interceptor).
 //
 // This call *is not* concurrency safe. It should only be used in the request goroutine: in other
 // interceptors or directly in the handler.
-func AddFields(ctx context.Context, fields ...zapcore.Field) {
+func AddFields(ctx context.Context, fields logrus.Fields) {
 	logger := Extract(ctx)
 	holder, ok := ctx.Value(grpc_logging.InternalContextMarker).(*holder)
 	if !ok {
 		return
 	}
-	holder.Logger = logger.With(fields...)
+	holder.Entry = logger.WithFields(fields)
 }
 
-func toContext(ctx context.Context, logger *zap.Logger) context.Context {
+func toContext(ctx context.Context, entry *logrus.Entry) context.Context {
 	h, ok := ctx.Value(grpc_logging.InternalContextMarker).(*holder)
 	if !ok {
-		return context.WithValue(ctx, grpc_logging.InternalContextMarker, &holder{logger})
+		return context.WithValue(ctx, grpc_logging.InternalContextMarker, &holder{entry})
 	}
-	h.Logger = logger
+	h.Entry = entry
 	return ctx
 }

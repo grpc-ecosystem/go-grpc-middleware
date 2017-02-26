@@ -1,12 +1,11 @@
 // Copyright 2017 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-package grpc_zap
+package grpc_logrus
 
 import (
+	"github.com/Sirupsen/logrus"
 	"github.com/mwitkow/go-grpc-middleware/logging"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc/codes"
 )
 
@@ -34,7 +33,7 @@ func evaluateOptions(opts []Option) *options {
 type Option func(*options)
 
 // CodeToLevel function defines the mapping between gRPC return codes and interceptor log level.
-type CodeToLevel func(code codes.Code) zapcore.Level
+type CodeToLevel func(code codes.Code) logrus.Level
 
 // WithLevels customizes the function for mapping gRPC return codes and interceptor log level statements.
 func WithLevels(f CodeToLevel) Option {
@@ -51,43 +50,43 @@ func WithFieldExtractor(f grpc_logging.RequestLogFieldExtractorFunc) Option {
 }
 
 // DefaultCodeToLevel is the default implementation of gRPC return codes and interceptor log level.
-func DefaultCodeToLevel(code codes.Code) zapcore.Level {
+func DefaultCodeToLevel(code codes.Code) logrus.Level {
 	switch code {
 	case codes.OK:
-		return zap.InfoLevel
+		return logrus.InfoLevel
 	case codes.Canceled:
-		return zap.InfoLevel
+		return logrus.InfoLevel
 	case codes.Unknown:
-		return zap.ErrorLevel
+		return logrus.ErrorLevel
 	case codes.InvalidArgument:
-		return zap.InfoLevel
+		return logrus.InfoLevel
 	case codes.DeadlineExceeded:
-		return zap.WarnLevel
+		return logrus.WarnLevel
 	case codes.NotFound:
-		return zap.InfoLevel
+		return logrus.InfoLevel
 	case codes.AlreadyExists:
-		return zap.InfoLevel
+		return logrus.InfoLevel
 	case codes.PermissionDenied:
-		return zap.WarnLevel
+		return logrus.WarnLevel
 	case codes.Unauthenticated:
-		return zap.InfoLevel // unauthenticated requests can happen
+		return logrus.InfoLevel // unauthenticated requests can happen
 	case codes.ResourceExhausted:
-		return zap.WarnLevel
+		return logrus.WarnLevel
 	case codes.FailedPrecondition:
-		return zap.WarnLevel
+		return logrus.WarnLevel
 	case codes.Aborted:
-		return zap.WarnLevel
+		return logrus.WarnLevel
 	case codes.OutOfRange:
-		return zap.WarnLevel
+		return logrus.WarnLevel
 	case codes.Unimplemented:
-		return zap.ErrorLevel
+		return logrus.ErrorLevel
 	case codes.Internal:
-		return zap.ErrorLevel
+		return logrus.ErrorLevel
 	case codes.Unavailable:
-		return zap.WarnLevel
+		return logrus.WarnLevel
 	case codes.DataLoss:
-		return zap.ErrorLevel
+		return logrus.ErrorLevel
 	default:
-		return zap.ErrorLevel
+		return logrus.ErrorLevel
 	}
 }

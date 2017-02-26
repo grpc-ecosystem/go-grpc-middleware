@@ -7,7 +7,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/mwitkow/go-grpc-middleware"
+	"github.com/mwitkow/go-grpc-middleware/logging"
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -23,6 +23,10 @@ func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServer
 	o := evaluateOptions(opts)
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		newCtx := newLoggerForCall(ctx, logger, info.FullMethod)
+		keys, values := o.fieldExtractorFunc(info.FullMethod, req)
+		if keys != nil && values != nil {
+			grpc_logging.ExtractMetadata(newCtx).AddFieldsFromMiddleware(keys, values)
+		}
 
 		startTime := time.Now()
 		resp, err := handler(newCtx, req)
@@ -38,13 +42,12 @@ func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServer
 	}
 }
 
-// StreamServerInterceptor returns a new unary server interceptors that performs per-request auth.
+// StreamServerInterceptor returns a new streaming server interceptor that adds zap.Logger to the context.
 func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServerInterceptor {
 	o := evaluateOptions(opts)
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		newCtx := newLoggerForCall(stream.Context(), logger, info.FullMethod)
-		wrapped := grpc_middleware.WrapServerStream(stream)
-		wrapped.WrappedContext = newCtx
+		wrapped := &wrappedStream{stream, info, o, newCtx}
 
 		startTime := time.Now()
 		err := handler(srv, wrapped)
@@ -57,6 +60,32 @@ func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServ
 		)
 		return err
 	}
+}
+
+// wrappedStream is a thin wrapper around grpc.ServerStream that allows modifying context and extracts log fields from the initial message.
+type wrappedStream struct {
+	grpc.ServerStream
+	info *grpc.StreamServerInfo
+	opts *options
+	// WrappedContext is the wrapper's own Context. You can assign it.
+	WrappedContext context.Context
+}
+
+// Context returns the wrapper's WrappedContext, overwriting the nested grpc.ServerStream.Context()
+func (w *wrappedStream) Context() context.Context {
+	return w.WrappedContext
+}
+
+func (w *wrappedStream) RecvMsg(m interface{}) error {
+	err := w.ServerStream.RecvMsg(m)
+	// We only do log fields extraction on the single-reqest of a server-side stream.
+	if !w.info.IsClientStream {
+		keys, values := w.opts.fieldExtractorFunc(w.info.FullMethod, m)
+		if keys != nil && values != nil {
+			grpc_logging.ExtractMetadata(w.Context()).AddFieldsFromMiddleware(keys, values)
+		}
+	}
+	return err
 }
 
 func newLoggerForCall(ctx context.Context, logger *zap.Logger, fullMethodString string) context.Context {

@@ -38,7 +38,9 @@ myServer := grpc.NewServer(
    * [`grpc_auth`](auth/README.md) - a customizable (via `AuthFunc) piece of auth middleware 
 
 #### Logging
-   * [`grpc_zap`](log/zap/README.md) - integration of [zap](https://github.com/uber-go/zap) logging library into gRPC handlers.
+   * [`grpc_zap`](logging/zap/README.md) - integration of [zap](https://github.com/uber-go/zap) logging library into gRPC handlers.
+   * [`grpc_logrus`](logging/logrus/README.md) - integration of [logrus](https://github.com/Sirupsen/logrus) logging library into gRPC handlers.
+
 
 #### Monitoring
    * [`grpc_prometheus`⚡](https://github.com/grpc-ecosystem/go-grpc-prometheus) - Prometheus client-side and server-side monitoring middleware
