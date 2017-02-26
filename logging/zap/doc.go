@@ -6,8 +6,8 @@
 `grpc_zap` provides server-side interceptors and handler funcitions for using ZAP loggers within gRPC code.
 
 It accepts a user-configured `zap.Logger` object that is:
- * used for logging completed gRPC calls (method called, time elapsed, error code and message, log level)
- * populated into the `context.Context` passed into gRPC handler code.
+ - used for logging completed gRPC calls (method called, time elapsed, error code and message, log level)
+ - populated into the `context.Context` passed into gRPC handler code.
 
 You can use `Extract` to log into a request-scoped `zap.Logger` instance in your handler code. Moreover you `AddFields`
 to the request-scoped `zap.Logger`, that will be propagated for all call depending on the context, including the
