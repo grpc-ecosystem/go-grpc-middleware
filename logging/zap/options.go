@@ -4,19 +4,22 @@
 package grpc_zap
 
 import (
+	"github.com/mwitkow/go-grpc-middleware/logging"
 	"go.uber.org/zap"
-	"google.golang.org/grpc/codes"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc/codes"
 )
 
 var (
 	defaultOptions = &options{
-		levelFunc: DefaultCodeToLevel,
+		levelFunc:          DefaultCodeToLevel,
+		fieldExtractorFunc: grpc_logging.CodeGenRequestLogFieldExtractor,
 	}
 )
 
 type options struct {
-	levelFunc CodeToLevel
+	levelFunc          CodeToLevel
+	fieldExtractorFunc grpc_logging.RequestLogFieldExtractorFunc
 }
 
 func evaluateOptions(opts []Option) *options {
@@ -37,6 +40,13 @@ type CodeToLevel func(code codes.Code) zapcore.Level
 func WithLevels(f CodeToLevel) Option {
 	return func(o *options) {
 		o.levelFunc = f
+	}
+}
+
+// WithFieldExtractor customizes the function for extracting log fields from protobuf messages.
+func WithFieldExtractor(f grpc_logging.RequestLogFieldExtractorFunc) Option {
+	return func(o *options) {
+		o.fieldExtractorFunc = f
 	}
 }
 

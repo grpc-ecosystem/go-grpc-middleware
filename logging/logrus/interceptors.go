@@ -7,10 +7,10 @@ import (
 	"path"
 	"time"
 
-	"github.com/mwitkow/go-grpc-middleware"
+	"github.com/Sirupsen/logrus"
+	"github.com/mwitkow/go-grpc-middleware/logging"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"github.com/Sirupsen/logrus"
 )
 
 var (
@@ -23,6 +23,10 @@ func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServe
 	o := evaluateOptions(opts)
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		newCtx := newLoggerForCall(ctx, entry, info.FullMethod)
+		keys, values := o.fieldExtractorFunc(info.FullMethod, req)
+		if keys != nil && values != nil {
+			grpc_logging.ExtractMetadata(newCtx).AddFieldsFromMiddleware(keys, values)
+		}
 
 		startTime := time.Now()
 		resp, err := handler(newCtx, req)
@@ -46,8 +50,7 @@ func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamSer
 	o := evaluateOptions(opts)
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		newCtx := newLoggerForCall(stream.Context(), entry, info.FullMethod)
-		wrapped := grpc_middleware.WrapServerStream(stream)
-		wrapped.WrappedContext = newCtx
+		wrapped := &wrappedStream{stream, info, o, newCtx}
 
 		startTime := time.Now()
 		err := handler(srv, wrapped)
@@ -64,6 +67,32 @@ func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamSer
 			"finished streaming call")
 		return err
 	}
+}
+
+// wrappedStream is a thin wrapper around grpc.ServerStream that allows modifying context and extracts log fields from the initial message.
+type wrappedStream struct {
+	grpc.ServerStream
+	info *grpc.StreamServerInfo
+	opts *options
+	// WrappedContext is the wrapper's own Context. You can assign it.
+	WrappedContext context.Context
+}
+
+// Context returns the wrapper's WrappedContext, overwriting the nested grpc.ServerStream.Context()
+func (w *wrappedStream) Context() context.Context {
+	return w.WrappedContext
+}
+
+func (w *wrappedStream) RecvMsg(m interface{}) error {
+	err := w.ServerStream.RecvMsg(m)
+	// We only do log fields extraction on the single-reqest of a server-side stream.
+	if !w.info.IsClientStream {
+		keys, values := w.opts.fieldExtractorFunc(w.info.FullMethod, m)
+		if keys != nil && values != nil {
+			grpc_logging.ExtractMetadata(w.Context()).AddFieldsFromMiddleware(keys, values)
+		}
+	}
+	return err
 }
 
 func levelLogf(entry *logrus.Entry, level logrus.Level, format string, args ...interface{}) {

@@ -130,7 +130,8 @@ func (s *LogrusLoggingSuite) TestPing_WithCustomTags() {
 		assert.Contains(s.T(), m, `"grpc_method": "Ping"`, "all lines must contain method name")
 		assert.Contains(s.T(), m, `"custom_string": "something"`, "all lines must contain `custom_string` set by AddFields")
 		assert.Contains(s.T(), m, `"custom_int": 1337`, "all lines must contain `custom_int` set by AddFields")
-
+		// request field extraction
+		assert.Contains(s.T(), m, `"request.value": "something"`, "all lines must contain fields extracted from goodPing because of test.manual_extractfields.pb")
 	}
 	assert.Contains(s.T(), msgs[0], `"msg": "some ping"`, "handler's message must contain user message")
 	assert.Contains(s.T(), msgs[1], `"msg": "finished unary call"`, "interceptor message must contain string")
@@ -198,7 +199,8 @@ func (s *LogrusLoggingSuite) TestPingList_WithCustomTags() {
 		assert.Contains(s.T(), m, `"grpc_method": "PingList"`, "all lines must contain method name")
 		assert.Contains(s.T(), m, `"custom_string": "something"`, "all lines must contain `custom_string` set by AddFields")
 		assert.Contains(s.T(), m, `"custom_int": 1337`, "all lines must contain `custom_int` set by AddFields")
-
+		// request field extraction
+		assert.Contains(s.T(), m, `"request.value": "something"`, "all lines must contain fields extracted from goodPing because of test.manual_extractfields.pb")
 	}
 	assert.Contains(s.T(), msgs[0], `"msg": "some pinglist"`, "handler's message must contain user message")
 	assert.Contains(s.T(), msgs[1], `"msg": "finished streaming call"`, "interceptor message must contain string")

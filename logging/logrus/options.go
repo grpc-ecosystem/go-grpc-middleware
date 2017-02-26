@@ -5,17 +5,20 @@ package grpc_logrus
 
 import (
 	"github.com/Sirupsen/logrus"
+	"github.com/mwitkow/go-grpc-middleware/logging"
 	"google.golang.org/grpc/codes"
 )
 
 var (
 	defaultOptions = &options{
-		levelFunc: DefaultCodeToLevel,
+		levelFunc:          DefaultCodeToLevel,
+		fieldExtractorFunc: grpc_logging.CodeGenRequestLogFieldExtractor,
 	}
 )
 
 type options struct {
-	levelFunc CodeToLevel
+	levelFunc          CodeToLevel
+	fieldExtractorFunc grpc_logging.RequestLogFieldExtractorFunc
 }
 
 func evaluateOptions(opts []Option) *options {
@@ -36,6 +39,13 @@ type CodeToLevel func(code codes.Code) logrus.Level
 func WithLevels(f CodeToLevel) Option {
 	return func(o *options) {
 		o.levelFunc = f
+	}
+}
+
+// WithFieldExtractor customizes the function for extracting log fields from protobuf messages.
+func WithFieldExtractor(f grpc_logging.RequestLogFieldExtractorFunc) Option {
+	return func(o *options) {
+		o.fieldExtractorFunc = f
 	}
 }
 
