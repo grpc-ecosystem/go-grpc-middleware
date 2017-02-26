@@ -11,17 +11,18 @@ import (
 
 	"fmt"
 
+	"time"
+
 	"github.com/mwitkow/go-grpc-middleware/auth"
 	"github.com/mwitkow/go-grpc-middleware/testing"
 	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"golang.org/x/oauth2"
-	"time"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/oauth"
+	"google.golang.org/grpc/metadata"
 )
 
 var (
@@ -195,10 +196,10 @@ type fakeOAuth2TokenSource struct {
 }
 
 func (ts *fakeOAuth2TokenSource) Token() (*oauth2.Token, error) {
-	t := &oauth2.Token {
+	t := &oauth2.Token{
 		AccessToken: ts.accessToken,
-		Expiry: time.Now().Add(1 * time.Minute),
-		TokenType: "bearer",
+		Expiry:      time.Now().Add(1 * time.Minute),
+		TokenType:   "bearer",
 	}
 	return t, nil
 }

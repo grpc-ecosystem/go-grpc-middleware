@@ -13,8 +13,8 @@ import (
 
 func TestJitterUp(t *testing.T) {
 	for i := 0; i < 1000; i++ {
-		out := backoffutils.JitterUp(10 * time.Second, 0.10)
-		assert.True(t, out <= 11 * time.Second, "value must be <= 11s")
-		assert.True(t, out >= 9 * time.Second, "value must be >= 9s")
+		out := backoffutils.JitterUp(10*time.Second, 0.10)
+		assert.True(t, out <= 11*time.Second, "value must be <= 11s")
+		assert.True(t, out >= 9*time.Second, "value must be >= 9s")
 	}
 }

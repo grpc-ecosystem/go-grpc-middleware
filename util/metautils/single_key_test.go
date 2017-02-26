@@ -32,19 +32,19 @@ func TestSingleFailsReading(t *testing.T) {
 	key := "someKey"
 	for _, tcase := range []struct {
 		caseName string
-		ctx       context.Context
+		ctx      context.Context
 	}{
 		{
 			caseName: "ignores multivalues",
-			ctx:       metadata.NewContext(parentCtx, metadata.Pairs(key, "value1", key, "value2")),
+			ctx:      metadata.NewContext(parentCtx, metadata.Pairs(key, "value1", key, "value2")),
 		},
 		{
 			caseName: "handles not found with values",
-			ctx:       metadata.NewContext(parentCtx, metadata.Pairs("another value", "value1")),
+			ctx:      metadata.NewContext(parentCtx, metadata.Pairs("another value", "value1")),
 		},
 		{
 			caseName: "handles non-MD ctx",
-			ctx:       parentCtx,
+			ctx:      parentCtx,
 		},
 	} {
 		t.Run(tcase.caseName, func(t *testing.T) {
