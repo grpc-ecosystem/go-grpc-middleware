@@ -4,6 +4,7 @@
 package grpc_logrus_test
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -17,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/mwitkow/go-grpc-middleware/logging"
 	"github.com/mwitkow/go-grpc-middleware/logging/logrus"
 	"github.com/mwitkow/go-grpc-middleware/testing"
 	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
@@ -24,7 +26,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
-	"github.com/mwitkow/go-grpc-middleware/logging"
 )
 
 var (
@@ -69,7 +70,10 @@ func (s *loggingPingService) PingEmpty(ctx context.Context, empty *pb_testproto.
 }
 
 func TestLogrusLoggingSuite(t *testing.T) {
-
+	if runtime.Version() == "go1.7" {
+		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
+		return
+	}
 	b := &bytes.Buffer{}
 	log := logrus.New()
 	log.Out = b

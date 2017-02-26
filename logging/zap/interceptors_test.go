@@ -80,7 +80,7 @@ func (*bufferWriteSyncer) Sync() error {
 
 func TestZapLoggingSuite(t *testing.T) {
 	if runtime.Version() == "go1.7" {
-		t.Skipf("Skipping due to zap incompatibility with go1.7")
+		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
 		return
 	}
 	b := &bufferWriteSyncer{&bytes.Buffer{}}
