@@ -4,10 +4,10 @@
 package grpc_zap
 
 import (
+	"github.com/mwitkow/go-grpc-middleware/logging"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/net/context"
-	"github.com/mwitkow/go-grpc-middleware/logging"
 )
 
 var (

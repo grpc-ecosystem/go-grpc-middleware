@@ -11,12 +11,13 @@ import (
 
 	"io"
 
-	"github.com/mwitkow/go-grpc-middleware/testing"
-	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
-	"github.com/mwitkow/go-grpc-middleware/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
+
+	"github.com/mwitkow/go-grpc-middleware/testing"
+	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
+	"github.com/mwitkow/go-grpc-middleware/validator"
 )
 
 var (

@@ -9,5 +9,4 @@ While the upstream grpc-go package contains decent functionality (see https://gi
 they are hard to use.
 */
 
-
 package metautils
