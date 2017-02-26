@@ -38,7 +38,7 @@ func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServer
 	}
 }
 
-// StreamServerInterceptor returns a new unary server interceptors that performs per-request auth.
+// StreamServerInterceptor returns a new streaming server interceptor that adds zap.Logger to the context.
 func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServerInterceptor {
 	o := evaluateOptions(opts)
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
