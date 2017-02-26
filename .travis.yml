@@ -14,7 +14,7 @@ install:
   # for logs/zap
   - go get go.uber.org/zap
   # for logs/logrus
-  - go github.com/Sirupsen/logrus
+  - go get github.com/Sirupsen/logrus
   # for field testing
   - go get github.com/gogo/protobuf/proto
 
