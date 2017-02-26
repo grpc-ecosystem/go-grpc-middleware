@@ -5,6 +5,8 @@ package mwitkow.testproto;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
+option (gogoproto.gogoproto_import) = false;
+
 message Metadata {
     repeated string tags = 1 [(gogoproto.moretags) = "log_field:\"meta_tags\""];
 }
