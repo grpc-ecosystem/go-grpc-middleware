@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
+	"github.com/mwitkow/go-grpc-middleware/logging"
 )
 
 var (
@@ -60,6 +61,10 @@ func (s *loggingPingService) PingList(ping *pb_testproto.PingRequest, stream pb_
 }
 
 func (s *loggingPingService) PingEmpty(ctx context.Context, empty *pb_testproto.Empty) (*pb_testproto.PingResponse, error) {
+	// This hijacks the PingEmpty to test whether the given interceptor implements the grpc_logging metadata.
+	grpc_logging.ExtractMetadata(ctx).AddFieldsFromMiddleware(
+		[]string{"middleware_1", "middleware_2"},
+		[]interface{}{1410, "some_content"})
 	return s.TestServiceServer.PingEmpty(ctx, empty)
 }
 
@@ -199,4 +204,14 @@ func (s *LogrusLoggingSuite) TestPingList_WithCustomTags() {
 	assert.Contains(s.T(), msgs[1], `"msg": "finished streaming call"`, "interceptor message must contain string")
 	assert.Contains(s.T(), msgs[1], `"level": "info"`, "OK error codes must be logged on info level.")
 	assert.Contains(s.T(), msgs[1], `"grpc_time_ns":`, "interceptor log statement should contain execution time")
+}
+
+func (s *LogrusLoggingSuite) TestPingEmpty_WithMetadataTags() {
+	_, err := s.Client.PingEmpty(s.SimpleCtx(), &pb_testproto.Empty{})
+	assert.NoError(s.T(), err, "there must be not be an on a successful call")
+	msgs := s.getOutputJSONs()
+	require.Len(s.T(), msgs, 1, "only the interceptor log message is printed in PingEmpty")
+	m := msgs[0]
+	assert.Contains(s.T(), m, `"middleware_1": 1410`, "the handler must contain fields from grpc_logging.Metadata calls")
+	assert.Contains(s.T(), m, `"middleware_2": "some_content"`, "the handler must contain fields from grpc_logging.Metadata calls")
 }

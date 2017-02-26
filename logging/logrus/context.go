@@ -5,15 +5,24 @@ package grpc_logrus
 
 import (
 	"github.com/Sirupsen/logrus"
+	"github.com/mwitkow/go-grpc-middleware/logging"
 	"golang.org/x/net/context"
-)
-
-var (
-	ctxMarker = "logrus-logger"
 )
 
 type holder struct {
 	*logrus.Entry
+}
+
+// AddFieldsFromMiddleware implements grpc_logging.Metadata on this holder.
+func (h *holder) AddFieldsFromMiddleware(keys []string, values []interface{}) {
+	if len(keys) != len(values) {
+		panic("AddFieldsFromMiddleware length of keys doesn't match length of values")
+	}
+	fields := logrus.Fields{}
+	for i := range keys {
+		fields[keys[i]] = values[i]
+	}
+	h.Entry = h.Entry.WithFields(fields)
 }
 
 // Extract takes the call-scoped logrus.Entry from grpc_logrus middleware.
@@ -21,7 +30,7 @@ type holder struct {
 // If the grpc_logrus middleware wasn't used, a no-op `logrus.Entry` is returned. This makes it safe to
 // use regardless.
 func Extract(ctx context.Context) *logrus.Entry {
-	h, ok := ctx.Value(ctxMarker).(*holder)
+	h, ok := ctx.Value(grpc_logging.InternalContextMarker).(*holder)
 	if !ok {
 		return logrus.NewEntry(nullLogger)
 	}
@@ -34,7 +43,7 @@ func Extract(ctx context.Context) *logrus.Entry {
 // interceptors or directly in the handler.
 func AddFields(ctx context.Context, fields logrus.Fields) {
 	logger := Extract(ctx)
-	holder, ok := ctx.Value(ctxMarker).(*holder)
+	holder, ok := ctx.Value(grpc_logging.InternalContextMarker).(*holder)
 	if !ok {
 		return
 	}
@@ -42,9 +51,9 @@ func AddFields(ctx context.Context, fields logrus.Fields) {
 }
 
 func toContext(ctx context.Context, entry *logrus.Entry) context.Context {
-	h, ok := ctx.Value(ctxMarker).(*holder)
+	h, ok := ctx.Value(grpc_logging.InternalContextMarker).(*holder)
 	if !ok {
-		return context.WithValue(ctx, ctxMarker, &holder{entry})
+		return context.WithValue(ctx, grpc_logging.InternalContextMarker, &holder{entry})
 	}
 	h.Entry = entry
 	return ctx
