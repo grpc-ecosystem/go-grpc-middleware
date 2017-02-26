@@ -2,25 +2,39 @@
 --
     import "github.com/mwitkow/go-grpc-middleware/logging"
 
-gRPC middleware logging.
+grpc_logging is a "parent" package for gRPC logging middlewares
 
-`grpc_logging` is a "mother" package for other specific gRPC logging middleware.
 
-General functionality across all logging middleware:
+### General functionality of all middleware
 
-    * Extract(ctx) function that provides a request-scoped logger with pre-defined fields
-    * log statement on completion of handling with customizeable log levels, gRPC status code and error message logging
-    * automatic request field to log field extraction, either through code-generated data or field annotations
+All logging middleware have an `Extract(ctx)` function that provides a
+request-scoped logger with gRPC-related fields (service and method names).
+Additionally, in case a `WithFieldExtractor` is used, the logger will have
+fields extracted from the content of the inbound request (unary and server-side
+stream).
 
-### Concrete logging middleware for use in user-code handlers is available in
-### subpackages
+All logging middleware will emit a final log statement. It is based on the error
+returned by the handler function, the gRPC status code, an error (if any) and it
+will emit at a level controlled via `WithLevels`.
 
-    * zap
-    * logrus
 
-### The functions and methods in this package should only be consumed by gRPC
-### logging middleware and other middlewares that want to add metadata to the
-logging context of the request.
+### This parent package
+
+This particular package is intended for use by other middleware, logging or
+otherwise. It contains interfaces that other logging middlewares *should*
+implement. This allows code to be shared between different implementations.
+
+The `RequestLogFieldExtractorFunc` signature allows users to customize the
+extraction of request fields to be used as log fields in middlewares. There are
+two implementations: one (default) that relies on optional code-generated
+`ExtractLogFields()` methods on protobuf structs, and another that uses tagging.
+
+
+### Implementations
+
+There are two implementations at the moment: logrus and zap
+
+See relevant packages below.
 
 ## Usage
 
