@@ -17,6 +17,13 @@ func DefaultErrorToCode(err error) codes.Code {
 	return grpc.Code(err)
 }
 
+// WithCodes customizes the function for mapping errors to error codes.
+func WithCodes(f ErrorToCode) Option {
+	return func(o *options) {
+		o.codeFunc = f
+	}
+}
+
 // RequestLogFieldExtractorFunc is a user-provided function that extracts field information from a gRPC request.
 // It is called from every logging middleware on arrival of unary request or a server-stream request.
 // Keys and values will be added to the logging request context.
