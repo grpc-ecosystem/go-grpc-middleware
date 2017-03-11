@@ -30,8 +30,10 @@ func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServe
 
 		startTime := time.Now()
 		resp, err := handler(newCtx, req)
+		code := o.codeFunc(err)
+		level := o.levelFunc(code)
 		fields := logrus.Fields{
-			"grpc_code":    grpc.Code(err).String(),
+			"grpc_code":    code.String(),
 			"grpc_time_ns": time.Now().Sub(startTime),
 		}
 		if err != nil {
@@ -39,7 +41,7 @@ func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServe
 		}
 		levelLogf(
 			Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
-			o.levelFunc(grpc.Code(err)),
+			level,
 			"finished unary call")
 		return resp, err
 	}
@@ -54,8 +56,10 @@ func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamSer
 
 		startTime := time.Now()
 		err := handler(srv, wrapped)
+		code := o.codeFunc(err)
+		level := o.levelFunc(code)
 		fields := logrus.Fields{
-			"grpc_code":    grpc.Code(err).String(),
+			"grpc_code":    code.String(),
 			"grpc_time_ns": time.Now().Sub(startTime),
 		}
 		if err != nil {
@@ -63,7 +67,7 @@ func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamSer
 		}
 		levelLogf(
 			Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
-			o.levelFunc(grpc.Code(err)),
+			level,
 			"finished streaming call")
 		return err
 	}
