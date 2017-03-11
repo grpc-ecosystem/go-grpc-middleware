@@ -12,12 +12,14 @@ import (
 var (
 	defaultOptions = &options{
 		levelFunc:          DefaultCodeToLevel,
+		codeFunc: 	    grpc_logging.DefaultErrorToCode,
 		fieldExtractorFunc: grpc_logging.CodeGenRequestLogFieldExtractor,
 	}
 )
 
 type options struct {
 	levelFunc          CodeToLevel
+	codeFunc	   grpc_logging.ErrorToCode
 	fieldExtractorFunc grpc_logging.RequestLogFieldExtractorFunc
 }
 
