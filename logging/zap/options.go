@@ -45,6 +45,13 @@ func WithLevels(f CodeToLevel) Option {
 	}
 }
 
+// WithCodes customizes the function for mapping errors to error codes.
+func WithCodes(f grpc_logging.ErrorToCode) Option {
+	return func(o *options) {
+		o.codeFunc = f
+	}
+}
+
 // WithFieldExtractor customizes the function for extracting log fields from protobuf messages.
 func WithFieldExtractor(f grpc_logging.RequestLogFieldExtractorFunc) Option {
 	return func(o *options) {
