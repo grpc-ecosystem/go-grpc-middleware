@@ -113,3 +113,10 @@ func WithLevels(f CodeToLevel) Option
 ```
 WithLevels customizes the function for mapping gRPC return codes and interceptor
 log level statements.
+
+#### func  WithCodes
+
+```go
+func WithCodes(f grpc_logging.ErrorToCode) Option
+```
+WithCodes customizes the function for mapping errors to error codes.

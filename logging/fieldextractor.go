@@ -3,7 +3,19 @@
 
 package grpc_logging
 
-import "reflect"
+import (
+	"reflect"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+)
+
+// ErrorToCode function determines the error code of an error
+// This makes using custom errors with grpc middleware easier
+type ErrorToCode func(err error) codes.Code
+
+func DefaultErrorToCode(err error) codes.Code {
+	return grpc.Code(err)
+}
 
 // RequestLogFieldExtractorFunc is a user-provided function that extracts field information from a gRPC request.
 // It is called from every logging middleware on arrival of unary request or a server-stream request.

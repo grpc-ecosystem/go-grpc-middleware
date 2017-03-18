@@ -30,12 +30,13 @@ func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServer
 
 		startTime := time.Now()
 		resp, err := handler(newCtx, req)
-		level := o.levelFunc(grpc.Code(err))
+		code := o.codeFunc(err)
+		level := o.levelFunc(code)
 		// re-extract logger from newCtx, as it may have extra fields that changed in the holder.
 
 		Extract(newCtx).Check(level, "finished unary call").Write(
 			zap.Error(err),
-			zap.String("grpc_code", grpc.Code(err).String()),
+			zap.String("grpc_code", code.String()),
 			zap.Duration("grpc_time_ns", time.Now().Sub(startTime)),
 		)
 		return resp, err
@@ -51,11 +52,13 @@ func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServ
 
 		startTime := time.Now()
 		err := handler(srv, wrapped)
-		level := o.levelFunc(grpc.Code(err))
+		code := o.codeFunc(err)
+		level := o.levelFunc(code)
+
 		// re-extract logger from newCtx, as it may have extra fields that changed in the holder.
 		Extract(newCtx).Check(level, "finished streaming call").Write(
 			zap.Error(err),
-			zap.String("grpc_code", grpc.Code(err).String()),
+			zap.String("grpc_code", code.String()),
 			zap.Duration("grpc_time_ns", time.Now().Sub(startTime)),
 		)
 		return err

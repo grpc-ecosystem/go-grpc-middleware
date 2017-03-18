@@ -14,7 +14,7 @@ fields extracted from the content of the inbound request (unary and server-side
 stream).
 
 All logging middleware will emit a final log statement. It is based on the error
-returned by the handler function, the gRPC status code, an error (if any) and it
+returned by the handler function, the gRPC status code (controlled via `WithCodes`), an error (if any) and it
 will emit at a level controlled via `WithLevels`.
 
 

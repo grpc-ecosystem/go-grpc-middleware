@@ -13,12 +13,14 @@ import (
 var (
 	defaultOptions = &options{
 		levelFunc:          DefaultCodeToLevel,
+		codeFunc: 	    grpc_logging.DefaultErrorToCode,
 		fieldExtractorFunc: grpc_logging.CodeGenRequestLogFieldExtractor,
 	}
 )
 
 type options struct {
 	levelFunc          CodeToLevel
+	codeFunc	   grpc_logging.ErrorToCode
 	fieldExtractorFunc grpc_logging.RequestLogFieldExtractorFunc
 }
 
@@ -40,6 +42,13 @@ type CodeToLevel func(code codes.Code) zapcore.Level
 func WithLevels(f CodeToLevel) Option {
 	return func(o *options) {
 		o.levelFunc = f
+	}
+}
+
+// WithCodes customizes the function for mapping errors to error codes.
+func WithCodes(f grpc_logging.ErrorToCode) Option {
+	return func(o *options) {
+		o.codeFunc = f
 	}
 }
 
