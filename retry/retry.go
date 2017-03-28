@@ -37,7 +37,7 @@ func UnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterceptor 
 		var lastErr error
 		for attempt := uint(0); attempt < callOpts.max; attempt++ {
 			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
-				return nil
+				return err
 			}
 			callCtx := perCallContext(parentCtx, callOpts, attempt)
 			lastErr = invoker(callCtx, method, req, reply, cc, grpcOpts...)
