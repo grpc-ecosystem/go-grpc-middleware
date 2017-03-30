@@ -19,4 +19,7 @@ install:
   - go get github.com/gogo/protobuf/proto
 
 script:
- - go test -race -v ./...
+ - go test -race -v ./... -coverprofile=coverage.txt -covermode=atomic
+ 
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
