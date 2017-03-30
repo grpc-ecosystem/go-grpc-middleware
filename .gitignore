@@ -195,3 +195,5 @@ local.properties
 # Code Recommenders
 .recommenders/
 
+
+coverage.txt

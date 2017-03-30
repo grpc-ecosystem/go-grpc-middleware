@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
+	"strings"
 )
 
 var (
@@ -70,7 +71,7 @@ func (s *loggingPingService) PingEmpty(ctx context.Context, empty *pb_testproto.
 }
 
 func TestLogrusLoggingSuite(t *testing.T) {
-	if runtime.Version() == "go1.7" {
+	if strings.HasPrefix(runtime.Version(), "go1.7") {
 		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
 		return
 	}

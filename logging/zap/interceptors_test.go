@@ -28,6 +28,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
+	"strings"
 )
 
 var (
@@ -79,7 +80,7 @@ func (*bufferWriteSyncer) Sync() error {
 }
 
 func TestZapLoggingSuite(t *testing.T) {
-	if runtime.Version() == "go1.7" {
+	if strings.HasPrefix(runtime.Version(), "go1.7") {
 		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
 		return
 	}
