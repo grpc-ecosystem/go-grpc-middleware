@@ -16,7 +16,7 @@ func TestCodeGenRequestLogFieldExtractor_ManualIsDeclared(t *testing.T) {
 	req := &pb_testproto.PingRequest{Value: "my_value"}
 	keys, values := grpc_ctxtags.CodeGenRequestFieldExtractor("", req)
 	require.Len(t, keys, 1, "PingRequest should have a ExtractLogFields method declared in test.manual_extractfields.pb")
-	require.EqualValues(t, []string{"request.value"}, keys)
+	require.EqualValues(t, []string{"value"}, keys)
 	require.EqualValues(t, []interface{}{"my_value"}, values)
 }
 
