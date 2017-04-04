@@ -54,3 +54,13 @@ func TestSingleFailsReading(t *testing.T) {
 		})
 	}
 }
+
+func TestSingleImmutableMD(t *testing.T) {
+	key := "someKey"
+	value := "123456"
+	md := metadata.Pairs(key, value)
+	parent := metadata.NewContext(context.Background(), md)
+	ctx := metautils.SetSingle(parent, "otherKey", "654321")
+	newMD, _ := metadata.FromContext(ctx)
+	assert.NotEqual(t, newMD, md, "new MD must be a copy of parent MD")
+}

@@ -45,9 +45,10 @@ func SetSingle(ctx context.Context, keyName string, keyValue string) context.Con
 		md = metadata.Pairs(keyName, keyValue)
 		return metadata.NewContext(ctx, md)
 	}
+	newMD := md.Copy()
 	k, v := encodeKeyValue(keyName, keyValue)
-	md[k] = []string{v}
-	return ctx // we use the same context because we modified the metadata in place.
+	newMD[k] = []string{v}
+	return metadata.NewContext(ctx, newMD)
 }
 
 func encodeKeyValue(k, v string) (string, string) {
