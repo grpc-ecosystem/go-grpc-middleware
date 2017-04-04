@@ -12,14 +12,14 @@ import (
 
 var (
 	defaultOptions = &options{
-		levelFunc:          DefaultCodeToLevel,
-		codeFunc: 	    grpc_logging.DefaultErrorToCode,
+		levelFunc: DefaultCodeToLevel,
+		codeFunc:  grpc_logging.DefaultErrorToCode,
 	}
 )
 
 type options struct {
-	levelFunc          CodeToLevel
-	codeFunc	   grpc_logging.ErrorToCode
+	levelFunc CodeToLevel
+	codeFunc  grpc_logging.ErrorToCode
 }
 
 func evaluateOptions(opts []Option) *options {

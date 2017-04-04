@@ -32,7 +32,7 @@ func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServer
 		Extract(newCtx).Check(level, "finished unary call").Write(
 			zap.Error(err),
 			zap.String("grpc.code", code.String()),
-			zap.Duration("grpc.time_ns", time.Now().Sub(startTime)),
+			zap.Int64("grpc.time_ns", time.Now().Sub(startTime).Nanoseconds()),
 		)
 		return resp, err
 	}
@@ -55,7 +55,7 @@ func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServ
 		Extract(newCtx).Check(level, "finished streaming call").Write(
 			zap.Error(err),
 			zap.String("grpc.code", code.String()),
-			zap.Duration("grpc.time_ns", time.Now().Sub(startTime)),
+			zap.Int64("grpc.time_ns", time.Now().Sub(startTime).Nanoseconds()),
 		)
 		return err
 	}

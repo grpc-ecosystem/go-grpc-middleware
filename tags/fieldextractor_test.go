@@ -5,12 +5,11 @@ package grpc_ctxtags_test
 
 import "testing"
 import (
-	"github.com/mwitkow/go-grpc-middleware/logging"
 	pb_gogotestproto "github.com/mwitkow/go-grpc-middleware/testing/gogotestproto"
 	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
 
-	"github.com/stretchr/testify/require"
 	"github.com/mwitkow/go-grpc-middleware/tags"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCodeGenRequestLogFieldExtractor_ManualIsDeclared(t *testing.T) {

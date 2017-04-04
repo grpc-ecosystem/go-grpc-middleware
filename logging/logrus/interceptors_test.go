@@ -17,16 +17,18 @@ import (
 
 	"fmt"
 
+	"strings"
+
 	"github.com/Sirupsen/logrus"
-	"github.com/mwitkow/go-grpc-middleware/logging"
+	"github.com/mwitkow/go-grpc-middleware"
 	"github.com/mwitkow/go-grpc-middleware/logging/logrus"
+	"github.com/mwitkow/go-grpc-middleware/tags"
 	"github.com/mwitkow/go-grpc-middleware/testing"
 	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
-	"strings"
 )
 
 var (
@@ -47,7 +49,7 @@ func customCodeToLevel(c codes.Code) logrus.Level {
 }
 
 func (s *loggingPingService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
-	grpc_logrus.AddFields(ctx, logrus.Fields{"custom_string": "something", "custom_int": 1337})
+	grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
 	grpc_logrus.Extract(ctx).Info("some ping")
 	return s.TestServiceServer.Ping(ctx, ping)
 }
@@ -57,16 +59,12 @@ func (s *loggingPingService) PingError(ctx context.Context, ping *pb_testproto.P
 }
 
 func (s *loggingPingService) PingList(ping *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
-	grpc_logrus.AddFields(stream.Context(), logrus.Fields{"custom_string": "something", "custom_int": 1337})
+	grpc_ctxtags.Extract(stream.Context()).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
 	grpc_logrus.Extract(stream.Context()).Info("some pinglist")
 	return s.TestServiceServer.PingList(ping, stream)
 }
 
 func (s *loggingPingService) PingEmpty(ctx context.Context, empty *pb_testproto.Empty) (*pb_testproto.PingResponse, error) {
-	// This hijacks the PingEmpty to test whether the given interceptor implements the grpc_logging metadata.
-	grpc_logging.ExtractMetadata(ctx).AddFieldsFromMiddleware(
-		[]string{"middleware_1", "middleware_2"},
-		[]interface{}{1410, "some_content"})
 	return s.TestServiceServer.PingEmpty(ctx, empty)
 }
 
@@ -88,8 +86,12 @@ func TestLogrusLoggingSuite(t *testing.T) {
 		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
 			TestService: &loggingPingService{&grpc_testing.TestPingService{T: t}},
 			ServerOpts: []grpc.ServerOption{
-				grpc.StreamInterceptor(grpc_logrus.StreamServerInterceptor(logrus.NewEntry(log), opts...)),
-				grpc.UnaryInterceptor(grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(log), opts...)),
+				grpc_middleware.WithStreamServerChain(
+					grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+					grpc_logrus.StreamServerInterceptor(logrus.NewEntry(log), opts...)),
+				grpc_middleware.WithUnaryServerChain(
+					grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+					grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(log), opts...)),
 			},
 		},
 	}
@@ -131,17 +133,17 @@ func (s *LogrusLoggingSuite) TestPing_WithCustomTags() {
 	assert.Len(s.T(), msgs, 2, "two log statements should be logged")
 	for _, m := range msgs {
 		s.T()
-		assert.Contains(s.T(), m, `"grpc_service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
-		assert.Contains(s.T(), m, `"grpc_method": "Ping"`, "all lines must contain method name")
-		assert.Contains(s.T(), m, `"custom_string": "something"`, "all lines must contain `custom_string` set by AddFields")
-		assert.Contains(s.T(), m, `"custom_int": 1337`, "all lines must contain `custom_int` set by AddFields")
+		assert.Contains(s.T(), m, `"grpc.service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
+		assert.Contains(s.T(), m, `"grpc.method": "Ping"`, "all lines must contain method name")
+		assert.Contains(s.T(), m, `"custom_tags.string": "something"`, "all lines must contain `custom_tags.string` set by AddFields")
+		assert.Contains(s.T(), m, `"custom_tags.int": 1337`, "all lines must contain `custom_tags.int` set by AddFields")
 		// request field extraction
-		assert.Contains(s.T(), m, `"request.value": "something"`, "all lines must contain fields extracted from goodPing because of test.manual_extractfields.pb")
+		assert.Contains(s.T(), m, `"grpc.request.value": "something"`, "all lines must contain fields extracted from goodPing because of test.manual_extractfields.pb")
 	}
 	assert.Contains(s.T(), msgs[0], `"msg": "some ping"`, "handler's message must contain user message")
 	assert.Contains(s.T(), msgs[1], `"msg": "finished unary call"`, "interceptor message must contain string")
 	assert.Contains(s.T(), msgs[1], `"level": "info"`, "OK error codes must be logged on info level.")
-	assert.Contains(s.T(), msgs[1], `"grpc_time_ns":`, "interceptor log statement should contain execution time")
+	assert.Contains(s.T(), msgs[1], `"grpc.time_ns":`, "interceptor log statement should contain execution time")
 }
 
 func (s *LogrusLoggingSuite) TestPingError_WithCustomLevels() {
@@ -179,9 +181,9 @@ func (s *LogrusLoggingSuite) TestPingError_WithCustomLevels() {
 		msgs := s.getOutputJSONs()
 		require.Len(s.T(), msgs, 1, "only the interceptor log message is printed in PingErr")
 		m := msgs[0]
-		assert.Contains(s.T(), m, `"grpc_service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
-		assert.Contains(s.T(), m, `"grpc_method": "PingError"`, "all lines must contain method name")
-		assert.Contains(s.T(), m, fmt.Sprintf(`"grpc_code": "%s"`, tcase.code.String()), "all lines must contain method name")
+		assert.Contains(s.T(), m, `"grpc.service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
+		assert.Contains(s.T(), m, `"grpc.method": "PingError"`, "all lines must contain method name")
+		assert.Contains(s.T(), m, fmt.Sprintf(`"grpc.code": "%s"`, tcase.code.String()), "all lines must contain method name")
 		assert.Contains(s.T(), m, fmt.Sprintf(`"level": "%s"`, tcase.level.String()), tcase.msg)
 	}
 }
@@ -200,25 +202,15 @@ func (s *LogrusLoggingSuite) TestPingList_WithCustomTags() {
 	assert.Len(s.T(), msgs, 2, "two log statements should be logged")
 	for _, m := range msgs {
 		s.T()
-		assert.Contains(s.T(), m, `"grpc_service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
-		assert.Contains(s.T(), m, `"grpc_method": "PingList"`, "all lines must contain method name")
-		assert.Contains(s.T(), m, `"custom_string": "something"`, "all lines must contain `custom_string` set by AddFields")
-		assert.Contains(s.T(), m, `"custom_int": 1337`, "all lines must contain `custom_int` set by AddFields")
+		assert.Contains(s.T(), m, `"grpc.service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
+		assert.Contains(s.T(), m, `"grpc.method": "PingList"`, "all lines must contain method name")
+		assert.Contains(s.T(), m, `"custom_tags.string": "something"`, "all lines must contain `custom_tags.string` set by AddFields")
+		assert.Contains(s.T(), m, `"custom_tags.int": 1337`, "all lines must contain `custom_tags.int` set by AddFields")
 		// request field extraction
-		assert.Contains(s.T(), m, `"request.value": "something"`, "all lines must contain fields extracted from goodPing because of test.manual_extractfields.pb")
+		assert.Contains(s.T(), m, `"grpc.request.value": "something"`, "all lines must contain fields extracted from goodPing because of test.manual_extractfields.pb")
 	}
 	assert.Contains(s.T(), msgs[0], `"msg": "some pinglist"`, "handler's message must contain user message")
 	assert.Contains(s.T(), msgs[1], `"msg": "finished streaming call"`, "interceptor message must contain string")
 	assert.Contains(s.T(), msgs[1], `"level": "info"`, "OK error codes must be logged on info level.")
-	assert.Contains(s.T(), msgs[1], `"grpc_time_ns":`, "interceptor log statement should contain execution time")
-}
-
-func (s *LogrusLoggingSuite) TestPingEmpty_WithMetadataTags() {
-	_, err := s.Client.PingEmpty(s.SimpleCtx(), &pb_testproto.Empty{})
-	assert.NoError(s.T(), err, "there must be not be an on a successful call")
-	msgs := s.getOutputJSONs()
-	require.Len(s.T(), msgs, 1, "only the interceptor log message is printed in PingEmpty")
-	m := msgs[0]
-	assert.Contains(s.T(), m, `"middleware_1": 1410`, "the handler must contain fields from grpc_logging.Metadata calls")
-	assert.Contains(s.T(), m, `"middleware_2": "some_content"`, "the handler must contain fields from grpc_logging.Metadata calls")
+	assert.Contains(s.T(), msgs[1], `"grpc.time_ns":`, "interceptor log statement should contain execution time")
 }
