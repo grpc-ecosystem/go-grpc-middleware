@@ -1,7 +1,7 @@
 // Copyright 2017 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-package grpc_logging_test
+package grpc_ctxtags_test
 
 import "testing"
 import (
@@ -10,11 +10,12 @@ import (
 	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
 
 	"github.com/stretchr/testify/require"
+	"github.com/mwitkow/go-grpc-middleware/tags"
 )
 
 func TestCodeGenRequestLogFieldExtractor_ManualIsDeclared(t *testing.T) {
 	req := &pb_testproto.PingRequest{Value: "my_value"}
-	keys, values := grpc_logging.CodeGenRequestLogFieldExtractor("", req)
+	keys, values := grpc_ctxtags.CodeGenRequestFieldExtractor("", req)
 	require.Len(t, keys, 1, "PingRequest should have a ExtractLogFields method declared in test.manual_extractfields.pb")
 	require.EqualValues(t, []string{"request.value"}, keys)
 	require.EqualValues(t, []interface{}{"my_value"}, values)
@@ -32,7 +33,7 @@ func TestTagedRequestFiledExtractor_PingRequest(t *testing.T) {
 			Tags: []string{"tagone", "tagtwo"}, // logfield is meta_tags
 		},
 	}
-	keys, values := grpc_logging.TagedRequestFiledExtractor("", req)
+	keys, values := grpc_ctxtags.TagedRequestFiledExtractor("", req)
 	require.EqualValues(t, []string{"ping_id", "meta_tags"}, keys)
 	require.EqualValues(t, []interface{}{int32(1337), []string{"tagone", "tagtwo"}}, values)
 }
@@ -46,7 +47,7 @@ func TestTagedRequestFiledExtractor_PongRequest(t *testing.T) {
 			Tags: []string{"tagone", "tagtwo"}, // logfield is meta_tags
 		},
 	}
-	keys, values := grpc_logging.TagedRequestFiledExtractor("", req)
+	keys, values := grpc_ctxtags.TagedRequestFiledExtractor("", req)
 	require.EqualValues(t, []string{"pong_id", "meta_tags"}, keys)
 	require.EqualValues(t, []interface{}{"some_id", []string{"tagone", "tagtwo"}}, values)
 }

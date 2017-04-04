@@ -1,37 +1,27 @@
 // Copyright 2017 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-package grpc_logging
+package grpc_ctxtags
 
 import (
 	"reflect"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 )
 
-// ErrorToCode function determines the error code of an error
-// This makes using custom errors with grpc middleware easier
-type ErrorToCode func(err error) codes.Code
-
-func DefaultErrorToCode(err error) codes.Code {
-	return grpc.Code(err)
-}
-
-// RequestLogFieldExtractorFunc is a user-provided function that extracts field information from a gRPC request.
+// RequestFieldExtractorFunc is a user-provided function that extracts field information from a gRPC request.
 // It is called from every logging middleware on arrival of unary request or a server-stream request.
-// Keys and values will be added to the logging request context.
-type RequestLogFieldExtractorFunc func(fullMethod string, req interface{}) (keys []string, values []interface{})
+// Keys and values will be added to the context tags of the request with
+type RequestFieldExtractorFunc func(fullMethod string, req interface{}) (keys []string, values []interface{})
 
-type requestLogFieldsExtractor interface {
-	// ExtractLogFields is a method declared on a Protobuf message that extracts log fields from the interface.
-	ExtractLogFields() (keys []string, values []interface{})
+type requestFieldsExtractor interface {
+	// ExtractRequestFields is a method declared on a Protobuf message that extracts fields from the interface.
+	ExtractRequestFields() (keys []string, values []interface{})
 }
 
-// CodeGenRequestLogFieldExtractor is a function that relies on code-generated functions that export log fields from requests.
+// CodeGenRequestFieldExtractor is a function that relies on code-generated functions that export log fields from requests.
 // These are usually coming from a protoc-plugin that generates additional information based on custom field options.
-func CodeGenRequestLogFieldExtractor(fullMethod string, req interface{}) (keys []string, values []interface{}) {
-	if ext, ok := req.(requestLogFieldsExtractor); ok {
-		return ext.ExtractLogFields()
+func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) (keys []string, values []interface{}) {
+	if ext, ok := req.(requestFieldsExtractor); ok {
+		return ext.ExtractRequestFields()
 	}
 	return nil, nil
 }

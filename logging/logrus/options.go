@@ -51,13 +51,6 @@ func WithCodes(f grpc_logging.ErrorToCode) Option {
 	}
 }
 
-// WithFieldExtractor customizes the function for extracting log fields from protobuf messages.
-func WithFieldExtractor(f grpc_logging.RequestLogFieldExtractorFunc) Option {
-	return func(o *options) {
-		o.fieldExtractorFunc = f
-	}
-}
-
 // DefaultCodeToLevel is the default implementation of gRPC return codes and interceptor log level.
 func DefaultCodeToLevel(code codes.Code) logrus.Level {
 	switch code {
