@@ -5,10 +5,10 @@ package grpc_auth_test
 
 import (
 	"github.com/mwitkow/go-grpc-middleware/auth"
+	"github.com/mwitkow/go-grpc-middleware/tags"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"github.com/mwitkow/go-grpc-middleware/tags"
 )
 
 var cc *grpc.ClientConn

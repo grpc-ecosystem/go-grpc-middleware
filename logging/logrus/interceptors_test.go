@@ -22,13 +22,13 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/mwitkow/go-grpc-middleware"
 	"github.com/mwitkow/go-grpc-middleware/logging/logrus"
+	"github.com/mwitkow/go-grpc-middleware/tags"
 	"github.com/mwitkow/go-grpc-middleware/testing"
 	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
-	"github.com/mwitkow/go-grpc-middleware/tags"
 )
 
 var (
