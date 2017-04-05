@@ -14,7 +14,6 @@ import (
 
 	"github.com/mwitkow/go-grpc-middleware"
 	"github.com/mwitkow/go-grpc-middleware/logging/zap"
-	"github.com/mwitkow/go-grpc-middleware/tags"
 	"github.com/mwitkow/go-grpc-middleware/testing"
 	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/assert"

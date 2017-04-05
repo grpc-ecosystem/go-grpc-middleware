@@ -8,7 +8,6 @@ import (
 	"github.com/mwitkow/go-grpc-middleware/logging/logrus"
 
 	"github.com/mwitkow/go-grpc-middleware"
-	"github.com/mwitkow/go-grpc-middleware/tags"
 	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"

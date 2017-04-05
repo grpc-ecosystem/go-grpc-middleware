@@ -8,7 +8,7 @@
 #### func  CodeGenRequestFieldExtractor
 
 ```go
-func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) (keys []string, values []interface{})
+func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) map[string]interface{}
 ```
 CodeGenRequestFieldExtractor is a function that relies on code-generated
 functions that export log fields from requests. These are usually coming from a
@@ -22,22 +22,6 @@ func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor
 ```
 StreamServerInterceptor returns a new streaming server interceptor that sets the
 values for request tags.
-
-#### func  TagedRequestFiledExtractor
-
-```go
-func TagedRequestFiledExtractor(fullMethod string, req interface{}) (keys []string, values []interface{})
-```
-TagedRequestFiledExtractor is a function that relies on Go struct tags to export
-log fields from requests. These are usualy coming from a protoc-plugin, such as
-Gogo protobuf.
-
-    message Metadata {
-       repeated string tags = 1 [ (gogoproto.moretags) = "log_field:\"meta_tags\"" ];
-    }
-
-It requires the tag to be `log_field` and is recursively executed through all
-non-repeated structs.
 
 #### func  UnaryServerInterceptor
 
@@ -65,13 +49,29 @@ protobuf messages.
 #### type RequestFieldExtractorFunc
 
 ```go
-type RequestFieldExtractorFunc func(fullMethod string, req interface{}) (keys []string, values []interface{})
+type RequestFieldExtractorFunc func(fullMethod string, req interface{}) map[string]interface{}
 ```
 
 RequestFieldExtractorFunc is a user-provided function that extracts field
-information from a gRPC request. It is called from every logging middleware on
-arrival of unary request or a server-stream request. Keys and values will be
-added to the context tags of the request with
+information from a gRPC request. It is called from tags middleware on arrival of
+unary request or a server-stream request. Keys and values will be added to the
+context tags of the request. If there are no fields, you should return a nil.
+
+#### func  TagBasedRequestFieldExtractor
+
+```go
+func TagBasedRequestFieldExtractor(tagName string) RequestFieldExtractorFunc
+```
+TagedRequestFiledExtractor is a function that relies on Go struct tags to export
+log fields from requests. These are usualy coming from a protoc-plugin, such as
+Gogo protobuf.
+
+    message Metadata {
+       repeated string tags = 1 [ (gogoproto.moretags) = "log_field:\"meta_tags\"" ];
+    }
+
+The tagName is configurable using the tagName variable. Here it would be
+"log_field".
 
 #### type Tags
 
@@ -90,7 +90,8 @@ request.
 func Extract(ctx context.Context) *Tags
 ```
 Extracts returns a pre-existing Tags object in the Context. If the context
-wasn't set in one in a tag interceptor, a no-op Tag storage is returned.
+wasn't set in a tag interceptor, a no-op Tag storage is returned that will *not*
+be propagated in context.
 
 #### func (*Tags) Has
 

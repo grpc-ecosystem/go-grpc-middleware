@@ -4,7 +4,6 @@
 package grpc_zap
 
 import (
-	"github.com/mwitkow/go-grpc-middleware/tags"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/net/context"

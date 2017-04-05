@@ -71,11 +71,10 @@ func newTagsForCtx(ctx context.Context) context.Context {
 }
 
 func setRequestFieldTags(ctx context.Context, f RequestFieldExtractorFunc, fullMethodName string, req interface{}) {
-	keys, values := f(fullMethodName, req)
-	if keys != nil && values != nil && len(keys) == len(values) {
+	if valMap := f(fullMethodName, req); valMap != nil {
 		t := Extract(ctx)
-		for index, _ := range keys {
-			t.Set("grpc.request."+keys[index], values[index])
+		for k, v := range valMap {
+			t.Set("grpc.request."+k, v)
 		}
 	}
 }
