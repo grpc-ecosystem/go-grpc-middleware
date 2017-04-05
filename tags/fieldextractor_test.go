@@ -8,6 +8,7 @@ import (
 	pb_gogotestproto "github.com/mwitkow/go-grpc-middleware/testing/gogotestproto"
 	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
 
+	"github.com/mwitkow/go-grpc-middleware/tags"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
