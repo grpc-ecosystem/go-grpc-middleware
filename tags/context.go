@@ -35,7 +35,7 @@ func (t *Tags) Values() map[string]interface{} {
 }
 
 // Extracts returns a pre-existing Tags object in the Context.
-// If the context wasn't set in one in a tag interceptor, a no-op Tag storage is returned.
+// If the context wasn't set in a tag interceptor, a no-op Tag storage is returned that will *not* be propagated in context.
 func Extract(ctx context.Context) *Tags {
 	t, ok := ctx.Value(ctxMarkerKey).(*Tags)
 	if !ok {
