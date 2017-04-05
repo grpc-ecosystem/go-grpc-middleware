@@ -3,6 +3,6 @@
 package mwitkow_testproto
 
 // This is implementing grpc_logging.requestLogFieldsExtractor
-func (m *PingRequest) ExtractRequestFields() map[string]interface{} {
-	return map[string]interface{}{"value": m.Value}
+func (m *PingRequest) ExtractRequestFields(appendToMap map[string]interface{}) {
+	appendToMap["value"] = m.Value
 }

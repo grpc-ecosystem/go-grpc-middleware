@@ -14,14 +14,20 @@ type RequestFieldExtractorFunc func(fullMethod string, req interface{}) map[stri
 
 type requestFieldsExtractor interface {
 	// ExtractRequestFields is a method declared on a Protobuf message that extracts fields from the interface.
-	ExtractRequestFields() map[string]interface{}
+	// The values from the extracted fields should be set in the appendToMap, in order to avoid allocations.
+	ExtractRequestFields(appendToMap map[string]interface{})
 }
 
 // CodeGenRequestFieldExtractor is a function that relies on code-generated functions that export log fields from requests.
 // These are usually coming from a protoc-plugin that generates additional information based on custom field options.
 func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) map[string]interface{} {
 	if ext, ok := req.(requestFieldsExtractor); ok {
-		return ext.ExtractRequestFields()
+		retMap := make(map[string]interface{})
+		ext.ExtractRequestFields(retMap)
+		if len(retMap) == 0 {
+			return nil
+		}
+		return retMap
 	}
 	return nil
 }
