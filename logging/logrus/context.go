@@ -6,6 +6,7 @@ package grpc_logrus
 import (
 	"github.com/Sirupsen/logrus"
 	"golang.org/x/net/context"
+	"github.com/mwitkow/go-grpc-middleware/tags"
 )
 
 type ctxMarker struct{}

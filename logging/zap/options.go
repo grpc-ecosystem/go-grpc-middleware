@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc/codes"
+	"github.com/mwitkow/go-grpc-middleware/logging"
 )
 
 var (
