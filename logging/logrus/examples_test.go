@@ -7,10 +7,11 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/mwitkow/go-grpc-middleware/logging/logrus"
 
-	"github.com/mwitkow/go-grpc-middleware/logging"
+	"github.com/mwitkow/go-grpc-middleware"
 	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"github.com/mwitkow/go-grpc-middleware/tags"
 )
 
 // Initialization shows a relatively complex initialization sequence.
@@ -20,14 +21,19 @@ func Example_initialization(logrusLogger *logrus.Logger, customFunc grpc_logrus.
 	// Shared options for the logger, with a custom gRPC code to log level function.
 	opts := []grpc_logrus.Option{
 		grpc_logrus.WithLevels(customFunc),
-		grpc_logrus.WithFieldExtractor(grpc_logging.CodeGenRequestLogFieldExtractor), // default, don't have to set
 	}
 	// Make sure that log statements internal to gRPC library are logged using the zapLogger as well.
 	grpc_logrus.ReplaceGrpcLogger(logrusEntry)
-	// Create a server
+	// Create a server, make sure we put the grpc_ctxtags context before everything else.
 	server := grpc.NewServer(
-		grpc.UnaryInterceptor(grpc_logrus.UnaryServerInterceptor(logrusEntry, opts...)),
-		grpc.StreamInterceptor(grpc_logrus.StreamServerInterceptor(logrusEntry, opts...)),
+		grpc_middleware.WithUnaryServerChain(
+			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_logrus.UnaryServerInterceptor(logrusEntry, opts...),
+		),
+		grpc_middleware.WithStreamServerChain(
+			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_logrus.StreamServerInterceptor(logrusEntry, opts...),
+		),
 	)
 	return server
 }
@@ -35,8 +41,8 @@ func Example_initialization(logrusLogger *logrus.Logger, customFunc grpc_logrus.
 // Simple unary handler that adds custom fields to the requests's context. These will be used for all log statements.
 func Example_handlerUsageUnaryPing() interface{} {
 	x := func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
-		// Add fields to all log statements, including the final one made by the interceptor.
-		grpc_logrus.AddFields(ctx, logrus.Fields{"custom_string": "something", "custom_int": 1337})
+		// Add fields the ctxtags of the request which will be added to all extracted loggers.
+		grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
 		// Extract a request-scoped zap.Logger and log a message.
 		grpc_logrus.Extract(ctx).Info("some ping")
 		return &pb_testproto.PingResponse{Value: ping.Value}, nil

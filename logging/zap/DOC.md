@@ -10,9 +10,8 @@ gRPC calls, and be populated into the `context.Context` passed into gRPC handler
 code.
 
 You can use `Extract` to log into a request-scoped `zap.Logger` instance in your
-handler code. `AddFields` adds new fields to the request-scoped `zap.Logger`.
-They will be propagated for all call depending on the context, including the
-interceptor's own "finished RPC" log message.
+handler code. The fields set on the logger correspond to the grpc_ctxtags.Tags
+attached to the context.
 
 ZAP can also be made as a backend for gRPC library internals. For that use
 `ReplaceGrpcLogger`.
@@ -27,17 +26,6 @@ var (
 	SystemField = zap.String("system", "grpc")
 )
 ```
-
-#### func  AddFields
-
-```go
-func AddFields(ctx context.Context, fields ...zapcore.Field)
-```
-AddFields adds zap.Fields to *all* usages of the logger, both upstream (to
-handler) and downstream.
-
-This call *is not* concurrency safe. It should only be used in the request
-goroutine: in other interceptors or directly in the handler.
 
 #### func  DefaultCodeToLevel
 
@@ -54,8 +42,7 @@ func Extract(ctx context.Context) *zap.Logger
 ```
 Extract takes the call-scoped Logger from grpc_zap middleware.
 
-If the grpc_zap middleware wasn't used, a null `zap.Logger` is returned. This
-makes it safe to use regardless.
+It always returns a Logger that has all the grpc_ctxtags updated.
 
 #### func  ReplaceGrpcLogger
 
@@ -97,13 +84,12 @@ type Option func(*options)
 ```
 
 
-#### func  WithFieldExtractor
+#### func  WithCodes
 
 ```go
-func WithFieldExtractor(f grpc_logging.RequestLogFieldExtractorFunc) Option
+func WithCodes(f grpc_logging.ErrorToCode) Option
 ```
-WithFieldExtractor customizes the function for extracting log fields from
-protobuf messages.
+WithCodes customizes the function for mapping errors to error codes.
 
 #### func  WithLevels
 
@@ -112,10 +98,3 @@ func WithLevels(f CodeToLevel) Option
 ```
 WithLevels customizes the function for mapping gRPC return codes and interceptor
 log level statements.
-
-#### func  WithCodes
-
-```go
-func WithCodes(f grpc_logging.ErrorToCode) Option
-```
-WithCodes customizes the function for mapping errors to error codes.
