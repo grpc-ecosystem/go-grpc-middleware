@@ -5,8 +5,8 @@ package grpc_logrus
 
 import (
 	"github.com/Sirupsen/logrus"
-	"google.golang.org/grpc/codes"
 	"github.com/mwitkow/go-grpc-middleware/logging"
+	"google.golang.org/grpc/codes"
 )
 
 var (

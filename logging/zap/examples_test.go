@@ -10,9 +10,9 @@ import (
 
 	"github.com/mwitkow/go-grpc-middleware"
 	"github.com/mwitkow/go-grpc-middleware/logging/zap"
+	"github.com/mwitkow/go-grpc-middleware/tags"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"github.com/mwitkow/go-grpc-middleware/tags"
 )
 
 // Initialization shows a relatively complex initialization sequence.

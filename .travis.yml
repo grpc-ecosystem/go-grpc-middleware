@@ -16,6 +16,8 @@ install:
   - go get github.com/Sirupsen/logrus
   # for field testing
   - go get github.com/gogo/protobuf/proto
+  # for tracing/opentracing
+  - go get github.com/opentracing/opentracing-go
 
 script:
  - ./test_all.sh
