@@ -3,7 +3,7 @@ package metautils_test
 import (
 	"testing"
 
-	"github.com/mwitkow/go-grpc-middleware/util/metautils"
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/metadata"

@@ -12,11 +12,11 @@ import (
 
 	"io"
 
-	"github.com/mwitkow/go-grpc-middleware"
-	"github.com/mwitkow/go-grpc-middleware/tags"
-	"github.com/mwitkow/go-grpc-middleware/testing"
-	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
-	"github.com/mwitkow/go-grpc-middleware/tracing/opentracing"
+	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/mocktracer"
 	"github.com/stretchr/testify/assert"

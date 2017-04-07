@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 
-	"github.com/mwitkow/go-grpc-middleware/retry"
-	"github.com/mwitkow/go-grpc-middleware/testing"
+	"github.com/grpc-ecosystem/go-grpc-middleware/retry"
+	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

@@ -1,6 +1,6 @@
 # grpc_auth
 --
-    import "github.com/mwitkow/go-grpc-middleware/auth"
+    import "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 
 `grpc_auth` a generic server-side auth middleware for gRPC.
 

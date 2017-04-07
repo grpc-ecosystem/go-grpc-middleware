@@ -1,9 +1,16 @@
 # grpc_opentracing
 --
-    import "github.com/mwitkow/go-grpc-middleware/tracing/opentracing"
+    import "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 
 
 ## Usage
+
+```go
+const (
+	TagTraceId = "trace.traceid"
+	TagSpanId  = "trace.spanid"
+)
+```
 
 #### func  StreamClientInterceptor
 
@@ -35,14 +42,14 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor
 ```
 UnaryServerInterceptor returns a new unary server interceptor for OpenTracing.
 
-#### type FilterOutFunc
+#### type FilterFunc
 
 ```go
-type FilterOutFunc func(ctx context.Context, fullMethodName string) bool
+type FilterFunc func(ctx context.Context, fullMethodName string) bool
 ```
 
-FilterOutFunc allows users to provide a function that filters out certain
-methods from being traced.
+FilterFunc allows users to provide a function that filters out certain methods
+from being traced.
 
 If it returns false, the given request will not be traced.
 
@@ -53,12 +60,13 @@ type Option func(*options)
 ```
 
 
-#### func  WithFilterOutFunc
+#### func  WithFilterFunc
 
 ```go
-func WithFilterOutFunc(f FilterOutFunc) Option
+func WithFilterFunc(f FilterFunc) Option
 ```
-WithFilterOutFunc customizes the function used for deciding
+WithFilterFunc customizes the function used for deciding whether a given call is
+traced or not.
 
 #### func  WithTracer
 

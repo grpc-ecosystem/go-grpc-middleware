@@ -4,13 +4,13 @@
 package grpc_zap_test
 
 import (
-	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 
 	"context"
 
-	"github.com/mwitkow/go-grpc-middleware"
-	"github.com/mwitkow/go-grpc-middleware/logging/zap"
-	"github.com/mwitkow/go-grpc-middleware/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )

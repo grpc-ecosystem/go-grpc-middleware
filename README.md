@@ -1,14 +1,15 @@
 # Go gRPC Middleware
 
-[![Travis Build](https://travis-ci.org/mwitkow/go-grpc-middleware.svg?branch=master)](https://travis-ci.org/mwitkow/go-grpc-middleware)
-[![Go Report Card](https://goreportcard.com/badge/github.com/mwitkow/go-grpc-middleware)](https://goreportcard.com/report/github.com/mwitkow/go-grpc-middleware)
-[![GoDoc](http://img.shields.io/badge/GoDoc-Reference-blue.svg)](https://godoc.org/github.com/mwitkow/go-grpc-middleware)
-[![SourceGraph](https://sourcegraph.com/github.com/mwitkow/go-grpc-middleware/-/badge.svg)](https://sourcegraph.com/github.com/mwitkow/go-grpc-middleware/?badge)
-[![codecov](https://codecov.io/gh/mwitkow/go-grpc-middleware/branch/master/graph/badge.svg)](https://codecov.io/gh/mwitkow/go-grpc-middleware)
+[![Travis Build](https://travis-ci.org/grpc-ecosystem/go-grpc-middleware.svg?branch=master)](https://travis-ci.org/grpc-ecosystem/go-grpc-middleware)
+[![Go Report Card](https://goreportcard.com/badge/github.com/grpc-ecosystem/go-grpc-middleware)](https://goreportcard.com/report/github.com/grpc-ecosystem/go-grpc-middleware)
+[![GoDoc](http://img.shields.io/badge/GoDoc-Reference-blue.svg)](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware)
+[![SourceGraph](https://sourcegraph.com/github.com/grpc-ecosystem/go-grpc-middleware/-/badge.svg)](https://sourcegraph.com/github.com/grpc-ecosystem/go-grpc-middleware/?badge)
+[![codecov](https://codecov.io/gh/grpc-ecosystem/go-grpc-middleware/branch/master/graph/badge.svg)](https://codecov.io/gh/grpc-ecosystem/go-grpc-middleware)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 [gRPC Go](https://github.com/grpc/grpc-go) Middleware: interceptors, helpers, utilities.
 
+**The repo has moved to grpc-ecosystem/go-grpc-middleware**.
 
 ## Middleware
 
@@ -24,7 +25,7 @@ some of them itself, but also will link to useful external repos.
 `grpc_middleware` itself provides support for chaining interceptors. Se [Documentation](DOC.md), but here's a simple example:
 
 ```go
-import "github.com/mwitkow/go-grpc-middleware"
+import "github.com/grpc-ecosystem/go-grpc-middleware"
 
 myServer := grpc.NewServer(
     grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(loggingStream, monitoringStream, authStream)),

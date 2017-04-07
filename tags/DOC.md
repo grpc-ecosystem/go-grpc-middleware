@@ -1,6 +1,6 @@
 # grpc_ctxtags
 --
-    import "github.com/mwitkow/go-grpc-middleware/tags"
+    import "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 
 
 ## Usage
