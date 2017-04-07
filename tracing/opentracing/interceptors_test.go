@@ -54,6 +54,9 @@ type tracingAssertService struct {
 
 func (s *tracingAssertService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
 	assert.NotNil(s.T, opentracing.SpanFromContext(ctx), "handlers must have the spancontext in their context, otherwise propagation will fail")
+	tags := grpc_ctxtags.Extract(ctx)
+	assert.True(s.T, tags.Has(grpc_opentracing.TagTraceId), "tags must contain traceid")
+	assert.True(s.T, tags.Has(grpc_opentracing.TagSpanId), "tags must contain traceid")
 	return s.TestServiceServer.Ping(ctx, ping)
 }
 
@@ -64,6 +67,9 @@ func (s *tracingAssertService) PingError(ctx context.Context, ping *pb_testproto
 
 func (s *tracingAssertService) PingList(ping *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
 	assert.NotNil(s.T, opentracing.SpanFromContext(stream.Context()), "handlers must have the spancontext in their context, otherwise propagation will fail")
+	tags := grpc_ctxtags.Extract(stream.Context())
+	assert.True(s.T, tags.Has(grpc_opentracing.TagTraceId), "tags must contain traceid")
+	assert.True(s.T, tags.Has(grpc_opentracing.TagSpanId), "tags must contain traceid")
 	return s.TestServiceServer.PingList(ping, stream)
 }
 

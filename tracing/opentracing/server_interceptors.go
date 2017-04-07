@@ -64,6 +64,7 @@ func newServerSpanFromInbound(ctx context.Context, tracer opentracing.Tracer, fu
 		ext.RPCServerOption(parentSpanContext),
 		grpcTag,
 	)
+	hackyInjectOpentracingIdsToTags(serverSpan, grpc_ctxtags.Extract(ctx))
 	return opentracing.ContextWithSpan(ctx, serverSpan), serverSpan
 }
 
@@ -71,7 +72,13 @@ func finishServerSpan(ctx context.Context, serverSpan opentracing.Span, err erro
 	// Log context information
 	tags := grpc_ctxtags.Extract(ctx)
 	for k, v := range tags.Values() {
-		serverSpan.SetTag(k, v)
+		// Don't tag errors, log them instead.
+		if vErr, ok := v.(error); ok {
+			serverSpan.LogKV(k, vErr.Error())
+
+		} else {
+			serverSpan.SetTag(k, v)
+		}
 	}
 	if err != nil {
 		ext.Error.Set(serverSpan, true)
