@@ -6,10 +6,10 @@ package grpc_auth
 import (
 	"strings"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 )
 
 var (
@@ -22,18 +22,12 @@ var (
 // case-insensitive format (see rfc2617, sec 1.2). If no such authorization is found, or the token
 // is of wrong scheme, an error with gRPC status `Unauthenticated` is returned.
 func AuthFromMD(ctx context.Context, expectedScheme string) (string, error) {
-	md, ok := metadata.FromContext(ctx)
-	if !ok {
-		return "", grpc.Errorf(codes.Internal, "gRPC context lacks metadata")
-	}
-	slice, ok := md[headerAuthorize]
-	if !ok {
+	val := metautils.ExtractIncoming(ctx).Get(headerAuthorize)
+	if val == "" {
 		return "", grpc.Errorf(codes.Unauthenticated, "Request unauthenticated with "+expectedScheme)
+
 	}
-	if len(slice) > 1 {
-		return "", grpc.Errorf(codes.Unauthenticated, "Request contains multiple authorization headers")
-	}
-	splits := strings.SplitN(slice[0], " ", 2)
+	splits := strings.SplitN(val, " ", 2)
 	if len(splits) < 2 {
 		return "", grpc.Errorf(codes.Unauthenticated, "Bad authorization string")
 	}

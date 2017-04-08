@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 )
 
 func TestAuthFromMD(t *testing.T) {
@@ -60,7 +61,7 @@ func TestAuthFromMD(t *testing.T) {
 			msg:     "bearer token must not be empty",
 		},
 	} {
-		ctx := metadata.NewContext(context.TODO(), run.md)
+		ctx := metautils.NiceMD(run.md).ToIncoming(context.TODO())
 		out, err := AuthFromMD(ctx, "bearer")
 		if run.errCode != codes.OK {
 			assert.Equal(t, run.errCode, grpc.Code(err), run.msg)

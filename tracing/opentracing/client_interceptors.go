@@ -111,16 +111,11 @@ func newClientSpanFromContext(ctx context.Context, tracer opentracing.Tracer, fu
 		grpcTag,
 	)
 	// Make sure we add this to the metadata of the call, so it gets propagated:
-	md, ok := metadata.FromContext(ctx)
-	if !ok {
-		md = metadata.New(nil)
-	} else {
-		md = metautils.Copy(md)
-	}
+	md := metautils.ExtractOutgoing(ctx).Clone()
 	if err := tracer.Inject(clientSpan.Context(), opentracing.HTTPHeaders, metadataTextMap(md)); err != nil {
 		grpclog.Printf("grpc_opentracing: failed serializing trace information: %v", err)
 	}
-	ctxWithMetadata := metadata.NewContext(ctx, md)
+	ctxWithMetadata := md.ToOutgoing(ctx)
 	return opentracing.ContextWithSpan(ctxWithMetadata, clientSpan), clientSpan
 }
 

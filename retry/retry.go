@@ -268,7 +268,8 @@ func perCallContext(parentCtx context.Context, callOpts *options, attempt uint) 
 		ctx, _ = context.WithTimeout(ctx, callOpts.perCallTimeout)
 	}
 	if attempt > 0 && callOpts.includeHeader {
-		ctx = metautils.SetSingle(ctx, AttemptMetadataKey, fmt.Sprintf("%d", attempt))
+		mdClone := metautils.ExtractOutgoing(ctx).Clone().Set(AttemptMetadataKey, fmt.Sprintf("%d", attempt))
+		ctx = mdClone.ToOutgoing(ctx)
 	}
 	return ctx
 }
