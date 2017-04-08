@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/oauth"
 	"google.golang.org/grpc/metadata"
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 )
 
 var (
@@ -69,7 +70,7 @@ func (s *assertingPingService) PingList(ping *pb_testproto.PingRequest, stream p
 
 func ctxWithToken(ctx context.Context, scheme string, token string) context.Context {
 	md := metadata.Pairs("authorization", fmt.Sprintf("%s %v", scheme, token))
-	nCtx := metadata.NewContext(ctx, md)
+	nCtx := metautils.NiceMD(md).ToOutgoing(ctx)
 	return nCtx
 }
 

@@ -19,6 +19,7 @@ const (
 // First return is the value of the key, followed by a bool indicator.
 // The bool indicator being false means the string should be discarded. It can be false if
 // the context has no metadata at all, the key in metadata doesn't exist or there are multiple values.
+// Deprecated, use NiceMD.Get.
 func GetSingle(ctx context.Context, keyName string) (string, bool) {
 	// TODO(mwitkow): Fix binary content support.
 	md, ok := metadata.FromContext(ctx)
@@ -39,6 +40,7 @@ func GetSingle(ctx context.Context, keyName string) (string, bool) {
 // SetSingle sets or overrides a metadata key to be single value in the Context.
 // It returns a new context.Context object that contains a *copy* of the metadata inside the given
 // context.
+// Deprecated, use NiceMD.Set.
 func SetSingle(ctx context.Context, keyName string, keyValue string) context.Context {
 	md, ok := metadata.FromContext(ctx)
 	if !ok {

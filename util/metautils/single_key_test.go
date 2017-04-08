@@ -9,24 +9,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-var (
-	parentCtx = context.WithValue(context.TODO(), "parentKey", "parentValue")
-)
 
-func assertRetainsParentContext(t *testing.T, ctx context.Context) {
-	x := ctx.Value("parentKey")
-	assert.EqualValues(t, "parentValue", x, "context must contain parentCtx")
-}
-
-func TestSingleReadYourWrites(t *testing.T) {
-	key := "someKey"
-	value := "123456"
-	c := metautils.SetSingle(parentCtx, key, value)
-	assertRetainsParentContext(t, c)
-	out, ok := metautils.GetSingle(c, key)
-	assert.True(t, ok, "GetSingle should find the key")
-	assert.Equal(t, value, out, "value from GetSingle must match SetSingle")
-}
 
 func TestSingleFailsReading(t *testing.T) {
 	key := "someKey"

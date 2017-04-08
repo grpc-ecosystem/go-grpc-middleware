@@ -6,13 +6,13 @@ package grpc_opentracing
 import (
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
-	"google.golang.org/grpc/metadata"
 )
 
 var (
@@ -50,14 +50,12 @@ func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 }
 
 func newServerSpanFromInbound(ctx context.Context, tracer opentracing.Tracer, fullMethodName string) (context.Context, opentracing.Span) {
-	var parentSpanContext opentracing.SpanContext
-	var err error
-	if md, ok := metadata.FromContext(ctx); ok {
-		parentSpanContext, err = tracer.Extract(opentracing.HTTPHeaders, metadataTextMap(md))
-		if err != nil && err != opentracing.ErrSpanContextNotFound {
-			grpclog.Printf("grpc_opentracing: failed parsing trace information: %v", err)
-		}
+	md := metautils.ExtractIncoming(ctx)
+	parentSpanContext, err := tracer.Extract(opentracing.HTTPHeaders, metadataTextMap(md))
+	if err != nil && err != opentracing.ErrSpanContextNotFound {
+		grpclog.Printf("grpc_opentracing: failed parsing trace information: %v", err)
 	}
+
 	serverSpan := tracer.StartSpan(
 		fullMethodName,
 		// this is magical, it attaches the new span to the parent parentSpanContext, and creates an unparented one if empty.
