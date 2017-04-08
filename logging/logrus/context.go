@@ -5,7 +5,7 @@ package grpc_logrus
 
 import (
 	"github.com/Sirupsen/logrus"
-	"github.com/mwitkow/go-grpc-middleware/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"golang.org/x/net/context"
 )
 

@@ -8,9 +8,9 @@ import (
 	"io"
 	"testing"
 
-	"github.com/mwitkow/go-grpc-middleware/tags"
-	"github.com/mwitkow/go-grpc-middleware/testing"
-	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

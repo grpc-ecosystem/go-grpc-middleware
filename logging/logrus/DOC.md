@@ -1,6 +1,6 @@
 # grpc_logrus
 --
-    import "github.com/mwitkow/go-grpc-middleware/logging/logrus"
+    import "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 
 `grpc_logrus` is a gRPC logging middleware backed by Logrus loggers
 

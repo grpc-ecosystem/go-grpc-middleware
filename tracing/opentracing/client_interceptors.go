@@ -4,10 +4,10 @@
 package grpc_opentracing
 
 import (
-	"sync"
 	"io"
+	"sync"
 
-	"github.com/mwitkow/go-grpc-middleware/util/metautils"
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"

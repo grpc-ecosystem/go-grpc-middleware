@@ -4,7 +4,7 @@
 package grpc_zap
 
 import (
-	"github.com/mwitkow/go-grpc-middleware/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc/codes"

@@ -5,10 +5,10 @@ package grpc_ctxtags_test
 
 import "testing"
 import (
-	pb_gogotestproto "github.com/mwitkow/go-grpc-middleware/testing/gogotestproto"
-	pb_testproto "github.com/mwitkow/go-grpc-middleware/testing/testproto"
+	pb_gogotestproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/gogotestproto"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 
-	"github.com/mwitkow/go-grpc-middleware/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

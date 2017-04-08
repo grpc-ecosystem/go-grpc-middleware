@@ -1,6 +1,6 @@
 # grpc_logging
 --
-    import "github.com/mwitkow/go-grpc-middleware/logging"
+    import "github.com/grpc-ecosystem/go-grpc-middleware/logging"
 
 grpc_logging is a "parent" package for gRPC logging middlewares
 

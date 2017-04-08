@@ -1,14 +1,17 @@
 # Go gRPC Middleware
 
-[![Travis Build](https://travis-ci.org/mwitkow/go-grpc-middleware.svg?branch=master)](https://travis-ci.org/mwitkow/go-grpc-middleware)
-[![Go Report Card](https://goreportcard.com/badge/github.com/mwitkow/go-grpc-middleware)](https://goreportcard.com/report/github.com/mwitkow/go-grpc-middleware)
-[![GoDoc](http://img.shields.io/badge/GoDoc-Reference-blue.svg)](https://godoc.org/github.com/mwitkow/go-grpc-middleware)
-[![SourceGraph](https://sourcegraph.com/github.com/mwitkow/go-grpc-middleware/-/badge.svg)](https://sourcegraph.com/github.com/mwitkow/go-grpc-middleware/?badge)
-[![codecov](https://codecov.io/gh/mwitkow/go-grpc-middleware/branch/master/graph/badge.svg)](https://codecov.io/gh/mwitkow/go-grpc-middleware)
+[![Travis Build](https://travis-ci.org/grpc-ecosystem/go-grpc-middleware.svg?branch=master)](https://travis-ci.org/grpc-ecosystem/go-grpc-middleware)
+[![Go Report Card](https://goreportcard.com/badge/github.com/grpc-ecosystem/go-grpc-middleware)](https://goreportcard.com/report/github.com/grpc-ecosystem/go-grpc-middleware)
+[![GoDoc](http://img.shields.io/badge/GoDoc-Reference-blue.svg)](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware)
+[![SourceGraph](https://sourcegraph.com/github.com/grpc-ecosystem/go-grpc-middleware/-/badge.svg)](https://sourcegraph.com/github.com/grpc-ecosystem/go-grpc-middleware/?badge)
+[![codecov](https://codecov.io/gh/grpc-ecosystem/go-grpc-middleware/branch/master/graph/badge.svg)](https://codecov.io/gh/grpc-ecosystem/go-grpc-middleware)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![quality: production](https://img.shields.io/badge/quality-production-orange.svg)](#status)
+
 
 [gRPC Go](https://github.com/grpc/grpc-go) Middleware: interceptors, helpers, utilities.
 
+**Important** The repo recently moved from `github.com/grpc-ecosystem/go-grpc-middleware`, please update your import paths.
 
 ## Middleware
 
@@ -21,14 +24,26 @@ These are generic building blocks that make it easy to build multiple microservi
 The purpose of this repository is to act as a go-to point for such reusable functionality. It contains
 some of them itself, but also will link to useful external repos.
 
-`grpc_middleware` itself provides support for chaining interceptors. Se [Documentation](DOC.md), but here's a simple example:
+`grpc_middleware` itself provides support for chaining interceptors. Se [Documentation](DOC.md), but here's an example:
 
 ```go
-import "github.com/mwitkow/go-grpc-middleware"
+import "github.com/grpc-ecosystem/go-grpc-middleware"
 
 myServer := grpc.NewServer(
-    grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(loggingStream, monitoringStream, authStream)),
-    grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(loggingUnary, monitoringUnary, authUnary),
+    grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+        grpc_ctxtags.StreamServerInterceptor(),
+        grpc_opentracing.StreamServerInterceptor(),
+        grpc_prometheus.StreamServerInterceptor,
+        grpc_zap.StreamServerInterceptor(zapLogger),
+        grpc_auth.StreamServerInterceptor(myAuthFunction),
+    )),
+    grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+        grpc_ctxtags.UnaryServerInterceptor(),
+        grpc_opentracing.UnaryServerInterceptor(),
+        grpc_prometheus.UnaryServerInterceptor,
+        grpc_zap.UnaryServerInterceptor(zapLogger),
+        grpc_auth.UnaryServerInterceptor(myAuthFunction),
+    )),
 )
 ```
 
@@ -40,6 +55,7 @@ myServer := grpc.NewServer(
    * [`grpc_auth`](auth) - a customizable (via `AuthFunc) piece of auth middleware 
 
 #### Logging
+   * [`grpc_ctxtags`](tags/) - a library that adds a `Tag` map to context, with data populated from request body
    * [`grpc_zap`](logging/zap/) - integration of [zap](https://github.com/uber-go/zap) logging library into gRPC handlers.
    * [`grpc_logrus`](logging/logrus/) - integration of [logrus](https://github.com/Sirupsen/logrus) logging library into gRPC handlers.
 
@@ -47,17 +63,16 @@ myServer := grpc.NewServer(
 #### Monitoring
    * [`grpc_prometheus`⚡](https://github.com/grpc-ecosystem/go-grpc-prometheus) - Prometheus client-side and server-side monitoring middleware
    * [`otgrpc`⚡](https://github.com/grpc-ecosystem/grpc-opentracing/tree/master/go/otgrpc) - [OpenTracing](http://opentracing.io/) client-side and server-side interceptors
+   * [`grpc_opentracing`](tracing/opentracing) - [OpenTracing](http://opentracing.io/) client-side and server-side interceptors with support for streaming and handler-returned tags
 
 #### Client
-   * [`grpc_retry`](retry/) - a generic gRPC response code retry mechanism
+   * [`grpc_retry`](retry/) - a generic gRPC response code retry mechanism, client-side middleware
 
 #### Server
    * [`grpc_validator`](validator/) - codegen inbound message validation from `.proto` options 
 
 
 ## Status
-
-This code has been inspired by the gRPC interceptor design discussion, and the [upstream PR](https://github.com/grpc/grpc-go/pull/653).
 
 This code has been running in *production* since May 2016 as the basis of the gRPC micro services stack at [Improbable](https://improbable.io).
 

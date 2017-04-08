@@ -1,9 +1,16 @@
 # metautils
 --
-    import "github.com/mwitkow/go-grpc-middleware/util/metautils"
+    import "github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 
 
 ## Usage
+
+#### func  Copy
+
+```go
+func Copy(parent metadata.MD) metadata.MD
+```
+Copy creates a shallow copy of the metadata.
 
 #### func  GetSingle
 

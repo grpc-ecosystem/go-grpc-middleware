@@ -1,6 +1,6 @@
 # grpc_retry
 --
-    import "github.com/mwitkow/go-grpc-middleware/retry"
+    import "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 
 `grpc_retry` provides client-side request retry logic for gRPC.
 

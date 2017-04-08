@@ -1,6 +1,6 @@
 # grpc_middleware
 --
-    import "github.com/mwitkow/go-grpc-middleware"
+    import "github.com/grpc-ecosystem/go-grpc-middleware"
 
 `grpc_middleware` is a collection of gRPC middleware packages: interceptors,
 helpers and tools.

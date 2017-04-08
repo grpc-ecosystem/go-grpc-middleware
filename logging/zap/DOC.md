@@ -1,6 +1,6 @@
 # grpc_zap
 --
-    import "github.com/mwitkow/go-grpc-middleware/logging/zap"
+    import "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 
 `grpc_zap` is a gRPC logging middleware backed by ZAP loggers
 

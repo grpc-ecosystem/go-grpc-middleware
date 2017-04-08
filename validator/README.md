@@ -1,6 +1,6 @@
 # grpc_validator
 --
-    import "github.com/mwitkow/go-grpc-middleware/validator"
+    import "github.com/grpc-ecosystem/go-grpc-middleware/validator"
 
 `grpc_validator` a generic request contents validator server-side middleware for
 gRPC.
