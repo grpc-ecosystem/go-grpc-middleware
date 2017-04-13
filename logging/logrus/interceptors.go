@@ -30,7 +30,7 @@ func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServe
 		level := o.levelFunc(code)
 		fields := logrus.Fields{
 			"grpc.code":    code.String(),
-			"grpc.time_ns": time.Now().Sub(startTime).Nanoseconds(),
+			"grpc.time_ms": timeDiffToMilliseconds(startTime),
 		}
 		if err != nil {
 			fields[logrus.ErrorKey] = err
@@ -57,7 +57,7 @@ func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamSer
 		level := o.levelFunc(code)
 		fields := logrus.Fields{
 			"grpc.code":    code.String(),
-			"grpc.time_ns": time.Now().Sub(startTime),
+			"grpc.time_ms": timeDiffToMilliseconds(startTime),
 		}
 		if err != nil {
 			fields[logrus.ErrorKey] = err
@@ -97,4 +97,8 @@ func newLoggerForCall(ctx context.Context, entry *logrus.Entry, fullMethodString
 			"grpc.method":  method,
 		})
 	return toContext(ctx, callLog)
+}
+
+func timeDiffToMilliseconds(then time.Time) float32 {
+	return float32(time.Now().Sub(then).Nanoseconds() / 1000 / 1000)
 }

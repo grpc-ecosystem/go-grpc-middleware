@@ -143,7 +143,7 @@ func (s *LogrusLoggingSuite) TestPing_WithCustomTags() {
 	assert.Contains(s.T(), msgs[0], `"msg": "some ping"`, "handler's message must contain user message")
 	assert.Contains(s.T(), msgs[1], `"msg": "finished unary call"`, "interceptor message must contain string")
 	assert.Contains(s.T(), msgs[1], `"level": "info"`, "OK error codes must be logged on info level.")
-	assert.Contains(s.T(), msgs[1], `"grpc.time_ns":`, "interceptor log statement should contain execution time")
+	assert.Contains(s.T(), msgs[1], `"grpc.time_ms":`, "interceptor log statement should contain execution time")
 }
 
 func (s *LogrusLoggingSuite) TestPingError_WithCustomLevels() {
@@ -212,5 +212,5 @@ func (s *LogrusLoggingSuite) TestPingList_WithCustomTags() {
 	assert.Contains(s.T(), msgs[0], `"msg": "some pinglist"`, "handler's message must contain user message")
 	assert.Contains(s.T(), msgs[1], `"msg": "finished streaming call"`, "interceptor message must contain string")
 	assert.Contains(s.T(), msgs[1], `"level": "info"`, "OK error codes must be logged on info level.")
-	assert.Contains(s.T(), msgs[1], `"grpc.time_ns":`, "interceptor log statement should contain execution time")
+	assert.Contains(s.T(), msgs[1], `"grpc.time_ms":`, "interceptor log statement should contain execution time")
 }
