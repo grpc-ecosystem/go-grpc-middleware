@@ -57,7 +57,7 @@ func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamSer
 		level := o.levelFunc(code)
 		fields := logrus.Fields{
 			"grpc.code":    code.String(),
-			"grpc.time_ns": time.Now().Sub(startTime),
+			"grpc.time_ns": time.Now().Sub(startTime).Nanoseconds(),
 		}
 		if err != nil {
 			fields[logrus.ErrorKey] = err
