@@ -32,7 +32,7 @@ func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServer
 		Extract(newCtx).Check(level, "finished unary call").Write(
 			zap.Error(err),
 			zap.String("grpc.code", code.String()),
-			zap.Int64("grpc.time_ns", time.Now().Sub(startTime).Nanoseconds()),
+			zap.Float32("grpc.time_ms", timeDiffToMilliseconds(startTime)),
 		)
 		return resp, err
 	}
@@ -55,7 +55,7 @@ func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServ
 		Extract(newCtx).Check(level, "finished streaming call").Write(
 			zap.Error(err),
 			zap.String("grpc.code", code.String()),
-			zap.Int64("grpc.time_ns", time.Now().Sub(startTime).Nanoseconds()),
+			zap.Float32("grpc.time_ms", timeDiffToMilliseconds(startTime)),
 		)
 		return err
 	}
@@ -69,4 +69,8 @@ func newLoggerForCall(ctx context.Context, logger *zap.Logger, fullMethodString 
 		zap.String("grpc.service", service),
 		zap.String("grpc.method", method))
 	return toContext(ctx, callLog)
+}
+
+func timeDiffToMilliseconds(then time.Time) float32 {
+	return float32(time.Now().Sub(then).Nanoseconds() / 1000 / 1000)
 }
