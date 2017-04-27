@@ -36,6 +36,7 @@ myServer := grpc.NewServer(
         grpc_prometheus.StreamServerInterceptor,
         grpc_zap.StreamServerInterceptor(zapLogger),
         grpc_auth.StreamServerInterceptor(myAuthFunction),
+        grpc_recovery.StreamServerInterceptor(),
     )),
     grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
         grpc_ctxtags.UnaryServerInterceptor(),
@@ -43,6 +44,7 @@ myServer := grpc.NewServer(
         grpc_prometheus.UnaryServerInterceptor,
         grpc_zap.UnaryServerInterceptor(zapLogger),
         grpc_auth.UnaryServerInterceptor(myAuthFunction),
+        grpc_recovery.UnaryServerInterceptor(),
     )),
 )
 ```
@@ -69,7 +71,8 @@ myServer := grpc.NewServer(
    * [`grpc_retry`](retry/) - a generic gRPC response code retry mechanism, client-side middleware
 
 #### Server
-   * [`grpc_validator`](validator/) - codegen inbound message validation from `.proto` options 
+   * [`grpc_validator`](validator/) - codegen inbound message validation from `.proto` options
+   * [`grpc_recovery`](recovery/) - turn panics into gRPC errors
 
 
 ## Status
