@@ -126,3 +126,60 @@ func (s *zapClientSuite) TestPingError_WithCustomLevels() {
 		assert.Contains(s.T(), m, fmt.Sprintf(`"level": "%s"`, tcase.level.String()), tcase.msg)
 	}
 }
+
+func TestZapClientOverrideSuite(t *testing.T) {
+	if strings.HasPrefix(runtime.Version(), "go1.7") {
+		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
+		return
+	}
+	opts := []grpc_zap.Option{
+		grpc_zap.WithDurationField(grpc_zap.DurationToDurationField),
+	}
+	b := newBaseZapSuite(t)
+	b.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
+		grpc.WithUnaryInterceptor(grpc_zap.UnaryClientInterceptor(b.log, opts...)),
+		grpc.WithStreamInterceptor(grpc_zap.StreamClientInterceptor(b.log, opts...)),
+	}
+	suite.Run(t, &zapClientOverrideSuite{b})
+}
+
+type zapClientOverrideSuite struct {
+	*zapBaseSuite
+}
+
+func (s *zapClientOverrideSuite) TestPing_HasOverrides() {
+	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	assert.NoError(s.T(), err, "there must be not be an on a successful call")
+	msgs := s.getOutputJSONs()
+	require.Len(s.T(), msgs, 1, "one log statement should be logged")
+	m := msgs[0]
+	assert.Contains(s.T(), m, `"grpc.service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
+	assert.Contains(s.T(), m, `"grpc.method": "Ping"`, "all lines must contain method name")
+	assert.Contains(s.T(), m, `"span.kind": "client"`, "all lines must contain the kind of call (client)")
+	assert.Contains(s.T(), m, `"msg": "finished client unary call"`, "interceptor message must contain string")
+	assert.Contains(s.T(), m, `"level": "debug"`, "OK error codes must be logged on debug level.")
+	assert.NotContains(s.T(), m, "grpc.time_ms", "interceptor message must not contain default duration")
+	assert.Contains(s.T(), m, "grpc.duration", "interceptor message must contain overridden duration")
+}
+
+func (s *zapClientOverrideSuite) TestPingList_HasOverrides() {
+	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
+	require.NoError(s.T(), err, "should not fail on establishing the stream")
+	for {
+		_, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		require.NoError(s.T(), err, "reading stream should not fail")
+	}
+	msgs := s.getOutputJSONs()
+	require.Len(s.T(), msgs, 1, "one log statement should be logged")
+	m := msgs[0]
+	assert.Contains(s.T(), m, `"grpc.service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
+	assert.Contains(s.T(), m, `"grpc.method": "PingList"`, "all lines must contain method name")
+	assert.Contains(s.T(), m, `"span.kind": "client"`, "all lines must contain the kind of call (client)")
+	assert.Contains(s.T(), m, `"msg": "finished client streaming call"`, "interceptor message must contain string")
+	assert.Contains(s.T(), m, `"level": "debug"`, "OK error codes must be logged on debug level.")
+	assert.NotContains(s.T(), m, "grpc.time_ms", "interceptor message must not contain default duration")
+	assert.Contains(s.T(), m, "grpc.duration", "interceptor message must contain overridden duration")
+}

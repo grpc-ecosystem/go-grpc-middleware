@@ -39,9 +39,10 @@ func StreamClientInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamCli
 func logFinalClientLine(o *options, entry *logrus.Entry, startTime time.Time, err error, msg string) {
 	code := o.codeFunc(err)
 	level := o.levelFunc(code)
+	durField, durVal := o.durationFunc(time.Now().Sub(startTime))
 	fields := logrus.Fields{
-		"grpc.code":    code.String(),
-		"grpc.time_ms": timeDiffToMilliseconds(startTime),
+		"grpc.code": code.String(),
+		durField:    durVal,
 	}
 	if err != nil {
 		fields[logrus.ErrorKey] = err

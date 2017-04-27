@@ -4,6 +4,8 @@
 package grpc_zap
 
 import (
+	"time"
+
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -12,14 +14,16 @@ import (
 
 var (
 	defaultOptions = &options{
-		levelFunc: DefaultCodeToLevel,
-		codeFunc:  grpc_logging.DefaultErrorToCode,
+		levelFunc:    DefaultCodeToLevel,
+		codeFunc:     grpc_logging.DefaultErrorToCode,
+		durationFunc: DefaultDurationToField,
 	}
 )
 
 type options struct {
-	levelFunc CodeToLevel
-	codeFunc  grpc_logging.ErrorToCode
+	levelFunc    CodeToLevel
+	codeFunc     grpc_logging.ErrorToCode
+	durationFunc DurationToField
 }
 
 func evaluateServerOpt(opts []Option) *options {
@@ -47,6 +51,9 @@ type Option func(*options)
 // CodeToLevel function defines the mapping between gRPC return codes and interceptor log level.
 type CodeToLevel func(code codes.Code) zapcore.Level
 
+// DurationToField function defines how to produce duration fields for logging
+type DurationToField func(duration time.Duration) zapcore.Field
+
 // WithLevels customizes the function for mapping gRPC return codes and interceptor log level statements.
 func WithLevels(f CodeToLevel) Option {
 	return func(o *options) {
@@ -58,6 +65,13 @@ func WithLevels(f CodeToLevel) Option {
 func WithCodes(f grpc_logging.ErrorToCode) Option {
 	return func(o *options) {
 		o.codeFunc = f
+	}
+}
+
+// WithDurationField customizes the function for mapping request durations to Zap fields.
+func WithDurationField(f DurationToField) Option {
+	return func(o *options) {
+		o.durationFunc = f
 	}
 }
 
@@ -143,4 +157,22 @@ func DefaultClientCodeToLevel(code codes.Code) zapcore.Level {
 	default:
 		return zap.InfoLevel
 	}
+}
+
+// DefaultDurationToField is the default implementation of converting request duration to a Zap field.
+var DefaultDurationToField = DurationToTimeMillisField
+
+// DurationToTimeMillisField converts the duration to milliseconds and uses the key `grpc.time_ms`.
+func DurationToTimeMillisField(duration time.Duration) zapcore.Field {
+	return zap.Float32("grpc.time_ms", durationToMilliseconds(duration))
+}
+
+// DurationToDurationField uses a Duration field to log the request duration
+// and leaves it up to Zap's encoder settings to determine how that is output.
+func DurationToDurationField(duration time.Duration) zapcore.Field {
+	return zap.Duration("grpc.duration", duration)
+}
+
+func durationToMilliseconds(duration time.Duration) float32 {
+	return float32(duration.Nanoseconds() / 1000 / 1000)
 }

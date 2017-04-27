@@ -48,7 +48,7 @@ func logFinalClientLine(o *options, logger *zap.Logger, startTime time.Time, err
 	logger.Check(level, msg).Write(
 		zap.Error(err),
 		zap.String("grpc.code", code.String()),
-		zap.Float32("grpc.time_ms", timeDiffToMilliseconds(startTime)),
+		o.durationFunc(time.Now().Sub(startTime)),
 	)
 }
 

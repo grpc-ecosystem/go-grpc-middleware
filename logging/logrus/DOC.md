@@ -31,6 +31,12 @@ var (
 ```
 
 ```go
+var DefaultDurationToField = DurationToTimeMillisField
+```
+DefaultDurationToField is the default implementation of converting request
+duration to a log field (key and value).
+
+```go
 var (
 	// JsonPBMarshaller is the marshaller used for serializing protobuf messages.
 	JsonPbMarshaller = &jsonpb.Marshaler{}
@@ -52,6 +58,21 @@ func DefaultCodeToLevel(code codes.Code) logrus.Level
 ```
 DefaultCodeToLevel is the default implementation of gRPC return codes to log
 levels for server side.
+
+#### func  DurationToDurationField
+
+```go
+func DurationToDurationField(duration time.Duration) (key string, value interface{})
+```
+DurationToDurationField uses the duration value to log the request duration.
+
+#### func  DurationToTimeMillisField
+
+```go
+func DurationToTimeMillisField(duration time.Duration) (key string, value interface{})
+```
+DurationToTimeMillisField converts the duration to milliseconds and uses the key
+`grpc.time_ms`.
 
 #### func  Extract
 
@@ -151,6 +172,14 @@ type CodeToLevel func(code codes.Code) logrus.Level
 CodeToLevel function defines the mapping between gRPC return codes and
 interceptor log level.
 
+#### type DurationToField
+
+```go
+type DurationToField func(duration time.Duration) (key string, value interface{})
+```
+
+DurationToField function defines how to produce duration fields for logging
+
 #### type Option
 
 ```go
@@ -164,6 +193,14 @@ type Option func(*options)
 func WithCodes(f grpc_logging.ErrorToCode) Option
 ```
 WithCodes customizes the function for mapping errors to error codes.
+
+#### func  WithDurationField
+
+```go
+func WithDurationField(f DurationToField) Option
+```
+WithDurationField customizes the function for mapping request durations to log
+fields.
 
 #### func  WithLevels
 

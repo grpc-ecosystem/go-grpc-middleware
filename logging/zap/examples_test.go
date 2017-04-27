@@ -7,11 +7,13 @@ import (
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 )
 
@@ -34,6 +36,28 @@ func Example_initialization(zapLogger *zap.Logger, customFunc grpc_zap.CodeToLev
 			grpc_zap.StreamServerInterceptor(zapLogger, opts...),
 		),
 	)
+	return server
+}
+
+// Initialization shows an initialization sequence with the duration field generation overridden.
+func Example_initializationWithDurationFieldOverride(zapLogger *zap.Logger) *grpc.Server {
+	opts := []grpc_zap.Option{
+		grpc_zap.WithDurationField(func(duration time.Duration) zapcore.Field {
+			return zap.Int64("grpc.time_ns", duration.Nanoseconds())
+		}),
+	}
+
+	server := grpc.NewServer(
+		grpc_middleware.WithUnaryServerChain(
+			grpc_ctxtags.UnaryServerInterceptor(),
+			grpc_zap.UnaryServerInterceptor(zapLogger, opts...),
+		),
+		grpc_middleware.WithStreamServerChain(
+			grpc_ctxtags.StreamServerInterceptor(),
+			grpc_zap.StreamServerInterceptor(zapLogger, opts...),
+		),
+	)
+
 	return server
 }
 
