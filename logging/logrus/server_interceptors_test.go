@@ -95,7 +95,7 @@ func (s *logrusServerSuite) TestPingError_WithCustomLevels() {
 		{
 			code:  codes.Unauthenticated,
 			level: logrus.ErrorLevel,
-			msg:   "Unauthenticated is overwritten to ErrorLevel with customClientCodeToLevel override, which probably didn't work",
+			msg:   "Unauthenticated is overwritten to ErrorLevel with customCodeToLevel override, which probably didn't work",
 		},
 	} {
 		s.buffer.Reset()

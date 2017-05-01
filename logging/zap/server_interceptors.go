@@ -16,11 +16,14 @@ import (
 var (
 	// SystemField is used in every log statement made through grpc_zap. Can be overwritten before any initialization code.
 	SystemField = zap.String("system", "grpc")
+
+	// ServerField is used in every server-side log statment made through grpc_zap.Can be overwritten before initialization.
+	ServerField = zap.String("span.kind", "server")
 )
 
 // UnaryServerInterceptor returns a new unary server interceptors that adds zap.Logger to the context.
 func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServerInterceptor {
-	o := evaluateOptions(opts)
+	o := evaluateServerOpt(opts)
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		newCtx := newLoggerForCall(ctx, logger, info.FullMethod)
 		startTime := time.Now()
@@ -40,7 +43,7 @@ func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServer
 
 // StreamServerInterceptor returns a new streaming server interceptor that adds zap.Logger to the context.
 func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServerInterceptor {
-	o := evaluateOptions(opts)
+	o := evaluateServerOpt(opts)
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		newCtx := newLoggerForCall(stream.Context(), logger, info.FullMethod)
 		wrapped := grpc_middleware.WrapServerStream(stream)
@@ -66,6 +69,7 @@ func newLoggerForCall(ctx context.Context, logger *zap.Logger, fullMethodString 
 	method := path.Base(fullMethodString)
 	callLog := logger.With(
 		SystemField,
+		ServerField,
 		zap.String("grpc.service", service),
 		zap.String("grpc.method", method))
 	return toContext(ctx, callLog)

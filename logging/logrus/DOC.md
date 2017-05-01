@@ -36,7 +36,7 @@ var (
 func DefaultClientCodeToLevel(code codes.Code) logrus.Level
 ```
 DefaultClientCodeToLevel is the default implementation of gRPC return codes to
-log levels for server side.
+log levels for client side.
 
 #### func  DefaultCodeToLevel
 
