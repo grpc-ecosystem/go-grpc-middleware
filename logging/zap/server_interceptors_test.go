@@ -4,8 +4,6 @@
 package grpc_zap_test
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"runtime"
@@ -15,25 +13,15 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
-
-var (
-	goodPing = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
-)
-
-type loggingPingService struct {
-	pb_testproto.TestServiceServer
-}
 
 func customCodeToLevel(c codes.Code) zapcore.Level {
 	if c == codes.Unauthenticated {
@@ -44,104 +32,31 @@ func customCodeToLevel(c codes.Code) zapcore.Level {
 	return level
 }
 
-func (s *loggingPingService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
-	grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
-	grpc_zap.Extract(ctx).Info("some ping")
-	return s.TestServiceServer.Ping(ctx, ping)
-}
-
-func (s *loggingPingService) PingError(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.Empty, error) {
-	return s.TestServiceServer.PingError(ctx, ping)
-}
-
-func (s *loggingPingService) PingList(ping *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
-	grpc_ctxtags.Extract(stream.Context()).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
-	grpc_zap.Extract(stream.Context()).Info("some pinglist")
-	return s.TestServiceServer.PingList(ping, stream)
-}
-
-func (s *loggingPingService) PingEmpty(ctx context.Context, empty *pb_testproto.Empty) (*pb_testproto.PingResponse, error) {
-	return s.TestServiceServer.PingEmpty(ctx, empty)
-}
-
-type bufferWriteSyncer struct {
-	*bytes.Buffer
-}
-
-func (*bufferWriteSyncer) Sync() error {
-	return nil // no op
-}
-
 func TestZapLoggingSuite(t *testing.T) {
 	if strings.HasPrefix(runtime.Version(), "go1.7") {
 		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
 		return
 	}
-	b := &bufferWriteSyncer{&bytes.Buffer{}}
-	zap.NewDevelopmentConfig()
-	jsonEncoder := zapcore.NewJSONEncoder(zapcore.EncoderConfig{
-		TimeKey:        "ts",
-		LevelKey:       "level",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		MessageKey:     "msg",
-		StacktraceKey:  "stacktrace",
-		EncodeLevel:    zapcore.LowercaseLevelEncoder,
-		EncodeTime:     zapcore.EpochTimeEncoder,
-		EncodeDuration: zapcore.SecondsDurationEncoder,
-	})
-	core := zapcore.NewCore(jsonEncoder, b, zap.LevelEnablerFunc(func(zapcore.Level) bool { return true }))
-	log := zap.New(core)
 	opts := []grpc_zap.Option{
 		grpc_zap.WithLevels(customCodeToLevel),
 	}
-	s := &ZapLoggingSuite{
-		log:    log,
-		buffer: b.Buffer,
-		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
-			TestService: &loggingPingService{&grpc_testing.TestPingService{T: t}},
-			ServerOpts: []grpc.ServerOption{
-				grpc_middleware.WithStreamServerChain(
-					grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-					grpc_zap.StreamServerInterceptor(log, opts...)),
-				grpc_middleware.WithUnaryServerChain(
-					grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-					grpc_zap.UnaryServerInterceptor(log, opts...)),
-			},
-		},
+	b := newBaseZapSuite(t)
+	b.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
+		grpc_middleware.WithStreamServerChain(
+			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.StreamServerInterceptor(b.log, opts...)),
+		grpc_middleware.WithUnaryServerChain(
+			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.UnaryServerInterceptor(b.log, opts...)),
 	}
-	suite.Run(t, s)
+	suite.Run(t, &zapServerSuite{b})
 }
 
-type ZapLoggingSuite struct {
-	*grpc_testing.InterceptorTestSuite
-	buffer *bytes.Buffer
-	log    *zap.Logger
+type zapServerSuite struct {
+	*zapBaseSuite
 }
 
-func (s *ZapLoggingSuite) SetupTest() {
-	s.buffer.Reset()
-}
-
-func (s *ZapLoggingSuite) getOutputJSONs() []string {
-	ret := []string{}
-	dec := json.NewDecoder(s.buffer)
-	for {
-		var val map[string]json.RawMessage
-		err := dec.Decode(&val)
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			s.T().Fatalf("failed decoding output from ZAP JSON: %v", err)
-		}
-		out, _ := json.MarshalIndent(val, "", "  ")
-		ret = append(ret, string(out))
-	}
-	return ret
-}
-
-func (s *ZapLoggingSuite) TestPing_WithCustomTags() {
+func (s *zapServerSuite) TestPing_WithCustomTags() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
 	msgs := s.getOutputJSONs()
@@ -161,7 +76,7 @@ func (s *ZapLoggingSuite) TestPing_WithCustomTags() {
 	assert.Contains(s.T(), msgs[1], `grpc.time_ms":`, "interceptor log statement should contain execution time")
 }
 
-func (s *ZapLoggingSuite) TestPingError_WithCustomLevels() {
+func (s *zapServerSuite) TestPingError_WithCustomLevels() {
 	for _, tcase := range []struct {
 		code  codes.Code
 		level zapcore.Level
@@ -203,7 +118,7 @@ func (s *ZapLoggingSuite) TestPingError_WithCustomLevels() {
 	}
 }
 
-func (s *ZapLoggingSuite) TestPingList_WithCustomTags() {
+func (s *zapServerSuite) TestPingList_WithCustomTags() {
 	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	for {

@@ -10,9 +10,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 
-	"bytes"
-
-	"encoding/json"
 	"io"
 
 	"fmt"
@@ -23,110 +20,37 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
 
-var (
-	goodPing = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
-)
-
-type loggingPingService struct {
-	pb_testproto.TestServiceServer
-}
-
-func customCodeToLevel(c codes.Code) logrus.Level {
-	if c == codes.Unauthenticated {
-		// Make this a special case for tests, and an error.
-		return logrus.ErrorLevel
-	}
-	level := grpc_logrus.DefaultCodeToLevel(c)
-	return level
-}
-
-func (s *loggingPingService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
-	grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
-	grpc_logrus.Extract(ctx).Info("some ping")
-	return s.TestServiceServer.Ping(ctx, ping)
-}
-
-func (s *loggingPingService) PingError(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.Empty, error) {
-	return s.TestServiceServer.PingError(ctx, ping)
-}
-
-func (s *loggingPingService) PingList(ping *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
-	grpc_ctxtags.Extract(stream.Context()).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
-	grpc_logrus.Extract(stream.Context()).Info("some pinglist")
-	return s.TestServiceServer.PingList(ping, stream)
-}
-
-func (s *loggingPingService) PingEmpty(ctx context.Context, empty *pb_testproto.Empty) (*pb_testproto.PingResponse, error) {
-	return s.TestServiceServer.PingEmpty(ctx, empty)
-}
-
-func TestLogrusLoggingSuite(t *testing.T) {
+func TestLogrusServerSuite(t *testing.T) {
 	if strings.HasPrefix(runtime.Version(), "go1.7") {
 		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
 		return
 	}
-	b := &bytes.Buffer{}
-	log := logrus.New()
-	log.Out = b
-	log.Formatter = &logrus.JSONFormatter{DisableTimestamp: true}
 	opts := []grpc_logrus.Option{
 		grpc_logrus.WithLevels(customCodeToLevel),
 	}
-	s := &LogrusLoggingSuite{
-		log:    logrus.NewEntry(log),
-		buffer: b,
-		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
-			TestService: &loggingPingService{&grpc_testing.TestPingService{T: t}},
-			ServerOpts: []grpc.ServerOption{
-				grpc_middleware.WithStreamServerChain(
-					grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-					grpc_logrus.StreamServerInterceptor(logrus.NewEntry(log), opts...)),
-				grpc_middleware.WithUnaryServerChain(
-					grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-					grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(log), opts...)),
-			},
-		},
+	b := newLogrusBaseSuite(t)
+	b.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
+		grpc_middleware.WithStreamServerChain(
+			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_logrus.StreamServerInterceptor(logrus.NewEntry(b.logger), opts...)),
+		grpc_middleware.WithUnaryServerChain(
+			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(b.logger), opts...)),
 	}
-	suite.Run(t, s)
+	suite.Run(t, &logrusServerSuite{b})
 }
 
-type LogrusLoggingSuite struct {
-	*grpc_testing.InterceptorTestSuite
-	buffer *bytes.Buffer
-	log    *logrus.Entry
+type logrusServerSuite struct {
+	*logrusBaseSuite
 }
 
-func (s *LogrusLoggingSuite) SetupTest() {
-	s.buffer.Reset()
-}
-
-func (s *LogrusLoggingSuite) getOutputJSONs() []string {
-	ret := []string{}
-	dec := json.NewDecoder(s.buffer)
-	for {
-		var val map[string]json.RawMessage
-		err := dec.Decode(&val)
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			s.T().Fatalf("failed decoding output from Logrus JSON: %v", err)
-		}
-		out, _ := json.MarshalIndent(val, "", "  ")
-		ret = append(ret, string(out))
-	}
-	return ret
-}
-
-func (s *LogrusLoggingSuite) TestPing_WithCustomTags() {
+func (s *logrusServerSuite) TestPing_WithCustomTags() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
 	msgs := s.getOutputJSONs()
@@ -146,7 +70,7 @@ func (s *LogrusLoggingSuite) TestPing_WithCustomTags() {
 	assert.Contains(s.T(), msgs[1], `"grpc.time_ms":`, "interceptor log statement should contain execution time")
 }
 
-func (s *LogrusLoggingSuite) TestPingError_WithCustomLevels() {
+func (s *logrusServerSuite) TestPingError_WithCustomLevels() {
 	for _, tcase := range []struct {
 		code  codes.Code
 		level logrus.Level
@@ -188,7 +112,7 @@ func (s *LogrusLoggingSuite) TestPingError_WithCustomLevels() {
 	}
 }
 
-func (s *LogrusLoggingSuite) TestPingList_WithCustomTags() {
+func (s *logrusServerSuite) TestPingList_WithCustomTags() {
 	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	for {
