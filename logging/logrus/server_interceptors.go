@@ -16,11 +16,14 @@ import (
 var (
 	// SystemField is used in every log statement made through grpc_logrus. Can be overwritten before any initialization code.
 	SystemField = "system"
+
+	// KindField describes the log gield used to incicate whether this is a server or a client log statment.
+	KindField = "span.kind"
 )
 
 // UnaryServerInterceptor returns a new unary server interceptors that adds logrus.Entry to the context.
 func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServerInterceptor {
-	o := evaluateOptions(opts)
+	o := evaluateServerOpt(opts)
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		newCtx := newLoggerForCall(ctx, entry, info.FullMethod)
 
@@ -45,7 +48,7 @@ func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServe
 
 // StreamServerInterceptor returns a new streaming server interceptor that adds logrus.Entry to the context.
 func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamServerInterceptor {
-	o := evaluateOptions(opts)
+	o := evaluateServerOpt(opts)
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		newCtx := newLoggerForCall(stream.Context(), entry, info.FullMethod)
 		wrapped := grpc_middleware.WrapServerStream(stream)
@@ -93,6 +96,7 @@ func newLoggerForCall(ctx context.Context, entry *logrus.Entry, fullMethodString
 	callLog := entry.WithFields(
 		logrus.Fields{
 			SystemField:    "grpc",
+			KindField:      "server",
 			"grpc.service": service,
 			"grpc.method":  method,
 		})
