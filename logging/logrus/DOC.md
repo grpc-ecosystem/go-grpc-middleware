@@ -30,6 +30,13 @@ var (
 )
 ```
 
+```go
+var (
+	// JsonPBMarshaller is the marshaller used for serializing protobuf messages.
+	JsonPbMarshaller = &jsonpb.Marshaler{}
+)
+```
+
 #### func  DefaultClientCodeToLevel
 
 ```go
@@ -55,6 +62,44 @@ Extract takes the call-scoped logrus.Entry from grpc_logrus middleware.
 
 If the grpc_logrus middleware wasn't used, a no-op `logrus.Entry` is returned.
 This makes it safe to use regardless.
+
+#### func  PayloadStreamClientInterceptor
+
+```go
+func PayloadStreamClientInterceptor(entry *logrus.Entry, decider grpc_logging.ClientPayloadLoggingDecider) grpc.StreamClientInterceptor
+```
+PayloadStreamServerInterceptor returns a new streaming client interceptor that
+logs the paylods of requests and responses.
+
+#### func  PayloadStreamServerInterceptor
+
+```go
+func PayloadStreamServerInterceptor(entry *logrus.Entry, decider grpc_logging.ServerPayloadLoggingDecider) grpc.StreamServerInterceptor
+```
+PayloadUnaryServerInterceptor returns a new server server interceptors that logs
+the payloads of requests.
+
+This *only* works when placed *after* the `grpc_logrus.StreamServerInterceptor`.
+However, the logging can be done to a separate instance of the logger.
+
+#### func  PayloadUnaryClientInterceptor
+
+```go
+func PayloadUnaryClientInterceptor(entry *logrus.Entry, decider grpc_logging.ClientPayloadLoggingDecider) grpc.UnaryClientInterceptor
+```
+PayloadUnaryClientInterceptor returns a new unary client interceptor that logs
+the paylods of requests and responses.
+
+#### func  PayloadUnaryServerInterceptor
+
+```go
+func PayloadUnaryServerInterceptor(entry *logrus.Entry, decider grpc_logging.ServerPayloadLoggingDecider) grpc.UnaryServerInterceptor
+```
+PayloadUnaryServerInterceptor returns a new unary server interceptors that logs
+the payloads of requests.
+
+This *only* works when placed *after* the `grpc_logrus.UnaryServerInterceptor`.
+However, the logging can be done to a separate instance of the logger.
 
 #### func  ReplaceGrpcLogger
 
@@ -94,7 +139,7 @@ logs the execution of external gRPC calls.
 ```go
 func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServerInterceptor
 ```
-UnaryServerInterceptor returns a new unary server interceptors that adds
+PayloadUnaryServerInterceptor returns a new unary server interceptors that adds
 logrus.Entry to the context.
 
 #### type CodeToLevel

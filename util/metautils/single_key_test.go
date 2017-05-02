@@ -9,8 +9,6 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-
-
 func TestSingleFailsReading(t *testing.T) {
 	key := "someKey"
 	for _, tcase := range []struct {
