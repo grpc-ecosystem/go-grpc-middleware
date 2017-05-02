@@ -1,17 +1,17 @@
 // Copyright 2017 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-package grpc_logrus
+package grpc_zap
 
 import (
 	"bytes"
-
 	"fmt"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -25,13 +25,13 @@ var (
 //
 // This *only* works when placed *after* the `grpc_logrus.UnaryServerInterceptor`. However, the logging can be done to a
 // separate instance of the logger.
-func PayloadUnaryServerInterceptor(entry *logrus.Entry, decider grpc_logging.ServerPayloadLoggingDecider) grpc.UnaryServerInterceptor {
+func PayloadUnaryServerInterceptor(logger *zap.Logger, decider grpc_logging.ServerPayloadLoggingDecider) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		if !decider(ctx, info.FullMethod, info.Server) {
 			return handler(ctx, req)
 		}
 		// Use the provided logrus.Entry for logging but use the fields from context.
-		logEntry := entry.WithFields(Extract(ctx).Data)
+		logEntry := logger.With(append(serverCallFields(ctx, info.FullMethod), tagsFieldsToZapFields(ctx)...)...)
 		logProtoMessageAsJson(logEntry, req, "grpc.request.content", "server request payload logged as grpc.request.content field")
 		resp, err := handler(ctx, req)
 		if err == nil {
@@ -45,25 +45,24 @@ func PayloadUnaryServerInterceptor(entry *logrus.Entry, decider grpc_logging.Ser
 //
 // This *only* works when placed *after* the `grpc_logrus.StreamServerInterceptor`. However, the logging can be done to a
 // separate instance of the logger.
-func PayloadStreamServerInterceptor(entry *logrus.Entry, decider grpc_logging.ServerPayloadLoggingDecider) grpc.StreamServerInterceptor {
+func PayloadStreamServerInterceptor(logger *zap.Logger, decider grpc_logging.ServerPayloadLoggingDecider) grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		if !decider(stream.Context(), info.FullMethod, srv) {
 			return handler(srv, stream)
 		}
-		// Use the provided logrus.Entry for logging but use the fields from context.
-		logEntry := entry.WithFields(Extract(stream.Context()).Data)
-		newStream := &loggingServerStream{ServerStream: stream, entry: logEntry}
+		logEntry := logger.With(append(serverCallFields(stream.Context(), info.FullMethod), tagsFieldsToZapFields(stream.Context())...)...)
+		newStream := &loggingServerStream{ServerStream: stream, logger: logEntry}
 		return handler(srv, newStream)
 	}
 }
 
 // PayloadUnaryClientInterceptor returns a new unary client interceptor that logs the paylods of requests and responses.
-func PayloadUnaryClientInterceptor(entry *logrus.Entry, decider grpc_logging.ClientPayloadLoggingDecider) grpc.UnaryClientInterceptor {
+func PayloadUnaryClientInterceptor(logger *zap.Logger, decider grpc_logging.ClientPayloadLoggingDecider) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		if !decider(ctx, method) {
 			return invoker(ctx, method, req, reply, cc, opts...)
 		}
-		logEntry := entry.WithFields(newClientLoggerFields(ctx, method))
+		logEntry := logger.With(newClientLoggerFields(ctx, method)...)
 		logProtoMessageAsJson(logEntry, req, "grpc.request.content", "client request payload logged as grpc.request.content")
 		err := invoker(ctx, method, req, reply, cc, opts...)
 		if err == nil {
@@ -74,27 +73,27 @@ func PayloadUnaryClientInterceptor(entry *logrus.Entry, decider grpc_logging.Cli
 }
 
 // PayloadStreamServerInterceptor returns a new streaming client interceptor that logs the paylods of requests and responses.
-func PayloadStreamClientInterceptor(entry *logrus.Entry, decider grpc_logging.ClientPayloadLoggingDecider) grpc.StreamClientInterceptor {
+func PayloadStreamClientInterceptor(logger *zap.Logger, decider grpc_logging.ClientPayloadLoggingDecider) grpc.StreamClientInterceptor {
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		if !decider(ctx, method) {
 			return streamer(ctx, desc, cc, method, opts...)
 		}
-		logEntry := entry.WithFields(newClientLoggerFields(ctx, method))
+		logEntry := logger.With(newClientLoggerFields(ctx, method)...)
 		clientStream, err := streamer(ctx, desc, cc, method, opts...)
-		newStream := &loggingClientStream{ClientStream: clientStream, entry: logEntry}
+		newStream := &loggingClientStream{ClientStream: clientStream, logger: logEntry}
 		return newStream, err
 	}
 }
 
 type loggingClientStream struct {
 	grpc.ClientStream
-	entry *logrus.Entry
+	logger *zap.Logger
 }
 
 func (l *loggingClientStream) SendMsg(m interface{}) error {
 	err := l.ClientStream.SendMsg(m)
 	if err == nil {
-		logProtoMessageAsJson(l.entry, m, "grpc.request.content", "server request payload logged as grpc.request.content field")
+		logProtoMessageAsJson(l.logger, m, "grpc.request.content", "server request payload logged as grpc.request.content field")
 	}
 	return err
 }
@@ -102,20 +101,20 @@ func (l *loggingClientStream) SendMsg(m interface{}) error {
 func (l *loggingClientStream) RecvMsg(m interface{}) error {
 	err := l.ClientStream.RecvMsg(m)
 	if err == nil {
-		logProtoMessageAsJson(l.entry, m, "grpc.response.content", "server response payload logged as grpc.response.content field")
+		logProtoMessageAsJson(l.logger, m, "grpc.response.content", "server response payload logged as grpc.response.content field")
 	}
 	return err
 }
 
 type loggingServerStream struct {
 	grpc.ServerStream
-	entry *logrus.Entry
+	logger *zap.Logger
 }
 
 func (l *loggingServerStream) SendMsg(m interface{}) error {
 	err := l.ServerStream.SendMsg(m)
 	if err == nil {
-		logProtoMessageAsJson(l.entry, m, "grpc.response.content", "server response payload logged as grpc.response.content field")
+		logProtoMessageAsJson(l.logger, m, "grpc.response.content", "server response payload logged as grpc.response.content field")
 	}
 	return err
 }
@@ -123,14 +122,14 @@ func (l *loggingServerStream) SendMsg(m interface{}) error {
 func (l *loggingServerStream) RecvMsg(m interface{}) error {
 	err := l.ServerStream.RecvMsg(m)
 	if err == nil {
-		logProtoMessageAsJson(l.entry, m, "grpc.request.content", "server request payload logged as grpc.request.content field")
+		logProtoMessageAsJson(l.logger, m, "grpc.request.content", "server request payload logged as grpc.request.content field")
 	}
 	return err
 }
 
-func logProtoMessageAsJson(entry *logrus.Entry, pbMsg interface{}, key string, msg string) {
+func logProtoMessageAsJson(logger *zap.Logger, pbMsg interface{}, key string, msg string) {
 	if p, ok := pbMsg.(proto.Message); ok {
-		entry.WithField(key, &jsonpbMarshalleble{p}).Info(msg)
+		logger.Check(zapcore.InfoLevel, msg).Write(zap.Object(key, &jsonpbMarshalleble{Message: p}))
 	}
 }
 
@@ -138,9 +137,14 @@ type jsonpbMarshalleble struct {
 	proto.Message
 }
 
+func (j *jsonpbMarshalleble) MarshalLogObject(e zapcore.ObjectEncoder) error {
+	// ZAP jsonEncoder deals with AddReflect by using json.MarshalObject. The same thing applies for consoleEncoder.
+	return e.AddReflected("msg", j.Message)
+}
+
 func (j *jsonpbMarshalleble) MarshalJSON() ([]byte, error) {
 	b := &bytes.Buffer{}
-	if err := JsonPbMarshaller.Marshal(b, j.Message); err != nil {
+	if err := JsonPbMarshaller.Marshal(b, j); err != nil {
 		return nil, fmt.Errorf("jsonpb serializer failed: %v", err)
 	}
 	return b.Bytes(), nil

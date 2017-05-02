@@ -1,13 +1,12 @@
 // Copyright 2017 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-package grpc_logrus_test
+package grpc_zap_test
 
 import (
 	"runtime"
 	"testing"
 
-	"io/ioutil"
 	"strings"
 
 	"github.com/stretchr/testify/suite"
@@ -15,55 +14,51 @@ import (
 
 	"io"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-var (
-	nullLogger = &logrus.Logger{
-		Out:       ioutil.Discard,
-		Formatter: new(logrus.TextFormatter),
-		Hooks:     make(logrus.LevelHooks),
-		Level:     logrus.PanicLevel,
-	}
-)
-
-func TestLogrusPayloadSuite(t *testing.T) {
+func TestZapPayloadSuite(t *testing.T) {
 	if strings.HasPrefix(runtime.Version(), "go1.7") {
 		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
 		return
 	}
+
 	alwaysLoggingDeciderServer := func(ctx context.Context, fullMethodName string, servingObject interface{}) bool { return true }
 	alwaysLoggingDeciderClient := func(ctx context.Context, fullMethodName string) bool { return true }
-	b := newLogrusBaseSuite(t)
+
+	b := newBaseZapSuite(t)
 	b.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
-		grpc.WithUnaryInterceptor(grpc_logrus.PayloadUnaryClientInterceptor(logrus.NewEntry(b.logger), alwaysLoggingDeciderClient)),
-		grpc.WithStreamInterceptor(grpc_logrus.PayloadStreamClientInterceptor(logrus.NewEntry(b.logger), alwaysLoggingDeciderClient)),
+		grpc.WithUnaryInterceptor(grpc_zap.PayloadUnaryClientInterceptor(b.log, alwaysLoggingDeciderClient)),
+		grpc.WithStreamInterceptor(grpc_zap.PayloadStreamClientInterceptor(b.log, alwaysLoggingDeciderClient)),
 	}
+	noOpZap := zap.New(zapcore.NewNopCore())
 	b.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
 		grpc_middleware.WithStreamServerChain(
 			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_logrus.StreamServerInterceptor(logrus.NewEntry(nullLogger)),
-			grpc_logrus.PayloadStreamServerInterceptor(logrus.NewEntry(b.logger), alwaysLoggingDeciderServer)),
+			grpc_zap.StreamServerInterceptor(noOpZap),
+			grpc_zap.PayloadStreamServerInterceptor(b.log, alwaysLoggingDeciderServer)),
 		grpc_middleware.WithUnaryServerChain(
 			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(nullLogger)),
-			grpc_logrus.PayloadUnaryServerInterceptor(logrus.NewEntry(b.logger), alwaysLoggingDeciderServer)),
+			grpc_zap.UnaryServerInterceptor(noOpZap),
+			grpc_zap.PayloadUnaryServerInterceptor(b.log, alwaysLoggingDeciderServer)),
 	}
-	suite.Run(t, &logrusPayloadSuite{b})
+	suite.Run(t, &zapPayloadSuite{b})
 }
 
-type logrusPayloadSuite struct {
-	*logrusBaseSuite
+type zapPayloadSuite struct {
+	*zapBaseSuite
 }
 
-func (s *logrusPayloadSuite) getServerAndClientMessages(expectedServer int, expectedClient int) (serverMsgs []string, clientMsgs []string) {
+func (s *zapPayloadSuite) getServerAndClientMessages(expectedServer int, expectedClient int) (serverMsgs []string, clientMsgs []string) {
 	msgs := s.getOutputJSONs()
 	for _, m := range msgs {
 		if strings.Contains(m, `"span.kind": "server"`) {
@@ -77,7 +72,7 @@ func (s *logrusPayloadSuite) getServerAndClientMessages(expectedServer int, expe
 	return serverMsgs, clientMsgs
 }
 
-func (s *logrusPayloadSuite) TestPing_LogsBothRequestAndResponse() {
+func (s *zapPayloadSuite) TestPing_LogsBothRequestAndResponse() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
 	serverMsgs, clientMsgs := s.getServerAndClientMessages(2, 2)
@@ -88,13 +83,14 @@ func (s *logrusPayloadSuite) TestPing_LogsBothRequestAndResponse() {
 	}
 	serverReq, serverResp := serverMsgs[0], serverMsgs[1]
 	clientReq, clientResp := clientMsgs[0], clientMsgs[1]
+	s.T().Log(clientReq)
 	assert.Contains(s.T(), clientReq, `"grpc.request.content": {`, "request payload must be logged in a structured way")
 	assert.Contains(s.T(), serverReq, `"grpc.request.content": {`, "request payload must be logged in a structured way")
 	assert.Contains(s.T(), clientResp, `"grpc.response.content": {`, "response payload must be logged in a structured way")
 	assert.Contains(s.T(), serverResp, `"grpc.response.content": {`, "response payload must be logged in a structured way")
 }
 
-func (s *logrusPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
+func (s *zapPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
 	_, err := s.Client.PingError(s.SimpleCtx(), &pb_testproto.PingRequest{Value: "something", ErrorCodeReturned: uint32(4)})
 	require.Error(s.T(), err, "there must be not be an on a successful call")
 	serverMsgs, clientMsgs := s.getServerAndClientMessages(1, 1)
@@ -107,7 +103,7 @@ func (s *logrusPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
 	assert.Contains(s.T(), serverMsgs[0], `"grpc.request.content": {`, "request payload must be logged in a structured way")
 }
 
-func (s *logrusPayloadSuite) TestPingStream_LogsAllRequestsAndResponses() {
+func (s *zapPayloadSuite) TestPingStream_LogsAllRequestsAndResponses() {
 	messagesExpected := 20
 	stream, err := s.Client.PingStream(s.SimpleCtx())
 	require.NoError(s.T(), err, "no error on stream creation")

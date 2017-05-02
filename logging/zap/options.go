@@ -22,29 +22,24 @@ type options struct {
 	codeFunc  grpc_logging.ErrorToCode
 }
 
-func evaluateOptions(opts []Option) *options {
+func evaluateServerOpt(opts []Option) *options {
 	optCopy := &options{}
 	*optCopy = *defaultOptions
+	optCopy.levelFunc = DefaultCodeToLevel
 	for _, o := range opts {
 		o(optCopy)
 	}
 	return optCopy
 }
 
-func evaluateServerOpt(opts []Option) *options {
-	o := evaluateOptions(opts)
-	if o.codeFunc == nil {
-		o.levelFunc = DefaultCodeToLevel
-	}
-	return o
-}
-
 func evaluateClientOpt(opts []Option) *options {
-	o := evaluateOptions(opts)
-	if o.codeFunc == nil {
-		o.levelFunc = DefaultCodeToLevel
+	optCopy := &options{}
+	*optCopy = *defaultOptions
+	optCopy.levelFunc = DefaultClientCodeToLevel
+	for _, o := range opts {
+		o(optCopy)
 	}
-	return o
+	return optCopy
 }
 
 type Option func(*options)

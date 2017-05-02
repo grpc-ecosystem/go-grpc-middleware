@@ -9,6 +9,7 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -64,14 +65,19 @@ func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServ
 	}
 }
 
-func newLoggerForCall(ctx context.Context, logger *zap.Logger, fullMethodString string) context.Context {
+func serverCallFields(ctx context.Context, fullMethodString string) []zapcore.Field {
 	service := path.Dir(fullMethodString)[1:]
 	method := path.Base(fullMethodString)
-	callLog := logger.With(
+	return []zapcore.Field{
 		SystemField,
 		ServerField,
 		zap.String("grpc.service", service),
-		zap.String("grpc.method", method))
+		zap.String("grpc.method", method),
+	}
+}
+
+func newLoggerForCall(ctx context.Context, logger *zap.Logger, fullMethodString string) context.Context {
+	callLog := logger.With(serverCallFields(ctx, fullMethodString)...)
 	return toContext(ctx, callLog)
 }
 

@@ -26,7 +26,6 @@ func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServe
 	o := evaluateServerOpt(opts)
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		newCtx := newLoggerForCall(ctx, entry, info.FullMethod)
-
 		startTime := time.Now()
 		resp, err := handler(newCtx, req)
 		code := o.codeFunc(err)

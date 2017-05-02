@@ -5,11 +5,13 @@ package metautils_test
 
 import (
 	"testing"
-	"google.golang.org/grpc/metadata"
+
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/metadata"
 )
+
 var (
 	testPairs = []string{"singlekey", "uno", "multikey", "one", "multikey", "two", "multikey", "three"}
 	parentCtx = context.WithValue(context.TODO(), "parentKey", "parentValue")
@@ -47,7 +49,6 @@ func TestNiceMD_Set(t *testing.T) {
 	assert.EqualValues(t, []string{"one"}, nmd["multikey"], "set should override existing multi keys")
 	assert.EqualValues(t, []string{"another"}, nmd["newkey"], "set should override new keys")
 }
-
 
 func TestNiceMD_Clone(t *testing.T) {
 	nmd := metautils.NiceMD(metadata.Pairs(testPairs...))
