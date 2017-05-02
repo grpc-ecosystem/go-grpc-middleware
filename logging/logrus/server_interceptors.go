@@ -21,7 +21,7 @@ var (
 	KindField = "span.kind"
 )
 
-// UnaryServerInterceptor returns a new unary server interceptors that adds logrus.Entry to the context.
+// PayloadUnaryServerInterceptor returns a new unary server interceptors that adds logrus.Entry to the context.
 func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServerInterceptor {
 	o := evaluateServerOpt(opts)
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {

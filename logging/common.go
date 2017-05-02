@@ -6,6 +6,7 @@ package grpc_logging
 import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"golang.org/x/net/context"
 )
 
 // ErrorToCode function determines the error code of an error
@@ -15,3 +16,12 @@ type ErrorToCode func(err error) codes.Code
 func DefaultErrorToCode(err error) codes.Code {
 	return grpc.Code(err)
 }
+
+
+// ServerPayloadLoggingDecider is a user-provided function for deciding whether to log the server-side
+// request/response payloads
+type ServerPayloadLoggingDecider func(ctx context.Context, fullMethodName string, servingObject interface{}) bool
+
+// ClientPayloadLoggingDecider is a user-provided function for deciding whether to log the client-side
+// request/response payloads
+type ClientPayloadLoggingDecider func(ctx context.Context, fullMethodName string) bool
