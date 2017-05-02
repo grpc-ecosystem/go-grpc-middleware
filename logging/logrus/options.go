@@ -11,7 +11,7 @@ import (
 
 var (
 	defaultOptions = &options{
-		levelFunc: DefaultCodeToLevel,
+		levelFunc: nil,
 		codeFunc:  grpc_logging.DefaultErrorToCode,
 	}
 )
@@ -28,6 +28,22 @@ func evaluateOptions(opts []Option) *options {
 		o(optCopy)
 	}
 	return optCopy
+}
+
+func evaluateServerOpt(opts []Option) *options {
+	o := evaluateOptions(opts)
+	if o.codeFunc == nil {
+		o.levelFunc = DefaultCodeToLevel
+	}
+	return o
+}
+
+func evaluateClientOpt(opts []Option) *options {
+	o := evaluateOptions(opts)
+	if o.codeFunc == nil {
+		o.levelFunc = DefaultCodeToLevel
+	}
+	return o
 }
 
 type Option func(*options)
@@ -49,7 +65,7 @@ func WithCodes(f grpc_logging.ErrorToCode) Option {
 	}
 }
 
-// DefaultCodeToLevel is the default implementation of gRPC return codes and interceptor log level.
+// DefaultCodeToLevel is the default implementation of gRPC return codes to log levels for server side.
 func DefaultCodeToLevel(code codes.Code) logrus.Level {
 	switch code {
 	case codes.OK:
@@ -88,5 +104,47 @@ func DefaultCodeToLevel(code codes.Code) logrus.Level {
 		return logrus.ErrorLevel
 	default:
 		return logrus.ErrorLevel
+	}
+}
+
+// DefaultClientCodeToLevel is the default implementation of gRPC return codes to log levels for client side.
+func DefaultClientCodeToLevel(code codes.Code) logrus.Level {
+	switch code {
+	case codes.OK:
+		return logrus.DebugLevel
+	case codes.Canceled:
+		return logrus.DebugLevel
+	case codes.Unknown:
+		return logrus.InfoLevel
+	case codes.InvalidArgument:
+		return logrus.DebugLevel
+	case codes.DeadlineExceeded:
+		return logrus.InfoLevel
+	case codes.NotFound:
+		return logrus.DebugLevel
+	case codes.AlreadyExists:
+		return logrus.DebugLevel
+	case codes.PermissionDenied:
+		return logrus.InfoLevel
+	case codes.Unauthenticated:
+		return logrus.InfoLevel // unauthenticated requests can happen
+	case codes.ResourceExhausted:
+		return logrus.DebugLevel
+	case codes.FailedPrecondition:
+		return logrus.DebugLevel
+	case codes.Aborted:
+		return logrus.DebugLevel
+	case codes.OutOfRange:
+		return logrus.DebugLevel
+	case codes.Unimplemented:
+		return logrus.WarnLevel
+	case codes.Internal:
+		return logrus.WarnLevel
+	case codes.Unavailable:
+		return logrus.WarnLevel
+	case codes.DataLoss:
+		return logrus.WarnLevel
+	default:
+		return logrus.InfoLevel
 	}
 }

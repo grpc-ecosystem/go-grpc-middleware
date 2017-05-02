@@ -24,16 +24,27 @@ Please see examples and tests for examples of use.
 var (
 	// SystemField is used in every log statement made through grpc_logrus. Can be overwritten before any initialization code.
 	SystemField = "system"
+
+	// KindField describes the log gield used to incicate whether this is a server or a client log statment.
+	KindField = "span.kind"
 )
 ```
+
+#### func  DefaultClientCodeToLevel
+
+```go
+func DefaultClientCodeToLevel(code codes.Code) logrus.Level
+```
+DefaultClientCodeToLevel is the default implementation of gRPC return codes to
+log levels for client side.
 
 #### func  DefaultCodeToLevel
 
 ```go
 func DefaultCodeToLevel(code codes.Code) logrus.Level
 ```
-DefaultCodeToLevel is the default implementation of gRPC return codes and
-interceptor log level.
+DefaultCodeToLevel is the default implementation of gRPC return codes to log
+levels for server side.
 
 #### func  Extract
 
@@ -54,6 +65,14 @@ ReplaceGrpcLogger sets the given logrus.Logger as a gRPC-level logger. This
 should be called *before* any other initialization, preferably from init()
 functions.
 
+#### func  StreamClientInterceptor
+
+```go
+func StreamClientInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamClientInterceptor
+```
+StreamServerInterceptor returns a new streaming client interceptor that
+optionally logs the execution of external gRPC calls.
+
 #### func  StreamServerInterceptor
 
 ```go
@@ -61,6 +80,14 @@ func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamSer
 ```
 StreamServerInterceptor returns a new streaming server interceptor that adds
 logrus.Entry to the context.
+
+#### func  UnaryClientInterceptor
+
+```go
+func UnaryClientInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryClientInterceptor
+```
+UnaryClientInterceptor returns a new unary client interceptor that optionally
+logs the execution of external gRPC calls.
 
 #### func  UnaryServerInterceptor
 

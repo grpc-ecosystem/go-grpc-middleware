@@ -24,8 +24,26 @@ Please see examples and tests for examples of use.
 var (
 	// SystemField is used in every log statement made through grpc_zap. Can be overwritten before any initialization code.
 	SystemField = zap.String("system", "grpc")
+
+	// ServerField is used in every server-side log statment made through grpc_zap.Can be overwritten before initialization.
+	ServerField = zap.String("span.kind", "server")
 )
 ```
+
+```go
+var (
+	// ClientField is used in every client-side log statement made through grpc_zap. Can be overwritten before initialization.
+	ClientField = zap.String("span.kind", "client")
+)
+```
+
+#### func  DefaultClientCodeToLevel
+
+```go
+func DefaultClientCodeToLevel(code codes.Code) zapcore.Level
+```
+DefaultClientCodeToLevel is the default implementation of gRPC return codes to
+log levels for client side.
 
 #### func  DefaultCodeToLevel
 
@@ -33,7 +51,7 @@ var (
 func DefaultCodeToLevel(code codes.Code) zapcore.Level
 ```
 DefaultCodeToLevel is the default implementation of gRPC return codes and
-interceptor log level.
+interceptor log level for server side.
 
 #### func  Extract
 
@@ -52,6 +70,14 @@ func ReplaceGrpcLogger(logger *zap.Logger)
 ReplaceGrpcLogger sets the given zap.Logger as a gRPC-level logger. This should
 be called *before* any other initialization, preferably from init() functions.
 
+#### func  StreamClientInterceptor
+
+```go
+func StreamClientInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamClientInterceptor
+```
+StreamServerInterceptor returns a new streaming client interceptor that
+optionally logs the execution of external gRPC calls.
+
 #### func  StreamServerInterceptor
 
 ```go
@@ -59,6 +85,14 @@ func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServ
 ```
 StreamServerInterceptor returns a new streaming server interceptor that adds
 zap.Logger to the context.
+
+#### func  UnaryClientInterceptor
+
+```go
+func UnaryClientInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryClientInterceptor
+```
+UnaryClientInterceptor returns a new unary client interceptor that optionally
+logs the execution of external gRPC calls.
 
 #### func  UnaryServerInterceptor
 
