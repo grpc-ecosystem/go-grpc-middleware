@@ -4,6 +4,8 @@
 package grpc_logrus
 
 import (
+	"time"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging"
 	"google.golang.org/grpc/codes"
@@ -11,14 +13,16 @@ import (
 
 var (
 	defaultOptions = &options{
-		levelFunc: nil,
-		codeFunc:  grpc_logging.DefaultErrorToCode,
+		levelFunc:    nil,
+		codeFunc:     grpc_logging.DefaultErrorToCode,
+		durationFunc: DefaultDurationToField,
 	}
 )
 
 type options struct {
-	levelFunc CodeToLevel
-	codeFunc  grpc_logging.ErrorToCode
+	levelFunc    CodeToLevel
+	codeFunc     grpc_logging.ErrorToCode
+	durationFunc DurationToField
 }
 
 func evaluateServerOpt(opts []Option) *options {
@@ -46,6 +50,9 @@ type Option func(*options)
 // CodeToLevel function defines the mapping between gRPC return codes and interceptor log level.
 type CodeToLevel func(code codes.Code) logrus.Level
 
+// DurationToField function defines how to produce duration fields for logging
+type DurationToField func(duration time.Duration) (key string, value interface{})
+
 // WithLevels customizes the function for mapping gRPC return codes and interceptor log level statements.
 func WithLevels(f CodeToLevel) Option {
 	return func(o *options) {
@@ -57,6 +64,13 @@ func WithLevels(f CodeToLevel) Option {
 func WithCodes(f grpc_logging.ErrorToCode) Option {
 	return func(o *options) {
 		o.codeFunc = f
+	}
+}
+
+// WithDurationField customizes the function for mapping request durations to log fields.
+func WithDurationField(f DurationToField) Option {
+	return func(o *options) {
+		o.durationFunc = f
 	}
 }
 
@@ -142,4 +156,21 @@ func DefaultClientCodeToLevel(code codes.Code) logrus.Level {
 	default:
 		return logrus.InfoLevel
 	}
+}
+
+// DefaultDurationToField is the default implementation of converting request duration to a log field (key and value).
+var DefaultDurationToField = DurationToTimeMillisField
+
+// DurationToTimeMillisField converts the duration to milliseconds and uses the key `grpc.time_ms`.
+func DurationToTimeMillisField(duration time.Duration) (key string, value interface{}) {
+	return "grpc.time_ms", durationToMilliseconds(duration)
+}
+
+// DurationToDurationField uses the duration value to log the request duration.
+func DurationToDurationField(duration time.Duration) (key string, value interface{}) {
+	return "grpc.duration", duration
+}
+
+func durationToMilliseconds(duration time.Duration) float32 {
+	return float32(duration.Nanoseconds() / 1000 / 1000)
 }

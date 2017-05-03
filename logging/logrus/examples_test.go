@@ -4,6 +4,8 @@
 package grpc_logrus_test
 
 import (
+	"time"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 
@@ -32,6 +34,28 @@ func Example_initialization(logrusLogger *logrus.Logger, customFunc grpc_logrus.
 		),
 		grpc_middleware.WithStreamServerChain(
 			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_logrus.StreamServerInterceptor(logrusEntry, opts...),
+		),
+	)
+	return server
+}
+
+func Example_initializationWithDurationFieldOverride(logrusLogger *logrus.Logger) *grpc.Server {
+	// Logrus entry is used, allowing pre-definition of certain fields by the user.
+	logrusEntry := logrus.NewEntry(logrusLogger)
+	// Shared options for the logger, with a custom duration to log field function.
+	opts := []grpc_logrus.Option{
+		grpc_logrus.WithDurationField(func(duration time.Duration) (key string, value interface{}) {
+			return "grpc.time_ns", duration.Nanoseconds()
+		}),
+	}
+	server := grpc.NewServer(
+		grpc_middleware.WithUnaryServerChain(
+			grpc_ctxtags.UnaryServerInterceptor(),
+			grpc_logrus.UnaryServerInterceptor(logrusEntry, opts...),
+		),
+		grpc_middleware.WithStreamServerChain(
+			grpc_ctxtags.StreamServerInterceptor(),
 			grpc_logrus.StreamServerInterceptor(logrusEntry, opts...),
 		),
 	)
