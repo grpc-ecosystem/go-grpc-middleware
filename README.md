@@ -24,7 +24,7 @@ These are generic building blocks that make it easy to build multiple microservi
 The purpose of this repository is to act as a go-to point for such reusable functionality. It contains
 some of them itself, but also will link to useful external repos.
 
-`grpc_middleware` itself provides support for chaining interceptors. Se [Documentation](DOC.md), but here's an example:
+`grpc_middleware` itself provides support for chaining interceptors. See [Documentation](DOC.md), but here's an example:
 
 ```go
 import "github.com/grpc-ecosystem/go-grpc-middleware"
