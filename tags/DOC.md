@@ -8,6 +8,24 @@
 
 ## <a name="pkg-overview">Overview</a>
 
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+opts := []grpc_ctxtags.Option{
+	    grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.TagBasedRequestFieldExtractor("log_fields")),
+	}
+	server := grpc.NewServer(
+	    grpc.StreamInterceptor(grpc_ctxtags.StreamServerInterceptor(opts...)),
+	    grpc.UnaryInterceptor(grpc_ctxtags.UnaryServerInterceptor(opts...)),
+	)
+	return server
+```
+
+</details>
+
 ## <a name="pkg-imports">Imported Packages</a>
 
 - [github.com/grpc-ecosystem/go-grpc-middleware](./..)

@@ -17,7 +17,7 @@ function generate_markdown {
         package=${realdir##${GOPATH}/src/}
         echo "$package"
         cd ${dir}
-        ${GOBIN}/godoc2ghmd -file DOC.md ${package}
+        ${GOBIN}/godoc2ghmd -ex -file DOC.md ${package}
         ln -s DOC.md README.md 2> /dev/null # can fail
         cd ${oldpwd}
     done;

@@ -16,6 +16,31 @@ Handling can be customised by providing an alternate recovery function.
 
 Please see examples for simple examples of use.
 
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+// Shared options for the logger, with a custom gRPC code to log level function.
+	opts := []grpc_recovery.Option{
+	    grpc_recovery.WithRecoveryHandler(customFunc),
+	}
+	// Create a server. Recovery handlers should typically be last in the chain so that other middleware
+	// (e.g. logging) can operate on the recovered state instead of being directly affected by any panic
+	server := grpc.NewServer(
+	    grpc_middleware.WithUnaryServerChain(
+	        grpc_recovery.UnaryServerInterceptor(opts...),
+	    ),
+	    grpc_middleware.WithStreamServerChain(
+	        grpc_recovery.StreamServerInterceptor(opts...),
+	    ),
+	)
+	return server
+```
+
+</details>
+
 ## <a name="pkg-imports">Imported Packages</a>
 
 - [golang.org/x/net/context](https://godoc.org/golang.org/x/net/context)
