@@ -1,77 +1,95 @@
 # grpc_opentracing
---
-    import "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
+`import "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"`
 
+* [Overview](#pkg-overview)
+* [Imported Packages](#pkg-imports)
+* [Index](#pkg-index)
 
-## Usage
+## <a name="pkg-overview">Overview</a>
 
-```go
+## <a name="pkg-imports">Imported Packages</a>
+
+- [github.com/grpc-ecosystem/go-grpc-middleware](./../..)
+- [github.com/grpc-ecosystem/go-grpc-middleware/tags](./../../tags)
+- [github.com/grpc-ecosystem/go-grpc-middleware/util/metautils](./../../util/metautils)
+- [github.com/opentracing/opentracing-go](https://godoc.org/github.com/opentracing/opentracing-go)
+- [github.com/opentracing/opentracing-go/ext](https://godoc.org/github.com/opentracing/opentracing-go/ext)
+- [github.com/opentracing/opentracing-go/log](https://godoc.org/github.com/opentracing/opentracing-go/log)
+- [golang.org/x/net/context](https://godoc.org/golang.org/x/net/context)
+- [google.golang.org/grpc](https://godoc.org/google.golang.org/grpc)
+- [google.golang.org/grpc/grpclog](https://godoc.org/google.golang.org/grpc/grpclog)
+- [google.golang.org/grpc/metadata](https://godoc.org/google.golang.org/grpc/metadata)
+
+## <a name="pkg-index">Index</a>
+* [Constants](#pkg-constants)
+* [func StreamClientInterceptor(opts ...Option) grpc.StreamClientInterceptor](#StreamClientInterceptor)
+* [func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor](#StreamServerInterceptor)
+* [func UnaryClientInterceptor(opts ...Option) grpc.UnaryClientInterceptor](#UnaryClientInterceptor)
+* [func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor](#UnaryServerInterceptor)
+* [type FilterFunc](#FilterFunc)
+* [type Option](#Option)
+  * [func WithFilterFunc(f FilterFunc) Option](#WithFilterFunc)
+  * [func WithTracer(tracer opentracing.Tracer) Option](#WithTracer)
+
+#### <a name="pkg-files">Package files</a>
+[client_interceptors.go](./client_interceptors.go) [doc.go](./doc.go) [id_extract.go](./id_extract.go) [metadata.go](./metadata.go) [options.go](./options.go) [server_interceptors.go](./server_interceptors.go) 
+
+## <a name="pkg-constants">Constants</a>
+``` go
 const (
-	TagTraceId = "trace.traceid"
-	TagSpanId  = "trace.spanid"
+    TagTraceId = "trace.traceid"
+    TagSpanId  = "trace.spanid"
 )
 ```
 
-#### func  StreamClientInterceptor
-
-```go
+## <a name="StreamClientInterceptor">func</a> [StreamClientInterceptor](./client_interceptors.go#L35)
+``` go
 func StreamClientInterceptor(opts ...Option) grpc.StreamClientInterceptor
 ```
-StreamClientInterceptor returns a new streaming server interceptor for
-OpenTracing.
+StreamClientInterceptor returns a new streaming server interceptor for OpenTracing.
 
-#### func  StreamServerInterceptor
-
-```go
+## <a name="StreamServerInterceptor">func</a> [StreamServerInterceptor](./server_interceptors.go#L37)
+``` go
 func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor
 ```
-StreamServerInterceptor returns a new streaming server interceptor for
-OpenTracing.
+StreamServerInterceptor returns a new streaming server interceptor for OpenTracing.
 
-#### func  UnaryClientInterceptor
-
-```go
+## <a name="UnaryClientInterceptor">func</a> [UnaryClientInterceptor](./client_interceptors.go#L21)
+``` go
 func UnaryClientInterceptor(opts ...Option) grpc.UnaryClientInterceptor
 ```
 UnaryClientInterceptor returns a new unary server interceptor for OpenTracing.
 
-#### func  UnaryServerInterceptor
-
-```go
+## <a name="UnaryServerInterceptor">func</a> [UnaryServerInterceptor](./server_interceptors.go#L23)
+``` go
 func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor
 ```
 UnaryServerInterceptor returns a new unary server interceptor for OpenTracing.
 
-#### type FilterFunc
-
-```go
+## <a name="FilterFunc">type</a> [FilterFunc](./options.go#L22)
+``` go
 type FilterFunc func(ctx context.Context, fullMethodName string) bool
 ```
-
-FilterFunc allows users to provide a function that filters out certain methods
-from being traced.
+FilterFunc allows users to provide a function that filters out certain methods from being traced.
 
 If it returns false, the given request will not be traced.
 
-#### type Option
-
-```go
+## <a name="Option">type</a> [Option](./options.go#L41)
+``` go
 type Option func(*options)
 ```
 
-
-#### func  WithFilterFunc
-
-```go
+### <a name="WithFilterFunc">func</a> [WithFilterFunc](./options.go#L44)
+``` go
 func WithFilterFunc(f FilterFunc) Option
 ```
-WithFilterFunc customizes the function used for deciding whether a given call is
-traced or not.
+WithFilterFunc customizes the function used for deciding whether a given call is traced or not.
 
-#### func  WithTracer
-
-```go
+### <a name="WithTracer">func</a> [WithTracer](./options.go#L51)
+``` go
 func WithTracer(tracer opentracing.Tracer) Option
 ```
-WithTracer sets a custom tracer to be used for this middleware, otherwise the
-opentracing.GlobalTracer is used.
+WithTracer sets a custom tracer to be used for this middleware, otherwise the opentracing.GlobalTracer is used.
+
+- - -
+Generated by [godoc2ghmd](https://github.com/GandalfUK/godoc2ghmd)

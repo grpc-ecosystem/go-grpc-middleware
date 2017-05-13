@@ -1,122 +1,135 @@
 # metautils
---
-    import "github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+`import "github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"`
 
+* [Overview](#pkg-overview)
+* [Imported Packages](#pkg-imports)
+* [Index](#pkg-index)
 
-## Usage
+## <a name="pkg-overview">Overview</a>
 
-#### func  GetSingle
+## <a name="pkg-imports">Imported Packages</a>
 
-```go
+- [golang.org/x/net/context](https://godoc.org/golang.org/x/net/context)
+- [google.golang.org/grpc/metadata](https://godoc.org/google.golang.org/grpc/metadata)
+
+## <a name="pkg-index">Index</a>
+* [func GetSingle(ctx context.Context, keyName string) (string, bool)](#GetSingle)
+* [func SetSingle(ctx context.Context, keyName string, keyValue string) context.Context](#SetSingle)
+* [type NiceMD](#NiceMD)
+  * [func ExtractIncoming(ctx context.Context) NiceMD](#ExtractIncoming)
+  * [func ExtractOutgoing(ctx context.Context) NiceMD](#ExtractOutgoing)
+  * [func (m NiceMD) Add(key string, value string) NiceMD](#NiceMD.Add)
+  * [func (m NiceMD) Clone(copiedKeys ...string) NiceMD](#NiceMD.Clone)
+  * [func (m NiceMD) Del(key string) NiceMD](#NiceMD.Del)
+  * [func (m NiceMD) Get(key string) string](#NiceMD.Get)
+  * [func (m NiceMD) Set(key string, value string) NiceMD](#NiceMD.Set)
+  * [func (m NiceMD) ToIncoming(ctx context.Context) context.Context](#NiceMD.ToIncoming)
+  * [func (m NiceMD) ToOutgoing(ctx context.Context) context.Context](#NiceMD.ToOutgoing)
+
+#### <a name="pkg-files">Package files</a>
+[doc.go](./doc.go) [nicemd.go](./nicemd.go) [single_key.go](./single_key.go) 
+
+## <a name="GetSingle">func</a> [GetSingle](./single_key.go#L23)
+``` go
 func GetSingle(ctx context.Context, keyName string) (string, bool)
 ```
-GetSingle extracts a single-value metadata key from Context. First return is the
-value of the key, followed by a bool indicator. The bool indicator being false
-means the string should be discarded. It can be false if the context has no
-metadata at all, the key in metadata doesn't exist or there are multiple values.
+GetSingle extracts a single-value metadata key from Context.
+First return is the value of the key, followed by a bool indicator.
+The bool indicator being false means the string should be discarded. It can be false if
+the context has no metadata at all, the key in metadata doesn't exist or there are multiple values.
 Deprecated, use NiceMD.Get.
 
-#### func  SetSingle
-
-```go
+## <a name="SetSingle">func</a> [SetSingle](./single_key.go#L44)
+``` go
 func SetSingle(ctx context.Context, keyName string, keyValue string) context.Context
 ```
-SetSingle sets or overrides a metadata key to be single value in the Context. It
-returns a new context.Context object that contains a *copy* of the metadata
-inside the given context. Deprecated, use NiceMD.Set.
+SetSingle sets or overrides a metadata key to be single value in the Context.
+It returns a new context.Context object that contains a *copy* of the metadata inside the given
+context.
+Deprecated, use NiceMD.Set.
 
-#### type NiceMD
-
-```go
+## <a name="NiceMD">type</a> [NiceMD](./nicemd.go#L14)
+``` go
 type NiceMD metadata.MD
 ```
-
 NiceMD is a convenience wrapper definiting extra functions on the metadata.
 
-#### func  ExtractIncoming
-
-```go
+### <a name="ExtractIncoming">func</a> [ExtractIncoming](./nicemd.go#L20)
+``` go
 func ExtractIncoming(ctx context.Context) NiceMD
 ```
 ExtractIncoming extracts an inbound metadata from the server-side context.
 
-This function always returns a NiceMD wrapper of the metadata.MD, in case the
-context doesn't have metadata it returns a new empty NiceMD.
+This function always returns a NiceMD wrapper of the metadata.MD, in case the context doesn't have metadata it returns
+a new empty NiceMD.
 
-#### func  ExtractOutgoing
-
-```go
+### <a name="ExtractOutgoing">func</a> [ExtractOutgoing](./nicemd.go#L32)
+``` go
 func ExtractOutgoing(ctx context.Context) NiceMD
 ```
 ExtractOutgoing extracts an outbound metadata from the client-side context.
 
-This function always returns a NiceMD wrapper of the metadata.MD, in case the
-context doesn't have metadata it returns a new empty NiceMD.
+This function always returns a NiceMD wrapper of the metadata.MD, in case the context doesn't have metadata it returns
+a new empty NiceMD.
 
-#### func (NiceMD) Add
-
-```go
+### <a name="NiceMD.Add">func</a> (NiceMD) [Add](./nicemd.go#L122)
+``` go
 func (m NiceMD) Add(key string, value string) NiceMD
 ```
 Add retrieves a single value from the metadata.
 
-It works analogously to http.Header.Add, as it appends to any existing values
-associated with key.
+It works analogously to http.Header.Add, as it appends to any existing values associated with key.
 
 The function is binary-key safe.
 
-#### func (NiceMD) Clone
-
-```go
+### <a name="NiceMD.Clone">func</a> (NiceMD) [Clone](./nicemd.go#L44)
+``` go
 func (m NiceMD) Clone(copiedKeys ...string) NiceMD
 ```
 Clone performs a *deep* copy of the metadata.MD.
 
-You can specify the lower-case copiedKeys to only copy certain whitelisted keys.
-If no keys are explicitly whitelisted all keys get copied.
+You can specify the lower-case copiedKeys to only copy certain whitelisted keys. If no keys are explicitly whitelisted
+all keys get copied.
 
-#### func (NiceMD) Del
-
-```go
+### <a name="NiceMD.Del">func</a> (NiceMD) [Del](./nicemd.go#L100)
+``` go
 func (m NiceMD) Del(key string) NiceMD
 ```
 
-#### func (NiceMD) Get
-
-```go
+### <a name="NiceMD.Get">func</a> (NiceMD) [Get](./nicemd.go#L85)
+``` go
 func (m NiceMD) Get(key string) string
 ```
 Get retrieves a single value from the metadata.
 
-It works analogously to http.Header.Get, returning the first value if there are
-many set. If the value is not set, an empty string is returned.
+It works analogously to http.Header.Get, returning the first value if there are many set. If the value is not set,
+an empty string is returned.
 
 The function is binary-key safe.
 
-#### func (NiceMD) Set
-
-```go
+### <a name="NiceMD.Set">func</a> (NiceMD) [Set](./nicemd.go#L111)
+``` go
 func (m NiceMD) Set(key string, value string) NiceMD
 ```
 Set sets the given value in a metadata.
 
-It works analogously to http.Header.Set, overwriting all previous metadata
-values.
+It works analogously to http.Header.Set, overwriting all previous metadata values.
 
 The function is binary-key safe.
 
-#### func (NiceMD) ToIncoming
-
-```go
+### <a name="NiceMD.ToIncoming">func</a> (NiceMD) [ToIncoming](./nicemd.go#L75)
+``` go
 func (m NiceMD) ToIncoming(ctx context.Context) context.Context
 ```
 ToIncoming sets the given NiceMD as a server-side context for dispatching.
 
 This is mostly useful in ServerInterceptors..
 
-#### func (NiceMD) ToOutgoing
-
-```go
+### <a name="NiceMD.ToOutgoing">func</a> (NiceMD) [ToOutgoing](./nicemd.go#L68)
+``` go
 func (m NiceMD) ToOutgoing(ctx context.Context) context.Context
 ```
 ToOutgoing sets the given NiceMD as a client-side context for dispatching.
+
+- - -
+Generated by [godoc2ghmd](https://github.com/GandalfUK/godoc2ghmd)
