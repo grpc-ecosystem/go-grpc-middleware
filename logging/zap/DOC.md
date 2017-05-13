@@ -15,9 +15,88 @@ be used for logging completed gRPC calls, and be populated into the `context.Con
 You can use `Extract` to log into a request-scoped `zap.Logger` instance in your handler code. The fields set on the
 logger correspond to the grpc_ctxtags.Tags attached to the context.
 
+This package also implements request and response *payload* logging, both for server-side and client-side. These will be
+logged as structured `jsonbp` fields for every message received/sent (both unary and streaming). For that please use
+`Payload*Interceptor` functions for that. Please note that the user-provided function that determines whetether to log
+the full request/response payload needs to be written with care, this can significantly slow down gRPC.
+
 ZAP can also be made as a backend for gRPC library internals. For that use `ReplaceGrpcLogger`.
 
 Please see examples and tests for examples of use.
+
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+x := func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
+	    // Add fields the ctxtags of the request which will be added to all extracted loggers.
+	    grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
+	    // Extract a request-scoped zap.Logger and log a message.
+	    grpc_zap.Extract(ctx).Info("some ping")
+	    return &pb_testproto.PingResponse{Value: ping.Value}, nil
+	}
+	return x
+```
+
+</details>
+
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+// Shared options for the logger, with a custom gRPC code to log level function.
+	opts := []grpc_zap.Option{
+	    grpc_zap.WithLevels(customFunc),
+	}
+	// Make sure that log statements internal to gRPC library are logged using the zapLogger as well.
+	grpc_zap.ReplaceGrpcLogger(zapLogger)
+	// Create a server, make sure we put the grpc_ctxtags context before everything else.
+	server := grpc.NewServer(
+	    grpc_middleware.WithUnaryServerChain(
+	        grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+	        grpc_zap.UnaryServerInterceptor(zapLogger, opts...),
+	    ),
+	    grpc_middleware.WithStreamServerChain(
+	        grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+	        grpc_zap.StreamServerInterceptor(zapLogger, opts...),
+	    ),
+	)
+	return server
+```
+
+</details>
+
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+opts := []grpc_zap.Option{
+	    grpc_zap.WithDurationField(func(duration time.Duration) zapcore.Field {
+	        return zap.Int64("grpc.time_ns", duration.Nanoseconds())
+	    }),
+	}
+	
+	server := grpc.NewServer(
+	    grpc_middleware.WithUnaryServerChain(
+	        grpc_ctxtags.UnaryServerInterceptor(),
+	        grpc_zap.UnaryServerInterceptor(zapLogger, opts...),
+	    ),
+	    grpc_middleware.WithStreamServerChain(
+	        grpc_ctxtags.StreamServerInterceptor(),
+	        grpc_zap.StreamServerInterceptor(zapLogger, opts...),
+	    ),
+	)
+	
+	return server
+```
+
+</details>
 
 ## <a name="pkg-imports">Imported Packages</a>
 

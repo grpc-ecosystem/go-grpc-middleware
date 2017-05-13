@@ -21,6 +21,42 @@ It also allows for per-service implementation overrides of `AuthFunc`. See `Serv
 
 Please see examples for simple examples of use.
 
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+token, err := grpc_auth.AuthFromMD(ctx, "bearer")
+	if err != nil {
+	    return nil, err
+	}
+	tokenInfo, err := parseToken(token)
+	if err != nil {
+	    return nil, grpc.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
+	}
+	grpc_ctxtags.Extract(ctx).Set("auth.sub", userClaimFromToken(tokenInfo))
+	newCtx := context.WithValue(ctx, "tokenInfo", tokenInfo)
+	return newCtx, nil
+```
+
+</details>
+
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+server := grpc.NewServer(
+	    grpc.StreamInterceptor(grpc_auth.StreamServerInterceptor(Example_authfunc)),
+	    grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(Example_authfunc)),
+	)
+	return server
+```
+
+</details>
+
 ## <a name="pkg-imports">Imported Packages</a>
 
 - [github.com/grpc-ecosystem/go-grpc-middleware](./..)
