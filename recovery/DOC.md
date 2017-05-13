@@ -7,7 +7,7 @@
 * [Examples](#pkg-examples)
 
 ## <a name="pkg-overview">Overview</a>
-`grpc_recovery` conversion of panics into gRPC errors
+`grpc_recovery` are intereceptors that recover from gRPC handler panics.
 
 ### Server Side Recovery Middleware
 By default a panic will be converted into a gRPC error with `code.Internal`.
