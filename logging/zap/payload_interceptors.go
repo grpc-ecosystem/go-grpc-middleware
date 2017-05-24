@@ -35,7 +35,7 @@ func PayloadUnaryServerInterceptor(logger *zap.Logger, decider grpc_logging.Serv
 		logProtoMessageAsJson(logEntry, req, "grpc.request.content", "server request payload logged as grpc.request.content field")
 		resp, err := handler(ctx, req)
 		if err == nil {
-			logProtoMessageAsJson(logEntry, req, "grpc.response.content", "server response payload logged as grpc.request.content field")
+			logProtoMessageAsJson(logEntry, resp, "grpc.response.content", "server response payload logged as grpc.request.content field")
 		}
 		return resp, err
 	}

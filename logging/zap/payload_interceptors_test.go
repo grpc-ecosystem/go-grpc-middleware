@@ -4,6 +4,7 @@
 package grpc_zap_test
 
 import (
+	"fmt"
 	"runtime"
 	"testing"
 
@@ -73,7 +74,7 @@ func (s *zapPayloadSuite) getServerAndClientMessages(expectedServer int, expecte
 }
 
 func (s *zapPayloadSuite) TestPing_LogsBothRequestAndResponse() {
-	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	resp, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
 	serverMsgs, clientMsgs := s.getServerAndClientMessages(2, 2)
 	for _, m := range append(serverMsgs, clientMsgs...) {
@@ -85,9 +86,17 @@ func (s *zapPayloadSuite) TestPing_LogsBothRequestAndResponse() {
 	clientReq, clientResp := clientMsgs[0], clientMsgs[1]
 	s.T().Log(clientReq)
 	assert.Contains(s.T(), clientReq, `"grpc.request.content": {`, "request payload must be logged in a structured way")
+	assert.Contains(s.T(), clientReq, fmt.Sprintf(`"value": "%s"`, goodPing.Value))
+	assert.Contains(s.T(), clientReq, fmt.Sprintf(`"sleep_time_ms": %d`, goodPing.SleepTimeMs))
 	assert.Contains(s.T(), serverReq, `"grpc.request.content": {`, "request payload must be logged in a structured way")
+	assert.Contains(s.T(), serverReq, fmt.Sprintf(`"value": "%s"`, goodPing.Value))
+	assert.Contains(s.T(), serverReq, fmt.Sprintf(`"sleep_time_ms": %d`, goodPing.SleepTimeMs))
 	assert.Contains(s.T(), clientResp, `"grpc.response.content": {`, "response payload must be logged in a structured way")
+	assert.Contains(s.T(), clientResp, fmt.Sprintf(`"Value": "%s"`, resp.Value))
+	assert.Contains(s.T(), clientResp, fmt.Sprintf(`"counter": %d`, resp.Counter))
 	assert.Contains(s.T(), serverResp, `"grpc.response.content": {`, "response payload must be logged in a structured way")
+	assert.Contains(s.T(), serverResp, fmt.Sprintf(`"Value": "%s"`, resp.Value))
+	assert.Contains(s.T(), serverResp, fmt.Sprintf(`"counter": %d`, resp.Counter))
 }
 
 func (s *zapPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {

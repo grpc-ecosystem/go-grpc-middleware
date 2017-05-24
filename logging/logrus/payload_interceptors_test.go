@@ -4,6 +4,7 @@
 package grpc_logrus_test
 
 import (
+	"fmt"
 	"runtime"
 	"testing"
 
@@ -78,7 +79,7 @@ func (s *logrusPayloadSuite) getServerAndClientMessages(expectedServer int, expe
 }
 
 func (s *logrusPayloadSuite) TestPing_LogsBothRequestAndResponse() {
-	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	resp, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
 	serverMsgs, clientMsgs := s.getServerAndClientMessages(2, 2)
 	for _, m := range append(serverMsgs, clientMsgs...) {
@@ -89,9 +90,17 @@ func (s *logrusPayloadSuite) TestPing_LogsBothRequestAndResponse() {
 	serverReq, serverResp := serverMsgs[0], serverMsgs[1]
 	clientReq, clientResp := clientMsgs[0], clientMsgs[1]
 	assert.Contains(s.T(), clientReq, `"grpc.request.content": {`, "request payload must be logged in a structured way")
+	assert.Contains(s.T(), clientReq, fmt.Sprintf(`"value": "%s"`, goodPing.Value))
+	assert.Contains(s.T(), clientReq, fmt.Sprintf(`"sleepTimeMs": %d`, goodPing.SleepTimeMs))
 	assert.Contains(s.T(), serverReq, `"grpc.request.content": {`, "request payload must be logged in a structured way")
+	assert.Contains(s.T(), serverReq, fmt.Sprintf(`"value": "%s"`, goodPing.Value))
+	assert.Contains(s.T(), serverReq, fmt.Sprintf(`"sleepTimeMs": %d`, goodPing.SleepTimeMs))
 	assert.Contains(s.T(), clientResp, `"grpc.response.content": {`, "response payload must be logged in a structured way")
+	assert.Contains(s.T(), clientResp, fmt.Sprintf(`"value": "%s"`, resp.Value))
+	assert.Contains(s.T(), clientResp, fmt.Sprintf(`"counter": %d`, resp.Counter))
 	assert.Contains(s.T(), serverResp, `"grpc.response.content": {`, "response payload must be logged in a structured way")
+	assert.Contains(s.T(), serverResp, fmt.Sprintf(`"value": "%s"`, resp.Value))
+	assert.Contains(s.T(), serverResp, fmt.Sprintf(`"counter": %d`, resp.Counter))
 }
 
 func (s *logrusPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
