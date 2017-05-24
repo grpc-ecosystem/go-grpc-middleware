@@ -23,19 +23,19 @@ var (
 
 // PayloadUnaryServerInterceptor returns a new unary server interceptors that logs the payloads of requests.
 //
-// This *only* works when placed *after* the `grpc_logrus.UnaryServerInterceptor`. However, the logging can be done to a
+// This *only* works when placed *after* the `grpc_zap.UnaryServerInterceptor`. However, the logging can be done to a
 // separate instance of the logger.
 func PayloadUnaryServerInterceptor(logger *zap.Logger, decider grpc_logging.ServerPayloadLoggingDecider) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		if !decider(ctx, info.FullMethod, info.Server) {
 			return handler(ctx, req)
 		}
-		// Use the provided logrus.Entry for logging but use the fields from context.
+		// Use the provided zap.Logger for logging but use the fields from context.
 		logEntry := logger.With(append(serverCallFields(ctx, info.FullMethod), tagsFieldsToZapFields(ctx)...)...)
 		logProtoMessageAsJson(logEntry, req, "grpc.request.content", "server request payload logged as grpc.request.content field")
 		resp, err := handler(ctx, req)
 		if err == nil {
-			logProtoMessageAsJson(logEntry, req, "grpc.response.content", "server response payload logged as grpc.request.content field")
+			logProtoMessageAsJson(logEntry, resp, "grpc.response.content", "server response payload logged as grpc.request.content field")
 		}
 		return resp, err
 	}
@@ -43,7 +43,7 @@ func PayloadUnaryServerInterceptor(logger *zap.Logger, decider grpc_logging.Serv
 
 // PayloadUnaryServerInterceptor returns a new server server interceptors that logs the payloads of requests.
 //
-// This *only* works when placed *after* the `grpc_logrus.StreamServerInterceptor`. However, the logging can be done to a
+// This *only* works when placed *after* the `grpc_zap.StreamServerInterceptor`. However, the logging can be done to a
 // separate instance of the logger.
 func PayloadStreamServerInterceptor(logger *zap.Logger, decider grpc_logging.ServerPayloadLoggingDecider) grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
