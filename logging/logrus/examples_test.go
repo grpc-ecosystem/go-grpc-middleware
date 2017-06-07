@@ -6,7 +6,7 @@ package grpc_logrus_test
 import (
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware"
