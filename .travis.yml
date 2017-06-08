@@ -13,7 +13,7 @@ install:
   # for logs/zap
   - go get go.uber.org/zap
   # for logs/logrus
-  - go get github.com/Sirupsen/logrus
+  - go get github.com/sirupsen/logrus
   # for field testing
   - go get github.com/gogo/protobuf/proto
   # for tracing/opentracing
