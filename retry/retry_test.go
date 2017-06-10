@@ -127,6 +127,20 @@ func (s *RetrySuite) TestUnary_FailsOnNonRetriableError() {
 	require.Equal(s.T(), codes.Internal, grpc.Code(err), "failure code must come from retrier")
 }
 
+func (s *RetrySuite) TestCallOptionsDontPanicWithoutInterceptor() {
+	// Fix for https://github.com/grpc-ecosystem/go-grpc-middleware/issues/37
+	// If this code doesn't panic, that's good.
+	s.srv.resetFailingConfiguration(100, codes.DataLoss, noSleep) // doesn't matter all requests should fail
+	nonMiddlewareClient := s.NewClient()
+	_, err := nonMiddlewareClient.Ping(s.SimpleCtx(), goodPing,
+		grpc_retry.WithMax(5),
+		grpc_retry.WithBackoff(grpc_retry.BackoffLinear(1*time.Millisecond)),
+		grpc_retry.WithCodes(codes.DataLoss),
+		grpc_retry.WithPerRetryTimeout(1 * time.Millisecond),
+	)
+	require.Error(s.T(), err)
+}
+
 func (s *RetrySuite) TestServerStream_FailsOnNonRetriableError() {
 	s.srv.resetFailingConfiguration(5, codes.Internal, noSleep)
 	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
