@@ -54,7 +54,7 @@ myServer := grpc.NewServer(
 *Please send a PR to add new interceptors or middleware to this list*
 
 #### Auth
-   * [`grpc_auth`](auth) - a customizable (via `AuthFunc) piece of auth middleware 
+   * [`grpc_auth`](auth) - a customizable (via `AuthFunc`) piece of auth middleware 
 
 #### Logging
    * [`grpc_ctxtags`](tags/) - a library that adds a `Tag` map to context, with data populated from request body
