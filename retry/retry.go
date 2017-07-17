@@ -238,7 +238,7 @@ func waitRetryBackoff(attempt uint, parentCtx context.Context, callOpts *options
 		select {
 		case <-parentCtx.Done():
 			return contextErrToGrpcErr(parentCtx.Err())
-		case <-time.Tick(waitTime):
+		case <-time.NewTimer(waitTime).C:
 		}
 	}
 	return nil
