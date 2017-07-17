@@ -235,10 +235,12 @@ func waitRetryBackoff(attempt uint, parentCtx context.Context, callOpts *options
 	}
 	if waitTime > 0 {
 		logTrace(parentCtx, "grpc_retry attempt: %d, backoff for %v", attempt, waitTime)
+		timer := time.NewTimer(waitTime)
 		select {
 		case <-parentCtx.Done():
+			timer.Stop()
 			return contextErrToGrpcErr(parentCtx.Err())
-		case <-time.NewTimer(waitTime).C:
+		case <-timer.C:
 		}
 	}
 	return nil
