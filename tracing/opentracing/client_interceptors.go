@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-	"github.com/opentracing/opentracing-go"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/net/context"
@@ -99,17 +99,35 @@ func (s *tracedClientStream) finishClientSpan(err error) {
 	}
 }
 
+// ClientSpanTagKey is a context key used by
+// UnaryClientInterceptor/StreamClientInterceptor to extract opentracing span
+// tags, so that it's possible to pass tags to opentracing tracer for display.
+//
+// e.g.
+//
+// 	ctx.Value(ClientSpanTagKey{}, opentracing.Tags{"key": "value"})
+//
+type ClientSpanTagKey struct{}
+
 func newClientSpanFromContext(ctx context.Context, tracer opentracing.Tracer, fullMethodName string) (context.Context, opentracing.Span) {
 	var parentSpanContext opentracing.SpanContext
 	if parent := opentracing.SpanFromContext(ctx); parent != nil {
 		parentSpanContext = parent.Context()
 	}
-	clientSpan := tracer.StartSpan(
-		fullMethodName,
+	opts := []opentracing.StartSpanOption{
 		opentracing.ChildOf(parentSpanContext),
 		ext.SpanKindRPCClient,
 		grpcTag,
-	)
+	}
+	if tagx := ctx.Value(ClientSpanTagKey{}); tagx != nil {
+		switch tag := tagx.(type) {
+		case opentracing.Tag:
+			opts = append(opts, tag)
+		case opentracing.Tags:
+			opts = append(opts, tag)
+		}
+	}
+	clientSpan := tracer.StartSpan(fullMethodName, opts...)
 	// Make sure we add this to the metadata of the call, so it gets propagated:
 	md := metautils.ExtractOutgoing(ctx).Clone()
 	if err := tracer.Inject(clientSpan.Context(), opentracing.HTTPHeaders, metadataTextMap(md)); err != nil {
