@@ -19,7 +19,8 @@ import (
 )
 
 var (
-	goodPing = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
+	goodPing    = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
+	anotherPing = &pb_testproto.PingRequest{Value: "else", SleepTimeMs: 9999}
 )
 
 func tagsToJson(value map[string]interface{}) string {
@@ -57,6 +58,22 @@ func (s *tagPingBack) PingEmpty(ctx context.Context, empty *pb_testproto.Empty) 
 	return s.TestServiceServer.PingEmpty(ctx, empty)
 }
 
+func (s *tagPingBack) PingStream(stream pb_testproto.TestService_PingStreamServer) error {
+	for {
+		_, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		out := &pb_testproto.PingResponse{Value: tagsToJson(grpc_ctxtags.Extract(stream.Context()).Values())}
+		err = stream.Send(out)
+		if err != nil {
+			return err
+		}
+	}
+}
 func TestTaggingSuite(t *testing.T) {
 	opts := []grpc_ctxtags.Option{
 		grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor),
@@ -103,4 +120,61 @@ func (s *TaggingSuite) TestPingList_WithCustomTags() {
 		assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain key address")
 		assert.Len(s.T(), tags, 2, "the tags should contain only two values")
 	}
+}
+
+func TestTaggingOnInitialRequestSuite(t *testing.T) {
+	opts := []grpc_ctxtags.Option{
+		grpc_ctxtags.WithFieldExtractorForInitialReq(grpc_ctxtags.CodeGenRequestFieldExtractor),
+	}
+	// Embeds TaggingSuite as the behaviour should be identical in
+	// the case of unary and server-streamed calls
+	s := &ClientStreamedTaggingSuite{
+		TaggingSuite: &TaggingSuite{
+			InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
+				TestService: &tagPingBack{&grpc_testing.TestPingService{T: t}},
+				ServerOpts: []grpc.ServerOption{
+					grpc.StreamInterceptor(grpc_ctxtags.StreamServerInterceptor(opts...)),
+					grpc.UnaryInterceptor(grpc_ctxtags.UnaryServerInterceptor(opts...)),
+				},
+			},
+		},
+	}
+	suite.Run(t, s)
+}
+
+type ClientStreamedTaggingSuite struct {
+	*TaggingSuite
+}
+
+func (s *ClientStreamedTaggingSuite) TestPingStream_WithCustomTagsFirstRequest() {
+	stream, err := s.Client.PingStream(s.SimpleCtx())
+	require.NoError(s.T(), err, "there must be not be an on a successful call")
+
+	count := 0
+	for {
+		switch {
+		case count == 0:
+			err = stream.Send(goodPing)
+		case count < 3:
+			err = stream.Send(anotherPing)
+		default:
+			err = stream.CloseSend()
+		}
+		require.NoError(s.T(), err, "there must be not be an on a successful call")
+
+		resp, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+
+		require.NoError(s.T(), err, "reading stream should not fail")
+
+		tags := tagsFromJson(s.T(), resp.Value)
+		assert.Contains(s.T(), tags, "peer.address", "the tags should contain key address")
+		assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain key address")
+		assert.Len(s.T(), tags, 2, "the tags should contain only two values")
+		count++
+	}
+
+	assert.Equal(s.T(), count, 3)
 }

@@ -19,3 +19,16 @@ func Example_initialization() *grpc.Server {
 	)
 	return server
 }
+
+// Example using WithFieldExtractorForInitialReq
+func Example_initialization_forInitialReq() *grpc.Server {
+	opts := []grpc_ctxtags.Option{
+		grpc_ctxtags.WithFieldExtractorForInitialReq(grpc_ctxtags.TagBasedRequestFieldExtractor("log_fields")),
+	}
+	server := grpc.NewServer(
+		grpc.StreamInterceptor(grpc_ctxtags.StreamServerInterceptor(opts...)),
+		grpc.UnaryInterceptor(grpc_ctxtags.UnaryServerInterceptor(opts...)),
+	)
+
+	return server
+}
