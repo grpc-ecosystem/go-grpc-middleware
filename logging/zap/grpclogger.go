@@ -34,7 +34,7 @@ func (l *zapGrpcLogger) Fatalln(args ...interface{}) {
 }
 
 func (l *zapGrpcLogger) Print(args ...interface{}) {
-	l.logger.Fatal(fmt.Sprint(args...))
+	l.logger.Info(fmt.Sprint(args...))
 }
 
 func (l *zapGrpcLogger) Printf(format string, args ...interface{}) {
