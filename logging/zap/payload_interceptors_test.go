@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 
 	"io"
 
@@ -102,14 +103,21 @@ func (s *zapPayloadSuite) TestPing_LogsBothRequestAndResponse() {
 func (s *zapPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
 	_, err := s.Client.PingError(s.SimpleCtx(), &pb_testproto.PingRequest{Value: "something", ErrorCodeReturned: uint32(4)})
 	require.Error(s.T(), err, "there must be not be an on a successful call")
-	serverMsgs, clientMsgs := s.getServerAndClientMessages(1, 1)
+	st, _ := status.FromError(err)
+	serverMsgs, clientMsgs := s.getServerAndClientMessages(2, 2)
 	for _, m := range append(serverMsgs, clientMsgs...) {
 		assert.Contains(s.T(), m, `"grpc.service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
 		assert.Contains(s.T(), m, `"grpc.method": "PingError"`, "all lines must contain method name")
 		assert.Contains(s.T(), m, `"level": "info"`, "all payloads must be logged on info level")
 	}
-	assert.Contains(s.T(), clientMsgs[0], `"grpc.request.content": {`, "request payload must be logged in a structured way")
-	assert.Contains(s.T(), serverMsgs[0], `"grpc.request.content": {`, "request payload must be logged in a structured way")
+	serverReq, serverResp := serverMsgs[0], serverMsgs[1]
+	clientReq, clientResp := clientMsgs[0], clientMsgs[1]
+	assert.Contains(s.T(), clientReq, `"grpc.request.content": {`, "request payload must be logged in a structured way")
+	assert.Contains(s.T(), serverReq, `"grpc.request.content": {`, "request payload must be logged in a structured way")
+	assert.Contains(s.T(), clientResp, fmt.Sprintf(`"code": %d`, st.Code()), "response payload must contain error code")
+	assert.Contains(s.T(), clientResp, fmt.Sprintf(`"message": "%s"`, st.Message()), "response payload must contain error message")
+	assert.Contains(s.T(), serverResp, fmt.Sprintf(`"code": %d`, st.Code()), "response payload must contain error code")
+	assert.Contains(s.T(), serverResp, fmt.Sprintf(`"message": "%s"`, st.Message()), "response payload must contain error message")
 }
 
 func (s *zapPayloadSuite) TestPingStream_LogsAllRequestsAndResponses() {

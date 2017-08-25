@@ -17,6 +17,7 @@ import (
 
 var (
 	goodPing = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
+	badPing  = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999, ErrorCodeReturned: 3}
 )
 
 type loggingPingService struct {

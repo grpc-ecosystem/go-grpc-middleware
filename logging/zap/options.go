@@ -17,6 +17,7 @@ var (
 		levelFunc:    DefaultCodeToLevel,
 		codeFunc:     grpc_logging.DefaultErrorToCode,
 		durationFunc: DefaultDurationToField,
+		statusInfo:   false,
 	}
 )
 
@@ -24,6 +25,7 @@ type options struct {
 	levelFunc    CodeToLevel
 	codeFunc     grpc_logging.ErrorToCode
 	durationFunc DurationToField
+	statusInfo   bool
 }
 
 func evaluateServerOpt(opts []Option) *options {
@@ -72,6 +74,13 @@ func WithCodes(f grpc_logging.ErrorToCode) Option {
 func WithDurationField(f DurationToField) Option {
 	return func(o *options) {
 		o.durationFunc = f
+	}
+}
+
+// WithStatusInfo customizes the function logs errors with google.rpc.Status message.
+func WithStatusInfo() Option {
+	return func(o *options) {
+		o.statusInfo = true
 	}
 }
 

@@ -152,6 +152,7 @@ func TestZapLoggingOverrideSuite(t *testing.T) {
 	}
 	opts := []grpc_zap.Option{
 		grpc_zap.WithDurationField(grpc_zap.DurationToDurationField),
+		grpc_zap.WithStatusInfo(),
 	}
 	b := newBaseZapSuite(t)
 	b.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
@@ -212,4 +213,53 @@ func (s *zapServerOverrideSuite) TestPingList_HasOverriddenDuration() {
 	assert.Contains(s.T(), msgs[1], `"level": "info"`, "OK error codes must be logged on info level.")
 	assert.NotContains(s.T(), msgs[1], "grpc.time_ms", "interceptor message must not contain default duration")
 	assert.Contains(s.T(), msgs[1], "grpc.duration", "interceptor message must contain overridden duration")
+}
+
+func (s *zapServerOverrideSuite) TestPing_HasStatusInfo() {
+	s.buffer.Reset()
+	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	require.NoError(s.T(), err, "there must not be an error on a successful call")
+
+	msgs := s.getOutputJSONs()
+	assert.Len(s.T(), msgs, 2, "two log statements should be logged")
+	for _, m := range msgs {
+		s.T()
+		assert.Contains(s.T(), m, `grpc.service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
+		assert.Contains(s.T(), m, `grpc.method": "Ping"`, "all lines must contain method name")
+	}
+	assert.Contains(s.T(), msgs[1], `grpc.code": "OK"`, "all lines must contain method name")
+	assert.Contains(s.T(), msgs[1], `"grpc.response.status":`, "handler's message must contain response status")
+}
+
+func (s *zapServerOverrideSuite) TestPingError_HasStatusInfo() {
+	_, err := s.Client.PingError(s.SimpleCtx(), badPing)
+	require.Error(s.T(), err, "there must be an error")
+
+	msgs := s.getOutputJSONs()
+	require.Len(s.T(), msgs, 1, "only the interceptor log message is printed in PingErr")
+	for _, m := range msgs {
+		s.T()
+		assert.Contains(s.T(), m, `grpc.service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
+		assert.Contains(s.T(), m, `grpc.method": "PingError"`, "all lines must contain method name")
+	}
+	assert.Contains(s.T(), msgs[0], `grpc.code": "InvalidArgument"`, "all lines must contain method name")
+	assert.Contains(s.T(), msgs[0], `"grpc.response.status":`, "handler's message must contain response status")
+}
+
+func (s *zapServerOverrideSuite) TestPingList_HasStatusInfo() {
+	stream, err := s.Client.PingList(s.SimpleCtx(), badPing)
+	require.NoError(s.T(), err, "no error on stream establishment expected")
+	_, err = stream.Recv()
+	assert.Error(s.T(), err, "error should be received on first message")
+	assert.Equal(s.T(), codes.InvalidArgument, grpc.Code(err), "gRPC status must be InvalidArgument")
+
+	msgs := s.getOutputJSONs()
+	assert.Len(s.T(), msgs, 2, "two log statements should be logged")
+	for _, m := range msgs {
+		s.T()
+		assert.Contains(s.T(), m, `grpc.service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
+		assert.Contains(s.T(), m, `grpc.method": "PingList"`, "all lines must contain method name")
+	}
+	assert.Contains(s.T(), msgs[1], `grpc.code": "InvalidArgument"`, "all lines must contain method name")
+	assert.Contains(s.T(), msgs[1], `"grpc.response.status":`, "handler's message must contain response status")
 }

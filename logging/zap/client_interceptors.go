@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -45,7 +46,16 @@ func StreamClientInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamClie
 func logFinalClientLine(o *options, logger *zap.Logger, startTime time.Time, err error, msg string) {
 	code := o.codeFunc(err)
 	level := o.levelFunc(code)
+
+	statusField := zap.Skip()
+	if o.statusInfo {
+		if st, ok := status.FromError(err); ok {
+			statusField = zap.Object("grpc.response.status", &jsonpbMarshalleble{Message: st.Proto()})
+		}
+	}
+
 	logger.Check(level, msg).Write(
+		statusField,
 		zap.Error(err),
 		zap.String("grpc.code", code.String()),
 		o.durationFunc(time.Now().Sub(startTime)),

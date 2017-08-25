@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -36,6 +37,10 @@ func PayloadUnaryServerInterceptor(logger *zap.Logger, decider grpc_logging.Serv
 		resp, err := handler(ctx, req)
 		if err == nil {
 			logProtoMessageAsJson(logEntry, resp, "grpc.response.content", "server response payload logged as grpc.request.content field")
+		} else {
+			if st, ok := status.FromError(err); ok {
+				logProtoMessageAsJson(logEntry, st.Proto(), "grpc.response.content", "server response payload logged as grpc.request.content field")
+			}
 		}
 		return resp, err
 	}
@@ -67,6 +72,11 @@ func PayloadUnaryClientInterceptor(logger *zap.Logger, decider grpc_logging.Clie
 		err := invoker(ctx, method, req, reply, cc, opts...)
 		if err == nil {
 			logProtoMessageAsJson(logEntry, reply, "grpc.response.content", "client response payload logged as grpc.response.content")
+		} else {
+			st, ok := status.FromError(err)
+			if ok {
+				logProtoMessageAsJson(logEntry, st.Proto(), "grpc.response.content", "client response payload logged as grpc.response.content")
+			}
 		}
 		return err
 	}
