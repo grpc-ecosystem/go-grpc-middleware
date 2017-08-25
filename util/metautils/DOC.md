@@ -13,8 +13,6 @@
 - [google.golang.org/grpc/metadata](https://godoc.org/google.golang.org/grpc/metadata)
 
 ## <a name="pkg-index">Index</a>
-* [func GetSingle(ctx context.Context, keyName string) (string, bool)](#GetSingle)
-* [func SetSingle(ctx context.Context, keyName string, keyValue string) context.Context](#SetSingle)
 * [type NiceMD](#NiceMD)
   * [func ExtractIncoming(ctx context.Context) NiceMD](#ExtractIncoming)
   * [func ExtractOutgoing(ctx context.Context) NiceMD](#ExtractOutgoing)
@@ -27,26 +25,7 @@
   * [func (m NiceMD) ToOutgoing(ctx context.Context) context.Context](#NiceMD.ToOutgoing)
 
 #### <a name="pkg-files">Package files</a>
-[doc.go](./doc.go) [nicemd.go](./nicemd.go) [single_key.go](./single_key.go) 
-
-## <a name="GetSingle">func</a> [GetSingle](./single_key.go#L23)
-``` go
-func GetSingle(ctx context.Context, keyName string) (string, bool)
-```
-GetSingle extracts a single-value metadata key from Context.
-First return is the value of the key, followed by a bool indicator.
-The bool indicator being false means the string should be discarded. It can be false if
-the context has no metadata at all, the key in metadata doesn't exist or there are multiple values.
-Deprecated, use NiceMD.Get.
-
-## <a name="SetSingle">func</a> [SetSingle](./single_key.go#L44)
-``` go
-func SetSingle(ctx context.Context, keyName string, keyValue string) context.Context
-```
-SetSingle sets or overrides a metadata key to be single value in the Context.
-It returns a new context.Context object that contains a *copy* of the metadata inside the given
-context.
-Deprecated, use NiceMD.Set.
+[doc.go](./doc.go) [nicemd.go](./nicemd.go) [single_key.go](./single_key.go)
 
 ## <a name="NiceMD">type</a> [NiceMD](./nicemd.go#L14)
 ``` go
