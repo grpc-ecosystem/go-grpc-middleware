@@ -23,22 +23,26 @@ the server side. `grpc_middleware` provides convenient chaining methods
 Simple way of turning a multiple interceptors into a single interceptor. Here's an example for
 server chaining:
 
-	myServer := grpc.NewServer(
-	    grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(loggingStream, monitoringStream, authStream)),
-	    grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(loggingUnary, monitoringUnary, authUnary),
-	)
+```go
+myServer := grpc.NewServer(
+    grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(loggingStream, monitoringStream, authStream)),
+    grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(loggingUnary, monitoringUnary, authUnary),
+)
+```
 
 These interceptors will be executed from left to right: logging, monitoring and auth.
 
 Here's an example for client side chaining:
 
-	clientConn, err = grpc.Dial(
-	    address,
-	        grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(monitoringClientUnary, retryUnary)),
-	        grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(monitoringClientStream, retryStream)),
-	)
-	client = pb_testproto.NewTestServiceClient(clientConn)
-	resp, err := client.PingEmpty(s.ctx, &myservice.Request{Msg: "hello"})
+```go
+clientConn, err = grpc.Dial(
+    address,
+	grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(monitoringClientUnary, retryUnary)),
+	grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(monitoringClientStream, retryStream)),
+)
+client = pb_testproto.NewTestServiceClient(clientConn)
+resp, err := client.PingEmpty(s.ctx, &myservice.Request{Msg: "hello"})
+```
 
 These interceptors will be executed from left to right: monitoring and then retry logic.
 
@@ -50,20 +54,24 @@ to the handling function.
 
 For example, a client side interceptor example for auth looks like:
 
-	func FakeAuthUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	   newCtx := context.WithValue(ctx, "user_id", "john@example.com")
-	   return handler(newCtx, req)
-	}
+```go
+func FakeAuthUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+   newCtx := context.WithValue(ctx, "user_id", "john@example.com")
+   return handler(newCtx, req)
+}
+```
 
 Unfortunately, it's not as easy for streaming RPCs. These have the `context.Context` embedded within
 the `grpc.ServerStream` object. To pass values through context, a wrapper (`WrappedServerStream`) is
 needed. For example:
 
-	func FakeAuthStreamingInterceptor(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	   newStream := grpc_middleware.WrapServerStream(stream)
-	   newStream.WrappedContext = context.WithValue(ctx, "user_id", "john@example.com")
-	   return handler(srv, stream)
-	}
+```go
+func FakeAuthStreamingInterceptor(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+   newStream := grpc_middleware.WrapServerStream(stream)
+   newStream.WrappedContext = context.WithValue(ctx, "user_id", "john@example.com")
+   return handler(srv, stream)
+}
+```
 
 ## <a name="pkg-imports">Imported Packages</a>
 
