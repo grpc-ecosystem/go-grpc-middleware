@@ -99,15 +99,14 @@ func (s *tracedClientStream) finishClientSpan(err error) {
 	}
 }
 
-// ClientSpanTagKey is a context key used by
-// UnaryClientInterceptor/StreamClientInterceptor to extract opentracing span
-// tags, so that it's possible to pass tags to opentracing tracer for display.
-//
-// e.g.
-//
-// 	ctx.Value(ClientSpanTagKey{}, opentracing.Tags{"key": "value"})
-//
-type ClientSpanTagKey struct{}
+// ClientAddContextTags returns a context with specified opentracing tags, which
+// are used by UnaryClientInterceptor/StreamClientInterceptor when creating a
+// new span.
+func ClientAddContextTags(ctx context.Context, tags opentracing.Tags) context.Context {
+	return context.WithValue(ctx, clientSpanTagKey{}, tags)
+}
+
+type clientSpanTagKey struct{}
 
 func newClientSpanFromContext(ctx context.Context, tracer opentracing.Tracer, fullMethodName string) (context.Context, opentracing.Span) {
 	var parentSpanContext opentracing.SpanContext
@@ -119,7 +118,7 @@ func newClientSpanFromContext(ctx context.Context, tracer opentracing.Tracer, fu
 		ext.SpanKindRPCClient,
 		grpcTag,
 	}
-	if tagx := ctx.Value(ClientSpanTagKey{}); tagx != nil {
+	if tagx := ctx.Value(clientSpanTagKey{}); tagx != nil {
 		switch tag := tagx.(type) {
 		case opentracing.Tag:
 			opts = append(opts, tag)
