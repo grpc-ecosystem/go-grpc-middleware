@@ -103,12 +103,12 @@ x := func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.Pi
 
 ## <a name="pkg-imports">Imported Packages</a>
 
-- github.com/sirupsen/logrus
 - [github.com/golang/protobuf/jsonpb](https://godoc.org/github.com/golang/protobuf/jsonpb)
 - [github.com/golang/protobuf/proto](https://godoc.org/github.com/golang/protobuf/proto)
 - [github.com/grpc-ecosystem/go-grpc-middleware](./../..)
 - [github.com/grpc-ecosystem/go-grpc-middleware/logging](./..)
 - [github.com/grpc-ecosystem/go-grpc-middleware/tags](./../../tags)
+- [github.com/sirupsen/logrus](https://godoc.org/github.com/sirupsen/logrus)
 - [golang.org/x/net/context](https://godoc.org/golang.org/x/net/context)
 - [google.golang.org/grpc](https://godoc.org/google.golang.org/grpc)
 - [google.golang.org/grpc/codes](https://godoc.org/google.golang.org/grpc/codes)

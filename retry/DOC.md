@@ -203,7 +203,7 @@ For example waitBetween=1s and jitter=0.10 can generate waits between 900ms and 
 ## <a name="CallOption">type</a> [CallOption](./options.go#L94-L97)
 ``` go
 type CallOption struct {
-    grpc.CallOption // anonymously implement it, without knowing the private fields.
+    grpc.EmptyCallOption // make sure we implement private after() and before() fields so we don't panic.
     // contains filtered or unexported fields
 }
 ```

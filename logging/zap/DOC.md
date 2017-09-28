@@ -216,7 +216,7 @@ func PayloadStreamServerInterceptor(logger *zap.Logger, decider grpc_logging.Ser
 ```
 PayloadUnaryServerInterceptor returns a new server server interceptors that logs the payloads of requests.
 
-This *only* works when placed *after* the `grpc_logrus.StreamServerInterceptor`. However, the logging can be done to a
+This *only* works when placed *after* the `grpc_zap.StreamServerInterceptor`. However, the logging can be done to a
 separate instance of the logger.
 
 ## <a name="PayloadUnaryClientInterceptor">func</a> [PayloadUnaryClientInterceptor](./payload_interceptors.go#L60)
@@ -231,7 +231,7 @@ func PayloadUnaryServerInterceptor(logger *zap.Logger, decider grpc_logging.Serv
 ```
 PayloadUnaryServerInterceptor returns a new unary server interceptors that logs the payloads of requests.
 
-This *only* works when placed *after* the `grpc_logrus.UnaryServerInterceptor`. However, the logging can be done to a
+This *only* works when placed *after* the `grpc_zap.UnaryServerInterceptor`. However, the logging can be done to a
 separate instance of the logger.
 
 ## <a name="ReplaceGrpcLogger">func</a> [ReplaceGrpcLogger](./grpclogger.go#L15)

@@ -25,7 +25,7 @@
   * [func (m NiceMD) ToOutgoing(ctx context.Context) context.Context](#NiceMD.ToOutgoing)
 
 #### <a name="pkg-files">Package files</a>
-[doc.go](./doc.go) [nicemd.go](./nicemd.go) [single_key.go](./single_key.go)
+[doc.go](./doc.go) [nicemd.go](./nicemd.go) [single_key.go](./single_key.go) 
 
 ## <a name="NiceMD">type</a> [NiceMD](./nicemd.go#L14)
 ``` go
