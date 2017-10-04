@@ -21,6 +21,9 @@ var (
 	JsonPbMarshaller = &jsonpb.Marshaler{}
 )
 
+//PayloadLogLevel is the log level that payload messages will be logged as
+var PayloadLogLevel = logrus.InfoLevel
+
 // PayloadUnaryServerInterceptor returns a new unary server interceptors that logs the payloads of requests.
 //
 // This *only* works when placed *after* the `grpc_logrus.UnaryServerInterceptor`. However, the logging can be done to a
@@ -130,7 +133,7 @@ func (l *loggingServerStream) RecvMsg(m interface{}) error {
 
 func logProtoMessageAsJson(entry *logrus.Entry, pbMsg interface{}, key string, msg string) {
 	if p, ok := pbMsg.(proto.Message); ok {
-		entry.WithField(key, &jsonpbMarshalleble{p}).Info(msg)
+		levelLogf(entry.WithField(key, &jsonpbMarshalleble{p}), PayloadLogLevel, msg)
 	}
 }
 
