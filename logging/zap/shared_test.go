@@ -25,6 +25,7 @@ type loggingPingService struct {
 
 func (s *loggingPingService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
 	grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
+	grpc_zap.AddFields(ctx, zap.String("custom_field", "custom_value"))
 	grpc_zap.Extract(ctx).Info("some ping")
 	return s.TestServiceServer.Ping(ctx, ping)
 }
