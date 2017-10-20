@@ -103,6 +103,25 @@ func (s *logrusPayloadSuite) TestPing_LogsBothRequestAndResponse() {
 	assert.Contains(s.T(), serverResp, fmt.Sprintf(`"counter": %d`, resp.Counter))
 }
 
+func (s *logrusPayloadSuite) Test_ChangeLogLevel() {
+	verifyLevel := func(level string) {
+		_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+		assert.NoError(s.T(), err, "there must be not be an on a successful call")
+		serverMsgs, clientMsgs := s.getServerAndClientMessages(2, 2)
+		serverReq, serverResp := serverMsgs[0], serverMsgs[1]
+		clientReq, clientResp := clientMsgs[0], clientMsgs[1]
+		assert.Contains(s.T(), clientReq, fmt.Sprintf(`"level": "%s"`, level))
+		assert.Contains(s.T(), clientResp, fmt.Sprintf(`"level": "%s"`, level))
+		assert.Contains(s.T(), serverReq, fmt.Sprintf(`"level": "%s"`, level))
+		assert.Contains(s.T(), serverResp, fmt.Sprintf(`"level": "%s"`, level))
+	}
+
+	verifyLevel("info")
+	grpc_logrus.PayloadLogLevel = logrus.WarnLevel
+	verifyLevel("warning")
+	grpc_logrus.PayloadLogLevel = logrus.InfoLevel
+}
+
 func (s *logrusPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
 	_, err := s.Client.PingError(s.SimpleCtx(), &pb_testproto.PingRequest{Value: "something", ErrorCodeReturned: uint32(4)})
 	require.Error(s.T(), err, "there must be not be an on a successful call")
