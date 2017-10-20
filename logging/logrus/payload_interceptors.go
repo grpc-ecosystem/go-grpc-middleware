@@ -8,10 +8,10 @@ import (
 
 	"fmt"
 
-	"github.com/sirupsen/logrus"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -20,9 +20,6 @@ var (
 	// JsonPBMarshaller is the marshaller used for serializing protobuf messages.
 	JsonPbMarshaller = &jsonpb.Marshaler{}
 )
-
-//PayloadLogLevel is the log level that payload messages will be logged as
-var PayloadLogLevel = logrus.InfoLevel
 
 // PayloadUnaryServerInterceptor returns a new unary server interceptors that logs the payloads of requests.
 //
@@ -133,7 +130,7 @@ func (l *loggingServerStream) RecvMsg(m interface{}) error {
 
 func logProtoMessageAsJson(entry *logrus.Entry, pbMsg interface{}, key string, msg string) {
 	if p, ok := pbMsg.(proto.Message); ok {
-		levelLogf(entry.WithField(key, &jsonpbMarshalleble{p}), PayloadLogLevel, msg)
+		levelLogf(entry.WithField(key, &jsonpbMarshalleble{p}), entry.Logger.Level, msg)
 	}
 }
 

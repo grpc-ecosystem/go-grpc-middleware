@@ -16,11 +16,11 @@ import (
 
 	"io"
 
-	"github.com/sirupsen/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
@@ -40,28 +40,37 @@ func TestLogrusPayloadSuite(t *testing.T) {
 		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
 		return
 	}
-	alwaysLoggingDeciderServer := func(ctx context.Context, fullMethodName string, servingObject interface{}) bool { return true }
-	alwaysLoggingDeciderClient := func(ctx context.Context, fullMethodName string) bool { return true }
+
 	b := newLogrusBaseSuite(t)
-	b.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
-		grpc.WithUnaryInterceptor(grpc_logrus.PayloadUnaryClientInterceptor(logrus.NewEntry(b.logger), alwaysLoggingDeciderClient)),
-		grpc.WithStreamInterceptor(grpc_logrus.PayloadStreamClientInterceptor(logrus.NewEntry(b.logger), alwaysLoggingDeciderClient)),
-	}
-	b.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
-		grpc_middleware.WithStreamServerChain(
-			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_logrus.StreamServerInterceptor(logrus.NewEntry(nullLogger)),
-			grpc_logrus.PayloadStreamServerInterceptor(logrus.NewEntry(b.logger), alwaysLoggingDeciderServer)),
-		grpc_middleware.WithUnaryServerChain(
-			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(nullLogger)),
-			grpc_logrus.PayloadUnaryServerInterceptor(logrus.NewEntry(b.logger), alwaysLoggingDeciderServer)),
-	}
-	suite.Run(t, &logrusPayloadSuite{b})
+	payloadSuite := &logrusPayloadSuite{b}
+	payloadSuite.buildInterceptors(logrus.InfoLevel)
+	suite.Run(t, payloadSuite)
 }
 
 type logrusPayloadSuite struct {
 	*logrusBaseSuite
+}
+
+func (s *logrusPayloadSuite) buildInterceptors(payloadLogLevel logrus.Level) {
+	alwaysLoggingDeciderServer := func(ctx context.Context, fullMethodName string, servingObject interface{}) bool { return true }
+	alwaysLoggingDeciderClient := func(ctx context.Context, fullMethodName string) bool { return true }
+
+	entry := logrus.NewEntry(s.logger)
+	entry.Logger.Level = payloadLogLevel
+	s.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
+		grpc.WithUnaryInterceptor(grpc_logrus.PayloadUnaryClientInterceptor(entry, alwaysLoggingDeciderClient)),
+		grpc.WithStreamInterceptor(grpc_logrus.PayloadStreamClientInterceptor(entry, alwaysLoggingDeciderClient)),
+	}
+	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
+		grpc_middleware.WithStreamServerChain(
+			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_logrus.StreamServerInterceptor(logrus.NewEntry(nullLogger)),
+			grpc_logrus.PayloadStreamServerInterceptor(entry, alwaysLoggingDeciderServer)),
+		grpc_middleware.WithUnaryServerChain(
+			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(nullLogger)),
+			grpc_logrus.PayloadUnaryServerInterceptor(entry, alwaysLoggingDeciderServer)),
+	}
 }
 
 func (s *logrusPayloadSuite) getServerAndClientMessages(expectedServer int, expectedClient int) (serverMsgs []string, clientMsgs []string) {
@@ -117,9 +126,9 @@ func (s *logrusPayloadSuite) Test_ChangeLogLevel() {
 	}
 
 	verifyLevel("info")
-	grpc_logrus.PayloadLogLevel = logrus.WarnLevel
+	s.buildInterceptors(logrus.WarnLevel)
 	verifyLevel("warning")
-	grpc_logrus.PayloadLogLevel = logrus.InfoLevel
+	s.buildInterceptors(logrus.InfoLevel)
 }
 
 func (s *logrusPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
