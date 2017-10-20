@@ -129,22 +129,22 @@ func (l *loggingServerStream) RecvMsg(m interface{}) error {
 
 func logProtoMessageAsJson(logger *zap.Logger, pbMsg interface{}, key string, msg string) {
 	if p, ok := pbMsg.(proto.Message); ok {
-		logger.Check(zapcore.InfoLevel, msg).Write(zap.Object(key, &jsonpbMarshalleble{Message: p}))
+		logger.Check(zapcore.InfoLevel, msg).Write(zap.Object(key, &jsonpbObjectMarshaler{pb: p}))
 	}
 }
 
-type jsonpbMarshalleble struct {
-	proto.Message
+type jsonpbObjectMarshaler struct {
+	pb proto.Message
 }
 
-func (j *jsonpbMarshalleble) MarshalLogObject(e zapcore.ObjectEncoder) error {
+func (j *jsonpbObjectMarshaler) MarshalLogObject(e zapcore.ObjectEncoder) error {
 	// ZAP jsonEncoder deals with AddReflect by using json.MarshalObject. The same thing applies for consoleEncoder.
-	return e.AddReflected("msg", j.Message)
+	return e.AddReflected("msg", j)
 }
 
-func (j *jsonpbMarshalleble) MarshalJSON() ([]byte, error) {
+func (j *jsonpbObjectMarshaler) MarshalJSON() ([]byte, error) {
 	b := &bytes.Buffer{}
-	if err := JsonPbMarshaller.Marshal(b, j); err != nil {
+	if err := JsonPbMarshaller.Marshal(b, j.pb); err != nil {
 		return nil, fmt.Errorf("jsonpb serializer failed: %v", err)
 	}
 	return b.Bytes(), nil
