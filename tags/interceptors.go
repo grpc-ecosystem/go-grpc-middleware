@@ -33,7 +33,7 @@ func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 			wrappedStream.WrappedContext = newCtx
 			return handler(srv, wrappedStream)
 		}
-		wrapped := &wrappedStream{stream, info, o, newCtx}
+		wrapped := &wrappedStream{stream, info, o, newCtx, true}
 		err := handler(srv, wrapped)
 		return err
 	}
@@ -46,6 +46,7 @@ type wrappedStream struct {
 	opts *options
 	// WrappedContext is the wrapper's own Context. You can assign it.
 	WrappedContext context.Context
+	initial        bool
 }
 
 // Context returns the wrapper's WrappedContext, overwriting the nested grpc.ServerStream.Context()
@@ -56,7 +57,9 @@ func (w *wrappedStream) Context() context.Context {
 func (w *wrappedStream) RecvMsg(m interface{}) error {
 	err := w.ServerStream.RecvMsg(m)
 	// We only do log fields extraction on the single-reqest of a server-side stream.
-	if !w.info.IsClientStream {
+	if !w.info.IsClientStream || w.opts.requestFieldsFromInitial && w.initial {
+		w.initial = false
+
 		setRequestFieldTags(w.Context(), w.opts.requestFieldsFunc, w.info.FullMethod, m)
 	}
 	return err
