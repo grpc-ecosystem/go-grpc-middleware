@@ -7,11 +7,11 @@ import (
 
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
@@ -35,6 +35,7 @@ func customCodeToLevel(c codes.Code) logrus.Level {
 
 func (s *loggingPingService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
 	grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
+	grpc_logrus.AddFields(ctx, logrus.Fields{"custom_field": "custom_value"})
 	grpc_logrus.Extract(ctx).Info("some ping")
 	return s.TestServiceServer.Ping(ctx, ping)
 }
@@ -45,6 +46,7 @@ func (s *loggingPingService) PingError(ctx context.Context, ping *pb_testproto.P
 
 func (s *loggingPingService) PingList(ping *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
 	grpc_ctxtags.Extract(stream.Context()).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
+	grpc_logrus.AddFields(stream.Context(), logrus.Fields{"custom_field": "custom_value"})
 	grpc_logrus.Extract(stream.Context()).Info("some pinglist")
 	return s.TestServiceServer.PingList(ping, stream)
 }
