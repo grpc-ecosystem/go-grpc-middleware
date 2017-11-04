@@ -14,10 +14,10 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
+	grpc_testing "github.com/grpc-ecosystem/go-grpc-middleware/testing"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
-	"github.com/opentracing/opentracing-go"
+	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/mocktracer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -159,6 +159,26 @@ func (s *OpentracingSuite) TestPing_PropagatesTraces() {
 	_, err := s.Client.Ping(ctx, goodPing)
 	require.NoError(s.T(), err, "there must be not be an on a successful call")
 	s.assertTracesCreated("/mwitkow.testproto.TestService/Ping")
+}
+
+func (s *OpentracingSuite) TestPing_ClientContextTags() {
+	const name = "opentracing.custom"
+	ctx := grpc_opentracing.ClientAddContextTags(
+		s.createContextFromFakeHttpRequestParent(s.SimpleCtx()),
+		opentracing.Tags{name: ""},
+	)
+
+	_, err := s.Client.Ping(ctx, goodPing)
+	require.NoError(s.T(), err, "there must be not be an on a successful call")
+
+	for _, span := range s.mockTracer.FinishedSpans() {
+		if span.OperationName == "/mwitkow.testproto.TestService/Ping" {
+			kind := fmt.Sprintf("%v", span.Tag("span.kind"))
+			if kind == "client" {
+				assert.Contains(s.T(), span.Tags(), name, "custom opentracing.Tags must be included in context")
+			}
+		}
+	}
 }
 
 func (s *OpentracingSuite) TestPingList_PropagatesTraces() {
