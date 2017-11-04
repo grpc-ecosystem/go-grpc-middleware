@@ -67,6 +67,7 @@ func (s *zapServerSuite) TestPing_WithCustomTags() {
 		assert.Contains(s.T(), m, `grpc.method": "Ping"`, "all lines must contain method name")
 		assert.Contains(s.T(), m, `"custom_tags.string": "something"`, "all lines must contain `custom_tags.string` set by AddFields")
 		assert.Contains(s.T(), m, `"custom_tags.int": 1337`, "all lines must contain `custom_tags.int` set by AddFields")
+		assert.Contains(s.T(), m, `"custom_field": "custom_value"`, "all lines must contain `custom_field` set by AddFields")
 		// request field extraction
 		assert.Contains(s.T(), m, `"grpc.request.value": "something"`, "all lines must contain fields extracted from goodPing because of test.manual_extractfields.pb")
 	}
