@@ -12,6 +12,7 @@ var (
 type options struct {
 	requestFieldsFunc        RequestFieldExtractorFunc
 	requestFieldsFromInitial bool
+	metadataExtractorFunc    RequestMetadataExtractorFunc
 }
 
 func evaluateOptions(opts []Option) *options {
@@ -30,6 +31,14 @@ type Option func(*options)
 func WithFieldExtractor(f RequestFieldExtractorFunc) Option {
 	return func(o *options) {
 		o.requestFieldsFunc = f
+	}
+}
+
+// WithMetadataExtractor customizes the function for extracting log fields from request metadata, for
+// unary and server-streamed methods only.
+func WithMetadataExtractor(f RequestMetadataExtractorFunc) Option {
+	return func(o *options) {
+		o.metadataExtractorFunc = f
 	}
 }
 
