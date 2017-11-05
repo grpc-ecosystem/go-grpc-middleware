@@ -13,8 +13,9 @@
 Tags describe information about the request, and can be set and used by other middleware, or handlers. Tags are used
 for logging and tracing of requests. Tags are populated both upwards, *and* downwards in the interceptor-handler stack.
 
-You can automatically extract tags (in `grpc.request.<field_name>`) from request payloads (in unary and server-streaming)
-by passing in the `WithFieldExtractor` option.
+Tags can be automatically extracted in unary and server-streaming calls in two ways:
+  * from request payloads by passing in the `WithFieldExtractor` option (in `grpc.request.<field_name>)
+  * from request metadata by passing in the `WithMetadataExtractor` option (in `[prefix.]<field_name>`)
 
 If a user doesn't use the interceptors that initialize the `Tags` object, all operations following from an `Extract(ctx)`
 will be no-ops. This is to ensure that code doesn't panic if the interceptors weren't used.
@@ -30,12 +31,20 @@ Tags fields are typed, and shallow and should follow the OpenTracing semantics c
 ```go
 opts := []grpc_ctxtags.Option{
 	    grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.TagBasedRequestFieldExtractor("log_fields")),
+	    grpc_ctxtags.WithMetadataExtractor(grpc_ctxtags.TagBasedRequestMetadataExtractor("md.prefix.", "key1", "key2")),
 	}
 	server := grpc.NewServer(
 	    grpc.StreamInterceptor(grpc_ctxtags.StreamServerInterceptor(opts...)),
 	    grpc.UnaryInterceptor(grpc_ctxtags.UnaryServerInterceptor(opts...)),
 	)
 	return server
+```
+
+and on the client:
+```go
+	md := metadata.Pairs("key", "value")
+	ctxMd := metadata.NewOutgoingContext(ctx, md)
+	client.Method(ctxMd, in)
 ```
 
 </details>

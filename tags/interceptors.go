@@ -18,6 +18,9 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 		if o.requestFieldsFunc != nil {
 			setRequestFieldTags(newCtx, o.requestFieldsFunc, info.FullMethod, req)
 		}
+		if o.metadataExtractorFunc != nil {
+			setRequestMetadataTags(newCtx, o.metadataExtractorFunc, req)
+		}
 		return handler(newCtx, req)
 	}
 }
@@ -27,7 +30,7 @@ func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 	o := evaluateOptions(opts)
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		newCtx := newTagsForCtx(stream.Context())
-		if o.requestFieldsFunc == nil {
+		if o.requestFieldsFunc == nil && o.metadataExtractorFunc == nil {
 			// Short-circuit, don't do the expensive bit of allocating a wrappedStream.
 			wrappedStream := grpc_middleware.WrapServerStream(stream)
 			wrappedStream.WrappedContext = newCtx
@@ -59,8 +62,12 @@ func (w *wrappedStream) RecvMsg(m interface{}) error {
 	// We only do log fields extraction on the single-reqest of a server-side stream.
 	if !w.info.IsClientStream || w.opts.requestFieldsFromInitial && w.initial {
 		w.initial = false
-
-		setRequestFieldTags(w.Context(), w.opts.requestFieldsFunc, w.info.FullMethod, m)
+		if w.opts.requestFieldsFunc != nil {
+			setRequestFieldTags(w.Context(), w.opts.requestFieldsFunc, w.info.FullMethod, m)
+		}
+		if w.opts.metadataExtractorFunc != nil {
+			setRequestMetadataTags(w.Context(), w.opts.metadataExtractorFunc, m)
+		}
 	}
 	return err
 }
@@ -80,4 +87,8 @@ func setRequestFieldTags(ctx context.Context, f RequestFieldExtractorFunc, fullM
 			t.Set("grpc.request."+k, v)
 		}
 	}
+}
+
+func setRequestMetadataTags(ctx context.Context, f RequestMetadataExtractorFunc, req interface{}) {
+	f(ctx, req)
 }
