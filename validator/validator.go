@@ -13,7 +13,7 @@ type validator interface {
 	Validate() error
 }
 
-// UnaryServerInterceptor returns a new unary server interceptors that validates incoming messages.
+// UnaryServerInterceptor returns a new unary server interceptor that validates incoming messages.
 //
 // Invalid messages will be rejected with `InvalidArgument` before reaching any userspace handlers.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
@@ -27,7 +27,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-// StreamServerInterceptor returns a new streaming server interceptors that validates incoming messages.
+// StreamServerInterceptor returns a new streaming server interceptor that validates incoming messages.
 //
 // The stage at which invalid messages will be rejected with `InvalidArgument` varies based on the
 // type of the RPC. For `ServerStream` (1:m) requests, it will happen before reaching any userspace
