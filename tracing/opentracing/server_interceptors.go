@@ -5,6 +5,7 @@ package grpc_opentracing
 
 import (
 	"context"
+	"path"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
@@ -14,6 +15,13 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
+)
+
+const (
+	// OscarTraceContextHeaderName should be used within Oscar GRPC
+	OscarTraceContextHeaderName = "oscar-trace-id"
+	grpcMethodTagName           = "grpc.method"
+	grpcServiceTagName          = "grpc.service"
 )
 
 var (
@@ -74,7 +82,11 @@ func newServerSpanFromInbound(ctx context.Context, tracer opentracing.Tracer, tr
 		ext.RPCServerOption(parentSpanContext),
 		grpcTag,
 	)
-
+	// Add oscar-specific tags
+	newOscarTags(serverSpan, opName)
+	if traceID, ok := md[OscarTraceContextHeaderName]; ok {
+		serverSpan.SetTag(OscarTraceContextHeaderName, traceID)
+	}
 	injectOpentracingIdsToTags(traceHeaderName, serverSpan, grpc_ctxtags.Extract(ctx))
 	return opentracing.ContextWithSpan(ctx, serverSpan), serverSpan
 }
@@ -95,4 +107,11 @@ func finishServerSpan(ctx context.Context, serverSpan opentracing.Span, err erro
 		serverSpan.LogFields(log.String("event", "error"), log.String("message", err.Error()))
 	}
 	serverSpan.Finish()
+}
+
+func newOscarTags(span opentracing.Span, fullMethodString string) {
+	method := path.Base(fullMethodString)
+	service := path.Dir(fullMethodString)[1:]
+	span.SetTag(grpcMethodTagName, method)
+	span.SetTag(grpcServiceTagName, service)
 }

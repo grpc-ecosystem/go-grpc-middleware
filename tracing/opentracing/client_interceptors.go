@@ -131,6 +131,11 @@ func newClientSpanFromContext(ctx context.Context, tracer opentracing.Tracer, fu
 		grpclog.Infof("grpc_opentracing: failed serializing trace information: %v", err)
 	}
 	ctxWithMetadata := md.ToOutgoing(ctx)
+	// Add oscar-specific tags
+	newOscarTags(clientSpan, fullMethodName)
+	if traceID, ok := md[OscarTraceContextHeaderName]; ok {
+		clientSpan.SetTag(OscarTraceContextHeaderName, traceID)
+	}
 	return opentracing.ContextWithSpan(ctxWithMetadata, clientSpan), clientSpan
 }
 
