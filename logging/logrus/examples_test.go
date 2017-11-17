@@ -67,8 +67,10 @@ func Example_handlerUsageUnaryPing() interface{} {
 	x := func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
 		// Add fields the ctxtags of the request which will be added to all extracted loggers.
 		grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
-		// Extract a request-scoped zap.Logger and log a message.
-		grpc_logrus.Extract(ctx).Info("some ping")
+		// Extract a single request-scoped logrus.Logger and log messages.
+		l := grpc_logrus.Extract(ctx)
+		l.Info("some ping")
+		l.Info("another ping")
 		return &pb_testproto.PingResponse{Value: ping.Value}, nil
 	}
 	return x
