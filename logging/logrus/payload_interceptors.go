@@ -5,20 +5,21 @@ package grpc_logrus
 
 import (
 	"bytes"
-
 	"fmt"
+	"sync"
 
-	"github.com/sirupsen/logrus"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
 var (
 	// JsonPBMarshaller is the marshaller used for serializing protobuf messages.
-	JsonPbMarshaller = &jsonpb.Marshaler{}
+	JsonPbMarshaller              = &jsonpb.Marshaler{}
+	fireAndForgetLoggingWaitGroup = &sync.WaitGroup{}
 )
 
 // PayloadUnaryServerInterceptor returns a new unary server interceptors that logs the payloads of requests.
@@ -31,12 +32,18 @@ func PayloadUnaryServerInterceptor(entry *logrus.Entry, decider grpc_logging.Ser
 			return handler(ctx, req)
 		}
 		// Use the provided logrus.Entry for logging but use the fields from context.
-		logEntry := entry.WithFields(Extract(ctx).Data)
-		logProtoMessageAsJson(logEntry, req, "grpc.request.content", "server request payload logged as grpc.request.content field")
 		resp, err := handler(ctx, req)
-		if err == nil {
-			logProtoMessageAsJson(logEntry, resp, "grpc.response.content", "server response payload logged as grpc.request.content field")
-		}
+
+		fireAndForgetLoggingWaitGroup.Add(1)
+		// Perform payload logging in a goroutien to unblock the response to the client.
+		go func(resp interface{}, err error) {
+			logEntry := entry.WithFields(Extract(ctx).Data)
+			logProtoMessageAsJson(logEntry, req, "grpc.request.content", "server request payload logged as grpc.request.content field")
+			if err == nil {
+				logProtoMessageAsJson(logEntry, resp, "grpc.response.content", "server response payload logged as grpc.request.content field")
+			}
+			fireAndForgetLoggingWaitGroup.Done()
+		}(resp, err)
 		return resp, err
 	}
 }
@@ -144,4 +151,9 @@ func (j *jsonpbMarshalleble) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("jsonpb serializer failed: %v", err)
 	}
 	return b.Bytes(), nil
+}
+
+// WaitForLogging waits until the fire and forget logging messages are finished. This should be called before the termination of your server to ensure all log messages are emitted.
+func WaitForLogging() {
+	fireAndForgetLoggingWaitGroup.Wait()
 }

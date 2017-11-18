@@ -16,11 +16,11 @@ import (
 
 	"io"
 
-	"github.com/sirupsen/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
@@ -65,6 +65,9 @@ type logrusPayloadSuite struct {
 }
 
 func (s *logrusPayloadSuite) getServerAndClientMessages(expectedServer int, expectedClient int) (serverMsgs []string, clientMsgs []string) {
+	// Wait for the fire&forget log statements to run so that their calls to log excute.
+	grpc_logrus.WaitForLogging()
+
 	msgs := s.getOutputJSONs()
 	for _, m := range msgs {
 		if strings.Contains(m, `"span.kind": "server"`) {
@@ -73,6 +76,7 @@ func (s *logrusPayloadSuite) getServerAndClientMessages(expectedServer int, expe
 			clientMsgs = append(clientMsgs, m)
 		}
 	}
+
 	require.Len(s.T(), serverMsgs, expectedServer, "must match expected number of server log messages")
 	require.Len(s.T(), clientMsgs, expectedClient, "must match expected number of client log messages")
 	return serverMsgs, clientMsgs

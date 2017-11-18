@@ -103,12 +103,12 @@ x := func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.Pi
 
 ## <a name="pkg-imports">Imported Packages</a>
 
-- github.com/sirupsen/logrus
 - [github.com/golang/protobuf/jsonpb](https://godoc.org/github.com/golang/protobuf/jsonpb)
 - [github.com/golang/protobuf/proto](https://godoc.org/github.com/golang/protobuf/proto)
 - [github.com/grpc-ecosystem/go-grpc-middleware](./../..)
 - [github.com/grpc-ecosystem/go-grpc-middleware/logging](./..)
 - [github.com/grpc-ecosystem/go-grpc-middleware/tags](./../../tags)
+- [github.com/sirupsen/logrus](https://godoc.org/github.com/sirupsen/logrus)
 - [golang.org/x/net/context](https://godoc.org/golang.org/x/net/context)
 - [google.golang.org/grpc](https://godoc.org/google.golang.org/grpc)
 - [google.golang.org/grpc/codes](https://godoc.org/google.golang.org/grpc/codes)
@@ -130,6 +130,7 @@ x := func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.Pi
 * [func StreamServerInterceptor(entry \*logrus.Entry, opts ...Option) grpc.StreamServerInterceptor](#StreamServerInterceptor)
 * [func UnaryClientInterceptor(entry \*logrus.Entry, opts ...Option) grpc.UnaryClientInterceptor](#UnaryClientInterceptor)
 * [func UnaryServerInterceptor(entry \*logrus.Entry, opts ...Option) grpc.UnaryServerInterceptor](#UnaryServerInterceptor)
+* [func WaitForLogging()](#WaitForLogging)
 * [type CodeToLevel](#CodeToLevel)
 * [type DurationToField](#DurationToField)
 * [type Option](#Option)
@@ -200,13 +201,13 @@ Extract takes the call-scoped logrus.Entry from grpc_logrus middleware.
 If the grpc_logrus middleware wasn't used, a no-op `logrus.Entry` is returned. This makes it safe to
 use regardless.
 
-## <a name="PayloadStreamClientInterceptor">func</a> [PayloadStreamClientInterceptor](./payload_interceptors.go#L77)
+## <a name="PayloadStreamClientInterceptor">func</a> [PayloadStreamClientInterceptor](./payload_interceptors.go#L84)
 ``` go
 func PayloadStreamClientInterceptor(entry *logrus.Entry, decider grpc_logging.ClientPayloadLoggingDecider) grpc.StreamClientInterceptor
 ```
 PayloadStreamServerInterceptor returns a new streaming client interceptor that logs the paylods of requests and responses.
 
-## <a name="PayloadStreamServerInterceptor">func</a> [PayloadStreamServerInterceptor](./payload_interceptors.go#L48)
+## <a name="PayloadStreamServerInterceptor">func</a> [PayloadStreamServerInterceptor](./payload_interceptors.go#L55)
 ``` go
 func PayloadStreamServerInterceptor(entry *logrus.Entry, decider grpc_logging.ServerPayloadLoggingDecider) grpc.StreamServerInterceptor
 ```
@@ -215,13 +216,13 @@ PayloadUnaryServerInterceptor returns a new server server interceptors that logs
 This *only* works when placed *after* the `grpc_logrus.StreamServerInterceptor`. However, the logging can be done to a
 separate instance of the logger.
 
-## <a name="PayloadUnaryClientInterceptor">func</a> [PayloadUnaryClientInterceptor](./payload_interceptors.go#L61)
+## <a name="PayloadUnaryClientInterceptor">func</a> [PayloadUnaryClientInterceptor](./payload_interceptors.go#L68)
 ``` go
 func PayloadUnaryClientInterceptor(entry *logrus.Entry, decider grpc_logging.ClientPayloadLoggingDecider) grpc.UnaryClientInterceptor
 ```
 PayloadUnaryClientInterceptor returns a new unary client interceptor that logs the paylods of requests and responses.
 
-## <a name="PayloadUnaryServerInterceptor">func</a> [PayloadUnaryServerInterceptor](./payload_interceptors.go#L28)
+## <a name="PayloadUnaryServerInterceptor">func</a> [PayloadUnaryServerInterceptor](./payload_interceptors.go#L29)
 ``` go
 func PayloadUnaryServerInterceptor(entry *logrus.Entry, decider grpc_logging.ServerPayloadLoggingDecider) grpc.UnaryServerInterceptor
 ```
@@ -260,6 +261,12 @@ UnaryClientInterceptor returns a new unary client interceptor that optionally lo
 func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServerInterceptor
 ```
 PayloadUnaryServerInterceptor returns a new unary server interceptors that adds logrus.Entry to the context.
+
+## <a name="WaitForLogging">func</a> [WaitForLogging](./payload_interceptors.go#L157)
+``` go
+func WaitForLogging()
+```
+WaitForLogging waits until the fire and forget logging messages are finished. This should be called before the termination of your server to ensure all log messages are emitted.
 
 ## <a name="CodeToLevel">type</a> [CodeToLevel](./options.go#L51)
 ``` go
