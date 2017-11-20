@@ -26,12 +26,6 @@
   revision = "1e59b77b52bf8e4b449a57e6f79f21226d571845"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/grpc-ecosystem/go-grpc-middleware"
-  packages = [".","auth","logging","logging/logrus","logging/zap","recovery","retry","tags","testing","testing/gogotestproto","testing/testproto","tracing/opentracing","util/backoffutils","util/metautils","validator"]
-  revision = "fa8fef87dcecac0bda02d36abb3c790ab9e0030b"
-
-[[projects]]
   name = "github.com/opentracing/opentracing-go"
   packages = [".","ext","log","mocktracer"]
   revision = "1949ddbfd147afd4d964a9f00b24eb291e0e7c38"
@@ -124,6 +118,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b67ea9776325a3fccee747d6fde8a8ca6edfa3825158054479ade270b8ba0d59"
+  inputs-digest = "bd7b2168d2d96509f1e9719d1636982062212578ae24e23459c7216e4456e9ae"
   solver-name = "gps-cdcl"
   solver-version = 1
