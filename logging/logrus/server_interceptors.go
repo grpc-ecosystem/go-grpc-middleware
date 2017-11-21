@@ -7,8 +7,8 @@ import (
 	"path"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )

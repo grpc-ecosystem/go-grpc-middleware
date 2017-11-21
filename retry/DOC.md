@@ -30,16 +30,16 @@ Please see examples for more advanced use.
 
 ```go
 client := pb_testproto.NewTestServiceClient(cc)
-	pong, err := client.Ping(
-	    newCtx(5*time.Second),
-	    &pb_testproto.PingRequest{},
-	    grpc_retry.WithMax(3),
-	    grpc_retry.WithPerRetryTimeout(1*time.Second))
-	if err != nil {
-	    return err
-	}
-	fmt.Printf("got pong: %v", pong)
-	return nil
+pong, err := client.Ping(
+    newCtx(5*time.Second),
+    &pb_testproto.PingRequest{},
+    grpc_retry.WithMax(3),
+    grpc_retry.WithPerRetryTimeout(1*time.Second))
+if err != nil {
+    return err
+}
+fmt.Printf("got pong: %v", pong)
+return nil
 ```
 
 </details>
@@ -51,13 +51,13 @@ client := pb_testproto.NewTestServiceClient(cc)
 
 ```go
 opts := []grpc_retry.CallOption{
-	    grpc_retry.WithBackoff(grpc_retry.BackoffLinear(100 * time.Millisecond)),
-	    grpc_retry.WithCodes(codes.NotFound, codes.Aborted),
-	}
-	return grpc.Dial("myservice.example.com",
-	    grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor(opts...)),
-	    grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(opts...)),
-	)
+    grpc_retry.WithBackoff(grpc_retry.BackoffLinear(100 * time.Millisecond)),
+    grpc_retry.WithCodes(codes.NotFound, codes.Aborted),
+}
+return grpc.Dial("myservice.example.com",
+    grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor(opts...)),
+    grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(opts...)),
+)
 ```
 
 </details>
@@ -69,9 +69,9 @@ opts := []grpc_retry.CallOption{
 
 ```go
 return grpc.Dial("myservice.example.com",
-	    grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor()),
-	    grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor()),
-	)
+    grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor()),
+    grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor()),
+)
 ```
 
 </details>
@@ -83,20 +83,20 @@ return grpc.Dial("myservice.example.com",
 
 ```go
 client := pb_testproto.NewTestServiceClient(cc)
-	stream, err := client.PingList(newCtx(1*time.Second), &pb_testproto.PingRequest{}, grpc_retry.WithMax(3))
-	if err != nil {
-	    return err
-	}
-	for {
-	    pong, err := stream.Recv() // retries happen here
-	    if err == io.EOF {
-	        break
-	    } else if err != nil {
-	        return err
-	    }
-	    fmt.Printf("got pong: %v", pong)
-	}
-	return nil
+stream, err := client.PingList(newCtx(1*time.Second), &pb_testproto.PingRequest{}, grpc_retry.WithMax(3))
+if err != nil {
+    return err
+}
+for {
+    pong, err := stream.Recv() // retries happen here
+    if err == io.EOF {
+        break
+    } else if err != nil {
+        return err
+    }
+    fmt.Printf("got pong: %v", pong)
+}
+return nil
 ```
 
 </details>
@@ -203,7 +203,7 @@ For example waitBetween=1s and jitter=0.10 can generate waits between 900ms and 
 ## <a name="CallOption">type</a> [CallOption](./options.go#L94-L97)
 ``` go
 type CallOption struct {
-    grpc.CallOption // anonymously implement it, without knowing the private fields.
+    grpc.EmptyCallOption // make sure we implement private after() and before() fields so we don't panic.
     // contains filtered or unexported fields
 }
 ```
