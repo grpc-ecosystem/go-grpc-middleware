@@ -84,7 +84,7 @@ needed. For example:
 #### <a name="pkg-files">Package files</a>
 [chain.go](./chain.go) [doc.go](./doc.go) [wrappers.go](./wrappers.go) 
 
-## <a name="ChainStreamClient">func</a> [ChainStreamClient](./chain.go#L106)
+## <a name="ChainStreamClient">func</a> [ChainStreamClient](./chain.go#L130)
 ``` go
 func ChainStreamClient(interceptors ...grpc.StreamClientInterceptor) grpc.StreamClientInterceptor
 ```
@@ -93,7 +93,7 @@ ChainStreamClient creates a single interceptor out of a chain of many intercepto
 Execution is done in left-to-right order, including passing of context.
 For example ChainStreamClient(one, two, three) will execute one before two before three.
 
-## <a name="ChainStreamServer">func</a> [ChainStreamServer](./chain.go#L48)
+## <a name="ChainStreamServer">func</a> [ChainStreamServer](./chain.go#L56)
 ``` go
 func ChainStreamServer(interceptors ...grpc.StreamServerInterceptor) grpc.StreamServerInterceptor
 ```
@@ -103,7 +103,7 @@ Execution is done in left-to-right order, including passing of context.
 For example ChainUnaryServer(one, two, three) will execute one before two before three.
 If you want to pass context between interceptors, use WrapServerStream.
 
-## <a name="ChainUnaryClient">func</a> [ChainUnaryClient](./chain.go#L77)
+## <a name="ChainUnaryClient">func</a> [ChainUnaryClient](./chain.go#L93)
 ``` go
 func ChainUnaryClient(interceptors ...grpc.UnaryClientInterceptor) grpc.UnaryClientInterceptor
 ```
@@ -122,14 +122,14 @@ Execution is done in left-to-right order, including passing of context.
 For example ChainUnaryServer(one, two, three) will execute one before two before three, and three
 will see context changes of one and two.
 
-## <a name="WithStreamServerChain">func</a> [WithStreamServerChain](./chain.go#L141)
+## <a name="WithStreamServerChain">func</a> [WithStreamServerChain](./chain.go#L173)
 ``` go
 func WithStreamServerChain(interceptors ...grpc.StreamServerInterceptor) grpc.ServerOption
 ```
 WithStreamServerChain is a grpc.Server config option that accepts multiple stream interceptors.
 Basically syntactic sugar.
 
-## <a name="WithUnaryServerChain">func</a> [WithUnaryServerChain](./chain.go#L135)
+## <a name="WithUnaryServerChain">func</a> [WithUnaryServerChain](./chain.go#L167)
 ``` go
 func WithUnaryServerChain(interceptors ...grpc.UnaryServerInterceptor) grpc.ServerOption
 ```

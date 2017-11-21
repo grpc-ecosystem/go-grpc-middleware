@@ -13,8 +13,12 @@
 Tags describe information about the request, and can be set and used by other middleware, or handlers. Tags are used
 for logging and tracing of requests. Tags are populated both upwards, *and* downwards in the interceptor-handler stack.
 
-You can automatically extract tags (in `grpc.request.<field_name>`) from request payloads (in unary and server-streaming)
-by passing in the `WithFieldExtractor` option.
+You can automatically extract tags (in `grpc.request.<field_name>`) from request payloads.
+
+For unary and server-streaming methods, pass in the `WithFieldExtractor` option. For client-streams and bidirectional-streams, you can
+use `WithFieldExtractorForInitialReq` which will extract the tags from the first message passed from client to server.
+Note the tags will not be modified for subsequent requests, so this option only makes sense when the initial message
+establishes the meta-data for the stream.
 
 If a user doesn't use the interceptors that initialize the `Tags` object, all operations following from an `Extract(ctx)`
 will be no-ops. This is to ensure that code doesn't panic if the interceptors weren't used.
@@ -29,13 +33,13 @@ Tags fields are typed, and shallow and should follow the OpenTracing semantics c
 
 ```go
 opts := []grpc_ctxtags.Option{
-	    grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.TagBasedRequestFieldExtractor("log_fields")),
-	}
-	server := grpc.NewServer(
-	    grpc.StreamInterceptor(grpc_ctxtags.StreamServerInterceptor(opts...)),
-	    grpc.UnaryInterceptor(grpc_ctxtags.UnaryServerInterceptor(opts...)),
-	)
-	return server
+    grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.TagBasedRequestFieldExtractor("log_fields")),
+}
+server := grpc.NewServer(
+    grpc.StreamInterceptor(grpc_ctxtags.StreamServerInterceptor(opts...)),
+    grpc.UnaryInterceptor(grpc_ctxtags.UnaryServerInterceptor(opts...)),
+)
+return server
 ```
 
 </details>
@@ -53,6 +57,7 @@ opts := []grpc_ctxtags.Option{
 * [func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor](#UnaryServerInterceptor)
 * [type Option](#Option)
   * [func WithFieldExtractor(f RequestFieldExtractorFunc) Option](#WithFieldExtractor)
+  * [func WithFieldExtractorForInitialReq(f RequestFieldExtractorFunc) Option](#WithFieldExtractorForInitialReq)
 * [type RequestFieldExtractorFunc](#RequestFieldExtractorFunc)
   * [func TagBasedRequestFieldExtractor(tagName string) RequestFieldExtractorFunc](#TagBasedRequestFieldExtractor)
 * [type Tags](#Tags)
@@ -86,16 +91,25 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor
 ```
 UnaryServerInterceptor returns a new unary server interceptors that sets the values for request tags.
 
-## <a name="Option">type</a> [Option](./options.go#L25)
+## <a name="Option">type</a> [Option](./options.go#L26)
 ``` go
 type Option func(*options)
 ```
 
-### <a name="WithFieldExtractor">func</a> [WithFieldExtractor](./options.go#L28)
+### <a name="WithFieldExtractor">func</a> [WithFieldExtractor](./options.go#L30)
 ``` go
 func WithFieldExtractor(f RequestFieldExtractorFunc) Option
 ```
-WithFieldExtractor customizes the function for extracting log fields from protobuf messages.
+WithFieldExtractor customizes the function for extracting log fields from protobuf messages, for
+unary and server-streamed methods only.
+
+### <a name="WithFieldExtractorForInitialReq">func</a> [WithFieldExtractorForInitialReq](./options.go#L39)
+``` go
+func WithFieldExtractorForInitialReq(f RequestFieldExtractorFunc) Option
+```
+WithFieldExtractorForInitialReq customizes the function for extracting log fields from protobuf messages,
+for all unary and streaming methods. For client-streams and bidirectional-streams, the tags will be
+extracted from the first message from the client.
 
 ## <a name="RequestFieldExtractorFunc">type</a> [RequestFieldExtractorFunc](./fieldextractor.go#L13)
 ``` go

@@ -28,16 +28,16 @@ Please see examples for simple examples of use.
 
 ```go
 token, err := grpc_auth.AuthFromMD(ctx, "bearer")
-	if err != nil {
-	    return nil, err
-	}
-	tokenInfo, err := parseToken(token)
-	if err != nil {
-	    return nil, grpc.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
-	}
-	grpc_ctxtags.Extract(ctx).Set("auth.sub", userClaimFromToken(tokenInfo))
-	newCtx := context.WithValue(ctx, "tokenInfo", tokenInfo)
-	return newCtx, nil
+if err != nil {
+    return nil, err
+}
+tokenInfo, err := parseToken(token)
+if err != nil {
+    return nil, grpc.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
+}
+grpc_ctxtags.Extract(ctx).Set("auth.sub", userClaimFromToken(tokenInfo))
+newCtx := context.WithValue(ctx, "tokenInfo", tokenInfo)
+return newCtx, nil
 ```
 
 </details>
@@ -49,10 +49,10 @@ token, err := grpc_auth.AuthFromMD(ctx, "bearer")
 
 ```go
 server := grpc.NewServer(
-	    grpc.StreamInterceptor(grpc_auth.StreamServerInterceptor(Example_authfunc)),
-	    grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(Example_authfunc)),
-	)
-	return server
+    grpc.StreamInterceptor(grpc_auth.StreamServerInterceptor(Example_authfunc)),
+    grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(Example_authfunc)),
+)
+return server
 ```
 
 </details>

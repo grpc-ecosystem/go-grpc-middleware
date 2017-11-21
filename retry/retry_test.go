@@ -136,7 +136,7 @@ func (s *RetrySuite) TestCallOptionsDontPanicWithoutInterceptor() {
 		grpc_retry.WithMax(5),
 		grpc_retry.WithBackoff(grpc_retry.BackoffLinear(1*time.Millisecond)),
 		grpc_retry.WithCodes(codes.DataLoss),
-		grpc_retry.WithPerRetryTimeout(1 * time.Millisecond),
+		grpc_retry.WithPerRetryTimeout(1*time.Millisecond),
 	)
 	require.Error(s.T(), err)
 }

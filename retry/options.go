@@ -93,7 +93,7 @@ type options struct {
 // callOption is a grpc.CallOption that is local to grpc_retry.
 type CallOption struct {
 	grpc.EmptyCallOption // make sure we implement private after() and before() fields so we don't panic.
-	applyFunc       func(opt *options)
+	applyFunc            func(opt *options)
 }
 
 func reuseOrNewWithCallOptions(opt *options, callOptions []CallOption) *options {

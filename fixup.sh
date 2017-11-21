@@ -5,13 +5,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 GOBIN=${GOBIN:="$GOPATH/bin"}
 
 function print_real_go_files {
-    grep --files-without-match 'DO NOT EDIT!' $(find . -iname '*.go')
+    grep --files-without-match 'DO NOT EDIT!' $(find . -iname '*.go') --exclude=./vendor/*
 }
 
 function generate_markdown {
     echo "Generating Github markdown"
     oldpwd=$(pwd)
-    for i in $(find . -iname 'doc.go'); do
+    for i in $(find . -iname 'doc.go' -not -path "*vendor/*"); do
         dir=${i%/*}
         realdir=$(realpath $dir)
         package=${realdir##${GOPATH}/src/}
@@ -29,7 +29,8 @@ function goimports_all {
     return $?
 }
 
-go get github.com/davecheney/godoc2md
+go get github.com/devnev/godoc2ghmd
+
 
 generate_markdown
 goimports_all
