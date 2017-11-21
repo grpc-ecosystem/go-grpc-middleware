@@ -1,4 +1,4 @@
-package grpc_zap_test
+package ctxlogger_zap_test
 
 import (
 	"bytes"
@@ -6,8 +6,8 @@ import (
 	"io"
 	"testing"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags/ctxlogger/zap"
 	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"go.uber.org/zap"
@@ -25,8 +25,8 @@ type loggingPingService struct {
 
 func (s *loggingPingService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
 	grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
-	ctxlogger_zap.AddFields(ctx, zap.String("custom_field", "custom_value"))
-	ctxlogger_zap.Extract(ctx).Info("some ping")
+	grpc_zap.AddFields(ctx, zap.String("custom_field", "custom_value"))
+	grpc_zap.Extract(ctx).Info("some ping")
 	return s.TestServiceServer.Ping(ctx, ping)
 }
 
@@ -36,7 +36,7 @@ func (s *loggingPingService) PingError(ctx context.Context, ping *pb_testproto.P
 
 func (s *loggingPingService) PingList(ping *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
 	grpc_ctxtags.Extract(stream.Context()).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
-	ctxlogger_zap.Extract(stream.Context()).Info("some pinglist")
+	grpc_zap.Extract(stream.Context()).Info("some pinglist")
 	return s.TestServiceServer.PingList(ping, stream)
 }
 

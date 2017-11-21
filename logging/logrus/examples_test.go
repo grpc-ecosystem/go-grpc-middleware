@@ -8,6 +8,7 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags/ctxlogger/logrus"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -32,10 +33,12 @@ func Example_Initialization() {
 	_ = grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
 			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			ctxlogger_logrus.UnaryServerInterceptor(logrusEntry),
 			grpc_logrus.UnaryServerInterceptor(logrusEntry, opts...),
 		),
 		grpc_middleware.WithStreamServerChain(
 			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			ctxlogger_logrus.StreamServerInterceptor(logrusEntry),
 			grpc_logrus.StreamServerInterceptor(logrusEntry, opts...),
 		),
 	)
@@ -53,6 +56,7 @@ func Example_InitializationWithDurationFieldOverride() {
 	_ = grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
 			grpc_ctxtags.UnaryServerInterceptor(),
+			ctxlogger_logrus.UnaryServerInterceptor(logrusEntry),
 			grpc_logrus.UnaryServerInterceptor(logrusEntry, opts...),
 		),
 		grpc_middleware.WithStreamServerChain(
@@ -68,7 +72,7 @@ func Example_HandlerUsageUnaryPing() {
 		// Add fields the ctxtags of the request which will be added to all extracted loggers.
 		grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
 		// Extract a single request-scoped logrus.Logger and log messages.
-		l := grpc_logrus.Extract(ctx)
+		l := ctxlogger_logrus.Extract(ctx)
 		l.Info("some ping")
 		l.Info("another ping")
 		return &pb_testproto.PingResponse{Value: ping.Value}, nil

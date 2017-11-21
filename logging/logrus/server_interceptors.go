@@ -1,5 +1,4 @@
-// Copyright 2017 Michal Witkowski. All Rights Reserved.
-// See LICENSE for licensing terms.
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 package grpc_logrus
 
@@ -8,6 +7,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags/ctxlogger/logrus"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -39,7 +39,7 @@ func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServe
 			fields[logrus.ErrorKey] = err
 		}
 		levelLogf(
-			Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
+			ctxlogger_logrus.Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
 			level,
 			"finished unary call")
 		return resp, err
@@ -67,7 +67,7 @@ func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamSer
 			fields[logrus.ErrorKey] = err
 		}
 		levelLogf(
-			Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
+			ctxlogger_logrus.Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
 			level,
 			"finished streaming call")
 		return err
@@ -101,5 +101,7 @@ func newLoggerForCall(ctx context.Context, entry *logrus.Entry, fullMethodString
 			"grpc.service": service,
 			"grpc.method":  method,
 		})
-	return toContext(ctx, callLog)
+
+	callLog = callLog.WithFields(ctxlogger_logrus.Extract(ctx).Data)
+	return ctxlogger_logrus.ToContext(ctx, callLog)
 }

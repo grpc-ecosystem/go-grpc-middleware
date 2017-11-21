@@ -1,20 +1,12 @@
-// Copyright 2017 Michal Witkowski. All Rights Reserved.
-// See LICENSE for licensing terms.
-
 package grpc_logrus_test
 
 import (
 	"fmt"
-	"runtime"
-	"testing"
-
-	"io/ioutil"
-	"strings"
-
-	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc"
-
 	"io"
+	"io/ioutil"
+	"runtime"
+	"strings"
+	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -23,7 +15,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
 
 var (

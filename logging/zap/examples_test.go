@@ -9,6 +9,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags/ctxlogger/zap"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
@@ -31,10 +32,12 @@ func Example_Initialization() {
 	_ = grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
 			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			ctxlogger_zap.UnaryServerInterceptor(zapLogger),
 			grpc_zap.UnaryServerInterceptor(zapLogger, opts...),
 		),
 		grpc_middleware.WithStreamServerChain(
 			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			ctxlogger_zap.StreamServerInterceptor(zapLogger),
 			grpc_zap.StreamServerInterceptor(zapLogger, opts...),
 		),
 	)
@@ -65,8 +68,9 @@ func Example_HandlerUsageUnaryPing() {
 	_ = func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
 		// Add fields the ctxtags of the request which will be added to all extracted loggers.
 		grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
-		// Extract a single request-scoped zap.Logger and log messages.
-		l := grpc_zap.Extract(ctx)
+
+		// Extract a single request-scoped zap.Logger and log messages. (containing the grpc.xxx tags)
+		l := ctxlogger_zap.Extract(ctx)
 		l.Info("some ping")
 		l.Info("another ping")
 		return &pb_testproto.PingResponse{Value: ping.Value}, nil
