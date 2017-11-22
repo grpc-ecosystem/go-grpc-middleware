@@ -1,4 +1,4 @@
-package ctxlogger_zap_test
+package ctxlogger_zap
 
 import (
 	"io"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags/ctxlogger/zap"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags/zap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

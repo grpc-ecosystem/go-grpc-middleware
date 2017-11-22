@@ -1,4 +1,4 @@
-package ctxlogger_logrus_test
+package ctxlogger_logrus
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags/ctxlogger/logrus"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/sirupsen/logrus"

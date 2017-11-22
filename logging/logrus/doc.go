@@ -7,12 +7,6 @@ It accepts a user-configured `logrus.Entry` that will be used for logging comple
 On calling `StreamServerInterceptor` or `UnaryServerInterceptor` this logging middleware will add gRPC call information
 to the ctx so that it will be present on subsequent use of the `ctxlogger_zap` logger.
 
-You can use `ctxlogger_logrus.Extract` to log into a request-scoped `logrus.Entry` instance in your handler code. The fields set on the
-logger correspond to the grpc_ctxtags.Tags attached to the context.
-
-As `ctxlogger_logrus.Extract` will iterate all tags on from `grpc_ctxtags` it is therefore expensive so it is advised that you
-extract once at the start of the function from the context and reuse it for the remainder of the function (see examples).
-
 This package also implements request and response *payload* logging, both for server-side and client-side. These will be
 logged as structured `jsonbp` fields for every message received/sent (both unary and streaming). For that please use
 `Payload*Interceptor` functions for that. Please note that the user-provided function that determines whetether to log

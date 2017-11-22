@@ -3,13 +3,12 @@
 
 //
 /*
-grpc_logging is a "parent" package for gRPC logging middlewares
+grpc_logging is a "parent" package for gRPC logging middlewares.
 
 General functionality of all middleware
 
-All logging middleware have an adds request-scoped grpc_ctxtags with gRPC-related fields
-(service and method names). Moreover, that logger will have fields populated from the `grpc_ctxtags.Tags` of the
-context.
+The gRPC logging middleware populates request-scoped data to `grpc_ctxtags.Tags` that relate to the current gRPC call
+(e.g. service and method names).
 
 Once the gRPC logging middleware has added the gRPC specific Tags to the ctx they will then be written with the logs
 that are made using the `ctxlogger_logrus` or `ctxlogger_zap` loggers.

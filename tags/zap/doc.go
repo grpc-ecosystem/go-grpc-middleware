@@ -18,8 +18,6 @@ logged as structured `jsonbp` fields for every message received/sent (both unary
 `Payload*Interceptor` functions for that. Please note that the user-provided function that determines whetether to log
 the full request/response payload needs to be written with care, this can significantly slow down gRPC.
 
-ZAP can also be made as a backend for gRPC library internals. For that use `ReplaceGrpcLogger`.
-
 Please see examples and tests for examples of use.
 */
 package ctxlogger_zap

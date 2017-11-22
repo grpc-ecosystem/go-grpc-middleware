@@ -1,4 +1,4 @@
-package ctxlogger_zap_test
+package ctxlogger_zap
 
 import (
 	"bytes"

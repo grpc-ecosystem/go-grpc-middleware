@@ -1,10 +1,9 @@
 # ctxlogger_logrus
-`import "github.com/grpc-ecosystem/go-grpc-middleware/tags/ctxlogger/logrus"`
+`import "github.com/grpc-ecosystem/go-grpc-middleware/tags/logrus"`
 
 * [Overview](#pkg-overview)
 * [Imported Packages](#pkg-imports)
 * [Index](#pkg-index)
-* [Examples](#pkg-examples)
 
 ## <a name="pkg-overview">Overview</a>
 `ctxlogger_logrus` is a ctxlogger that is backed by logrus
@@ -22,55 +21,10 @@ extract once at the start of the function from the context and reuse it for the 
 
 Please see examples and tests for examples of use.
 
-#### Example:
-
-<details>
-<summary>Click to expand code.</summary>
-
-```go
-x := func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
-    // Add fields the ctxtags of the request which will be added to all extracted loggers.
-    grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
-    // Extract a single request-scoped logrus.Logger and log messages.
-    l := ctxlogger_logrus.Extract(ctx)
-    l.Info("some ping")
-    l.Info("another ping")
-    return &pb_testproto.PingResponse{Value: ping.Value}, nil
-}
-return x
-```
-
-</details>
-
-#### Example:
-
-<details>
-<summary>Click to expand code.</summary>
-
-```go
-// Logrus entry is used, allowing pre-definition of certain fields by the user.
-logrusEntry := logrus.NewEntry(logrusLogger)
-
-// Create a server, make sure we put the grpc_ctxtags context before everything else.
-server := grpc.NewServer(
-    grpc_middleware.WithUnaryServerChain(
-        grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-        ctxlogger_logrus.UnaryServerInterceptor(logrusEntry),
-    ),
-    grpc_middleware.WithStreamServerChain(
-        grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-        ctxlogger_logrus.StreamServerInterceptor(logrusEntry),
-    ),
-)
-return server
-```
-
-</details>
-
 ## <a name="pkg-imports">Imported Packages</a>
 
-- [github.com/grpc-ecosystem/go-grpc-middleware](./../../..)
-- [github.com/grpc-ecosystem/go-grpc-middleware/tags](./../..)
+- [github.com/grpc-ecosystem/go-grpc-middleware](./../..)
+- [github.com/grpc-ecosystem/go-grpc-middleware/tags](./..)
 - [github.com/sirupsen/logrus](https://godoc.org/github.com/sirupsen/logrus)
 - [golang.org/x/net/context](https://godoc.org/golang.org/x/net/context)
 - [google.golang.org/grpc](https://godoc.org/google.golang.org/grpc)
@@ -81,10 +35,6 @@ return server
 * [func StreamServerInterceptor(entry \*logrus.Entry) grpc.StreamServerInterceptor](#StreamServerInterceptor)
 * [func ToContext(ctx context.Context, entry \*logrus.Entry) context.Context](#ToContext)
 * [func UnaryServerInterceptor(entry \*logrus.Entry) grpc.UnaryServerInterceptor](#UnaryServerInterceptor)
-
-#### <a name="pkg-examples">Examples</a>
-* [Package (HandlerUsageUnaryPing)](#example__handlerUsageUnaryPing)
-* [Package (Initialization)](#example__initialization)
 
 #### <a name="pkg-files">Package files</a>
 [context.go](./context.go) [doc.go](./doc.go) [noop.go](./noop.go) [server_interceptors.go](./server_interceptors.go) 

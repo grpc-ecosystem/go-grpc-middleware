@@ -1,4 +1,4 @@
-package ctxlogger_zap_test
+package ctxlogger_zap
 
 import (
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
@@ -7,15 +7,17 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags/ctxlogger/zap"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags/zap"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
+var zapLogger *zap.Logger
+
 // Initialization shows a relatively complex initialization sequence.
-func Example_initialization(zapLogger *zap.Logger) *grpc.Server {
+func Example_Initialization() {
 	// Create a server, make sure we put the grpc_ctxtags context before everything else.
-	server := grpc.NewServer(
+	_ = grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
 			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
 			ctxlogger_zap.UnaryServerInterceptor(zapLogger),
@@ -25,12 +27,11 @@ func Example_initialization(zapLogger *zap.Logger) *grpc.Server {
 			ctxlogger_zap.StreamServerInterceptor(zapLogger),
 		),
 	)
-	return server
 }
 
 // Simple unary handler that adds custom fields to the requests's context. These will be used for all log statements.
-func Example_handlerUsageUnaryPing() interface{} {
-	x := func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
+func Example_HandlerUsageUnaryPing() {
+	_ = func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
 		// Add fields the ctxtags of the request which will be added to all extracted loggers.
 		grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
 
@@ -40,5 +41,4 @@ func Example_handlerUsageUnaryPing() interface{} {
 		l.Info("another ping")
 		return &pb_testproto.PingResponse{Value: ping.Value}, nil
 	}
-	return x
 }
