@@ -4,7 +4,6 @@
 * [Overview](#pkg-overview)
 * [Imported Packages](#pkg-imports)
 * [Index](#pkg-index)
-* [Examples](#pkg-examples)
 
 ## <a name="pkg-overview">Overview</a>
 `grpc_zap` is a gRPC logging middleware backed by ZAP loggers
@@ -26,82 +25,6 @@ the full request/response payload needs to be written with care, this can signif
 ZAP can also be made as a backend for gRPC library internals. For that use `ReplaceGrpcLogger`.
 
 Please see examples and tests for examples of use.
-
-#### Example:
-
-<details>
-<summary>Click to expand code.</summary>
-
-```go
-x := func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
-    // Add fields the ctxtags of the request which will be added to all extracted loggers.
-    grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
-    // Extract a single request-scoped zap.Logger and log messages.
-    l := grpc_zap.Extract(ctx)
-    l.Info("some ping")
-    l.Info("another ping")
-    return &pb_testproto.PingResponse{Value: ping.Value}, nil
-}
-return x
-```
-
-</details>
-
-#### Example:
-
-<details>
-<summary>Click to expand code.</summary>
-
-```go
-// Shared options for the logger, with a custom gRPC code to log level function.
-opts := []grpc_zap.Option{
-    grpc_zap.WithLevels(customFunc),
-}
-// Make sure that log statements internal to gRPC library are logged using the zapLogger as well.
-grpc_zap.ReplaceGrpcLogger(zapLogger)
-// Create a server, make sure we put the grpc_ctxtags context before everything else.
-server := grpc.NewServer(
-    grpc_middleware.WithUnaryServerChain(
-        grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-        grpc_zap.UnaryServerInterceptor(zapLogger, opts...),
-    ),
-    grpc_middleware.WithStreamServerChain(
-        grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-        grpc_zap.StreamServerInterceptor(zapLogger, opts...),
-    ),
-)
-return server
-```
-
-</details>
-
-#### Example:
-
-<details>
-<summary>Click to expand code.</summary>
-
-```go
-opts := []grpc_zap.Option{
-    grpc_zap.WithDurationField(func(duration time.Duration) zapcore.Field {
-        return zap.Int64("grpc.time_ns", duration.Nanoseconds())
-    }),
-}
-
-server := grpc.NewServer(
-    grpc_middleware.WithUnaryServerChain(
-        grpc_ctxtags.UnaryServerInterceptor(),
-        grpc_zap.UnaryServerInterceptor(zapLogger, opts...),
-    ),
-    grpc_middleware.WithStreamServerChain(
-        grpc_ctxtags.StreamServerInterceptor(),
-        grpc_zap.StreamServerInterceptor(zapLogger, opts...),
-    ),
-)
-
-return server
-```
-
-</details>
 
 ## <a name="pkg-imports">Imported Packages</a>
 
@@ -140,11 +63,6 @@ return server
   * [func WithCodes(f grpc\_logging.ErrorToCode) Option](#WithCodes)
   * [func WithDurationField(f DurationToField) Option](#WithDurationField)
   * [func WithLevels(f CodeToLevel) Option](#WithLevels)
-
-#### <a name="pkg-examples">Examples</a>
-* [Package (HandlerUsageUnaryPing)](#example__handlerUsageUnaryPing)
-* [Package (Initialization)](#example__initialization)
-* [Package (InitializationWithDurationFieldOverride)](#example__initializationWithDurationFieldOverride)
 
 #### <a name="pkg-files">Package files</a>
 [client_interceptors.go](./client_interceptors.go) [context.go](./context.go) [doc.go](./doc.go) [grpclogger.go](./grpclogger.go) [options.go](./options.go) [payload_interceptors.go](./payload_interceptors.go) [server_interceptors.go](./server_interceptors.go) 

@@ -4,7 +4,6 @@
 * [Overview](#pkg-overview)
 * [Imported Packages](#pkg-imports)
 * [Index](#pkg-index)
-* [Examples](#pkg-examples)
 
 ## <a name="pkg-overview">Overview</a>
 `grpc_retry` provides client-side request retry logic for gRPC.
@@ -22,84 +21,6 @@ Other default options are: retry on `ResourceExhausted` and `Unavailable` gRPC c
 linear backoff with 10% jitter.
 
 Please see examples for more advanced use.
-
-#### Example:
-
-<details>
-<summary>Click to expand code.</summary>
-
-```go
-client := pb_testproto.NewTestServiceClient(cc)
-pong, err := client.Ping(
-    newCtx(5*time.Second),
-    &pb_testproto.PingRequest{},
-    grpc_retry.WithMax(3),
-    grpc_retry.WithPerRetryTimeout(1*time.Second))
-if err != nil {
-    return err
-}
-fmt.Printf("got pong: %v", pong)
-return nil
-```
-
-</details>
-
-#### Example:
-
-<details>
-<summary>Click to expand code.</summary>
-
-```go
-opts := []grpc_retry.CallOption{
-    grpc_retry.WithBackoff(grpc_retry.BackoffLinear(100 * time.Millisecond)),
-    grpc_retry.WithCodes(codes.NotFound, codes.Aborted),
-}
-return grpc.Dial("myservice.example.com",
-    grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor(opts...)),
-    grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(opts...)),
-)
-```
-
-</details>
-
-#### Example:
-
-<details>
-<summary>Click to expand code.</summary>
-
-```go
-return grpc.Dial("myservice.example.com",
-    grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor()),
-    grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor()),
-)
-```
-
-</details>
-
-#### Example:
-
-<details>
-<summary>Click to expand code.</summary>
-
-```go
-client := pb_testproto.NewTestServiceClient(cc)
-stream, err := client.PingList(newCtx(1*time.Second), &pb_testproto.PingRequest{}, grpc_retry.WithMax(3))
-if err != nil {
-    return err
-}
-for {
-    pong, err := stream.Recv() // retries happen here
-    if err == io.EOF {
-        break
-    } else if err != nil {
-        return err
-    }
-    fmt.Printf("got pong: %v", pong)
-}
-return nil
-```
-
-</details>
 
 ## <a name="pkg-imports">Imported Packages</a>
 
@@ -125,12 +46,6 @@ return nil
   * [func WithCodes(retryCodes ...codes.Code) CallOption](#WithCodes)
   * [func WithMax(maxRetries uint) CallOption](#WithMax)
   * [func WithPerRetryTimeout(timeout time.Duration) CallOption](#WithPerRetryTimeout)
-
-#### <a name="pkg-examples">Examples</a>
-* [Package (Deadlinecall)](#example__deadlinecall)
-* [Package (Dialcomplex)](#example__dialcomplex)
-* [Package (Dialsimple)](#example__dialsimple)
-* [Package (Simplecall)](#example__simplecall)
 
 #### <a name="pkg-files">Package files</a>
 [backoff.go](./backoff.go) [doc.go](./doc.go) [options.go](./options.go) [retry.go](./retry.go) 
