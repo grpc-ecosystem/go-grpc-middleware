@@ -4,7 +4,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
 function print_real_go_files {
-    grep --files-without-match 'DO NOT EDIT!' $(find . -iname '*.go')
+    grep --files-without-match 'DO NOT EDIT!' $(find . -iname '*.go') --exclude=./vendor/*
 }
 
 function govet_all {
