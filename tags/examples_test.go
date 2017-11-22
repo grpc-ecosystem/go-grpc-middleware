@@ -10,7 +10,7 @@ func Example_Initialization() {
 	opts := []grpc_ctxtags.Option{
 		grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.TagBasedRequestFieldExtractor("log_fields")),
 	}
-	_ := grpc.NewServer(
+	_ = grpc.NewServer(
 		grpc.StreamInterceptor(grpc_ctxtags.StreamServerInterceptor(opts...)),
 		grpc.UnaryInterceptor(grpc_ctxtags.UnaryServerInterceptor(opts...)),
 	)
@@ -21,7 +21,7 @@ func Example_InitializationForInitialReq() {
 	opts := []grpc_ctxtags.Option{
 		grpc_ctxtags.WithFieldExtractorForInitialReq(grpc_ctxtags.TagBasedRequestFieldExtractor("log_fields")),
 	}
-	_ := grpc.NewServer(
+	_ = grpc.NewServer(
 		grpc.StreamInterceptor(grpc_ctxtags.StreamServerInterceptor(opts...)),
 		grpc.UnaryInterceptor(grpc_ctxtags.UnaryServerInterceptor(opts...)),
 	)
