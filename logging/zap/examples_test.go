@@ -15,9 +15,7 @@ import (
 )
 
 var (
-	handler    func(context.Context, *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error)
 	zapLogger  *zap.Logger
-	server     *grpc.Server
 	customFunc grpc_zap.CodeToLevel
 )
 
@@ -30,7 +28,7 @@ func Example_Initialization() {
 	// Make sure that log statements internal to gRPC library are logged using the zapLogger as well.
 	grpc_zap.ReplaceGrpcLogger(zapLogger)
 	// Create a server, make sure we put the grpc_ctxtags context before everything else.
-	server = grpc.NewServer(
+	_ = grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
 			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
 			grpc_zap.UnaryServerInterceptor(zapLogger, opts...),
@@ -50,7 +48,7 @@ func Example_InitializationWithDurationFieldOverride() {
 		}),
 	}
 
-	server = grpc.NewServer(
+	_ = grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
 			grpc_ctxtags.UnaryServerInterceptor(),
 			grpc_zap.UnaryServerInterceptor(zapLogger, opts...),
@@ -64,7 +62,7 @@ func Example_InitializationWithDurationFieldOverride() {
 
 // Simple unary handler that adds custom fields to the requests's context. These will be used for all log statements.
 func Example_HandlerUsageUnaryPing() {
-	handler = func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
+	_ = func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
 		// Add fields the ctxtags of the request which will be added to all extracted loggers.
 		grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
 		// Extract a single request-scoped zap.Logger and log messages.

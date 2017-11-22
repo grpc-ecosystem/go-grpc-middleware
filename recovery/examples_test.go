@@ -11,7 +11,6 @@ import (
 
 var (
 	customFunc grpc_recovery.RecoveryHandlerFunc
-	server     *grpc.Server
 )
 
 // Initialization shows an initialization sequence with a custom recovery handler func.
@@ -22,7 +21,7 @@ func Example_initialization() {
 	}
 	// Create a server. Recovery handlers should typically be last in the chain so that other middleware
 	// (e.g. logging) can operate on the recovered state instead of being directly affected by any panic
-	server = grpc.NewServer(
+	_ = grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
 			grpc_recovery.UnaryServerInterceptor(opts...),
 		),

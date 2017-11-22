@@ -9,8 +9,7 @@ import (
 )
 
 var (
-	cc     *grpc.ClientConn
-	server *grpc.Server
+	cc *grpc.ClientConn
 )
 
 func parseToken(token string) (struct{}, error) {
@@ -23,8 +22,7 @@ func userClaimFromToken(struct{}) string {
 
 // Simple example of server initialization code.
 func Example_ServerConfig() {
-	var exampleAuthFunc func(context.Context) (context.Context, error)
-	exampleAuthFunc = func(ctx context.Context) (context.Context, error) {
+	exampleAuthFunc := func(ctx context.Context) (context.Context, error) {
 		token, err := grpc_auth.AuthFromMD(ctx, "bearer")
 		if err != nil {
 			return nil, err
@@ -38,7 +36,7 @@ func Example_ServerConfig() {
 		return newCtx, nil
 	}
 
-	server = grpc.NewServer(
+	_ = grpc.NewServer(
 		grpc.StreamInterceptor(grpc_auth.StreamServerInterceptor(exampleAuthFunc)),
 		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(exampleAuthFunc)),
 	)
