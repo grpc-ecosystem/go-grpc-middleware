@@ -1,4 +1,4 @@
-package ctxlogger_logrus
+package ctxlogger_logrus_test
 
 import (
 	"runtime"

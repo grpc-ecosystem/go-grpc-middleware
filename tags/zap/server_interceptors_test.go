@@ -1,4 +1,4 @@
-package ctxlogger_zap
+package ctxlogger_zap_test
 
 import (
 	"io"

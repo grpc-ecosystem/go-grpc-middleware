@@ -1,4 +1,4 @@
-package ctxlogger_zap
+package ctxlogger_zap_test
 
 import (
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"

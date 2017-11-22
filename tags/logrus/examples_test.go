@@ -1,4 +1,4 @@
-package ctxlogger_logrus
+package ctxlogger_logrus_test
 
 import (
 	"github.com/grpc-ecosystem/go-grpc-middleware"
