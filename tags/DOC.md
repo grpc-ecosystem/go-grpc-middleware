@@ -4,7 +4,6 @@
 * [Overview](#pkg-overview)
 * [Imported Packages](#pkg-imports)
 * [Index](#pkg-index)
-* [Examples](#pkg-examples)
 
 ## <a name="pkg-overview">Overview</a>
 `grpc_ctxtags` adds a Tag object to the context that can be used by other middleware to add context about a request.
@@ -25,24 +24,6 @@ will be no-ops. This is to ensure that code doesn't panic if the interceptors we
 
 Tags fields are typed, and shallow and should follow the OpenTracing semantics convention:
 <a href="https://github.com/opentracing/specification/blob/master/semantic_conventions.md">https://github.com/opentracing/specification/blob/master/semantic_conventions.md</a>
-
-#### Example:
-
-<details>
-<summary>Click to expand code.</summary>
-
-```go
-opts := []grpc_ctxtags.Option{
-    grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.TagBasedRequestFieldExtractor("log_fields")),
-}
-server := grpc.NewServer(
-    grpc.StreamInterceptor(grpc_ctxtags.StreamServerInterceptor(opts...)),
-    grpc.UnaryInterceptor(grpc_ctxtags.UnaryServerInterceptor(opts...)),
-)
-return server
-```
-
-</details>
 
 ## <a name="pkg-imports">Imported Packages</a>
 
@@ -65,9 +46,6 @@ return server
   * [func (t \*Tags) Has(key string) bool](#Tags.Has)
   * [func (t \*Tags) Set(key string, value interface{}) \*Tags](#Tags.Set)
   * [func (t \*Tags) Values() map[string]interface{}](#Tags.Values)
-
-#### <a name="pkg-examples">Examples</a>
-* [Package (Initialization)](#example__initialization)
 
 #### <a name="pkg-files">Package files</a>
 [context.go](./context.go) [doc.go](./doc.go) [fieldextractor.go](./fieldextractor.go) [interceptors.go](./interceptors.go) [options.go](./options.go) 
