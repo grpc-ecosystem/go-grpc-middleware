@@ -3,13 +3,15 @@
 
 //
 /*
-grpc_logging is a "parent" package for gRPC logging middlewares
+grpc_logging is a "parent" package for gRPC logging middlewares.
 
 General functionality of all middleware
 
-All logging middleware have an `Extract(ctx)` function that provides a request-scoped logger with gRPC-related fields
-(service and method names). Moreover, that logger will have fields populated from the `grpc_ctxtags.Tags` of the
-context.
+The gRPC logging middleware populates request-scoped data to `grpc_ctxtags.Tags` that relate to the current gRPC call
+(e.g. service and method names).
+
+Once the gRPC logging middleware has added the gRPC specific Tags to the ctx they will then be written with the logs
+that are made using the `ctx_logrus` or `ctx_zap` loggers.
 
 All logging middleware will emit a final log statement. It is based on the error returned by the handler function,
 the gRPC status code, an error (if any) and it will emit at a level controlled via `WithLevels`.

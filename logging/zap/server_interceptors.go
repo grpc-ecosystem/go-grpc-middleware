@@ -1,6 +1,3 @@
-// Copyright 2017 Michal Witkowski. All Rights Reserved.
-// See LICENSE for licensing terms.
-
 package grpc_zap
 
 import (
@@ -8,6 +5,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags/zap"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/net/context"
@@ -33,7 +31,7 @@ func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServer
 		level := o.levelFunc(code)
 
 		// re-extract logger from newCtx, as it may have extra fields that changed in the holder.
-		Extract(newCtx).Check(level, "finished unary call").Write(
+		ctx_zap.Extract(newCtx).Check(level, "finished unary call").Write(
 			zap.Error(err),
 			zap.String("grpc.code", code.String()),
 			o.durationFunc(time.Now().Sub(startTime)),
@@ -56,7 +54,7 @@ func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServ
 		level := o.levelFunc(code)
 
 		// re-extract logger from newCtx, as it may have extra fields that changed in the holder.
-		Extract(newCtx).Check(level, "finished streaming call").Write(
+		ctx_zap.Extract(newCtx).Check(level, "finished streaming call").Write(
 			zap.Error(err),
 			zap.String("grpc.code", code.String()),
 			o.durationFunc(time.Now().Sub(startTime)),
@@ -65,7 +63,7 @@ func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServ
 	}
 }
 
-func serverCallFields(ctx context.Context, fullMethodString string) []zapcore.Field {
+func serverCallFields(fullMethodString string) []zapcore.Field {
 	service := path.Dir(fullMethodString)[1:]
 	method := path.Base(fullMethodString)
 	return []zapcore.Field{
@@ -77,6 +75,6 @@ func serverCallFields(ctx context.Context, fullMethodString string) []zapcore.Fi
 }
 
 func newLoggerForCall(ctx context.Context, logger *zap.Logger, fullMethodString string) context.Context {
-	callLog := logger.With(serverCallFields(ctx, fullMethodString)...)
-	return toContext(ctx, callLog)
+	callLog := logger.With(append(ctx_zap.TagsToFields(ctx), serverCallFields(fullMethodString)...)...)
+	return ctx_zap.ToContext(ctx, callLog)
 }
