@@ -31,7 +31,7 @@ func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServer
 		level := o.levelFunc(code)
 
 		// re-extract logger from newCtx, as it may have extra fields that changed in the holder.
-		ctxlogger_zap.Extract(newCtx).Check(level, "finished unary call").Write(
+		ctx_zap.Extract(newCtx).Check(level, "finished unary call").Write(
 			zap.Error(err),
 			zap.String("grpc.code", code.String()),
 			o.durationFunc(time.Now().Sub(startTime)),
@@ -54,7 +54,7 @@ func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServ
 		level := o.levelFunc(code)
 
 		// re-extract logger from newCtx, as it may have extra fields that changed in the holder.
-		ctxlogger_zap.Extract(newCtx).Check(level, "finished streaming call").Write(
+		ctx_zap.Extract(newCtx).Check(level, "finished streaming call").Write(
 			zap.Error(err),
 			zap.String("grpc.code", code.String()),
 			o.durationFunc(time.Now().Sub(startTime)),
@@ -75,6 +75,6 @@ func serverCallFields(fullMethodString string) []zapcore.Field {
 }
 
 func newLoggerForCall(ctx context.Context, logger *zap.Logger, fullMethodString string) context.Context {
-	callLog := logger.With(append(ctxlogger_zap.TagsToFields(ctx), serverCallFields(fullMethodString)...)...)
-	return ctxlogger_zap.ToContext(ctx, callLog)
+	callLog := logger.With(append(ctx_zap.TagsToFields(ctx), serverCallFields(fullMethodString)...)...)
+	return ctx_zap.ToContext(ctx, callLog)
 }

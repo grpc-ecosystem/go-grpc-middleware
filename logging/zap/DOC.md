@@ -12,7 +12,7 @@ It accepts a user-configured `zap.Logger` that will be used for logging complete
 be used for logging completed gRPC calls, and be populated into the `context.Context` passed into gRPC handler code.
 
 On calling `StreamServerInterceptor` or `UnaryServerInterceptor` this logging middleware will add gRPC call information
-to the ctx so that it will be present on subsequent use of the `ctxlogger_zap` logger.
+to the ctx so that it will be present on subsequent use of the `ctx_zap` logger.
 
 This package also implements request and response *payload* logging, both for server-side and client-side. These will be
 logged as structured `jsonbp` fields for every message received/sent (both unary and streaming). For that please use
@@ -97,7 +97,7 @@ var (
 func AddFields(ctx context.Context, fields ...zapcore.Field)
 ```
 AddFields adds zap fields to the logger.
-Deprecated: should use the ctxlogger_zap.AddFields instead
+Deprecated: should use the ctx_zap.AddFields instead
 
 ## <a name="DefaultClientCodeToLevel">func</a> [DefaultClientCodeToLevel](./options.go#L121)
 ``` go
@@ -129,7 +129,7 @@ DurationToTimeMillisField converts the duration to milliseconds and uses the key
 func Extract(ctx context.Context) *zap.Logger
 ```
 Extract takes the call-scoped Logger from grpc_zap middleware.
-Deprecated: should use the ctxlogger_zap.Extract instead
+Deprecated: should use the ctx_zap.Extract instead
 
 ## <a name="PayloadStreamClientInterceptor">func</a> [PayloadStreamClientInterceptor](./payload_interceptors.go#L74)
 ``` go

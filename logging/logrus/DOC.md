@@ -12,7 +12,7 @@ It accepts a user-configured `logrus.Entry` that will be used for logging comple
 `logrus.Entry` will be used for logging completed gRPC calls, and be populated into the `context.Context` passed into gRPC handler code.
 
 On calling `StreamServerInterceptor` or `UnaryServerInterceptor` this logging middleware will add gRPC call information
-to the ctx so that it will be present on subsequent use of the `ctxlogger_zap` logger.
+to the ctx so that it will be present on subsequent use of the `ctx_zap` logger.
 
 This package also implements request and response *payload* logging, both for server-side and client-side. These will be
 logged as structured `jsonbp` fields for every message received/sent (both unary and streaming). For that please use
@@ -90,7 +90,7 @@ var (
 func AddFields(ctx context.Context, fields logrus.Fields)
 ```
 AddFields adds logrus fields to the logger.
-Deprecated: should use the ctxlogger_logrus.Extract instead
+Deprecated: should use the ctx_logrus.Extract instead
 
 ## <a name="DefaultClientCodeToLevel">func</a> [DefaultClientCodeToLevel](./options.go#L120)
 ``` go
@@ -121,7 +121,7 @@ DurationToTimeMillisField converts the duration to milliseconds and uses the key
 func Extract(ctx context.Context) *logrus.Entry
 ```
 Extract takes the call-scoped logrus.Entry from grpc_logrus middleware.
-Deprecated: should use the ctxlogger_logrus.Extract instead
+Deprecated: should use the ctx_logrus.Extract instead
 
 ## <a name="PayloadStreamClientInterceptor">func</a> [PayloadStreamClientInterceptor](./payload_interceptors.go#L74)
 ``` go

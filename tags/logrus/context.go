@@ -1,4 +1,4 @@
-package ctxlogger_logrus
+package ctx_logrus
 
 import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
@@ -28,9 +28,9 @@ func AddFields(ctx context.Context, fields logrus.Fields) {
 	}
 }
 
-// Extract takes the call-scoped logrus.Entry from ctxlogger_logrus middleware.
+// Extract takes the call-scoped logrus.Entry from ctx_logrus middleware.
 //
-// If the ctxlogger_logrus middleware wasn't used, a no-op `logrus.Entry` is returned. This makes it safe to
+// If the ctx_logrus middleware wasn't used, a no-op `logrus.Entry` is returned. This makes it safe to
 // use regardless.
 func Extract(ctx context.Context) *logrus.Entry {
 	l, ok := ctx.Value(ctxLoggerKey).(*ctxLogger)

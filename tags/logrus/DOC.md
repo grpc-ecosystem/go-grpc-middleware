@@ -1,4 +1,4 @@
-# ctxlogger_logrus
+# ctx_logrus
 `import "github.com/grpc-ecosystem/go-grpc-middleware/tags/logrus"`
 
 * [Overview](#pkg-overview)
@@ -6,14 +6,14 @@
 * [Index](#pkg-index)
 
 ## <a name="pkg-overview">Overview</a>
-`ctxlogger_logrus` is a ctxlogger that is backed by logrus
+`ctx_logrus` is a ctxlogger that is backed by logrus
 
 It accepts a user-configured `logrus.Logger` that will be used for logging. The same `logrus.Logger` will
 be populated into the `context.Context` passed into gRPC handler code.
 
-You can use `ctxlogger_logrus.Extract` to log into a request-scoped `logrus.Logger` instance in your handler code.
+You can use `ctx_logrus.Extract` to log into a request-scoped `logrus.Logger` instance in your handler code.
 
-As `ctxlogger_logrus.Extract` will iterate all tags on from `grpc_ctxtags` it is therefore expensive so it is advised that you
+As `ctx_logrus.Extract` will iterate all tags on from `grpc_ctxtags` it is therefore expensive so it is advised that you
 extract once at the start of the function from the context and reuse it for the remainder of the function (see examples).
 
 Please see examples and tests for examples of use.
@@ -42,9 +42,9 @@ AddFields adds logrus fields to the logger.
 ``` go
 func Extract(ctx context.Context) *logrus.Entry
 ```
-Extract takes the call-scoped logrus.Entry from ctxlogger_logrus middleware.
+Extract takes the call-scoped logrus.Entry from ctx_logrus middleware.
 
-If the ctxlogger_logrus middleware wasn't used, a no-op `logrus.Entry` is returned. This makes it safe to
+If the ctx_logrus middleware wasn't used, a no-op `logrus.Entry` is returned. This makes it safe to
 use regardless.
 
 ## <a name="ToContext">func</a> [ToContext](./context.go#L59)

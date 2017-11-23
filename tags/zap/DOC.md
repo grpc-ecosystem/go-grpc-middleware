@@ -1,4 +1,4 @@
-# ctxlogger_zap
+# ctx_zap
 `import "github.com/grpc-ecosystem/go-grpc-middleware/tags/zap"`
 
 * [Overview](#pkg-overview)
@@ -6,14 +6,14 @@
 * [Index](#pkg-index)
 
 ## <a name="pkg-overview">Overview</a>
-`ctxlogger_zap` is a ctxlogger that is backed by Zap
+`ctx_zap` is a ctxlogger that is backed by Zap
 
 It accepts a user-configured `zap.Logger` that will be used for logging. The same `zap.Logger` will
 be populated into the `context.Context` passed into gRPC handler code.
 
-You can use `ctxlogger_zap.Extract` to log into a request-scoped `zap.Logger` instance in your handler code.
+You can use `ctx_zap.Extract` to log into a request-scoped `zap.Logger` instance in your handler code.
 
-As `ctxlogger_zap.Extract` will iterate all tags on from `grpc_ctxtags` it is therefore expensive so it is advised that you
+As `ctx_zap.Extract` will iterate all tags on from `grpc_ctxtags` it is therefore expensive so it is advised that you
 extract once at the start of the function from the context and reuse it for the remainder of the function (see examples).
 
 Please see examples and tests for examples of use.

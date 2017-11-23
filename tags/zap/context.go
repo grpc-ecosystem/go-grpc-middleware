@@ -1,4 +1,4 @@
-package ctxlogger_zap
+package ctx_zap
 
 import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"

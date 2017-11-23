@@ -68,7 +68,7 @@ func Example_HandlerUsageUnaryPing() {
 		grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
 
 		// Extract a single request-scoped zap.Logger and log messages. (containing the grpc.xxx tags)
-		l := ctxlogger_zap.Extract(ctx)
+		l := ctx_zap.Extract(ctx)
 		l.Info("some ping")
 		l.Info("another ping")
 		return &pb_testproto.PingResponse{Value: ping.Value}, nil

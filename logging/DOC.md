@@ -13,7 +13,7 @@ The gRPC logging middleware populates request-scoped data to `grpc_ctxtags.Tags`
 (e.g. service and method names).
 
 Once the gRPC logging middleware has added the gRPC specific Tags to the ctx they will then be written with the logs
-that are made using the `ctxlogger_logrus` or `ctxlogger_zap` loggers.
+that are made using the `ctx_logrus` or `ctx_zap` loggers.
 
 All logging middleware will emit a final log statement. It is based on the error returned by the handler function,
 the gRPC status code, an error (if any) and it will emit at a level controlled via `WithLevels`.

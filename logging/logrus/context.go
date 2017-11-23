@@ -7,13 +7,13 @@ import (
 )
 
 // AddFields adds logrus fields to the logger.
-// Deprecated: should use the ctxlogger_logrus.Extract instead
+// Deprecated: should use the ctx_logrus.Extract instead
 func AddFields(ctx context.Context, fields logrus.Fields) {
-	ctxlogger_logrus.AddFields(ctx, fields)
+	ctx_logrus.AddFields(ctx, fields)
 }
 
 // Extract takes the call-scoped logrus.Entry from grpc_logrus middleware.
-// Deprecated: should use the ctxlogger_logrus.Extract instead
+// Deprecated: should use the ctx_logrus.Extract instead
 func Extract(ctx context.Context) *logrus.Entry {
-	return ctxlogger_logrus.Extract(ctx)
+	return ctx_logrus.Extract(ctx)
 }

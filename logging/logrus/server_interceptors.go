@@ -37,7 +37,7 @@ func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServe
 			fields[logrus.ErrorKey] = err
 		}
 		levelLogf(
-			ctxlogger_logrus.Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
+			ctx_logrus.Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
 			level,
 			"finished unary call")
 		return resp, err
@@ -65,7 +65,7 @@ func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamSer
 			fields[logrus.ErrorKey] = err
 		}
 		levelLogf(
-			ctxlogger_logrus.Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
+			ctx_logrus.Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
 			level,
 			"finished streaming call")
 		return err
@@ -100,6 +100,6 @@ func newLoggerForCall(ctx context.Context, entry *logrus.Entry, fullMethodString
 			"grpc.method":  method,
 		})
 
-	callLog = callLog.WithFields(ctxlogger_logrus.Extract(ctx).Data)
-	return ctxlogger_logrus.ToContext(ctx, callLog)
+	callLog = callLog.WithFields(ctx_logrus.Extract(ctx).Data)
+	return ctx_logrus.ToContext(ctx, callLog)
 }
