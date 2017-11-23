@@ -1,33 +1,15 @@
 package ctxlogger_zap_test
 
 import (
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
-
 	"context"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags/zap"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
 )
 
 var zapLogger *zap.Logger
-
-// Initialization shows a relatively complex initialization sequence.
-func Example_Initialization() {
-	// Create a server, make sure we put the grpc_ctxtags context before everything else.
-	_ = grpc.NewServer(
-		grpc_middleware.WithUnaryServerChain(
-			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			ctxlogger_zap.UnaryServerInterceptor(zapLogger),
-		),
-		grpc_middleware.WithStreamServerChain(
-			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			ctxlogger_zap.StreamServerInterceptor(zapLogger),
-		),
-	)
-}
 
 // Simple unary handler that adds custom fields to the requests's context. These will be used for all log statements.
 func Example_HandlerUsageUnaryPing() {

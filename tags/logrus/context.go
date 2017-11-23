@@ -54,6 +54,8 @@ func Extract(ctx context.Context) *logrus.Entry {
 	return l.logger.WithFields(fields)
 }
 
+// ToContext adds the logrus.Entry to the context for extraction later.
+// Returning the new context that has been created.
 func ToContext(ctx context.Context, entry *logrus.Entry) context.Context {
 	l := &ctxLogger{
 		logger: entry,

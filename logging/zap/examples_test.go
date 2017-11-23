@@ -32,12 +32,10 @@ func Example_Initialization() {
 	_ = grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
 			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			ctxlogger_zap.UnaryServerInterceptor(zapLogger),
 			grpc_zap.UnaryServerInterceptor(zapLogger, opts...),
 		),
 		grpc_middleware.WithStreamServerChain(
 			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			ctxlogger_zap.StreamServerInterceptor(zapLogger),
 			grpc_zap.StreamServerInterceptor(zapLogger, opts...),
 		),
 	)

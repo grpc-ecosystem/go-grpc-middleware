@@ -44,6 +44,7 @@ func Extract(ctx context.Context) *zap.Logger {
 	return l.logger.With(fields...)
 }
 
+// TagsToFields transforms the Tags on the supplied context into zap fields.
 func TagsToFields(ctx context.Context) []zapcore.Field {
 	fields := []zapcore.Field{}
 	tags := grpc_ctxtags.Extract(ctx)
@@ -53,6 +54,8 @@ func TagsToFields(ctx context.Context) []zapcore.Field {
 	return fields
 }
 
+// ToContext adds the zap.Logger to the context for extraction later.
+// Returning the new context that has been created.
 func ToContext(ctx context.Context, logger *zap.Logger) context.Context {
 	l := &ctxLogger{
 		logger: logger,

@@ -10,7 +10,6 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags/logrus"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -29,19 +28,6 @@ func TestLogrusServerSuite(t *testing.T) {
 		grpc_logrus.WithLevels(customCodeToLevel),
 	}
 	b := newLogrusBaseSuite(t)
-	b.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
-		grpc_middleware.WithStreamServerChain(
-			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			ctxlogger_logrus.StreamServerInterceptor(logrus.NewEntry(b.logger)),
-			grpc_logrus.StreamServerInterceptor(logrus.NewEntry(b.logger), opts...)),
-		grpc_middleware.WithUnaryServerChain(
-			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			ctxlogger_logrus.UnaryServerInterceptor(logrus.NewEntry(b.logger)),
-			grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(b.logger), opts...)),
-	}
-	suite.Run(t, &logrusServerSuite{b})
-
-	// tests should also pass with the old style
 	b.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
 		grpc_middleware.WithStreamServerChain(
 			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
