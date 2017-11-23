@@ -4,15 +4,6 @@
 /*
 `grpc_middleware` is a collection of gRPC middleware packages: interceptors, helpers and tools.
 
-Middleware
-
-gRPC is a fantastic RPC middleware, which sees a lot of adoption in the Golang world. However, the
-upstream gRPC codebase is relatively bare bones.
-
-This package, and most of its child packages provides commonly needed middleware for gRPC:
-client-side interceptors for retires, server-side interceptors for input validation and auth,
-functions for chaining said interceptors, metadata convenience methods and more.
-
 Chaining
 
 By default, gRPC doesn't allow one to have more than one interceptor either on the client nor on
