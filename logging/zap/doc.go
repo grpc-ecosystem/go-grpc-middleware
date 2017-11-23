@@ -8,7 +8,7 @@ It accepts a user-configured `zap.Logger` that will be used for logging complete
 be used for logging completed gRPC calls, and be populated into the `context.Context` passed into gRPC handler code.
 
 You can use `Extract` to log into a request-scoped `zap.Logger` instance in your handler code. The fields set on the
-logger correspond to the grpc_ctxtags.Tags attached to the context.
+logger correspond to the `grpc_ctxtags.Tags` attached to the context.
 
 As `Extract` will iterate all tags on from `grpc_ctxtags` it is therefore expensive so it is advised that you
 extract once at the start of the function from the context and reuse it for the remainder of the function (see examples).
