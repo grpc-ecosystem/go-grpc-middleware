@@ -22,13 +22,13 @@ func main() {
 
 	bufferPrev, err := ioutil.ReadFile(*prevPath)
 	if err != nil {
-		fmt.Println("error: %v", err)
+		fmt.Println(fmt.Errorf("error: %v", err))
 		return
 	}
 
 	bufferLatest, err := ioutil.ReadFile(*latestPath)
 	if err != nil {
-		fmt.Println("error: %v", err)
+		fmt.Println(fmt.Errorf("error: %v", err))
 		return
 	}
 
@@ -44,7 +44,7 @@ func main() {
 	latestHTML := string(bufferLatest)
 	res, err := cfg.HTMLdiff([]string{previousHTML, latestHTML})
 	if err != nil {
-		fmt.Errorf("error: %v", err)
+		fmt.Println(fmt.Errorf("error: %v", err))
 		return
 	}
 

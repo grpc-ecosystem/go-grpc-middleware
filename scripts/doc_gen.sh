@@ -44,6 +44,9 @@ function compare {
 
 if [ "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" != "master" ]; then
     pull=$(git rev-parse HEAD)
+    if [${TRAVIS_BUILD_DIR} == ""]; then
+        TRAVIS_BUILD_DIR=$(pwd)
+    fi
     cd ${TRAVIS_BUILD_DIR}/..
     topdir=$(pwd)
     docspr=${topdir}/docs_pr/
