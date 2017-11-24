@@ -14,6 +14,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/documize/html-diff"
+  packages = ["."]
+  revision = "f61c192c7796644259832ef705c49259797e7fff"
+
+[[projects]]
   name = "github.com/gogo/protobuf"
   packages = ["gogoproto","proto","protoc-gen-gogo/descriptor"]
   revision = "342cbe0a04158f6dcb03ca0079991a51a4248c02"
@@ -24,6 +30,12 @@
   name = "github.com/golang/protobuf"
   packages = ["jsonpb","proto","ptypes","ptypes/any","ptypes/duration","ptypes/struct","ptypes/timestamp"]
   revision = "1e59b77b52bf8e4b449a57e6f79f21226d571845"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mb0/diff"
+  packages = ["."]
+  revision = "d8d9a906c24d7b0ee77287e0463e5ca7f026032e"
 
 [[projects]]
   name = "github.com/opentracing/opentracing-go"
@@ -76,7 +88,7 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = ["context","context/ctxhttp","http2","http2/hpack","idna","internal/timeseries","lex/httplex","trace"]
+  packages = ["context","context/ctxhttp","html","html/atom","http2","http2/hpack","idna","internal/timeseries","lex/httplex","trace"]
   revision = "9dfe39835686865bff950a07b394c12a98ddc811"
 
 [[projects]]
@@ -118,6 +130,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "bd7b2168d2d96509f1e9719d1636982062212578ae24e23459c7216e4456e9ae"
+  inputs-digest = "5067b13329abbcf836f4864172e0f2b88acafff9bf698568f790929ab8e65d0c"
   solver-name = "gps-cdcl"
   solver-version = 1

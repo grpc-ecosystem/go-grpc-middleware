@@ -2,10 +2,7 @@ SHELL="/bin/bash"
 
 GOFILES_NOVENDOR = $(shell go list ./... | grep -v /vendor/)
 
-all: vet fmt docs test
-
-docs:
-	./scripts/fixup.sh
+all: vet fmt test
 
 fmt:
 	go fmt $(GOFILES_NOVENDOR)
@@ -16,4 +13,4 @@ vet:
 test: vet
 	./scripts/test_all.sh
 
-.PHONY: all docs validate test
+.PHONY: all validate test
