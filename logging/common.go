@@ -17,6 +17,14 @@ func DefaultErrorToCode(err error) codes.Code {
 	return grpc.Code(err)
 }
 
+// Suppressed function defines rules for suppressing any interceptor logs
+type Suppressed func(method string) bool
+
+// DefaultSuppressedMethod is the default implementation of logs (none are suppressed by default)
+func DefaultSuppressedMethod(method string) bool {
+	return false
+}
+
 // ServerPayloadLoggingDecider is a user-provided function for deciding whether to log the server-side
 // request/response payloads
 type ServerPayloadLoggingDecider func(ctx context.Context, fullMethodName string, servingObject interface{}) bool

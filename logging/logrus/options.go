@@ -14,7 +14,7 @@ import (
 var (
 	defaultOptions = &options{
 		levelFunc:      nil,
-		withSuppressed: DefaultSuppressedMethod,
+		withSuppressed: grpc_logging.DefaultSuppressedMethod,
 		codeFunc:       grpc_logging.DefaultErrorToCode,
 		durationFunc:   DefaultDurationToField,
 	}
@@ -22,7 +22,7 @@ var (
 
 type options struct {
 	levelFunc      CodeToLevel
-	withSuppressed Suppressed
+	withSuppressed grpc_logging.Suppressed
 	codeFunc       grpc_logging.ErrorToCode
 	durationFunc   DurationToField
 }
@@ -55,11 +55,8 @@ type CodeToLevel func(code codes.Code) logrus.Level
 // DurationToField function defines how to produce duration fields for logging
 type DurationToField func(duration time.Duration) (key string, value interface{})
 
-// Suppressed function defines rules for suppressing any interceptor logs
-type Suppressed func(method string) bool
-
 // WithSuppressed customizes the function for supressing gRPC interceptor logs.
-func WithSuppressed(f Suppressed) Option {
+func WithSuppressed(f grpc_logging.Suppressed) Option {
 	return func(o *options) {
 		o.withSuppressed = f
 	}
@@ -185,9 +182,4 @@ func DurationToDurationField(duration time.Duration) (key string, value interfac
 
 func durationToMilliseconds(duration time.Duration) float32 {
 	return float32(duration.Nanoseconds() / 1000 / 1000)
-}
-
-// DefaultSuppressedMethod is the default implementation of logs (none are suppressed by default)
-func DefaultSuppressedMethod(method string) bool {
-	return false
 }
