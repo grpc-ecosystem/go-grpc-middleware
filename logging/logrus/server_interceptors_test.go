@@ -203,3 +203,78 @@ func (s *logrusServerOverrideSuite) TestPingList_HasOverriddenDuration() {
 	assert.NotContains(s.T(), msgs[1], "grpc.time_ms", "interceptor message must not contain default duration")
 	assert.Contains(s.T(), msgs[1], "grpc.duration", "interceptor message must contain overridden duration")
 }
+
+func TestLogrusServerOverrideSuppressedSuite(t *testing.T) {
+	if strings.HasPrefix(runtime.Version(), "go1.7") {
+		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
+		return
+	}
+	opts := []grpc_logrus.Option{
+		grpc_logrus.WithSuppressed(func(method string) bool {
+			return true
+		}),
+	}
+	b := newLogrusBaseSuite(t)
+	b.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
+		grpc_middleware.WithStreamServerChain(
+			grpc_ctxtags.StreamServerInterceptor(),
+			grpc_logrus.StreamServerInterceptor(logrus.NewEntry(b.logger), opts...)),
+		grpc_middleware.WithUnaryServerChain(
+			grpc_ctxtags.UnaryServerInterceptor(),
+			grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(b.logger), opts...)),
+	}
+	suite.Run(t, &logrusServerOverrideSuppressedSuite{b})
+}
+
+type logrusServerOverrideSuppressedSuite struct {
+	*logrusBaseSuite
+}
+
+func (s *logrusServerOverrideSuppressedSuite) TestPing_HasOverriddenSuppresed() {
+	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	assert.NoError(s.T(), err, "there must be not be an on a successful call")
+	msgs := s.getOutputJSONs()
+	assert.Len(s.T(), msgs, 1, "single log statements should be logged")
+
+	assert.Contains(s.T(), msgs[0], `"grpc.service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
+	assert.Contains(s.T(), msgs[0], `"grpc.method": "Ping"`, "all lines must contain method name")
+	assert.Contains(s.T(), msgs[0], `"msg": "some ping"`, "handler's message must contain user message")
+}
+
+func (s *logrusServerOverrideSuppressedSuite) TestPingError_HasOverriddenSuppresed() {
+	code := codes.NotFound
+	level := logrus.InfoLevel
+	msg := "NotFound must remap to InfoLevel in DefaultCodeToLevel"
+
+	s.buffer.Reset()
+	_, err := s.Client.PingError(
+		s.SimpleCtx(),
+		&pb_testproto.PingRequest{Value: "something", ErrorCodeReturned: uint32(code)})
+	assert.Error(s.T(), err, "each call here must return an error")
+	msgs := s.getOutputJSONs()
+	require.Len(s.T(), msgs, 1, "only the interceptor log message is printed in PingErr")
+	m := msgs[0]
+	assert.Contains(s.T(), m, `"grpc.service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
+	assert.Contains(s.T(), m, `"grpc.method": "PingError"`, "all lines must contain method name")
+	assert.Contains(s.T(), m, fmt.Sprintf(`"grpc.code": "%s"`, code.String()), "all lines must contain method name")
+	assert.Contains(s.T(), m, fmt.Sprintf(`"level": "%s"`, level.String()), msg)
+}
+
+func (s *logrusServerOverrideSuppressedSuite) TestPingList_HasOverriddenDuration() {
+	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
+	require.NoError(s.T(), err, "should not fail on establishing the stream")
+	for {
+		_, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		require.NoError(s.T(), err, "reading stream should not fail")
+	}
+	msgs := s.getOutputJSONs()
+	assert.Len(s.T(), msgs, 1, "single log statements should be logged")
+	assert.Contains(s.T(), msgs[0], `"grpc.service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
+	assert.Contains(s.T(), msgs[0], `"grpc.method": "PingList"`, "all lines must contain method name")
+	assert.Contains(s.T(), msgs[0], `"msg": "some pinglist"`, "handler's message must contain user message")
+	assert.NotContains(s.T(), msgs[0], "grpc.time_ms", "handler's message must not contain default duration")
+	assert.NotContains(s.T(), msgs[0], "grpc.duration", "handler's message must not contain overridden duration")
+}

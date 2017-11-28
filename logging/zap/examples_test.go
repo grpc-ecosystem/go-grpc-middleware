@@ -1,8 +1,6 @@
 package grpc_zap_test
 
 import (
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
-
 	"context"
 	"time"
 
@@ -10,6 +8,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags/zap"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
@@ -72,5 +71,25 @@ func Example_HandlerUsageUnaryPing() {
 		l.Info("some ping")
 		l.Info("another ping")
 		return &pb_testproto.PingResponse{Value: ping.Value}, nil
+	}
+}
+
+func ExampleWithSuppressed() {
+	opts := []grpc_zap.Option{
+		grpc_zap.WithSuppressed(func(method string) bool {
+			if method == "healthcheck" {
+				return true
+			}
+			return false
+		}),
+	}
+
+	_ = []grpc.ServerOption{
+		grpc_middleware.WithStreamServerChain(
+			grpc_ctxtags.StreamServerInterceptor(),
+			grpc_zap.StreamServerInterceptor(zap.NewNop(), opts...)),
+		grpc_middleware.WithUnaryServerChain(
+			grpc_ctxtags.UnaryServerInterceptor(),
+			grpc_zap.UnaryServerInterceptor(zap.NewNop(), opts...)),
 	}
 }

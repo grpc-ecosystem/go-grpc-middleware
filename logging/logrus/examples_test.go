@@ -3,13 +3,12 @@ package grpc_logrus_test
 import (
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
-	"github.com/sirupsen/logrus"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags/logrus"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -73,5 +72,25 @@ func Example_HandlerUsageUnaryPing() {
 		l.Info("some ping")
 		l.Info("another ping")
 		return &pb_testproto.PingResponse{Value: ping.Value}, nil
+	}
+}
+
+func ExampleWithSuppressed() {
+	opts := []grpc_logrus.Option{
+		grpc_logrus.WithSuppressed(func(method string) bool {
+			if method == "healthcheck" {
+				return true
+			}
+			return false
+		}),
+	}
+
+	_ = []grpc.ServerOption{
+		grpc_middleware.WithStreamServerChain(
+			grpc_ctxtags.StreamServerInterceptor(),
+			grpc_logrus.StreamServerInterceptor(logrus.NewEntry(logrus.New()), opts...)),
+		grpc_middleware.WithUnaryServerChain(
+			grpc_ctxtags.UnaryServerInterceptor(),
+			grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(logrus.New()), opts...)),
 	}
 }

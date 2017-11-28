@@ -1,6 +1,3 @@
-// Copyright 2017 Michal Witkowski. All Rights Reserved.
-// See LICENSE for licensing terms.
-
 package grpc_zap
 
 import (
@@ -14,16 +11,18 @@ import (
 
 var (
 	defaultOptions = &options{
-		levelFunc:    DefaultCodeToLevel,
-		codeFunc:     grpc_logging.DefaultErrorToCode,
-		durationFunc: DefaultDurationToField,
+		levelFunc:      DefaultCodeToLevel,
+		withSuppressed: DefaultSuppressedMethod,
+		codeFunc:       grpc_logging.DefaultErrorToCode,
+		durationFunc:   DefaultDurationToField,
 	}
 )
 
 type options struct {
-	levelFunc    CodeToLevel
-	codeFunc     grpc_logging.ErrorToCode
-	durationFunc DurationToField
+	levelFunc      CodeToLevel
+	withSuppressed Suppressed
+	codeFunc       grpc_logging.ErrorToCode
+	durationFunc   DurationToField
 }
 
 func evaluateServerOpt(opts []Option) *options {
@@ -53,6 +52,16 @@ type CodeToLevel func(code codes.Code) zapcore.Level
 
 // DurationToField function defines how to produce duration fields for logging
 type DurationToField func(duration time.Duration) zapcore.Field
+
+// Suppressed function defines rules for suppressing any interceptor logs
+type Suppressed func(method string) bool
+
+// WithSuppressed customizes the function for supressing gRPC interceptor logs.
+func WithSuppressed(f Suppressed) Option {
+	return func(o *options) {
+		o.withSuppressed = f
+	}
+}
 
 // WithLevels customizes the function for mapping gRPC return codes and interceptor log level statements.
 func WithLevels(f CodeToLevel) Option {
@@ -175,4 +184,9 @@ func DurationToDurationField(duration time.Duration) zapcore.Field {
 
 func durationToMilliseconds(duration time.Duration) float32 {
 	return float32(duration.Nanoseconds() / 1000 / 1000)
+}
+
+// DefaultSuppressedMethod is the default implementation of logs (none are suppressed by default)
+func DefaultSuppressedMethod(method string) bool {
+	return false
 }

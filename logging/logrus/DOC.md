@@ -4,6 +4,7 @@
 * [Overview](#pkg-overview)
 * [Imported Packages](#pkg-imports)
 * [Index](#pkg-index)
+* [Examples](#pkg-examples)
 
 ## <a name="pkg-overview">Overview</a>
 `grpc_logrus` is a gRPC logging middleware backed by Logrus loggers
@@ -41,6 +42,7 @@ Please see examples and tests for examples of use.
 * [func AddFields(ctx context.Context, fields logrus.Fields)](#AddFields)
 * [func DefaultClientCodeToLevel(code codes.Code) logrus.Level](#DefaultClientCodeToLevel)
 * [func DefaultCodeToLevel(code codes.Code) logrus.Level](#DefaultCodeToLevel)
+* [func DefaultSuppressedMethod(method string) bool](#DefaultSuppressedMethod)
 * [func DurationToDurationField(duration time.Duration) (key string, value interface{})](#DurationToDurationField)
 * [func DurationToTimeMillisField(duration time.Duration) (key string, value interface{})](#DurationToTimeMillisField)
 * [func Extract(ctx context.Context) \*logrus.Entry](#Extract)
@@ -59,6 +61,11 @@ Please see examples and tests for examples of use.
   * [func WithCodes(f grpc\_logging.ErrorToCode) Option](#WithCodes)
   * [func WithDurationField(f DurationToField) Option](#WithDurationField)
   * [func WithLevels(f CodeToLevel) Option](#WithLevels)
+  * [func WithSuppressed(f Suppressed) Option](#WithSuppressed)
+* [type Suppressed](#Suppressed)
+
+#### <a name="pkg-examples">Examples</a>
+* [WithSuppressed](#example_WithSuppressed)
 
 #### <a name="pkg-files">Package files</a>
 [client_interceptors.go](./client_interceptors.go) [context.go](./context.go) [doc.go](./doc.go) [grpclogger.go](./grpclogger.go) [options.go](./options.go) [payload_interceptors.go](./payload_interceptors.go) [server_interceptors.go](./server_interceptors.go) 
@@ -92,25 +99,31 @@ func AddFields(ctx context.Context, fields logrus.Fields)
 AddFields adds logrus fields to the logger.
 Deprecated: should use the ctx_logrus.Extract instead
 
-## <a name="DefaultClientCodeToLevel">func</a> [DefaultClientCodeToLevel](./options.go#L120)
+## <a name="DefaultClientCodeToLevel">func</a> [DefaultClientCodeToLevel](./options.go#L132)
 ``` go
 func DefaultClientCodeToLevel(code codes.Code) logrus.Level
 ```
 DefaultClientCodeToLevel is the default implementation of gRPC return codes to log levels for client side.
 
-## <a name="DefaultCodeToLevel">func</a> [DefaultCodeToLevel](./options.go#L78)
+## <a name="DefaultCodeToLevel">func</a> [DefaultCodeToLevel](./options.go#L90)
 ``` go
 func DefaultCodeToLevel(code codes.Code) logrus.Level
 ```
 DefaultCodeToLevel is the default implementation of gRPC return codes to log levels for server side.
 
-## <a name="DurationToDurationField">func</a> [DurationToDurationField](./options.go#L170)
+## <a name="DefaultSuppressedMethod">func</a> [DefaultSuppressedMethod](./options.go#L191)
+``` go
+func DefaultSuppressedMethod(method string) bool
+```
+DefaultSuppressedMethod is the default implementation of logs (none are suppressed by default)
+
+## <a name="DurationToDurationField">func</a> [DurationToDurationField](./options.go#L182)
 ``` go
 func DurationToDurationField(duration time.Duration) (key string, value interface{})
 ```
 DurationToDurationField uses the duration value to log the request duration.
 
-## <a name="DurationToTimeMillisField">func</a> [DurationToTimeMillisField](./options.go#L165)
+## <a name="DurationToTimeMillisField">func</a> [DurationToTimeMillisField](./options.go#L177)
 ``` go
 func DurationToTimeMillisField(duration time.Duration) (key string, value interface{})
 ```
@@ -166,7 +179,7 @@ func StreamClientInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamCli
 ```
 StreamServerInterceptor returns a new streaming client interceptor that optionally logs the execution of external gRPC calls.
 
-## <a name="StreamServerInterceptor">func</a> [StreamServerInterceptor](./server_interceptors.go#L48)
+## <a name="StreamServerInterceptor">func</a> [StreamServerInterceptor](./server_interceptors.go#L52)
 ``` go
 func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamServerInterceptor
 ```
@@ -184,40 +197,79 @@ func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServe
 ```
 PayloadUnaryServerInterceptor returns a new unary server interceptors that adds logrus.Entry to the context.
 
-## <a name="CodeToLevel">type</a> [CodeToLevel](./options.go#L51)
+## <a name="CodeToLevel">type</a> [CodeToLevel](./options.go#L53)
 ``` go
 type CodeToLevel func(code codes.Code) logrus.Level
 ```
 CodeToLevel function defines the mapping between gRPC return codes and interceptor log level.
 
-## <a name="DurationToField">type</a> [DurationToField](./options.go#L54)
+## <a name="DurationToField">type</a> [DurationToField](./options.go#L56)
 ``` go
 type DurationToField func(duration time.Duration) (key string, value interface{})
 ```
 DurationToField function defines how to produce duration fields for logging
 
-## <a name="Option">type</a> [Option](./options.go#L48)
+## <a name="Option">type</a> [Option](./options.go#L50)
 ``` go
 type Option func(*options)
 ```
 
-### <a name="WithCodes">func</a> [WithCodes](./options.go#L64)
+### <a name="WithCodes">func</a> [WithCodes](./options.go#L76)
 ``` go
 func WithCodes(f grpc_logging.ErrorToCode) Option
 ```
 WithCodes customizes the function for mapping errors to error codes.
 
-### <a name="WithDurationField">func</a> [WithDurationField](./options.go#L71)
+### <a name="WithDurationField">func</a> [WithDurationField](./options.go#L83)
 ``` go
 func WithDurationField(f DurationToField) Option
 ```
 WithDurationField customizes the function for mapping request durations to log fields.
 
-### <a name="WithLevels">func</a> [WithLevels](./options.go#L57)
+### <a name="WithLevels">func</a> [WithLevels](./options.go#L69)
 ``` go
 func WithLevels(f CodeToLevel) Option
 ```
 WithLevels customizes the function for mapping gRPC return codes and interceptor log level statements.
+
+### <a name="WithSuppressed">func</a> [WithSuppressed](./options.go#L62)
+``` go
+func WithSuppressed(f Suppressed) Option
+```
+WithSuppressed customizes the function for supressing gRPC interceptor logs.
+
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+opts := []grpc_logrus.Option{
+    grpc_logrus.WithSuppressed(func(method string) bool {
+        if method == "healthcheck" {
+            return true
+        }
+        return false
+    }),
+}
+
+_ = []grpc.ServerOption{
+    grpc_middleware.WithStreamServerChain(
+        grpc_ctxtags.StreamServerInterceptor(),
+        grpc_logrus.StreamServerInterceptor(logrus.NewEntry(logrus.New()), opts...)),
+    grpc_middleware.WithUnaryServerChain(
+        grpc_ctxtags.UnaryServerInterceptor(),
+        grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(logrus.New()), opts...)),
+}
+```
+
+</details>
+
+## <a name="Suppressed">type</a> [Suppressed](./options.go#L59)
+``` go
+type Suppressed func(method string) bool
+```
+Suppressed function defines rules for suppressing any interceptor logs
 
 - - -
 Generated by [godoc2ghmd](https://github.com/GandalfUK/godoc2ghmd)
