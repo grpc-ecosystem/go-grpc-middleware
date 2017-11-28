@@ -13,18 +13,18 @@ import (
 
 var (
 	defaultOptions = &options{
-		levelFunc:      nil,
-		withSuppressed: grpc_logging.DefaultSuppressedMethod,
-		codeFunc:       grpc_logging.DefaultErrorToCode,
-		durationFunc:   DefaultDurationToField,
+		levelFunc:    nil,
+		shouldLog:    grpc_logging.DefaultDeciderMethod,
+		codeFunc:     grpc_logging.DefaultErrorToCode,
+		durationFunc: DefaultDurationToField,
 	}
 )
 
 type options struct {
-	levelFunc      CodeToLevel
-	withSuppressed grpc_logging.Suppressed
-	codeFunc       grpc_logging.ErrorToCode
-	durationFunc   DurationToField
+	levelFunc    CodeToLevel
+	shouldLog    grpc_logging.Decider
+	codeFunc     grpc_logging.ErrorToCode
+	durationFunc DurationToField
 }
 
 func evaluateServerOpt(opts []Option) *options {
@@ -55,10 +55,10 @@ type CodeToLevel func(code codes.Code) logrus.Level
 // DurationToField function defines how to produce duration fields for logging
 type DurationToField func(duration time.Duration) (key string, value interface{})
 
-// WithSuppressed customizes the function for supressing gRPC interceptor logs.
-func WithSuppressed(f grpc_logging.Suppressed) Option {
+// WithDecider customizes the function for deciding if the gRPC interceptor logs should log.
+func WithDecider(f grpc_logging.Decider) Option {
 	return func(o *options) {
-		o.withSuppressed = f
+		o.shouldLog = f
 	}
 }
 

@@ -204,18 +204,18 @@ func (s *logrusServerOverrideSuite) TestPingList_HasOverriddenDuration() {
 	assert.Contains(s.T(), msgs[1], "grpc.duration", "interceptor message must contain overridden duration")
 }
 
-func TestLogrusServerOverrideSuppressedSuite(t *testing.T) {
+func TestLogrusServerOverrideDeciderSuite(t *testing.T) {
 	if strings.HasPrefix(runtime.Version(), "go1.7") {
 		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
 		return
 	}
 	opts := []grpc_logrus.Option{
-		grpc_logrus.WithSuppressed(func(method string, err error) bool {
+		grpc_logrus.WithDecider(func(method string, err error) bool {
 			if method == "/mwitkow.testproto.TestService/PingError" && err != nil {
-				return false
+				return true
 			}
 
-			return true
+			return false
 		}),
 	}
 	b := newLogrusBaseSuite(t)
@@ -227,14 +227,14 @@ func TestLogrusServerOverrideSuppressedSuite(t *testing.T) {
 			grpc_ctxtags.UnaryServerInterceptor(),
 			grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(b.logger), opts...)),
 	}
-	suite.Run(t, &logrusServerOverrideSuppressedSuite{b})
+	suite.Run(t, &logrusServerOverrideDeciderSuite{b})
 }
 
-type logrusServerOverrideSuppressedSuite struct {
+type logrusServerOverrideDeciderSuite struct {
 	*logrusBaseSuite
 }
 
-func (s *logrusServerOverrideSuppressedSuite) TestPing_HasOverriddenSuppresed() {
+func (s *logrusServerOverrideDeciderSuite) TestPing_HasOverriddenDecider() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
 	msgs := s.getOutputJSONs()
@@ -245,7 +245,7 @@ func (s *logrusServerOverrideSuppressedSuite) TestPing_HasOverriddenSuppresed() 
 	assert.Contains(s.T(), msgs[0], `"msg": "some ping"`, "handler's message must contain user message")
 }
 
-func (s *logrusServerOverrideSuppressedSuite) TestPingError_HasOverriddenSuppresed() {
+func (s *logrusServerOverrideDeciderSuite) TestPingError_HasOverriddenDecider() {
 	code := codes.NotFound
 	level := logrus.InfoLevel
 	msg := "NotFound must remap to InfoLevel in DefaultCodeToLevel"
@@ -264,7 +264,7 @@ func (s *logrusServerOverrideSuppressedSuite) TestPingError_HasOverriddenSuppres
 	assert.Contains(s.T(), m, fmt.Sprintf(`"level": "%s"`, level.String()), msg)
 }
 
-func (s *logrusServerOverrideSuppressedSuite) TestPingList_HasOverriddenDuration() {
+func (s *logrusServerOverrideDeciderSuite) TestPingList_HasOverriddenDecider() {
 	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	for {

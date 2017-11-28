@@ -27,7 +27,7 @@ func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServer
 		newCtx := newLoggerForCall(ctx, logger, info.FullMethod)
 		startTime := time.Now()
 		resp, err := handler(newCtx, req)
-		if !o.withSuppressed(info.FullMethod, err) {
+		if o.shouldLog(info.FullMethod, err) {
 			code := o.codeFunc(err)
 			level := o.levelFunc(code)
 
@@ -52,7 +52,7 @@ func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServ
 
 		startTime := time.Now()
 		err := handler(srv, wrapped)
-		if !o.withSuppressed(info.FullMethod, err) {
+		if o.shouldLog(info.FullMethod, err) {
 			code := o.codeFunc(err)
 			level := o.levelFunc(code)
 

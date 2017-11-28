@@ -18,11 +18,12 @@ func DefaultErrorToCode(err error) codes.Code {
 }
 
 // Suppressed function defines rules for suppressing any interceptor logs
-type Suppressed func(fullMethodName string, err error) bool
+type Decider func(fullMethodName string, err error) bool
 
-// DefaultSuppressedMethod is the default implementation of logs (none are suppressed by default)
-func DefaultSuppressedMethod(fullMethodName string, err error) bool {
-	return false
+// DefaultDeciderMethod is the default implementation of decider to see if you should log the call
+// by default this if always true so all calls are logged
+func DefaultDeciderMethod(fullMethodName string, err error) bool {
+	return true
 }
 
 // ServerPayloadLoggingDecider is a user-provided function for deciding whether to log the server-side

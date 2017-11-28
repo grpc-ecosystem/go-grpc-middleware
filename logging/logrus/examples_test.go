@@ -75,14 +75,16 @@ func Example_HandlerUsageUnaryPing() {
 	}
 }
 
-func ExampleWithSuppressed() {
+func ExampleWithDecider() {
 	opts := []grpc_logrus.Option{
-		grpc_logrus.WithSuppressed(func(methodFullName string, err error) bool {
-			// will only suppress call to healthcheck if there are no errors
+		grpc_logrus.WithDecider(func(methodFullName string, err error) bool {
+			// will not log calls to healthcheck if there are no errors
 			if methodFullName == "blah.foo.healthcheck" && err == nil {
-				return true
+				return false
 			}
-			return false
+
+			// by default you will log all calls
+			return true
 		}),
 	}
 

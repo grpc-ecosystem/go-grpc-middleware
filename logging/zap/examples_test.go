@@ -76,12 +76,12 @@ func Example_HandlerUsageUnaryPing() {
 
 func ExampleWithSuppressed() {
 	opts := []grpc_zap.Option{
-		grpc_zap.WithSuppressed(func(method string, err error) bool {
-			// will suppress calls to healthcheck even if it has an error
-			if method == "healthcheck" {
-				return true
+		grpc_zap.WithDecider(func(fullMethodName string, err error) bool {
+			// will not log gRPC calls that have the fullMethodName  and no errors
+			if fullMethodName == "foo.bar.healthcheck" && err == nil {
+				return false
 			}
-			return false
+			return true
 		}),
 	}
 

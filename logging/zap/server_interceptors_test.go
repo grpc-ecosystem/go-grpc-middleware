@@ -219,11 +219,11 @@ func TestZapServerOverrideSuppressedSuite(t *testing.T) {
 		return
 	}
 	opts := []grpc_zap.Option{
-		grpc_zap.WithSuppressed(func(method string, err error) bool {
+		grpc_zap.WithDecider(func(method string, err error) bool {
 			if method == "/mwitkow.testproto.TestService/PingError" && err != nil {
-				return false
+				return true
 			}
-			return true
+			return false
 		}),
 	}
 	b := newBaseZapSuite(t)

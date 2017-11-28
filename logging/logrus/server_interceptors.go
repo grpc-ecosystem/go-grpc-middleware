@@ -27,7 +27,7 @@ func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServe
 		startTime := time.Now()
 		resp, err := handler(newCtx, req)
 
-		if !o.withSuppressed(info.FullMethod, err) {
+		if o.shouldLog(info.FullMethod, err) {
 			code := o.codeFunc(err)
 			level := o.levelFunc(code)
 			durField, durVal := o.durationFunc(time.Now().Sub(startTime))
@@ -59,7 +59,7 @@ func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamSer
 		startTime := time.Now()
 		err := handler(srv, wrapped)
 
-		if !o.withSuppressed(info.FullMethod, err) {
+		if o.shouldLog(info.FullMethod, err) {
 			code := o.codeFunc(err)
 			level := o.levelFunc(code)
 			durField, durVal := o.durationFunc(time.Now().Sub(startTime))
