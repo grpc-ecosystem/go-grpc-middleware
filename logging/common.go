@@ -18,10 +18,10 @@ func DefaultErrorToCode(err error) codes.Code {
 }
 
 // Suppressed function defines rules for suppressing any interceptor logs
-type Suppressed func(method string) bool
+type Suppressed func(fullMethodName string, err error) bool
 
 // DefaultSuppressedMethod is the default implementation of logs (none are suppressed by default)
-func DefaultSuppressedMethod(method string) bool {
+func DefaultSuppressedMethod(fullMethodName string, err error) bool {
 	return false
 }
 

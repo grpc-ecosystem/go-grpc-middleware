@@ -237,8 +237,9 @@ WithSuppressed customizes the function for supressing gRPC interceptor logs.
 
 ```go
 opts := []grpc_logrus.Option{
-    grpc_logrus.WithSuppressed(func(method string) bool {
-        if method == "healthcheck" {
+    grpc_logrus.WithSuppressed(func(methodFullName string, err error) bool {
+        // will only suppress call to healthcheck if there are no errors
+        if methodFullName == "blah.foo.healthcheck" && err == nil {
             return true
         }
         return false

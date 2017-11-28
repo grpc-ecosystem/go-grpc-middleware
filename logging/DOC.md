@@ -39,7 +39,7 @@ See relevant packages below.
 
 ## <a name="pkg-index">Index</a>
 * [func DefaultErrorToCode(err error) codes.Code](#DefaultErrorToCode)
-* [func DefaultSuppressedMethod(method string) bool](#DefaultSuppressedMethod)
+* [func DefaultSuppressedMethod(fullMethodName string, err error) bool](#DefaultSuppressedMethod)
 * [type ClientPayloadLoggingDecider](#ClientPayloadLoggingDecider)
 * [type ErrorToCode](#ErrorToCode)
 * [type ServerPayloadLoggingDecider](#ServerPayloadLoggingDecider)
@@ -55,7 +55,7 @@ func DefaultErrorToCode(err error) codes.Code
 
 ## <a name="DefaultSuppressedMethod">func</a> [DefaultSuppressedMethod](./common.go#L24)
 ``` go
-func DefaultSuppressedMethod(method string) bool
+func DefaultSuppressedMethod(fullMethodName string, err error) bool
 ```
 DefaultSuppressedMethod is the default implementation of logs (none are suppressed by default)
 
@@ -82,7 +82,7 @@ request/response payloads
 
 ## <a name="Suppressed">type</a> [Suppressed](./common.go#L21)
 ``` go
-type Suppressed func(method string) bool
+type Suppressed func(fullMethodName string, err error) bool
 ```
 Suppressed function defines rules for suppressing any interceptor logs
 

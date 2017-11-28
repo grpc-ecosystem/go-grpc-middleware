@@ -210,7 +210,11 @@ func TestLogrusServerOverrideSuppressedSuite(t *testing.T) {
 		return
 	}
 	opts := []grpc_logrus.Option{
-		grpc_logrus.WithSuppressed(func(method string) bool {
+		grpc_logrus.WithSuppressed(func(method string, err error) bool {
+			if method == "/mwitkow.testproto.TestService/PingError" && err != nil {
+				return false
+			}
+
 			return true
 		}),
 	}
