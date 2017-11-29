@@ -1,6 +1,3 @@
-// Copyright 2017 Michal Witkowski. All Rights Reserved.
-// See LICENSE for licensing terms.
-
 package grpc_ctxtags_test
 
 import (
@@ -16,6 +13,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"time"
 )
 
 var (
@@ -101,9 +99,32 @@ func (s *TaggingSuite) TestPing_WithCustomTags() {
 	resp, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "there must be not be an on a successful call")
 	tags := tagsFromJson(s.T(), resp.Value)
+	assert.NotContains(s.T(), tags, "deadline", "the tags not should contain a deadline")
 	assert.Contains(s.T(), tags, "peer.address", "the tags should contain key address")
 	assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain key address")
 	assert.Len(s.T(), tags, 2, "the tags should contain only two values")
+}
+
+func (s *TaggingSuite) TestPing_WithDeadline() {
+	ctx, _ := context.WithDeadline(s.SimpleCtx(), time.Now().AddDate(0, 0, 1))
+	resp, err := s.Client.Ping(ctx, goodPing)
+	require.NoError(s.T(), err, "there must be not be an on a successful call")
+	tags := tagsFromJson(s.T(), resp.Value)
+	assert.Contains(s.T(), tags, "deadline", "the tags should contain a deadline")
+	assert.Contains(s.T(), tags, "peer.address", "the tags should contain key address")
+	assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain key address")
+	assert.Len(s.T(), tags, 3, "the tags should contain only three values")
+}
+
+func (s *TaggingSuite) TestPing_WithDeadlineAndStart() {
+	ctx, _ := context.WithDeadline(s.SimpleCtx(), time.Now().AddDate(0, 0, 1))
+	resp, err := s.Client.Ping(ctx, goodPing)
+	require.NoError(s.T(), err, "there must be not be an on a successful call")
+	tags := tagsFromJson(s.T(), resp.Value)
+	assert.Contains(s.T(), tags, "deadline", "the tags should contain a deadline")
+	assert.Contains(s.T(), tags, "peer.address", "the tags should contain key address")
+	assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain key address")
+	assert.Len(s.T(), tags, 3, "the tags should contain only three values")
 }
 
 func (s *TaggingSuite) TestPingList_WithCustomTags() {

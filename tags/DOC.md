@@ -19,6 +19,8 @@ use `WithFieldExtractorForInitialReq` which will extract the tags from the first
 Note the tags will not be modified for subsequent requests, so this option only makes sense when the initial message
 establishes the meta-data for the stream.
 
+If there is a deadline present on the context it will be added to the tags on the context when they Extract(ctx) is called.
+
 If a user doesn't use the interceptors that initialize the `Tags` object, all operations following from an `Extract(ctx)`
 will be no-ops. This is to ensure that code doesn't panic if the interceptors weren't used.
 
@@ -33,6 +35,7 @@ Tags fields are typed, and shallow and should follow the OpenTracing semantics c
 - [google.golang.org/grpc/peer](https://godoc.org/google.golang.org/grpc/peer)
 
 ## <a name="pkg-index">Index</a>
+* [Variables](#pkg-variables)
 * [func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) map[string]interface{}](#CodeGenRequestFieldExtractor)
 * [func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor](#StreamServerInterceptor)
 * [func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor](#UnaryServerInterceptor)
@@ -49,6 +52,13 @@ Tags fields are typed, and shallow and should follow the OpenTracing semantics c
 
 #### <a name="pkg-files">Package files</a>
 [context.go](./context.go) [doc.go](./doc.go) [fieldextractor.go](./fieldextractor.go) [interceptors.go](./interceptors.go) [options.go](./options.go) 
+
+## <a name="pkg-variables">Variables</a>
+``` go
+var (
+    DeadlineTag = "deadline"
+)
+```
 
 ## <a name="CodeGenRequestFieldExtractor">func</a> [CodeGenRequestFieldExtractor](./fieldextractor.go#L23)
 ``` go
@@ -110,7 +120,7 @@ These are usualy coming from a protoc-plugin, such as Gogo protobuf.
 
 The tagName is configurable using the tagName variable. Here it would be "log_field".
 
-## <a name="Tags">type</a> [Tags](./context.go#L15-L17)
+## <a name="Tags">type</a> [Tags](./context.go#L18-L20)
 ``` go
 type Tags struct {
     // contains filtered or unexported fields
@@ -119,26 +129,26 @@ type Tags struct {
 Tags is the struct used for storing request tags between Context calls.
 This object is *not* thread safe, and should be handled only in the context of the request.
 
-### <a name="Extract">func</a> [Extract](./context.go#L39)
+### <a name="Extract">func</a> [Extract](./context.go#L42)
 ``` go
 func Extract(ctx context.Context) *Tags
 ```
 Extracts returns a pre-existing Tags object in the Context.
 If the context wasn't set in a tag interceptor, a no-op Tag storage is returned that will *not* be propagated in context.
 
-### <a name="Tags.Has">func</a> (\*Tags) [Has](./context.go#L26)
+### <a name="Tags.Has">func</a> (\*Tags) [Has](./context.go#L29)
 ``` go
 func (t *Tags) Has(key string) bool
 ```
 Has checks if the given key exists.
 
-### <a name="Tags.Set">func</a> (\*Tags) [Set](./context.go#L20)
+### <a name="Tags.Set">func</a> (\*Tags) [Set](./context.go#L23)
 ``` go
 func (t *Tags) Set(key string, value interface{}) *Tags
 ```
 Set sets the given key in the metadata tags.
 
-### <a name="Tags.Values">func</a> (\*Tags) [Values](./context.go#L33)
+### <a name="Tags.Values">func</a> (\*Tags) [Values](./context.go#L36)
 ``` go
 func (t *Tags) Values() map[string]interface{}
 ```
