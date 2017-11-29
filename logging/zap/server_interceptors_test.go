@@ -66,6 +66,7 @@ func (s *zapServerSuite) TestPing_WithCustomTags() {
 		assert.Contains(s.T(), m, `"custom_tags.string": "something"`, "all lines must contain `custom_tags.string` set by AddFields")
 		assert.Contains(s.T(), m, `"custom_tags.int": 1337`, "all lines must contain `custom_tags.int` set by AddFields")
 		assert.Contains(s.T(), m, `"custom_field": "custom_value"`, "all lines must contain `custom_field` set by AddFields")
+		assert.Contains(s.T(), m, `"grpc.start":`, "all lines must contain the start time")
 		// request field extraction
 		assert.Contains(s.T(), m, `"grpc.request.value": "something"`, "all lines must contain fields extracted from goodPing because of test.manual_extractfields.pb")
 	}
@@ -113,6 +114,7 @@ func (s *zapServerSuite) TestPingError_WithCustomLevels() {
 		assert.Contains(s.T(), m, `grpc.service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
 		assert.Contains(s.T(), m, `grpc.method": "PingError"`, "all lines must contain method name")
 		assert.Contains(s.T(), m, fmt.Sprintf(`grpc.code": "%s"`, tcase.code.String()), "all lines must contain method name")
+		assert.Contains(s.T(), m, `"grpc.start":`, "all lines must contain the start time")
 		assert.Contains(s.T(), m, fmt.Sprintf(`"level": "%s"`, tcase.level.String()), tcase.msg)
 	}
 }
@@ -135,6 +137,7 @@ func (s *zapServerSuite) TestPingList_WithCustomTags() {
 		assert.Contains(s.T(), m, `grpc.method": "PingList"`, "all lines must contain method name")
 		assert.Contains(s.T(), m, `"custom_tags.string": "something"`, "all lines must contain `custom_tags.string` set by AddFields")
 		assert.Contains(s.T(), m, `"custom_tags.int": 1337`, "all lines must contain `custom_tags.int` set by AddFields")
+		assert.Contains(s.T(), m, `"grpc.start":`, "all lines must contain the start time")
 		// request field extraction
 		assert.Contains(s.T(), m, `"grpc.request.value": "something"`, "all lines must contain fields extracted from goodPing because of test.manual_extractfields.pb")
 	}
