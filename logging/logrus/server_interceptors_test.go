@@ -211,7 +211,7 @@ func TestLogrusServerOverrideDeciderSuite(t *testing.T) {
 	}
 	opts := []grpc_logrus.Option{
 		grpc_logrus.WithDecider(func(method string, err error) bool {
-			if method == "/mwitkow.testproto.TestService/PingError" && err != nil {
+			if err != nil && method == "/mwitkow.testproto.TestService/PingError" {
 				return true
 			}
 

@@ -74,13 +74,15 @@ func Example_HandlerUsageUnaryPing() {
 	}
 }
 
-func ExampleWithSuppressed() {
+func ExampleWithDecider() {
 	opts := []grpc_zap.Option{
 		grpc_zap.WithDecider(func(fullMethodName string, err error) bool {
-			// will not log gRPC calls that have the fullMethodName  and no errors
-			if fullMethodName == "foo.bar.healthcheck" && err == nil {
+			// will not log gRPC calls if it was a call to healthcheck and no error was raised
+			if err == nil && fullMethodName == "foo.bar.healthcheck" {
 				return false
 			}
+
+			// by default everything will be logged
 			return true
 		}),
 	}

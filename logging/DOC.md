@@ -71,7 +71,7 @@ request/response payloads
 ``` go
 type Decider func(fullMethodName string, err error) bool
 ```
-Suppressed function defines rules for suppressing any interceptor logs
+Decider function defines rules for suppressing any interceptor logs
 
 ## <a name="ErrorToCode">type</a> [ErrorToCode](./common.go#L14)
 ``` go

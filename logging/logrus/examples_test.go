@@ -78,8 +78,8 @@ func Example_HandlerUsageUnaryPing() {
 func ExampleWithDecider() {
 	opts := []grpc_logrus.Option{
 		grpc_logrus.WithDecider(func(methodFullName string, err error) bool {
-			// will not log calls to healthcheck if there are no errors
-			if methodFullName == "blah.foo.healthcheck" && err == nil {
+			// will not log gRPC calls if it was a call to healthcheck and no error was raised
+			if err == nil && methodFullName == "blah.foo.healthcheck" {
 				return false
 			}
 

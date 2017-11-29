@@ -17,7 +17,7 @@ func DefaultErrorToCode(err error) codes.Code {
 	return grpc.Code(err)
 }
 
-// Suppressed function defines rules for suppressing any interceptor logs
+// Decider function defines rules for suppressing any interceptor logs
 type Decider func(fullMethodName string, err error) bool
 
 // DefaultDeciderMethod is the default implementation of decider to see if you should log the call

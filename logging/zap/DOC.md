@@ -4,6 +4,7 @@
 * [Overview](#pkg-overview)
 * [Imported Packages](#pkg-imports)
 * [Index](#pkg-index)
+* [Examples](#pkg-examples)
 
 ## <a name="pkg-overview">Overview</a>
 `grpc_zap` is a gRPC logging middleware backed by ZAP loggers
@@ -61,6 +62,9 @@ Please see examples and tests for examples of use.
   * [func WithDecider(f grpc\_logging.Decider) Option](#WithDecider)
   * [func WithDurationField(f DurationToField) Option](#WithDurationField)
   * [func WithLevels(f CodeToLevel) Option](#WithLevels)
+
+#### <a name="pkg-examples">Examples</a>
+* [WithDecider](#example_WithDecider)
 
 #### <a name="pkg-files">Package files</a>
 [client_interceptors.go](./client_interceptors.go) [context.go](./context.go) [doc.go](./doc.go) [grpclogger.go](./grpclogger.go) [options.go](./options.go) [payload_interceptors.go](./payload_interceptors.go) [server_interceptors.go](./server_interceptors.go) 
@@ -222,6 +226,35 @@ func WithDecider(f grpc_logging.Decider) Option
 ```
 WithDecider customizes the function for deciding if the gRPC interceptor logs should log.
 
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+opts := []grpc_zap.Option{
+    grpc_zap.WithDecider(func(fullMethodName string, err error) bool {
+        // will not log gRPC calls if it was a call to healthcheck and no error was raised
+        if err == nil && fullMethodName == "foo.bar.healthcheck" {
+            return false
+        }
+
+        // by default everything will be logged
+        return true
+    }),
+}
+
+_ = []grpc.ServerOption{
+    grpc_middleware.WithStreamServerChain(
+        grpc_ctxtags.StreamServerInterceptor(),
+        grpc_zap.StreamServerInterceptor(zap.NewNop(), opts...)),
+    grpc_middleware.WithUnaryServerChain(
+        grpc_ctxtags.UnaryServerInterceptor(),
+        grpc_zap.UnaryServerInterceptor(zap.NewNop(), opts...)),
+}
+```
+
+</details>
 ### <a name="WithDurationField">func</a> [WithDurationField](./options.go#L78)
 ``` go
 func WithDurationField(f DurationToField) Option
