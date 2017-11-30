@@ -171,7 +171,7 @@ func StreamClientInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamCli
 ```
 StreamServerInterceptor returns a new streaming client interceptor that optionally logs the execution of external gRPC calls.
 
-## <a name="StreamServerInterceptor">func</a> [StreamServerInterceptor](./server_interceptors.go#L52)
+## <a name="StreamServerInterceptor">func</a> [StreamServerInterceptor](./server_interceptors.go#L54)
 ``` go
 func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamServerInterceptor
 ```

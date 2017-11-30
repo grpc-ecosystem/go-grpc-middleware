@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 package grpc_zap
 
 import (
@@ -27,17 +29,19 @@ func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServer
 		newCtx := newLoggerForCall(ctx, logger, info.FullMethod)
 		startTime := time.Now()
 		resp, err := handler(newCtx, req)
-		if o.shouldLog(info.FullMethod, err) {
-			code := o.codeFunc(err)
-			level := o.levelFunc(code)
-
-			// re-extract logger from newCtx, as it may have extra fields that changed in the holder.
-			ctx_zap.Extract(newCtx).Check(level, "finished unary call").Write(
-				zap.Error(err),
-				zap.String("grpc.code", code.String()),
-				o.durationFunc(time.Now().Sub(startTime)),
-			)
+		if !o.shouldLog(info.FullMethod, err) {
+			return resp, err
 		}
+		code := o.codeFunc(err)
+		level := o.levelFunc(code)
+
+		// re-extract logger from newCtx, as it may have extra fields that changed in the holder.
+		ctx_zap.Extract(newCtx).Check(level, "finished unary call").Write(
+			zap.Error(err),
+			zap.String("grpc.code", code.String()),
+			o.durationFunc(time.Now().Sub(startTime)),
+		)
+
 		return resp, err
 	}
 }
@@ -52,17 +56,19 @@ func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServ
 
 		startTime := time.Now()
 		err := handler(srv, wrapped)
-		if o.shouldLog(info.FullMethod, err) {
-			code := o.codeFunc(err)
-			level := o.levelFunc(code)
-
-			// re-extract logger from newCtx, as it may have extra fields that changed in the holder.
-			ctx_zap.Extract(newCtx).Check(level, "finished streaming call").Write(
-				zap.Error(err),
-				zap.String("grpc.code", code.String()),
-				o.durationFunc(time.Now().Sub(startTime)),
-			)
+		if !o.shouldLog(info.FullMethod, err) {
+			return err
 		}
+		code := o.codeFunc(err)
+		level := o.levelFunc(code)
+
+		// re-extract logger from newCtx, as it may have extra fields that changed in the holder.
+		ctx_zap.Extract(newCtx).Check(level, "finished streaming call").Write(
+			zap.Error(err),
+			zap.String("grpc.code", code.String()),
+			o.durationFunc(time.Now().Sub(startTime)),
+		)
+
 		return err
 	}
 }

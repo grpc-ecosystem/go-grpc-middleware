@@ -179,7 +179,7 @@ func StreamClientInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamClie
 ```
 StreamServerInterceptor returns a new streaming client interceptor that optionally logs the execution of external gRPC calls.
 
-## <a name="StreamServerInterceptor">func</a> [StreamServerInterceptor](./server_interceptors.go#L46)
+## <a name="StreamServerInterceptor">func</a> [StreamServerInterceptor](./server_interceptors.go#L50)
 ``` go
 func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServerInterceptor
 ```
@@ -191,7 +191,7 @@ func UnaryClientInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryClient
 ```
 UnaryClientInterceptor returns a new unary client interceptor that optionally logs the execution of external gRPC calls.
 
-## <a name="UnaryServerInterceptor">func</a> [UnaryServerInterceptor](./server_interceptors.go#L24)
+## <a name="UnaryServerInterceptor">func</a> [UnaryServerInterceptor](./server_interceptors.go#L26)
 ``` go
 func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServerInterceptor
 ```
