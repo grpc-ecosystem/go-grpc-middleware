@@ -101,7 +101,7 @@ Keys and values will be added to the context tags of the request. If there are n
 ``` go
 func TagBasedRequestFieldExtractor(tagName string) RequestFieldExtractorFunc
 ```
-TagedRequestFiledExtractor is a function that relies on Go struct tags to export log fields from requests.
+TagBasedRequestFieldExtractor is a function that relies on Go struct tags to export log fields from requests.
 These are usualy coming from a protoc-plugin, such as Gogo protobuf.
 
 	message Metadata {

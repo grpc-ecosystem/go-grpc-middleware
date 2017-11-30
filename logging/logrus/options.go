@@ -14,6 +14,7 @@ import (
 var (
 	defaultOptions = &options{
 		levelFunc:    nil,
+		shouldLog:    grpc_logging.DefaultDeciderMethod,
 		codeFunc:     grpc_logging.DefaultErrorToCode,
 		durationFunc: DefaultDurationToField,
 	}
@@ -21,6 +22,7 @@ var (
 
 type options struct {
 	levelFunc    CodeToLevel
+	shouldLog    grpc_logging.Decider
 	codeFunc     grpc_logging.ErrorToCode
 	durationFunc DurationToField
 }
@@ -52,6 +54,13 @@ type CodeToLevel func(code codes.Code) logrus.Level
 
 // DurationToField function defines how to produce duration fields for logging
 type DurationToField func(duration time.Duration) (key string, value interface{})
+
+// WithDecider customizes the function for deciding if the gRPC interceptor logs should log.
+func WithDecider(f grpc_logging.Decider) Option {
+	return func(o *options) {
+		o.shouldLog = f
+	}
+}
 
 // WithLevels customizes the function for mapping gRPC return codes and interceptor log level statements.
 func WithLevels(f CodeToLevel) Option {

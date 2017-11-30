@@ -4,6 +4,7 @@
 * [Overview](#pkg-overview)
 * [Imported Packages](#pkg-imports)
 * [Index](#pkg-index)
+* [Examples](#pkg-examples)
 
 ## <a name="pkg-overview">Overview</a>
 `grpc_zap` is a gRPC logging middleware backed by ZAP loggers
@@ -58,8 +59,12 @@ Please see examples and tests for examples of use.
 * [type DurationToField](#DurationToField)
 * [type Option](#Option)
   * [func WithCodes(f grpc\_logging.ErrorToCode) Option](#WithCodes)
+  * [func WithDecider(f grpc\_logging.Decider) Option](#WithDecider)
   * [func WithDurationField(f DurationToField) Option](#WithDurationField)
   * [func WithLevels(f CodeToLevel) Option](#WithLevels)
+
+#### <a name="pkg-examples">Examples</a>
+* [WithDecider](#example_WithDecider)
 
 #### <a name="pkg-files">Package files</a>
 [client_interceptors.go](./client_interceptors.go) [context.go](./context.go) [doc.go](./doc.go) [grpclogger.go](./grpclogger.go) [options.go](./options.go) [payload_interceptors.go](./payload_interceptors.go) [server_interceptors.go](./server_interceptors.go) 
@@ -99,26 +104,26 @@ func AddFields(ctx context.Context, fields ...zapcore.Field)
 AddFields adds zap fields to the logger.
 Deprecated: should use the ctx_zap.AddFields instead
 
-## <a name="DefaultClientCodeToLevel">func</a> [DefaultClientCodeToLevel](./options.go#L121)
+## <a name="DefaultClientCodeToLevel">func</a> [DefaultClientCodeToLevel](./options.go#L127)
 ``` go
 func DefaultClientCodeToLevel(code codes.Code) zapcore.Level
 ```
 DefaultClientCodeToLevel is the default implementation of gRPC return codes to log levels for client side.
 
-## <a name="DefaultCodeToLevel">func</a> [DefaultCodeToLevel](./options.go#L79)
+## <a name="DefaultCodeToLevel">func</a> [DefaultCodeToLevel](./options.go#L85)
 ``` go
 func DefaultCodeToLevel(code codes.Code) zapcore.Level
 ```
 DefaultCodeToLevel is the default implementation of gRPC return codes and interceptor log level for server side.
 
-## <a name="DurationToDurationField">func</a> [DurationToDurationField](./options.go#L172)
+## <a name="DurationToDurationField">func</a> [DurationToDurationField](./options.go#L178)
 ``` go
 func DurationToDurationField(duration time.Duration) zapcore.Field
 ```
 DurationToDurationField uses a Duration field to log the request duration
 and leaves it up to Zap's encoder settings to determine how that is output.
 
-## <a name="DurationToTimeMillisField">func</a> [DurationToTimeMillisField](./options.go#L166)
+## <a name="DurationToTimeMillisField">func</a> [DurationToTimeMillisField](./options.go#L172)
 ``` go
 func DurationToTimeMillisField(duration time.Duration) zapcore.Field
 ```
@@ -174,7 +179,7 @@ func StreamClientInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamClie
 ```
 StreamServerInterceptor returns a new streaming client interceptor that optionally logs the execution of external gRPC calls.
 
-## <a name="StreamServerInterceptor">func</a> [StreamServerInterceptor](./server_interceptors.go#L44)
+## <a name="StreamServerInterceptor">func</a> [StreamServerInterceptor](./server_interceptors.go#L50)
 ``` go
 func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServerInterceptor
 ```
@@ -186,42 +191,77 @@ func UnaryClientInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryClient
 ```
 UnaryClientInterceptor returns a new unary client interceptor that optionally logs the execution of external gRPC calls.
 
-## <a name="UnaryServerInterceptor">func</a> [UnaryServerInterceptor](./server_interceptors.go#L24)
+## <a name="UnaryServerInterceptor">func</a> [UnaryServerInterceptor](./server_interceptors.go#L26)
 ``` go
 func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServerInterceptor
 ```
 UnaryServerInterceptor returns a new unary server interceptors that adds zap.Logger to the context.
 
-## <a name="CodeToLevel">type</a> [CodeToLevel](./options.go#L52)
+## <a name="CodeToLevel">type</a> [CodeToLevel](./options.go#L51)
 ``` go
 type CodeToLevel func(code codes.Code) zapcore.Level
 ```
 CodeToLevel function defines the mapping between gRPC return codes and interceptor log level.
 
-## <a name="DurationToField">type</a> [DurationToField](./options.go#L55)
+## <a name="DurationToField">type</a> [DurationToField](./options.go#L54)
 ``` go
 type DurationToField func(duration time.Duration) zapcore.Field
 ```
 DurationToField function defines how to produce duration fields for logging
 
-## <a name="Option">type</a> [Option](./options.go#L49)
+## <a name="Option">type</a> [Option](./options.go#L48)
 ``` go
 type Option func(*options)
 ```
 
-### <a name="WithCodes">func</a> [WithCodes](./options.go#L65)
+### <a name="WithCodes">func</a> [WithCodes](./options.go#L71)
 ``` go
 func WithCodes(f grpc_logging.ErrorToCode) Option
 ```
 WithCodes customizes the function for mapping errors to error codes.
 
-### <a name="WithDurationField">func</a> [WithDurationField](./options.go#L72)
+### <a name="WithDecider">func</a> [WithDecider](./options.go#L57)
+``` go
+func WithDecider(f grpc_logging.Decider) Option
+```
+WithDecider customizes the function for deciding if the gRPC interceptor logs should log.
+
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+opts := []grpc_zap.Option{
+    grpc_zap.WithDecider(func(fullMethodName string, err error) bool {
+        // will not log gRPC calls if it was a call to healthcheck and no error was raised
+        if err == nil && fullMethodName == "foo.bar.healthcheck" {
+            return false
+        }
+
+        // by default everything will be logged
+        return true
+    }),
+}
+
+_ = []grpc.ServerOption{
+    grpc_middleware.WithStreamServerChain(
+        grpc_ctxtags.StreamServerInterceptor(),
+        grpc_zap.StreamServerInterceptor(zap.NewNop(), opts...)),
+    grpc_middleware.WithUnaryServerChain(
+        grpc_ctxtags.UnaryServerInterceptor(),
+        grpc_zap.UnaryServerInterceptor(zap.NewNop(), opts...)),
+}
+```
+
+</details>
+### <a name="WithDurationField">func</a> [WithDurationField](./options.go#L78)
 ``` go
 func WithDurationField(f DurationToField) Option
 ```
 WithDurationField customizes the function for mapping request durations to Zap fields.
 
-### <a name="WithLevels">func</a> [WithLevels](./options.go#L58)
+### <a name="WithLevels">func</a> [WithLevels](./options.go#L64)
 ``` go
 func WithLevels(f CodeToLevel) Option
 ```
