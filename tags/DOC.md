@@ -20,6 +20,7 @@ Note the tags will not be modified for subsequent requests, so this option only 
 establishes the meta-data for the stream.
 
 If there is a deadline present on the context it will be added to the tags on the context when they Extract(ctx) is called.
+The deadline will be a string representing the time (RFC3339) when the current call will expire.
 
 If a user doesn't use the interceptors that initialize the `Tags` object, all operations following from an `Extract(ctx)`
 will be no-ops. This is to ensure that code doesn't panic if the interceptors weren't used.
@@ -56,7 +57,7 @@ Tags fields are typed, and shallow and should follow the OpenTracing semantics c
 ## <a name="pkg-variables">Variables</a>
 ``` go
 var (
-    DeadlineTag = "deadline"
+    DeadlineTag = "grpc.request.deadline"
 )
 ```
 
@@ -120,7 +121,7 @@ These are usualy coming from a protoc-plugin, such as Gogo protobuf.
 
 The tagName is configurable using the tagName variable. Here it would be "log_field".
 
-## <a name="Tags">type</a> [Tags](./context.go#L18-L20)
+## <a name="Tags">type</a> [Tags](./context.go#L19-L21)
 ``` go
 type Tags struct {
     // contains filtered or unexported fields
@@ -129,26 +130,26 @@ type Tags struct {
 Tags is the struct used for storing request tags between Context calls.
 This object is *not* thread safe, and should be handled only in the context of the request.
 
-### <a name="Extract">func</a> [Extract](./context.go#L42)
+### <a name="Extract">func</a> [Extract](./context.go#L43)
 ``` go
 func Extract(ctx context.Context) *Tags
 ```
 Extracts returns a pre-existing Tags object in the Context.
 If the context wasn't set in a tag interceptor, a no-op Tag storage is returned that will *not* be propagated in context.
 
-### <a name="Tags.Has">func</a> (\*Tags) [Has](./context.go#L29)
+### <a name="Tags.Has">func</a> (\*Tags) [Has](./context.go#L30)
 ``` go
 func (t *Tags) Has(key string) bool
 ```
 Has checks if the given key exists.
 
-### <a name="Tags.Set">func</a> (\*Tags) [Set](./context.go#L23)
+### <a name="Tags.Set">func</a> (\*Tags) [Set](./context.go#L24)
 ``` go
 func (t *Tags) Set(key string, value interface{}) *Tags
 ```
 Set sets the given key in the metadata tags.
 
-### <a name="Tags.Values">func</a> (\*Tags) [Values](./context.go#L36)
+### <a name="Tags.Values">func</a> (\*Tags) [Values](./context.go#L37)
 ``` go
 func (t *Tags) Values() map[string]interface{}
 ```

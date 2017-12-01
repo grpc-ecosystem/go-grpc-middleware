@@ -1,6 +1,3 @@
-// Copyright 2017 Michal Witkowski. All Rights Reserved.
-// See LICENSE for licensing terms.
-
 /*
 `grpc_ctxtags` adds a Tag object to the context that can be used by other middleware to add context about a request.
 
@@ -17,6 +14,7 @@ Note the tags will not be modified for subsequent requests, so this option only 
 establishes the meta-data for the stream.
 
 If there is a deadline present on the context it will be added to the tags on the context when they Extract(ctx) is called.
+The deadline will be a string representing the time (RFC3339) when the current call will expire.
 
 If a user doesn't use the interceptors that initialize the `Tags` object, all operations following from an `Extract(ctx)`
 will be no-ops. This is to ensure that code doesn't panic if the interceptors weren't used.
