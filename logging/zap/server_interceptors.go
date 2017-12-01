@@ -86,7 +86,7 @@ func serverCallFields(fullMethodString string) []zapcore.Field {
 
 func newLoggerForCall(ctx context.Context, logger *zap.Logger, fullMethodString string, start time.Time) context.Context {
 	f := ctx_zap.TagsToFields(ctx)
-	f = append(f, zap.Time("grpc.start", start))
+	f = append(f, zap.String("grpc.start_time", start.Format(time.RFC3339)))
 	callLog := logger.With(append(f, serverCallFields(fullMethodString)...)...)
 	return ctx_zap.ToContext(ctx, callLog)
 }
