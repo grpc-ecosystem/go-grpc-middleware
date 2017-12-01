@@ -82,20 +82,9 @@ func (s *zapPayloadSuite) TestPing_LogsBothRequestAndResponse() {
 	clientReq, clientResp := clientMsgs[0], clientMsgs[1]
 	s.T().Log(clientReq)
 	assert.Contains(s.T(), clientReq, "grpc.request.content", "request payload must be logged in a structured way")
-	//assert.Equal(s.T(), clientReq["grpc.request.content"]["value"], goodPing.Value))
-	//assert.Equal(s.T(), clientReq["grpc.request.content"]["sleepTimeMs"], goodPing.SleepTimeMs))
-
 	assert.Contains(s.T(), serverReq, "grpc.request.content", "request payload must be logged in a structured way")
-	//assert.Equal(s.T(), serverReq["grpc.request.content"]["value"], goodPing.Value))
-	//assert.Equal(s.T(), serverReq["grpc.request.content"]["sleepTimeMs"], goodPing.SleepTimeMs))
-
 	assert.Contains(s.T(), clientResp, "grpc.response.content", "request payload must be logged in a structured way")
-	//assert.Equal(s.T(), clientResp["grpc.response.content"]["value"], resp.Value))
-	//assert.Equal(s.T(), clientResp["grpc.response.content"]["counter"], resp.Counter))
-
 	assert.Contains(s.T(), serverResp, "grpc.response.content", "request payload must be logged in a structured way")
-	//assert.Equal(s.T(), serverResp["grpc.response.content"]["value"], resp.Value))
-	//assert.Equal(s.T(), serverResp["grpc.response.content"]["counter"], resp.Counter))
 }
 
 func (s *zapPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
