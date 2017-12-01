@@ -191,7 +191,7 @@ func UnaryClientInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryClient
 ```
 UnaryClientInterceptor returns a new unary client interceptor that optionally logs the execution of external gRPC calls.
 
-## <a name="UnaryServerInterceptor">func</a> [UnaryServerInterceptor](./server_interceptors.go#L26)
+## <a name="UnaryServerInterceptor">func</a> [UnaryServerInterceptor](./server_interceptors.go#L24)
 ``` go
 func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServerInterceptor
 ```

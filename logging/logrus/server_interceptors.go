@@ -107,11 +107,11 @@ func newLoggerForCall(ctx context.Context, entry *logrus.Entry, fullMethodString
 	method := path.Base(fullMethodString)
 	callLog := entry.WithFields(
 		logrus.Fields{
-			SystemField:    "grpc",
-			KindField:      "server",
-			"grpc.service": service,
-			"grpc.method":  method,
-			"grpc.start":   start,
+			SystemField:       "grpc",
+			KindField:         "server",
+			"grpc.service":    service,
+			"grpc.method":     method,
+			"grpc.start_time": start.Format(time.RFC3339),
 		})
 
 	callLog = callLog.WithFields(ctx_logrus.Extract(ctx).Data)
