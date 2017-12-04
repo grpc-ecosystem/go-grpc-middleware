@@ -1,14 +1,12 @@
-// Copyright 2017 Michal Witkowski. All Rights Reserved.
-// See LICENSE for licensing terms.
-
 package grpc_logrus
 
 import (
 	"path"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags/logrus"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -28,6 +26,10 @@ func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServe
 		newCtx := newLoggerForCall(ctx, entry, info.FullMethod)
 		startTime := time.Now()
 		resp, err := handler(newCtx, req)
+
+		if !o.shouldLog(info.FullMethod, err) {
+			return resp, err
+		}
 		code := o.codeFunc(err)
 		level := o.levelFunc(code)
 		durField, durVal := o.durationFunc(time.Now().Sub(startTime))
@@ -38,10 +40,12 @@ func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServe
 		if err != nil {
 			fields[logrus.ErrorKey] = err
 		}
+
 		levelLogf(
-			Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
+			ctx_logrus.Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
 			level,
 			"finished unary call")
+
 		return resp, err
 	}
 }
@@ -56,6 +60,10 @@ func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamSer
 
 		startTime := time.Now()
 		err := handler(srv, wrapped)
+
+		if !o.shouldLog(info.FullMethod, err) {
+			return err
+		}
 		code := o.codeFunc(err)
 		level := o.levelFunc(code)
 		durField, durVal := o.durationFunc(time.Now().Sub(startTime))
@@ -66,10 +74,12 @@ func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamSer
 		if err != nil {
 			fields[logrus.ErrorKey] = err
 		}
+
 		levelLogf(
-			Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
+			ctx_logrus.Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
 			level,
 			"finished streaming call")
+
 		return err
 	}
 }
@@ -101,5 +111,7 @@ func newLoggerForCall(ctx context.Context, entry *logrus.Entry, fullMethodString
 			"grpc.service": service,
 			"grpc.method":  method,
 		})
-	return toContext(ctx, callLog)
+
+	callLog = callLog.WithFields(ctx_logrus.Extract(ctx).Data)
+	return ctx_logrus.ToContext(ctx, callLog)
 }

@@ -1,17 +1,14 @@
-// Copyright 2017 Michal Witkowski. All Rights Reserved.
-// See LICENSE for licensing terms.
-
 package grpc_logrus
 
 import (
 	"bytes"
-
 	"fmt"
 
-	"github.com/sirupsen/logrus"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags/logrus"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -31,7 +28,7 @@ func PayloadUnaryServerInterceptor(entry *logrus.Entry, decider grpc_logging.Ser
 			return handler(ctx, req)
 		}
 		// Use the provided logrus.Entry for logging but use the fields from context.
-		logEntry := entry.WithFields(Extract(ctx).Data)
+		logEntry := entry.WithFields(ctx_logrus.Extract(ctx).Data)
 		logProtoMessageAsJson(logEntry, req, "grpc.request.content", "server request payload logged as grpc.request.content field")
 		resp, err := handler(ctx, req)
 		if err == nil {

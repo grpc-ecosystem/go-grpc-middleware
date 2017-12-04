@@ -20,7 +20,7 @@ func TestCodeGenRequestLogFieldExtractor_ManualIsDeclared(t *testing.T) {
 	require.EqualValues(t, valMap, map[string]interface{}{"value": "my_value"})
 }
 
-func TestTagedRequestFiledExtractor_PingRequest(t *testing.T) {
+func TestTaggedRequestFiledExtractor_PingRequest(t *testing.T) {
 	req := &pb_gogotestproto.PingRequest{
 		Ping: &pb_gogotestproto.Ping{
 			Id: &pb_gogotestproto.PingId{
@@ -37,7 +37,7 @@ func TestTagedRequestFiledExtractor_PingRequest(t *testing.T) {
 	assert.EqualValues(t, []string{"tagone", "tagtwo"}, valMap["meta_tags"])
 }
 
-func TestTagedRequestFiledExtractor_PongRequest(t *testing.T) {
+func TestTaggedRequestFiledExtractor_PongRequest(t *testing.T) {
 	req := &pb_gogotestproto.PongRequest{
 		Pong: &pb_gogotestproto.Pong{
 			Id: "some_id",

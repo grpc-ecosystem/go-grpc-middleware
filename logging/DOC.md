@@ -6,12 +6,14 @@
 * [Index](#pkg-index)
 
 ## <a name="pkg-overview">Overview</a>
-grpc_logging is a "parent" package for gRPC logging middlewares
+grpc_logging is a "parent" package for gRPC logging middlewares.
 
 ### General functionality of all middleware
-All logging middleware have an `Extract(ctx)` function that provides a request-scoped logger with gRPC-related fields
-(service and method names). Moreover, that logger will have fields populated from the `grpc_ctxtags.Tags` of the
-context.
+The gRPC logging middleware populates request-scoped data to `grpc_ctxtags.Tags` that relate to the current gRPC call
+(e.g. service and method names).
+
+Once the gRPC logging middleware has added the gRPC specific Tags to the ctx they will then be written with the logs
+that are made using the `ctx_logrus` or `ctx_zap` loggers.
 
 All logging middleware will emit a final log statement. It is based on the error returned by the handler function,
 the gRPC status code, an error (if any) and it will emit at a level controlled via `WithLevels`.
@@ -36,25 +38,40 @@ See relevant packages below.
 - [google.golang.org/grpc/codes](https://godoc.org/google.golang.org/grpc/codes)
 
 ## <a name="pkg-index">Index</a>
+* [func DefaultDeciderMethod(fullMethodName string, err error) bool](#DefaultDeciderMethod)
 * [func DefaultErrorToCode(err error) codes.Code](#DefaultErrorToCode)
 * [type ClientPayloadLoggingDecider](#ClientPayloadLoggingDecider)
+* [type Decider](#Decider)
 * [type ErrorToCode](#ErrorToCode)
 * [type ServerPayloadLoggingDecider](#ServerPayloadLoggingDecider)
 
 #### <a name="pkg-files">Package files</a>
 [common.go](./common.go) [doc.go](./doc.go) 
 
+## <a name="DefaultDeciderMethod">func</a> [DefaultDeciderMethod](./common.go#L25)
+``` go
+func DefaultDeciderMethod(fullMethodName string, err error) bool
+```
+DefaultDeciderMethod is the default implementation of decider to see if you should log the call
+by default this if always true so all calls are logged
+
 ## <a name="DefaultErrorToCode">func</a> [DefaultErrorToCode](./common.go#L16)
 ``` go
 func DefaultErrorToCode(err error) codes.Code
 ```
 
-## <a name="ClientPayloadLoggingDecider">type</a> [ClientPayloadLoggingDecider](./common.go#L26)
+## <a name="ClientPayloadLoggingDecider">type</a> [ClientPayloadLoggingDecider](./common.go#L35)
 ``` go
 type ClientPayloadLoggingDecider func(ctx context.Context, fullMethodName string) bool
 ```
 ClientPayloadLoggingDecider is a user-provided function for deciding whether to log the client-side
 request/response payloads
+
+## <a name="Decider">type</a> [Decider](./common.go#L21)
+``` go
+type Decider func(fullMethodName string, err error) bool
+```
+Decider function defines rules for suppressing any interceptor logs
 
 ## <a name="ErrorToCode">type</a> [ErrorToCode](./common.go#L14)
 ``` go
@@ -63,7 +80,7 @@ type ErrorToCode func(err error) codes.Code
 ErrorToCode function determines the error code of an error
 This makes using custom errors with grpc middleware easier
 
-## <a name="ServerPayloadLoggingDecider">type</a> [ServerPayloadLoggingDecider](./common.go#L22)
+## <a name="ServerPayloadLoggingDecider">type</a> [ServerPayloadLoggingDecider](./common.go#L31)
 ``` go
 type ServerPayloadLoggingDecider func(ctx context.Context, fullMethodName string, servingObject interface{}) bool
 ```
