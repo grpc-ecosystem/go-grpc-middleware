@@ -53,13 +53,13 @@ func (s *logrusClientSuite) TestPing() {
 	msgs := s.getOutputJSONs()
 	require.Len(s.T(), msgs, 1, "one log statement should be logged")
 
-	assert.Equal(s.T(), msgs[0]["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
-	assert.Equal(s.T(), msgs[0]["grpc.method"], "Ping", "all lines must contain method name")
-	assert.Equal(s.T(), msgs[0]["msg"], "finished client unary call", "handler's message must contain user message")
-	assert.Contains(s.T(), msgs[0], "grpc.time_ms", "interceptor log statement should contain execution time")
+	assert.Equal(s.T(), msgs[0]["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain the correct service name")
+	assert.Equal(s.T(), msgs[0]["grpc.method"], "Ping", "all lines must contain the correct method name")
+	assert.Equal(s.T(), msgs[0]["msg"], "finished client unary call", "handler's message must contain the correct message")
+	assert.Contains(s.T(), msgs[0], "grpc.time_ms", "interceptor log statement should contain execution time (duration in ms)")
 
 	assert.Equal(s.T(), msgs[0]["span.kind"], "client", "all lines must contain the kind of call (client)")
-	assert.Equal(s.T(), msgs[0]["level"], "debug", "OK error codes must be logged on debug level.")
+	assert.Equal(s.T(), msgs[0]["level"], "debug", "OK codes must be logged on debug level.")
 }
 
 func (s *logrusClientSuite) TestPingList() {
@@ -74,13 +74,13 @@ func (s *logrusClientSuite) TestPingList() {
 	}
 	msgs := s.getOutputJSONs()
 	require.Len(s.T(), msgs, 1, "one log statement should be logged")
-	assert.Equal(s.T(), msgs[0]["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
-	assert.Equal(s.T(), msgs[0]["grpc.method"], "PingList", "all lines must contain method name")
-	assert.Equal(s.T(), msgs[0]["msg"], "finished client streaming call", "handler's message must contain user message")
-	assert.Contains(s.T(), msgs[0], "grpc.time_ms", "handler's message must not contain default duration")
+	assert.Equal(s.T(), msgs[0]["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain the correct service name")
+	assert.Equal(s.T(), msgs[0]["grpc.method"], "PingList", "all lines must contain the correct method name")
+	assert.Equal(s.T(), msgs[0]["msg"], "finished client streaming call", "handler's message must contain the correct message")
+	assert.Contains(s.T(), msgs[0], "grpc.time_ms", "interceptor log statement should contain execution time (duration in ms)")
 
 	assert.Equal(s.T(), msgs[0]["span.kind"], "client", "all lines must contain the kind of call (client)")
-	assert.Equal(s.T(), msgs[0]["level"], "debug", "OK error codes must be logged on debug level.")
+	assert.Equal(s.T(), msgs[0]["level"], "debug", "OK codes must be logged on debug level.")
 }
 
 func (s *logrusClientSuite) TestPingError_WithCustomLevels() {
@@ -117,10 +117,10 @@ func (s *logrusClientSuite) TestPingError_WithCustomLevels() {
 		assert.Error(s.T(), err, "each call here must return an error")
 		msgs := s.getOutputJSONs()
 		require.Len(s.T(), msgs, 1, "only the interceptor log message is printed in PingErr")
-		assert.Equal(s.T(), msgs[0]["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
-		assert.Equal(s.T(), msgs[0]["grpc.method"], "PingError", "all lines must contain method name")
+		assert.Equal(s.T(), msgs[0]["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain the correct service name")
+		assert.Equal(s.T(), msgs[0]["grpc.method"], "PingError", "all lines must contain the correct method name")
 
-		assert.Equal(s.T(), msgs[0]["grpc.code"], tcase.code.String(), "all lines must contain method name")
+		assert.Equal(s.T(), msgs[0]["grpc.code"], tcase.code.String(), "all lines must contain a grpc code")
 		assert.Equal(s.T(), msgs[0]["level"], tcase.level.String(), tcase.msg)
 	}
 }
@@ -151,11 +151,11 @@ func (s *logrusClientOverrideSuite) TestPing_HasOverrides() {
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
 	msgs := s.getOutputJSONs()
 	require.Len(s.T(), msgs, 1, "one log statement should be logged")
-	assert.Equal(s.T(), msgs[0]["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
-	assert.Equal(s.T(), msgs[0]["grpc.method"], "Ping", "all lines must contain method name")
-	assert.Equal(s.T(), msgs[0]["msg"], "finished client unary call", "handler's message must contain user message")
-	assert.NotContains(s.T(), msgs[0], "grpc.time_ms", "handler's message must not contain default duration")
-	assert.Contains(s.T(), msgs[0], "grpc.duration", "handler's message must not contain overridden duration")
+	assert.Equal(s.T(), msgs[0]["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain the correct service name")
+	assert.Equal(s.T(), msgs[0]["grpc.method"], "Ping", "all lines must contain the correct method name")
+	assert.Equal(s.T(), msgs[0]["msg"], "finished client unary call", "handler's message must contain the correct message")
+	assert.NotContains(s.T(), msgs[0], "grpc.time_ms", "message must not contain default duration")
+	assert.Contains(s.T(), msgs[0], "grpc.duration", "message must not contain overridden duration")
 }
 
 func (s *logrusClientOverrideSuite) TestPingList_HasOverrides() {
@@ -172,12 +172,12 @@ func (s *logrusClientOverrideSuite) TestPingList_HasOverrides() {
 	require.Len(s.T(), msgs, 1, "one log statement should be logged")
 	assert.Len(s.T(), msgs, 1, "single log statements should be logged")
 
-	assert.Equal(s.T(), msgs[0]["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
-	assert.Equal(s.T(), msgs[0]["grpc.method"], "PingList", "all lines must contain method name")
-	assert.Equal(s.T(), msgs[0]["msg"], "finished client streaming call", "handler's message must contain user message")
-	assert.NotContains(s.T(), msgs[0], "grpc.time_ms", "handler's message must not contain default duration")
-	assert.Contains(s.T(), msgs[0], "grpc.duration", "handler's message must not contain overridden duration")
+	assert.Equal(s.T(), msgs[0]["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain the correct service name")
+	assert.Equal(s.T(), msgs[0]["grpc.method"], "PingList", "all lines must contain the correct method name")
+	assert.Equal(s.T(), msgs[0]["msg"], "finished client streaming call", "handler's message must contain the correct message")
+	assert.NotContains(s.T(), msgs[0], "grpc.time_ms", "message must not contain default duration")
+	assert.Contains(s.T(), msgs[0], "grpc.duration", "message must contain overridden duration")
 	assert.Equal(s.T(), msgs[0]["span.kind"], "client", "all lines must contain the kind of call (client)")
-	assert.Equal(s.T(), msgs[0]["level"], "debug", "OK error codes must be logged on debug level.")
+	assert.Equal(s.T(), msgs[0]["level"], "debug", "OK codes must be logged on debug level.")
 
 }

@@ -48,7 +48,7 @@ type zapClientSuite struct {
 
 func (s *zapClientSuite) TestPing() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
-	assert.NoError(s.T(), err, "there must be not be an on a successful call")
+	assert.NoError(s.T(), err, "there must be not be an error on a successful call")
 	msgs := s.getOutputJSONs()
 	require.Len(s.T(), msgs, 1, "one log statement should be logged")
 	assert.Equal(s.T(), msgs[0]["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
@@ -57,7 +57,7 @@ func (s *zapClientSuite) TestPing() {
 	assert.Contains(s.T(), msgs[0], "grpc.time_ms", "interceptor log statement should contain execution time")
 
 	assert.Equal(s.T(), msgs[0]["span.kind"], "client", "all lines must contain the kind of call (client)")
-	assert.Equal(s.T(), msgs[0]["level"], "debug", "OK error codes must be logged on debug level.")
+	assert.Equal(s.T(), msgs[0]["level"], "debug", "OK codes must be logged on debug level.")
 }
 
 func (s *zapClientSuite) TestPingList() {
@@ -78,7 +78,7 @@ func (s *zapClientSuite) TestPingList() {
 	assert.Contains(s.T(), msgs[0], "grpc.time_ms", "handler's message must not contain default duration")
 
 	assert.Equal(s.T(), msgs[0]["span.kind"], "client", "all lines must contain the kind of call (client)")
-	assert.Equal(s.T(), msgs[0]["level"], "debug", "OK error codes must be logged on debug level.")
+	assert.Equal(s.T(), msgs[0]["level"], "debug", "OK codes must be logged on debug level.")
 }
 
 func (s *zapClientSuite) TestPingError_WithCustomLevels() {
@@ -118,7 +118,7 @@ func (s *zapClientSuite) TestPingError_WithCustomLevels() {
 		assert.Equal(s.T(), msgs[0]["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
 		assert.Equal(s.T(), msgs[0]["grpc.method"], "PingError", "all lines must contain method name")
 
-		assert.Equal(s.T(), msgs[0]["grpc.code"], tcase.code.String(), "all lines must contain method name")
+		assert.Equal(s.T(), msgs[0]["grpc.code"], tcase.code.String(), "all lines must contain the correct gRPC code")
 		assert.Equal(s.T(), msgs[0]["level"], tcase.level.String(), tcase.msg)
 	}
 }
@@ -145,7 +145,7 @@ type zapClientOverrideSuite struct {
 
 func (s *zapClientOverrideSuite) TestPing_HasOverrides() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
-	assert.NoError(s.T(), err, "there must be not be an on a successful call")
+	assert.NoError(s.T(), err, "there must be not be an error on a successful call")
 	msgs := s.getOutputJSONs()
 	require.Len(s.T(), msgs, 1, "one log statement should be logged")
 	assert.Equal(s.T(), msgs[0]["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
@@ -173,5 +173,5 @@ func (s *zapClientOverrideSuite) TestPingList_HasOverrides() {
 	assert.NotContains(s.T(), msgs[0], "grpc.time_ms", "handler's message must not contain default duration")
 	assert.Contains(s.T(), msgs[0], "grpc.duration", "handler's message must not contain overridden duration")
 	assert.Equal(s.T(), msgs[0]["span.kind"], "client", "all lines must contain the kind of call (client)")
-	assert.Equal(s.T(), msgs[0]["level"], "debug", "OK error codes must be logged on debug level.")
+	assert.Equal(s.T(), msgs[0]["level"], "debug", "OK codes must be logged on debug level.")
 }

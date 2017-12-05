@@ -71,7 +71,7 @@ func (s *zapPayloadSuite) getServerAndClientMessages(expectedServer int, expecte
 
 func (s *zapPayloadSuite) TestPing_LogsBothRequestAndResponse() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
-	assert.NoError(s.T(), err, "there must be not be an on a successful call")
+	assert.NoError(s.T(), err, "there must be not be an error on a successful call")
 	serverMsgs, clientMsgs := s.getServerAndClientMessages(2, 2)
 	for _, m := range append(serverMsgs, clientMsgs...) {
 		assert.Equal(s.T(), m["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
@@ -89,7 +89,7 @@ func (s *zapPayloadSuite) TestPing_LogsBothRequestAndResponse() {
 
 func (s *zapPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
 	_, err := s.Client.PingError(s.SimpleCtx(), &pb_testproto.PingRequest{Value: "something", ErrorCodeReturned: uint32(4)})
-	require.Error(s.T(), err, "there must be not be an on a successful call")
+	require.Error(s.T(), err, "there must be not be an error on a successful call")
 	serverMsgs, clientMsgs := s.getServerAndClientMessages(1, 1)
 	for _, m := range append(serverMsgs, clientMsgs...) {
 		assert.Equal(s.T(), m["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
@@ -120,7 +120,7 @@ func (s *zapPayloadSuite) TestPingStream_LogsAllRequestsAndResponses() {
 	for _, m := range append(serverMsgs, clientMsgs...) {
 		assert.Equal(s.T(), m["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
 		assert.Equal(s.T(), m["grpc.method"], "PingStream", "all lines must contain method name")
-		assert.Equal(s.T(), m["level"], "info", "all lines must contain method name")
+		assert.Equal(s.T(), m["level"], "info", "all lines must contain a info log level")
 
 		content := m["grpc.request.content"] != nil || m["grpc.response.content"] != nil
 		assert.True(s.T(), content, "all messages must contain payloads")

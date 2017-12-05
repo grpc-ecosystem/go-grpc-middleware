@@ -45,26 +45,26 @@ type logrusServerSuite struct {
 
 func (s *logrusServerSuite) TestPing_WithCustomTags() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
-	assert.NoError(s.T(), err, "there must be not be an on a successful call")
+	assert.NoError(s.T(), err, "there must be not be an error on a successful call")
 	msgs := s.getOutputJSONs()
 	assert.Len(s.T(), msgs, 2, "two log statements should be logged")
 	for _, m := range msgs {
 		s.T()
-		assert.Equal(s.T(), m["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
-		assert.Equal(s.T(), m["grpc.method"], "Ping", "all lines must contain method name")
+		assert.Equal(s.T(), m["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain the correct service name")
+		assert.Equal(s.T(), m["grpc.method"], "Ping", "all lines must contain the correct method name")
 		assert.Equal(s.T(), m["span.kind"], "server", "all lines must contain the kind of call (server)")
-		assert.Equal(s.T(), m["custom_tags.string"], "something", "all lines must contain `custom_tags.string` set by AddFields")
-		assert.NotNil(s.T(), m["custom_tags.int"], "all lines must contain `custom_tags.int` set by AddFields")
-		assert.NotNil(s.T(), m["grpc.start_time"], "all lines must contain the start time")
+		assert.Equal(s.T(), m["custom_tags.string"], "something", "all lines must contain `custom_tags.string` with expected value")
+		assert.NotNil(s.T(), m["custom_tags.int"], "all lines must contain `custom_tags.int`")
+		assert.NotNil(s.T(), m["grpc.start_time"], "all lines must contain the start time of the call")
 		_, err := time.Parse(time.RFC3339, m["grpc.start_time"].(string))
-		assert.Nil(s.T(), err, "should be able to parse date as RFC3339")
-		assert.Equal(s.T(), m["grpc.request.value"], "something", "all lines must contain fields extracted from goodPing because of test.manual_extractfields.pb")
-		assert.Equal(s.T(), m["custom_field"], "custom_value", "all lines must contain `custom_field` set by AddFields")
+		assert.Nil(s.T(), err, "should be able to parse start time as RFC3339")
+		assert.Equal(s.T(), m["grpc.request.value"], "something", "all lines must contain the correct request value")
+		assert.Equal(s.T(), m["custom_field"], "custom_value", "all lines must contain `custom_field` with the correct value")
 	}
 
-	assert.Equal(s.T(), msgs[0]["msg"], "some ping", "handler's message must contain user message")
-	assert.Equal(s.T(), msgs[1]["msg"], "finished unary call", "handler's message must contain user message")
-	assert.Equal(s.T(), msgs[1]["level"], "info", "OK error codes must be logged on info level.")
+	assert.Equal(s.T(), msgs[0]["msg"], "some ping", "message must contain the correct user message")
+	assert.Equal(s.T(), msgs[1]["msg"], "finished unary call", "handler's message must contain the correct user message")
+	assert.Equal(s.T(), msgs[1]["level"], "info", "OK codes must be logged on info level.")
 	assert.NotNil(s.T(), msgs[1]["grpc.time_ms"], "interceptor log statement should contain execution time")
 }
 
@@ -103,14 +103,14 @@ func (s *logrusServerSuite) TestPingError_WithCustomLevels() {
 		msgs := s.getOutputJSONs()
 		require.Len(s.T(), msgs, 1, "only the interceptor log message is printed in PingErr")
 		m := msgs[0]
-		assert.Equal(s.T(), m["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
-		assert.Equal(s.T(), m["grpc.method"], "PingError", "all lines must contain method name")
-		assert.NotNil(s.T(), m["grpc.start_time"], "all lines must contain the start time")
+		assert.Equal(s.T(), m["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain the correct service name")
+		assert.Equal(s.T(), m["grpc.method"], "PingError", "all lines must contain the correct method name")
+		assert.NotNil(s.T(), m["grpc.start_time"], "all lines must contain a start time for the call")
 
 		_, err = time.Parse(time.RFC3339, m["grpc.start_time"].(string))
-		assert.Nil(s.T(), err, "should be able to parse date as RFC3339")
+		assert.Nil(s.T(), err, "should be able to parse the start time as RFC3339")
 
-		assert.Equal(s.T(), m["grpc.code"], tcase.code.String(), "all lines must contain method name")
+		assert.Equal(s.T(), m["grpc.code"], tcase.code.String(), "a gRPC code must be present")
 		assert.Equal(s.T(), m["level"], tcase.level.String(), tcase.msg)
 	}
 }
@@ -129,20 +129,20 @@ func (s *logrusServerSuite) TestPingList_WithCustomTags() {
 	assert.Len(s.T(), msgs, 2, "two log statements should be logged")
 	for _, m := range msgs {
 		s.T()
-		assert.Equal(s.T(), m["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
-		assert.Equal(s.T(), m["grpc.method"], "PingList", "all lines must contain method name")
+		assert.Equal(s.T(), m["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain the correct service name")
+		assert.Equal(s.T(), m["grpc.method"], "PingList", "all lines must contain the correct method name")
 		assert.Equal(s.T(), m["span.kind"], "server", "all lines must contain the kind of call (server)")
-		assert.Equal(s.T(), m["custom_tags.string"], "something", "all lines must contain `custom_tags.string` set by AddFields")
-		assert.NotNil(s.T(), m["custom_tags.int"], "all lines must contain `custom_tags.int` set by AddFields")
-		assert.Equal(s.T(), m["grpc.request.value"], "something", "all lines must contain fields extracted from goodPing because of test.manual_extractfields.pb")
-		require.NotNil(s.T(), m["grpc.start_time"], "all lines must contain the start time")
+		assert.Equal(s.T(), m["custom_tags.string"], "something", "all lines must contain `custom_tags.string`")
+		assert.NotNil(s.T(), m["custom_tags.int"], "all lines must contain `custom_tags.int`")
+		assert.Equal(s.T(), m["grpc.request.value"], "something", "all lines must contain the correct request value")
+		require.NotNil(s.T(), m["grpc.start_time"], "all lines must contain the start time for the call")
 		_, err := time.Parse(time.RFC3339, m["grpc.start_time"].(string))
-		assert.Nil(s.T(), err, "should be able to parse date as RFC3339")
+		assert.Nil(s.T(), err, "should be able to parse start time as RFC3339")
 	}
 
-	assert.Equal(s.T(), msgs[0]["msg"], "some pinglist", "handler's message must contain user message")
-	assert.Equal(s.T(), msgs[1]["msg"], "finished streaming call", "handler's message must contain user message")
-	assert.Equal(s.T(), msgs[1]["level"], "info", "OK error codes must be logged on info level.")
+	assert.Equal(s.T(), msgs[0]["msg"], "some pinglist", "msg must be the correct message")
+	assert.Equal(s.T(), msgs[1]["msg"], "finished streaming call", "msg must be the correct message")
+	assert.Equal(s.T(), msgs[1]["level"], "info", "OK codes must be logged on info level.")
 	assert.NotNil(s.T(), msgs[1]["grpc.time_ms"], "interceptor log statement should contain execution time")
 }
 
@@ -172,7 +172,7 @@ type logrusServerOverrideSuite struct {
 
 func (s *logrusServerOverrideSuite) TestPing_HasOverriddenDuration() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
-	assert.NoError(s.T(), err, "there must be not be an on a successful call")
+	assert.NoError(s.T(), err, "there must be not be an error on a successful call")
 	msgs := s.getOutputJSONs()
 	assert.Len(s.T(), msgs, 2, "two log statements should be logged")
 	for _, m := range msgs {
@@ -186,7 +186,7 @@ func (s *logrusServerOverrideSuite) TestPing_HasOverriddenDuration() {
 	assert.NotContains(s.T(), msgs[0], "grpc.duration", "handler's message must not contain overridden duration")
 
 	assert.Equal(s.T(), msgs[1]["msg"], "finished unary call", "handler's message must contain user message")
-	assert.Equal(s.T(), msgs[1]["level"], "info", "OK error codes must be logged on info level.")
+	assert.Equal(s.T(), msgs[1]["level"], "info", "OK codes must be logged on info level.")
 	assert.NotContains(s.T(), msgs[1], "grpc.time_ms", "handler's message must not contain default duration")
 	assert.Contains(s.T(), msgs[1], "grpc.duration", "handler's message must not contain overridden duration")
 }
@@ -214,7 +214,7 @@ func (s *logrusServerOverrideSuite) TestPingList_HasOverriddenDuration() {
 	assert.NotContains(s.T(), msgs[0], "grpc.duration", "handler's message must not contain overridden duration")
 
 	assert.Equal(s.T(), msgs[1]["msg"], "finished streaming call", "handler's message must contain user message")
-	assert.Equal(s.T(), msgs[1]["level"], "info", "OK error codes must be logged on info level.")
+	assert.Equal(s.T(), msgs[1]["level"], "info", "OK codes must be logged on info level.")
 	assert.NotContains(s.T(), msgs[1], "grpc.time_ms", "handler's message must not contain default duration")
 	assert.Contains(s.T(), msgs[1], "grpc.duration", "handler's message must not contain overridden duration")
 }
@@ -251,7 +251,7 @@ type logrusServerOverrideDeciderSuite struct {
 
 func (s *logrusServerOverrideDeciderSuite) TestPing_HasOverriddenDecider() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
-	assert.NoError(s.T(), err, "there must be not be an on a successful call")
+	assert.NoError(s.T(), err, "there must be not be an error on a successful call")
 	msgs := s.getOutputJSONs()
 	assert.Len(s.T(), msgs, 1, "single log statements should be logged")
 
