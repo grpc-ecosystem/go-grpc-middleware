@@ -98,33 +98,33 @@ func (s *TaggingSuite) SetupTest() {
 
 func (s *TaggingSuite) TestPing_WithCustomTags() {
 	resp, err := s.Client.Ping(s.SimpleCtx(), goodPing)
-	require.NoError(s.T(), err, "there must be not be an on a successful call")
+	require.NoError(s.T(), err, "must not be an error on a successful call")
 	tags := tagsFromJson(s.T(), resp.Value)
-	assert.Contains(s.T(), tags, "grpc.request.deadline", "the tags should a deadline")
-	assert.Contains(s.T(), tags, "peer.address", "the tags should contain key address")
-	assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain key address")
+	assert.Contains(s.T(), tags, "grpc.request.deadline", "the tags should contain a deadline tag")
+	assert.Contains(s.T(), tags, "peer.address", "the tags should contain a peer address")
+	assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain the correct request value")
 	assert.Len(s.T(), tags, 3, "the tags should contain only three values")
 }
 
 func (s *TaggingSuite) TestPing_WithDeadline() {
 	ctx, _ := context.WithDeadline(context.TODO(), time.Now().AddDate(0, 0, 5))
 	resp, err := s.Client.Ping(ctx, goodPing)
-	require.NoError(s.T(), err, "there must be not be an on a successful call")
+	require.NoError(s.T(), err, "must not be an error on a successful call")
 	tags := tagsFromJson(s.T(), resp.Value)
-	assert.Contains(s.T(), tags, "grpc.request.deadline", "the tags should contain a deadline")
-	assert.Contains(s.T(), tags, "peer.address", "the tags should contain key address")
-	assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain key address")
+	assert.Contains(s.T(), tags, "grpc.request.deadline", "the tags should contain a deadline tag")
+	assert.Contains(s.T(), tags, "peer.address", "the tags should contain a peer address")
+	assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain the correct request value")
 	assert.Len(s.T(), tags, 3, "the tags should contain only three values")
 }
 
 func (s *TaggingSuite) TestPing_WithNoDeadline() {
 	ctx := context.TODO()
 	resp, err := s.Client.Ping(ctx, goodPing)
-	require.NoError(s.T(), err, "there must be not be an on a successful call")
+	require.NoError(s.T(), err, "must not be an error on a successful call")
 	tags := tagsFromJson(s.T(), resp.Value)
-	assert.NotContains(s.T(), tags, "grpc.request.deadline", "the tags should contain a deadline")
-	assert.Contains(s.T(), tags, "peer.address", "the tags should contain key address")
-	assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain key address")
+	assert.NotContains(s.T(), tags, "grpc.request.deadline", "the tags should not contain a deadline tag")
+	assert.Contains(s.T(), tags, "peer.address", "the tags should contain a peer address")
+	assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain the correct request value")
 	assert.Len(s.T(), tags, 2, "the tags should contain only two values")
 }
 
@@ -138,9 +138,9 @@ func (s *TaggingSuite) TestPingList_WithCustomTags() {
 		}
 		require.NoError(s.T(), err, "reading stream should not fail")
 		tags := tagsFromJson(s.T(), resp.Value)
-		assert.Contains(s.T(), tags, "grpc.request.deadline", "the tags should contain a deadline")
-		assert.Contains(s.T(), tags, "peer.address", "the tags should contain key address")
-		assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain key address")
+		assert.Contains(s.T(), tags, "grpc.request.deadline", "the tags should not contain a deadline tag")
+		assert.Contains(s.T(), tags, "peer.address", "the tags should contain a peer address")
+		assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain the correct request value")
 		assert.Len(s.T(), tags, 3, "the tags should contain only three values")
 	}
 }
@@ -171,7 +171,7 @@ type ClientStreamedTaggingSuite struct {
 
 func (s *ClientStreamedTaggingSuite) TestPingStream_WithCustomTagsFirstRequest() {
 	stream, err := s.Client.PingStream(s.SimpleCtx())
-	require.NoError(s.T(), err, "there must be not be an on a successful call")
+	require.NoError(s.T(), err, "there must be not be an error on a successful call")
 
 	count := 0
 	for {
@@ -183,7 +183,7 @@ func (s *ClientStreamedTaggingSuite) TestPingStream_WithCustomTagsFirstRequest()
 		default:
 			err = stream.CloseSend()
 		}
-		require.NoError(s.T(), err, "there must be not be an on a successful call")
+		require.NoError(s.T(), err, "there must be not be an error on a successful call")
 
 		resp, err := stream.Recv()
 		if err == io.EOF {
@@ -193,9 +193,9 @@ func (s *ClientStreamedTaggingSuite) TestPingStream_WithCustomTagsFirstRequest()
 		require.NoError(s.T(), err, "reading stream should not fail")
 
 		tags := tagsFromJson(s.T(), resp.Value)
-		assert.Contains(s.T(), tags, "peer.address", "the tags should contain key address")
-		assert.Contains(s.T(), tags, "grpc.request.deadline", "the tags should contain a deadline")
-		assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain key address")
+		assert.Contains(s.T(), tags, "peer.address", "the tags should contain a peer address")
+		assert.Contains(s.T(), tags, "grpc.request.deadline", "the tags should contain a deadline tag")
+		assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain the correct request value")
 		assert.Len(s.T(), tags, 3, "the tags should contain only three values")
 		count++
 	}

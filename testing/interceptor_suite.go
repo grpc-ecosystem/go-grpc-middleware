@@ -90,7 +90,6 @@ func (s *InterceptorTestSuite) ServerAddr() string {
 func (s *InterceptorTestSuite) SimpleCtx() context.Context {
 	ctx, _ := context.WithTimeout(context.TODO(), 2*time.Second)
 	return ctx
-
 }
 
 func (s *InterceptorTestSuite) TearDownSuite() {
