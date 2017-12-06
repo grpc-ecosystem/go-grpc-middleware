@@ -181,5 +181,5 @@ func DurationToDurationField(duration time.Duration) (key string, value interfac
 }
 
 func durationToMilliseconds(duration time.Duration) float32 {
-	return float32(duration.Nanoseconds() / 1000 / 1000)
+	return float32(duration.Nanoseconds()) / 1000 / 1000
 }
