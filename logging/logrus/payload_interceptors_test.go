@@ -66,6 +66,7 @@ func (s *logrusPayloadSuite) getServerAndClientMessages(expectedServer int, expe
 			clientMsgs = append(clientMsgs, m)
 		}
 	}
+
 	require.Len(s.T(), serverMsgs, expectedServer, "must match expected number of server log messages")
 	require.Len(s.T(), clientMsgs, expectedClient, "must match expected number of client log messages")
 	return serverMsgs, clientMsgs
@@ -73,13 +74,15 @@ func (s *logrusPayloadSuite) getServerAndClientMessages(expectedServer int, expe
 
 func (s *logrusPayloadSuite) TestPing_LogsBothRequestAndResponse() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
-	assert.NoError(s.T(), err, "there must be not be an on a successful call")
+	require.NoError(s.T(), err, "there must be not be an on a successful call")
 	serverMsgs, clientMsgs := s.getServerAndClientMessages(2, 2)
+
 	for _, m := range append(serverMsgs, clientMsgs...) {
 		assert.Equal(s.T(), m["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain the correct service name")
 		assert.Equal(s.T(), m["grpc.method"], "Ping", "all lines must contain the correct method name")
 		assert.Equal(s.T(), m["level"], "info", "all lines must contain method name")
 	}
+
 	serverReq, serverResp := serverMsgs[0], serverMsgs[1]
 	clientReq, clientResp := clientMsgs[0], clientMsgs[1]
 	assert.Contains(s.T(), clientReq, "grpc.request.content", "request payload must be logged in a structured way")
@@ -91,14 +94,16 @@ func (s *logrusPayloadSuite) TestPing_LogsBothRequestAndResponse() {
 func (s *logrusPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
 	_, err := s.Client.PingError(s.SimpleCtx(), &pb_testproto.PingRequest{Value: "something", ErrorCodeReturned: uint32(4)})
 	require.Error(s.T(), err, "there must be not be an error on a successful call")
+
 	serverMsgs, clientMsgs := s.getServerAndClientMessages(1, 1)
 	for _, m := range append(serverMsgs, clientMsgs...) {
 		assert.Equal(s.T(), m["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain the correct service name")
 		assert.Equal(s.T(), m["grpc.method"], "PingError", "all lines must contain the correct method name")
 		assert.Equal(s.T(), m["level"], "info", "all lines must be logged at info level")
 	}
-	assert.Contains(s.T(), clientMsgs[0], "grpc.request.content", "request payload must be logged in a structured way")
-	assert.Contains(s.T(), serverMsgs[0], "grpc.request.content", "request payload must be logged in a structured way")
+
+	assert.Contains(s.T(), clientMsgs[0], "grpc.request.content", "request payload must be logged by the client")
+	assert.Contains(s.T(), serverMsgs[0], "grpc.request.content", "request payload must be logged by the server")
 }
 
 func (s *logrusPayloadSuite) TestPingStream_LogsAllRequestsAndResponses() {
@@ -109,6 +114,7 @@ func (s *logrusPayloadSuite) TestPingStream_LogsAllRequestsAndResponses() {
 		require.NoError(s.T(), stream.Send(goodPing), "sending must succeed")
 	}
 	require.NoError(s.T(), stream.CloseSend(), "no error on close of stream")
+
 	for {
 		pong := &pb_testproto.PingResponse{}
 		err := stream.RecvMsg(pong)
