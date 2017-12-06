@@ -87,8 +87,8 @@ func (s *logrusPayloadSuite) TestPing_LogsBothRequestAndResponse() {
 	clientReq, clientResp := clientMsgs[0], clientMsgs[1]
 	assert.Contains(s.T(), clientReq, "grpc.request.content", "request payload must be logged in a structured way")
 	assert.Contains(s.T(), serverReq, "grpc.request.content", "request payload must be logged in a structured way")
-	assert.Contains(s.T(), clientResp, "grpc.response.content", "request payload must be logged in a structured way")
-	assert.Contains(s.T(), serverResp, "grpc.response.content", "request payload must be logged in a structured way")
+	assert.Contains(s.T(), clientResp, "grpc.response.content", "response payload must be logged in a structured way")
+	assert.Contains(s.T(), serverResp, "grpc.response.content", "response payload must be logged in a structured way")
 }
 
 func (s *logrusPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {

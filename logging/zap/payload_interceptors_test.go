@@ -85,8 +85,8 @@ func (s *zapPayloadSuite) TestPing_LogsBothRequestAndResponse() {
 	s.T().Log(clientReq)
 	assert.Contains(s.T(), clientReq, "grpc.request.content", "request payload must be logged in a structured way")
 	assert.Contains(s.T(), serverReq, "grpc.request.content", "request payload must be logged in a structured way")
-	assert.Contains(s.T(), clientResp, "grpc.response.content", "request payload must be logged in a structured way")
-	assert.Contains(s.T(), serverResp, "grpc.response.content", "request payload must be logged in a structured way")
+	assert.Contains(s.T(), clientResp, "grpc.response.content", "response payload must be logged in a structured way")
+	assert.Contains(s.T(), serverResp, "grpc.response.content", "response payload must be logged in a structured way")
 }
 
 func (s *zapPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
