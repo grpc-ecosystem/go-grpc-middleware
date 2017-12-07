@@ -145,7 +145,7 @@ func (s *TaggingSuite) TestPingList_WithCustomTags() {
 
 		tags := tagsFromJson(s.T(), resp.Value)
 		require.Len(s.T(), tags, 3, "the tags should contain only three values")
-		assert.Contains(s.T(), tags, "grpc.request.deadline", "the tags should not contain a deadline tag")
+		assert.Contains(s.T(), tags, "grpc.request.deadline", "the tags should contain a deadline tag")
 		assert.Contains(s.T(), tags, "peer.address", "the tags should contain a peer address")
 		assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain the correct request value")
 	}
@@ -177,7 +177,7 @@ type ClientStreamedTaggingSuite struct {
 
 func (s *ClientStreamedTaggingSuite) TestPingStream_WithCustomTagsFirstRequest() {
 	stream, err := s.Client.PingStream(s.SimpleCtx())
-	require.NoError(s.T(), err, "there must be not be an error on a successful call")
+	require.NoError(s.T(), err, "should not fail on establishing the stream")
 
 	count := 0
 	for {
@@ -189,7 +189,6 @@ func (s *ClientStreamedTaggingSuite) TestPingStream_WithCustomTagsFirstRequest()
 		default:
 			err = stream.CloseSend()
 		}
-		require.NoError(s.T(), err, "there must be not be an error on a successful call")
 
 		resp, err := stream.Recv()
 		if err == io.EOF {
