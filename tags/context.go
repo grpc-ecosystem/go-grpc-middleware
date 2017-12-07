@@ -11,10 +11,9 @@ var (
 	// ctxMarkerKey is the Context value marker used by *all* logging middleware.
 	// The logging middleware object must interf
 	ctxMarkerKey = &ctxMarker{}
-
 )
 
-const deadlineTag  = "grpc.request.deadline"
+const deadlineTag = "deadline"
 
 // Tags is the struct used for storing request tags between Context calls.
 // This object is *not* thread safe, and should be handled only in the context of the request.

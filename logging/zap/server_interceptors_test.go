@@ -55,7 +55,8 @@ type zapServerSuite struct {
 }
 
 func (s *zapServerSuite) TestPing_WithCustomTags() {
-	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	deadline := time.Now().Add(3 * time.Second)
+	_, err := s.Client.Ping(s.DeadlineCtx(deadline), goodPing)
 	require.NoError(s.T(), err, "there must be not be an error on a successful call")
 
 	msgs := s.getOutputJSONs()
@@ -72,6 +73,11 @@ func (s *zapServerSuite) TestPing_WithCustomTags() {
 		require.Contains(s.T(), m, "grpc.start_time", "all lines must contain the start time")
 		_, err := time.Parse(time.RFC3339, m["grpc.start_time"].(string))
 		assert.NoError(s.T(), err, "should be able to parse start time as RFC3339")
+
+		require.Contains(s.T(), m, "grpc.request.deadline", "all lines must contain the deadline of the call")
+		_, err = time.Parse(time.RFC3339, m["grpc.request.deadline"].(string))
+		require.NoError(s.T(), err, "should be able to parse deadline as RFC3339")
+		assert.Equal(s.T(), m["grpc.request.deadline"], deadline.Format(time.RFC3339), "should have the same deadline that was set by the caller")
 	}
 
 	assert.Equal(s.T(), msgs[0]["msg"], "some ping", "handler's message must contain user message")

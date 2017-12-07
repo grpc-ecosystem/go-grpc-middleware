@@ -92,6 +92,11 @@ func (s *InterceptorTestSuite) SimpleCtx() context.Context {
 	return ctx
 }
 
+func (s *InterceptorTestSuite) DeadlineCtx(deadline time.Time) context.Context {
+	ctx, _ := context.WithDeadline(context.TODO(), deadline)
+	return ctx
+}
+
 func (s *InterceptorTestSuite) TearDownSuite() {
 	time.Sleep(10 * time.Millisecond)
 	if s.ServerListener != nil {

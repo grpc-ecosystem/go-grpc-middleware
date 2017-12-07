@@ -20,34 +20,41 @@ logged as structured `jsonbp` fields for every message received/sent (both unary
 `Payload*Interceptor` functions for that. Please note that the user-provided function that determines whetether to log
 the full request/response payload needs to be written with care, this can significantly slow down gRPC.
 
+If a deadline is present on the gRPC request the grpc.request.deadline tag is populated on the request. This may then be logged again as
+deadline further down due to ctxtags however if a new deadline is added to an inner context the tag deadline will be updated but the
+grpc.request.deadline will always state the deadline for the request.
+
+The deadline will be a string representing the time (RFC3339) when the current call will expire.
+
 Logrus can also be made as a backend for gRPC library internals. For that use `ReplaceGrpcLogger`.
 
 *Server Interceptor*
 Below is a JSON formatted example of a log that would be logged by the server interceptor:
 
-	{
-	  "level": "info",									// string logrus log levels
-	  "msg": "finished unary call",						// string log message
+		{
+		  "level": "info",									// string logrus log levels
+		  "msg": "finished unary call",						// string log message
 	
-	  "grpc.code": "OK",								// string grpc status code
-	  "grpc.method": "Ping",							// string method name
-	  "grpc.service": "mwitkow.testproto.TestService",  // string full name of the called service
-	  "grpc.start_time": "2006-01-02T15:04:05Z07:00",   // string RFC3339 representation of the start time
-	  "grpc.request.value": "something",				// string value on the request
-	  "grpc.time_ms": 0,								// int    run time of the call in ms
+		  "grpc.code": "OK",								// string grpc status code
+		  "grpc.method": "Ping",							// string method name
+		  "grpc.service": "mwitkow.testproto.TestService",  // string full name of the called service
+		  "grpc.start_time": "2006-01-02T15:04:05Z07:00",   // string RFC3339 representation of the start time
+	      "grpc.request.deadline"							// string RFC3339 deadline of the current request if supplied
+		  "grpc.request.value": "something",				// string value on the request
+		  "grpc.time_ms": 0,								// int    run time of the call in ms
 	
-	  "peer.address": {
-	    "IP": "127.0.0.1",								// string IP address of calling party
-	    "Port": 60216,									// int    port call is coming in on
-	    "Zone": ""										// string peer zone for caller
-	  },
-	  "span.kind": "server",							// string client | server
-	  "system": "grpc"									// string
+		  "peer.address": {
+		    "IP": "127.0.0.1",								// string IP address of calling party
+		    "Port": 60216,									// int    port call is coming in on
+		    "Zone": ""										// string peer zone for caller
+		  },
+		  "span.kind": "server",							// string client | server
+		  "system": "grpc"									// string
 	
-	  "custom_field": "custom_value",					// string user defined field
-	  "custom_tags.int": 1337,							// int    user defined tag on the ctx
-	  "custom_tags.string": "something",				// string user defined tag on the ctx
-	}
+		  "custom_field": "custom_value",					// string user defined field
+		  "custom_tags.int": 1337,							// int    user defined tag on the ctx
+		  "custom_tags.string": "something",				// string user defined tag on the ctx
+		}
 
 *Payload Interceptor*
 Below is a JSON formatted example of a log that would be logged by the payload interceptor:
@@ -218,7 +225,7 @@ func StreamClientInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamCli
 ```
 StreamServerInterceptor returns a new streaming client interceptor that optionally logs the execution of external gRPC calls.
 
-## <a name="StreamServerInterceptor">func</a> [StreamServerInterceptor](./server_interceptors.go#L55)
+## <a name="StreamServerInterceptor">func</a> [StreamServerInterceptor](./server_interceptors.go#L57)
 ``` go
 func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamServerInterceptor
 ```
@@ -230,7 +237,7 @@ func UnaryClientInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryClien
 ```
 UnaryClientInterceptor returns a new unary client interceptor that optionally logs the execution of external gRPC calls.
 
-## <a name="UnaryServerInterceptor">func</a> [UnaryServerInterceptor](./server_interceptors.go#L23)
+## <a name="UnaryServerInterceptor">func</a> [UnaryServerInterceptor](./server_interceptors.go#L25)
 ``` go
 func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServerInterceptor
 ```

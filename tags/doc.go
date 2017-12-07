@@ -13,8 +13,8 @@ use `WithFieldExtractorForInitialReq` which will extract the tags from the first
 Note the tags will not be modified for subsequent requests, so this option only makes sense when the initial message
 establishes the meta-data for the stream.
 
-If there is a grpc.request.deadline tag is present on the context it will be added to the tags on the context when they Extract(ctx) is called.
-The deadline will be a string representing the time (RFC3339) when the current call will expire.
+When extracting a Tags from a context if a deadline has been set on the context (or inherited from a parent) it will be added
+to the Tags with the time of the deadline as "deadline" and will be stored using the RFC3339 date format.
 
 If a user doesn't use the interceptors that initialize the `Tags` object, all operations following from an `Extract(ctx)`
 will be no-ops. This is to ensure that code doesn't panic if the interceptors weren't used.

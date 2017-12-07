@@ -103,7 +103,7 @@ func (s *TaggingSuite) TestPing_WithCustomTags() {
 	tags := tagsFromJson(s.T(), resp.Value)
 	require.Len(s.T(), tags, 3, "the tags should contain only three values")
 	assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain the correct request value")
-	assert.Contains(s.T(), tags, "grpc.request.deadline", "the tags should contain a deadline tag")
+	assert.Contains(s.T(), tags, "deadline", "the tags should contain a deadline tag")
 	assert.Contains(s.T(), tags, "peer.address", "the tags should contain a peer address")
 }
 
@@ -116,7 +116,7 @@ func (s *TaggingSuite) TestPing_WithDeadline() {
 	require.Len(s.T(), tags, 3, "the tags should contain only three values")
 
 	assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain the correct request value")
-	assert.Contains(s.T(), tags, "grpc.request.deadline", "the tags should contain a deadline tag")
+	assert.Contains(s.T(), tags, "deadline", "the tags should contain a deadline tag")
 	assert.Contains(s.T(), tags, "peer.address", "the tags should contain a peer address")
 }
 
@@ -129,7 +129,7 @@ func (s *TaggingSuite) TestPing_WithNoDeadline() {
 	require.Len(s.T(), tags, 2, "the tags should contain only two values")
 
 	assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain the correct request value")
-	assert.NotContains(s.T(), tags, "grpc.request.deadline", "the tags should not contain a deadline tag")
+	assert.NotContains(s.T(), tags, "deadline", "the tags should not contain a deadline tag")
 	assert.Contains(s.T(), tags, "peer.address", "the tags should contain a peer address")
 }
 
@@ -145,7 +145,7 @@ func (s *TaggingSuite) TestPingList_WithCustomTags() {
 
 		tags := tagsFromJson(s.T(), resp.Value)
 		require.Len(s.T(), tags, 3, "the tags should contain only three values")
-		assert.Contains(s.T(), tags, "grpc.request.deadline", "the tags should contain a deadline tag")
+		assert.Contains(s.T(), tags, "deadline", "the tags should contain a deadline tag")
 		assert.Contains(s.T(), tags, "peer.address", "the tags should contain a peer address")
 		assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain the correct request value")
 	}
@@ -201,7 +201,7 @@ func (s *ClientStreamedTaggingSuite) TestPingStream_WithCustomTagsFirstRequest()
 		require.Len(s.T(), tags, 3, "the tags should contain only three values")
 		assert.Equal(s.T(), tags["grpc.request.value"], "something", "the tags should contain the correct request value")
 		assert.Contains(s.T(), tags, "peer.address", "the tags should contain a peer address")
-		assert.Contains(s.T(), tags, "grpc.request.deadline", "the tags should contain a deadline tag")
+		assert.Contains(s.T(), tags, "deadline", "the tags should contain a deadline tag")
 		count++
 	}
 
