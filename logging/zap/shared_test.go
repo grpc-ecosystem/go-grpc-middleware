@@ -85,20 +85,22 @@ func (s *zapBaseSuite) SetupTest() {
 	s.mutexBuffer.Unlock()
 }
 
-func (s *zapBaseSuite) getOutputJSONs() []string {
-	ret := []string{}
+func (s *zapBaseSuite) getOutputJSONs() []map[string]interface{} {
+	ret := make([]map[string]interface{}, 0)
 	dec := json.NewDecoder(s.mutexBuffer)
+
 	for {
-		var val map[string]json.RawMessage
+		var val map[string]interface{}
 		err := dec.Decode(&val)
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			s.T().Fatalf("failed decoding output from ZAP JSON: %v", err)
+			s.T().Fatalf("failed decoding output from Logrus JSON: %v", err)
 		}
-		out, _ := json.MarshalIndent(val, "", "  ")
-		ret = append(ret, string(out))
+
+		ret = append(ret, val)
 	}
+
 	return ret
 }

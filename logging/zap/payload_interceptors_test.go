@@ -1,7 +1,6 @@
 package grpc_zap_test
 
 import (
-	"fmt"
 	"runtime"
 	"testing"
 
@@ -56,12 +55,12 @@ type zapPayloadSuite struct {
 	*zapBaseSuite
 }
 
-func (s *zapPayloadSuite) getServerAndClientMessages(expectedServer int, expectedClient int) (serverMsgs []string, clientMsgs []string) {
+func (s *zapPayloadSuite) getServerAndClientMessages(expectedServer int, expectedClient int) (serverMsgs []map[string]interface{}, clientMsgs []map[string]interface{}) {
 	msgs := s.getOutputJSONs()
 	for _, m := range msgs {
-		if strings.Contains(m, `"span.kind": "server"`) {
+		if m["span.kind"] == "server" {
 			serverMsgs = append(serverMsgs, m)
-		} else if strings.Contains(m, `"span.kind": "client"`) {
+		} else if m["span.kind"] == "client" {
 			clientMsgs = append(clientMsgs, m)
 		}
 	}
@@ -71,52 +70,50 @@ func (s *zapPayloadSuite) getServerAndClientMessages(expectedServer int, expecte
 }
 
 func (s *zapPayloadSuite) TestPing_LogsBothRequestAndResponse() {
-	resp, err := s.Client.Ping(s.SimpleCtx(), goodPing)
-	assert.NoError(s.T(), err, "there must be not be an on a successful call")
+	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+
+	require.NoError(s.T(), err, "there must be not be an error on a successful call")
 	serverMsgs, clientMsgs := s.getServerAndClientMessages(2, 2)
 	for _, m := range append(serverMsgs, clientMsgs...) {
-		assert.Contains(s.T(), m, `"grpc.service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
-		assert.Contains(s.T(), m, `"grpc.method": "Ping"`, "all lines must contain method name")
-		assert.Contains(s.T(), m, `"level": "info"`, "all payloads must be logged on info level")
+		assert.Equal(s.T(), m["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
+		assert.Equal(s.T(), m["grpc.method"], "Ping", "all lines must contain method name")
+		assert.Equal(s.T(), m["level"], "info", "all payloads must be logged on info level")
 	}
+
 	serverReq, serverResp := serverMsgs[0], serverMsgs[1]
 	clientReq, clientResp := clientMsgs[0], clientMsgs[1]
 	s.T().Log(clientReq)
-	assert.Contains(s.T(), clientReq, `"grpc.request.content": {`, "request payload must be logged in a structured way")
-	assert.Contains(s.T(), clientReq, fmt.Sprintf(`"value": "%s"`, goodPing.Value))
-	assert.Contains(s.T(), clientReq, fmt.Sprintf(`"sleepTimeMs": %d`, goodPing.SleepTimeMs))
-	assert.Contains(s.T(), serverReq, `"grpc.request.content": {`, "request payload must be logged in a structured way")
-	assert.Contains(s.T(), serverReq, fmt.Sprintf(`"value": "%s"`, goodPing.Value))
-	assert.Contains(s.T(), serverReq, fmt.Sprintf(`"sleepTimeMs": %d`, goodPing.SleepTimeMs))
-	assert.Contains(s.T(), clientResp, `"grpc.response.content": {`, "response payload must be logged in a structured way")
-	assert.Contains(s.T(), clientResp, fmt.Sprintf(`"value": "%s"`, resp.Value))
-	assert.Contains(s.T(), clientResp, fmt.Sprintf(`"counter": %d`, resp.Counter))
-	assert.Contains(s.T(), serverResp, `"grpc.response.content": {`, "response payload must be logged in a structured way")
-	assert.Contains(s.T(), serverResp, fmt.Sprintf(`"value": "%s"`, resp.Value))
-	assert.Contains(s.T(), serverResp, fmt.Sprintf(`"counter": %d`, resp.Counter))
+	assert.Contains(s.T(), clientReq, "grpc.request.content", "request payload must be logged in a structured way")
+	assert.Contains(s.T(), serverReq, "grpc.request.content", "request payload must be logged in a structured way")
+	assert.Contains(s.T(), clientResp, "grpc.response.content", "response payload must be logged in a structured way")
+	assert.Contains(s.T(), serverResp, "grpc.response.content", "response payload must be logged in a structured way")
 }
 
 func (s *zapPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
 	_, err := s.Client.PingError(s.SimpleCtx(), &pb_testproto.PingRequest{Value: "something", ErrorCodeReturned: uint32(4)})
-	require.Error(s.T(), err, "there must be not be an on a successful call")
+
+	require.Error(s.T(), err, "there must be an error on an unsuccessful call")
 	serverMsgs, clientMsgs := s.getServerAndClientMessages(1, 1)
 	for _, m := range append(serverMsgs, clientMsgs...) {
-		assert.Contains(s.T(), m, `"grpc.service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
-		assert.Contains(s.T(), m, `"grpc.method": "PingError"`, "all lines must contain method name")
-		assert.Contains(s.T(), m, `"level": "info"`, "all payloads must be logged on info level")
+		assert.Equal(s.T(), m["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
+		assert.Equal(s.T(), m["grpc.method"], "PingError", "all lines must contain method name")
+		assert.Equal(s.T(), m["level"], "info", "must be logged at the info level")
 	}
-	assert.Contains(s.T(), clientMsgs[0], `"grpc.request.content": {`, "request payload must be logged in a structured way")
-	assert.Contains(s.T(), serverMsgs[0], `"grpc.request.content": {`, "request payload must be logged in a structured way")
+
+	assert.Contains(s.T(), clientMsgs[0], "grpc.request.content", "request payload must be logged in a structured way")
+	assert.Contains(s.T(), serverMsgs[0], "grpc.request.content", "request payload must be logged in a structured way")
 }
 
 func (s *zapPayloadSuite) TestPingStream_LogsAllRequestsAndResponses() {
 	messagesExpected := 20
 	stream, err := s.Client.PingStream(s.SimpleCtx())
+
 	require.NoError(s.T(), err, "no error on stream creation")
 	for i := 0; i < messagesExpected; i++ {
 		require.NoError(s.T(), stream.Send(goodPing), "sending must succeed")
 	}
 	require.NoError(s.T(), stream.CloseSend(), "no error on send stream")
+
 	for {
 		pong := &pb_testproto.PingResponse{}
 		err := stream.RecvMsg(pong)
@@ -125,11 +122,14 @@ func (s *zapPayloadSuite) TestPingStream_LogsAllRequestsAndResponses() {
 		}
 		require.NoError(s.T(), err, "no error on receive")
 	}
+
 	serverMsgs, clientMsgs := s.getServerAndClientMessages(2*messagesExpected, 2*messagesExpected)
 	for _, m := range append(serverMsgs, clientMsgs...) {
-		assert.Contains(s.T(), m, `"grpc.service": "mwitkow.testproto.TestService"`, "all lines must contain service name")
-		assert.Contains(s.T(), m, `"grpc.method": "PingStream"`, "all lines must contain method name")
-		assert.Contains(s.T(), m, `"level": "info"`, "all payloads must be logged on info level")
-		assert.Contains(s.T(), m, `.content": {`, "all messages must contain payloads")
+		assert.Equal(s.T(), m["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
+		assert.Equal(s.T(), m["grpc.method"], "PingStream", "all lines must contain method name")
+		assert.Equal(s.T(), m["level"], "info", "all lines must logged at info level")
+
+		content := m["grpc.request.content"] != nil || m["grpc.response.content"] != nil
+		assert.True(s.T(), content, "all messages must contain payloads")
 	}
 }

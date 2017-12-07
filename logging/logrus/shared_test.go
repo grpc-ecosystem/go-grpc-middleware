@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -85,11 +84,12 @@ func (s *logrusBaseSuite) SetupTest() {
 	s.mutexBuffer.Unlock()
 }
 
-func (s *logrusBaseSuite) getOutputJSONs() []string {
-	ret := []string{}
+func (s *logrusBaseSuite) getOutputJSONs() []map[string]interface{} {
+	ret := make([]map[string]interface{}, 0)
 	dec := json.NewDecoder(s.mutexBuffer)
+
 	for {
-		var val map[string]json.RawMessage
+		var val map[string]interface{}
 		err := dec.Decode(&val)
 		if err == io.EOF {
 			break
@@ -97,8 +97,9 @@ func (s *logrusBaseSuite) getOutputJSONs() []string {
 		if err != nil {
 			s.T().Fatalf("failed decoding output from Logrus JSON: %v", err)
 		}
-		out, _ := json.MarshalIndent(val, "", "  ")
-		ret = append(ret, string(out))
+
+		ret = append(ret, val)
 	}
+
 	return ret
 }
