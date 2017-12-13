@@ -19,9 +19,6 @@ use `WithFieldExtractorForInitialReq` which will extract the tags from the first
 Note the tags will not be modified for subsequent requests, so this option only makes sense when the initial message
 establishes the meta-data for the stream.
 
-When extracting a Tags from a context if a deadline has been set on the context (or inherited from a parent) it will be added
-to the Tags with the time of the deadline as "deadline" and will be stored using the RFC3339 date format.
-
 If a user doesn't use the interceptors that initialize the `Tags` object, all operations following from an `Extract(ctx)`
 will be no-ops. This is to ensure that code doesn't panic if the interceptors weren't used.
 
@@ -113,7 +110,7 @@ These are usualy coming from a protoc-plugin, such as Gogo protobuf.
 
 The tagName is configurable using the tagName variable. Here it would be "log_field".
 
-## <a name="Tags">type</a> [Tags](./context.go#L20-L22)
+## <a name="Tags">type</a> [Tags](./context.go#L17-L19)
 ``` go
 type Tags struct {
     // contains filtered or unexported fields
@@ -122,26 +119,26 @@ type Tags struct {
 Tags is the struct used for storing request tags between Context calls.
 This object is *not* thread safe, and should be handled only in the context of the request.
 
-### <a name="Extract">func</a> [Extract](./context.go#L44)
+### <a name="Extract">func</a> [Extract](./context.go#L41)
 ``` go
 func Extract(ctx context.Context) *Tags
 ```
 Extracts returns a pre-existing Tags object in the Context.
 If the context wasn't set in a tag interceptor, a no-op Tag storage is returned that will *not* be propagated in context.
 
-### <a name="Tags.Has">func</a> (\*Tags) [Has](./context.go#L31)
+### <a name="Tags.Has">func</a> (\*Tags) [Has](./context.go#L28)
 ``` go
 func (t *Tags) Has(key string) bool
 ```
 Has checks if the given key exists.
 
-### <a name="Tags.Set">func</a> (\*Tags) [Set](./context.go#L25)
+### <a name="Tags.Set">func</a> (\*Tags) [Set](./context.go#L22)
 ``` go
 func (t *Tags) Set(key string, value interface{}) *Tags
 ```
 Set sets the given key in the metadata tags.
 
-### <a name="Tags.Values">func</a> (\*Tags) [Values](./context.go#L38)
+### <a name="Tags.Values">func</a> (\*Tags) [Values](./context.go#L35)
 ``` go
 func (t *Tags) Values() map[string]interface{}
 ```

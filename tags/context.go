@@ -2,7 +2,6 @@ package grpc_ctxtags
 
 import (
 	"context"
-	"time"
 )
 
 type ctxMarker struct{}
@@ -12,8 +11,6 @@ var (
 	// The logging middleware object must interf
 	ctxMarkerKey = &ctxMarker{}
 )
-
-const deadlineTag = "deadline"
 
 // Tags is the struct used for storing request tags between Context calls.
 // This object is *not* thread safe, and should be handled only in the context of the request.
@@ -47,10 +44,6 @@ func Extract(ctx context.Context) *Tags {
 		return &Tags{values: make(map[string]interface{})}
 	}
 
-	// will override each time in case deadline is altered
-	if d, ok := ctx.Deadline(); ok {
-		t.Set(deadlineTag, d.Format(time.RFC3339))
-	}
 	return t
 }
 
