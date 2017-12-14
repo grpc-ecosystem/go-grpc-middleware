@@ -180,5 +180,5 @@ func DurationToDurationField(duration time.Duration) zapcore.Field {
 }
 
 func durationToMilliseconds(duration time.Duration) float32 {
-	return float32(duration.Nanoseconds() / 1000 / 1000)
+	return float32(duration.Nanoseconds()/1000) / 1000
 }

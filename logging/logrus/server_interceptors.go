@@ -33,7 +33,7 @@ func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServe
 		}
 		code := o.codeFunc(err)
 		level := o.levelFunc(code)
-		durField, durVal := o.durationFunc(time.Now().Sub(startTime))
+		durField, durVal := o.durationFunc(time.Since(startTime))
 		fields := logrus.Fields{
 			"grpc.code": code.String(),
 			durField:    durVal,
@@ -67,7 +67,7 @@ func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamSer
 		}
 		code := o.codeFunc(err)
 		level := o.levelFunc(code)
-		durField, durVal := o.durationFunc(time.Now().Sub(startTime))
+		durField, durVal := o.durationFunc(time.Since(startTime))
 		fields := logrus.Fields{
 			"grpc.code": code.String(),
 			durField:    durVal,
