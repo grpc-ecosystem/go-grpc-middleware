@@ -110,7 +110,7 @@ These are usualy coming from a protoc-plugin, such as Gogo protobuf.
 
 The tagName is configurable using the tagName variable. Here it would be "log_field".
 
-## <a name="Tags">type</a> [Tags](./context.go#L15-L17)
+## <a name="Tags">type</a> [Tags](./context.go#L17-L19)
 ``` go
 type Tags struct {
     // contains filtered or unexported fields
@@ -119,26 +119,26 @@ type Tags struct {
 Tags is the struct used for storing request tags between Context calls.
 This object is *not* thread safe, and should be handled only in the context of the request.
 
-### <a name="Extract">func</a> [Extract](./context.go#L39)
+### <a name="Extract">func</a> [Extract](./context.go#L41)
 ``` go
 func Extract(ctx context.Context) *Tags
 ```
 Extracts returns a pre-existing Tags object in the Context.
 If the context wasn't set in a tag interceptor, a no-op Tag storage is returned that will *not* be propagated in context.
 
-### <a name="Tags.Has">func</a> (\*Tags) [Has](./context.go#L26)
+### <a name="Tags.Has">func</a> (\*Tags) [Has](./context.go#L28)
 ``` go
 func (t *Tags) Has(key string) bool
 ```
 Has checks if the given key exists.
 
-### <a name="Tags.Set">func</a> (\*Tags) [Set](./context.go#L20)
+### <a name="Tags.Set">func</a> (\*Tags) [Set](./context.go#L22)
 ``` go
 func (t *Tags) Set(key string, value interface{}) *Tags
 ```
 Set sets the given key in the metadata tags.
 
-### <a name="Tags.Values">func</a> (\*Tags) [Values](./context.go#L33)
+### <a name="Tags.Values">func</a> (\*Tags) [Values](./context.go#L35)
 ``` go
 func (t *Tags) Values() map[string]interface{}
 ```

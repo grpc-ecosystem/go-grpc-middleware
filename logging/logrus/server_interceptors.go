@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 package grpc_logrus
 
 import (
@@ -113,6 +115,13 @@ func newLoggerForCall(ctx context.Context, entry *logrus.Entry, fullMethodString
 			"grpc.method":     method,
 			"grpc.start_time": start.Format(time.RFC3339),
 		})
+
+	if d, ok := ctx.Deadline(); ok {
+		callLog = callLog.WithFields(
+			logrus.Fields{
+				"grpc.request.deadline": d.Format(time.RFC3339),
+			})
+	}
 
 	callLog = callLog.WithFields(ctx_logrus.Extract(ctx).Data)
 	return ctx_logrus.ToContext(ctx, callLog)
