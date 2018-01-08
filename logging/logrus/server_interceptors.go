@@ -47,7 +47,7 @@ func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServe
 		levelLogf(
 			ctx_logrus.Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
 			level,
-			"finished unary call")
+			"finished unary call with "+code.String())
 
 		return resp, err
 	}
@@ -81,7 +81,7 @@ func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamSer
 		levelLogf(
 			ctx_logrus.Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
 			level,
-			"finished streaming call")
+			"finished streaming call with "+code.String())
 
 		return err
 	}
