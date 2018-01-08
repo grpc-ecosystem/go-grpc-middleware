@@ -71,7 +71,7 @@ func (s *logrusServerSuite) TestPing_WithCustomTags() {
 	}
 
 	assert.Equal(s.T(), msgs[0]["msg"], "some ping", "first message must contain the correct user message")
-	assert.Equal(s.T(), msgs[1]["msg"], "finished unary call with OK", "second message must contain the correct user message")
+	assert.Equal(s.T(), msgs[1]["msg"], "finished unary call with code OK", "second message must contain the correct user message")
 	assert.Equal(s.T(), msgs[1]["level"], "info", "OK codes must be logged on info level.")
 
 	assert.Contains(s.T(), msgs[1], "grpc.time_ms", "interceptor log statement should contain execution time")
@@ -117,7 +117,7 @@ func (s *logrusServerSuite) TestPingError_WithCustomLevels() {
 		assert.Equal(s.T(), m["grpc.method"], "PingError", "all lines must contain the correct method name")
 		assert.Equal(s.T(), m["grpc.code"], tcase.code.String(), "a gRPC code must be present")
 		assert.Equal(s.T(), m["level"], tcase.level.String(), tcase.msg)
-		assert.Equal(s.T(), m["msg"], "finished unary call with "+tcase.code.String(), "must have the correct finish message")
+		assert.Equal(s.T(), m["msg"], "finished unary call with code "+tcase.code.String(), "must have the correct finish message")
 
 		require.Contains(s.T(), m, "grpc.start_time", "all lines must contain a start time for the call")
 		_, err = time.Parse(time.RFC3339, m["grpc.start_time"].(string))
@@ -160,7 +160,7 @@ func (s *logrusServerSuite) TestPingList_WithCustomTags() {
 	}
 
 	assert.Equal(s.T(), msgs[0]["msg"], "some pinglist", "msg must be the correct message")
-	assert.Equal(s.T(), msgs[1]["msg"], "finished streaming call with OK", "msg must be the correct message")
+	assert.Equal(s.T(), msgs[1]["msg"], "finished streaming call with code OK", "msg must be the correct message")
 	assert.Equal(s.T(), msgs[1]["level"], "info", "OK codes must be logged on info level.")
 
 	assert.Contains(s.T(), msgs[1], "grpc.time_ms", "interceptor log statement should contain execution time")
@@ -205,7 +205,7 @@ func (s *logrusServerOverrideSuite) TestPing_HasOverriddenDuration() {
 	assert.NotContains(s.T(), msgs[0], "grpc.time_ms", "first message must not contain default duration")
 	assert.NotContains(s.T(), msgs[0], "grpc.duration", "first message must not contain overridden duration")
 
-	assert.Equal(s.T(), msgs[1]["msg"], "finished unary call with OK", "second message must be correct")
+	assert.Equal(s.T(), msgs[1]["msg"], "finished unary call with code OK", "second message must be correct")
 	assert.Equal(s.T(), msgs[1]["level"], "info", "second must be logged on info level.")
 	assert.NotContains(s.T(), msgs[1], "grpc.time_ms", "second message must not contain default duration")
 	assert.Contains(s.T(), msgs[1], "grpc.duration", "second message must contain overridden duration")
@@ -233,7 +233,7 @@ func (s *logrusServerOverrideSuite) TestPingList_HasOverriddenDuration() {
 	assert.NotContains(s.T(), msgs[0], "grpc.time_ms", "first message must not contain default duration")
 	assert.NotContains(s.T(), msgs[0], "grpc.duration", "first message must not contain overridden duration")
 
-	assert.Equal(s.T(), msgs[1]["msg"], "finished streaming call with OK", "second message must contain correct message")
+	assert.Equal(s.T(), msgs[1]["msg"], "finished streaming call with code OK", "second message must contain correct message")
 	assert.Equal(s.T(), msgs[1]["level"], "info", "second message must be logged on info level.")
 	assert.NotContains(s.T(), msgs[1], "grpc.time_ms", "second message must not contain default duration")
 	assert.Contains(s.T(), msgs[1], "grpc.duration", "second message must contain overridden duration")

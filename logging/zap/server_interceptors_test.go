@@ -5,7 +5,6 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware"
@@ -83,7 +82,7 @@ func (s *zapServerSuite) TestPing_WithCustomTags() {
 
 	assert.Equal(s.T(), msgs[0]["msg"], "some ping", "handler's message must contain user message")
 
-	assert.Equal(s.T(), msgs[1]["msg"], "finished unary call with OK", "handler's message must contain user message")
+	assert.Equal(s.T(), msgs[1]["msg"], "finished unary call with code OK", "handler's message must contain user message")
 	assert.Equal(s.T(), msgs[1]["level"], "info", "must be logged at info level")
 	assert.Contains(s.T(), msgs[1], "grpc.time_ms", "interceptor log statement should contain execution time")
 }
@@ -129,7 +128,7 @@ func (s *zapServerSuite) TestPingError_WithCustomLevels() {
 		assert.Equal(s.T(), m["grpc.method"], "PingError", "all lines must contain method name")
 		assert.Equal(s.T(), m["grpc.code"], tcase.code.String(), "all lines have the correct gRPC code")
 		assert.Equal(s.T(), m["level"], tcase.level.String(), tcase.msg)
-		assert.Equal(s.T(), m["msg"], "finished unary call with "+tcase.code.String(), "needs the correct end message")
+		assert.Equal(s.T(), m["msg"], "finished unary call with code "+tcase.code.String(), "needs the correct end message")
 
 		require.Contains(s.T(), m, "grpc.start_time", "all lines must contain the start time")
 		_, err = time.Parse(time.RFC3339, m["grpc.start_time"].(string))
@@ -165,7 +164,7 @@ func (s *zapServerSuite) TestPingList_WithCustomTags() {
 
 	assert.Equal(s.T(), msgs[0]["msg"], "some pinglist", "handler's message must contain user message")
 
-	assert.Equal(s.T(), msgs[1]["msg"], "finished streaming call with OK", "handler's message must contain user message")
+	assert.Equal(s.T(), msgs[1]["msg"], "finished streaming call with code OK", "handler's message must contain user message")
 	assert.Equal(s.T(), msgs[1]["level"], "info", "OK codes must be logged on info level.")
 	assert.Contains(s.T(), msgs[1], "grpc.time_ms", "interceptor log statement should contain execution time")
 }
@@ -208,7 +207,7 @@ func (s *zapServerOverrideSuite) TestPing_HasOverriddenDuration() {
 	assert.NotContains(s.T(), msgs[0], "grpc.time_ms", "handler's message must not contain default duration")
 	assert.NotContains(s.T(), msgs[0], "grpc.duration", "handler's message must not contain overridden duration")
 
-	assert.Equal(s.T(), msgs[1]["msg"], "finished unary call with OK", "handler's message must contain user message")
+	assert.Equal(s.T(), msgs[1]["msg"], "finished unary call with code OK", "handler's message must contain user message")
 	assert.Equal(s.T(), msgs[1]["level"], "info", "OK error codes must be logged on info level.")
 	assert.NotContains(s.T(), msgs[1], "grpc.time_ms", "handler's message must not contain default duration")
 	assert.Contains(s.T(), msgs[1], "grpc.duration", "handler's message must contain overridden duration")
@@ -236,7 +235,7 @@ func (s *zapServerOverrideSuite) TestPingList_HasOverriddenDuration() {
 	assert.NotContains(s.T(), msgs[0], "grpc.time_ms", "handler's message must not contain default duration")
 	assert.NotContains(s.T(), msgs[0], "grpc.duration", "handler's message must not contain overridden duration")
 
-	assert.Equal(s.T(), msgs[1]["msg"], "finished streaming call with OK", "handler's message must contain user message")
+	assert.Equal(s.T(), msgs[1]["msg"], "finished streaming call with code OK", "handler's message must contain user message")
 	assert.Equal(s.T(), msgs[1]["level"], "info", "OK error codes must be logged on info level.")
 	assert.NotContains(s.T(), msgs[1], "grpc.time_ms", "handler's message must not contain default duration")
 	assert.Contains(s.T(), msgs[1], "grpc.duration", "handler's message must contain overridden duration")
