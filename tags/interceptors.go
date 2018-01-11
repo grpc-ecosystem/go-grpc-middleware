@@ -14,7 +14,7 @@ import (
 func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 	o := evaluateOptions(opts)
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		newCtx := newTagsForCtx(ctx)
+		newCtx := NewTagsForCtx(ctx)
 		if o.requestFieldsFunc != nil {
 			setRequestFieldTags(newCtx, o.requestFieldsFunc, info.FullMethod, req)
 		}
@@ -26,7 +26,7 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 	o := evaluateOptions(opts)
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		newCtx := newTagsForCtx(stream.Context())
+		newCtx := NewTagsForCtx(stream.Context())
 		if o.requestFieldsFunc == nil {
 			// Short-circuit, don't do the expensive bit of allocating a wrappedStream.
 			wrappedStream := grpc_middleware.WrapServerStream(stream)
@@ -65,7 +65,7 @@ func (w *wrappedStream) RecvMsg(m interface{}) error {
 	return err
 }
 
-func newTagsForCtx(ctx context.Context) context.Context {
+func NewTagsForCtx(ctx context.Context) context.Context {
 	t := Extract(ctx) // will allocate a new one if it didn't exist.
 	if peer, ok := peer.FromContext(ctx); ok {
 		t.Set("peer.address", peer.Addr.String())
