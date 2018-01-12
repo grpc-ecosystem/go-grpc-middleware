@@ -67,17 +67,15 @@ func newServerSpanFromInbound(ctx context.Context, tracer opentracing.Tracer, fu
 }
 
 func finishServerSpan(ctx context.Context, serverSpan opentracing.Span, err error) {
-	// Log context information
-	tags := grpc_ctxtags.Extract(ctx)
-	for k, v := range tags.Values() {
-		// Don't tag errors, log them instead.
-		if vErr, ok := v.(error); ok {
-			serverSpan.LogKV(k, vErr.Error())
-
-		} else {
-			serverSpan.SetTag(k, v)
-		}
+	tagsMap := grpc_ctxtags.Extract(ctx).Values()
+	if val, ok := tagsMap[TagTraceId]; ok {
+		serverSpan.SetTag(TagTraceId, val)
 	}
+
+	if val, ok := tagsMap[TagSpanId]; ok {
+		serverSpan.SetTag(TagSpanId, val)
+	}
+
 	if err != nil {
 		ext.Error.Set(serverSpan, true)
 		serverSpan.LogFields(log.String("event", "error"), log.String("message", err.Error()))

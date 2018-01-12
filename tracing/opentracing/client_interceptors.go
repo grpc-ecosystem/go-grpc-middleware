@@ -137,15 +137,13 @@ func newClientSpanFromContext(ctx context.Context, tracer opentracing.Tracer, fu
 }
 
 func finishClientSpan(ctx context.Context, clientSpan opentracing.Span, err error) {
-	tags := grpc_ctxtags.Extract(ctx)
-	for k, v := range tags.Values() {
-		// Don't tag errors, log them instead.
-		if vErr, ok := v.(error); ok {
-			clientSpan.LogKV(k, vErr.Error())
+	tagsMap := grpc_ctxtags.Extract(ctx).Values()
+	if val, ok := tagsMap[TagTraceId]; ok {
+		clientSpan.SetTag(TagTraceId, val)
+	}
 
-		} else {
-			clientSpan.SetTag(k, v)
-		}
+	if val, ok := tagsMap[TagSpanId]; ok {
+		clientSpan.SetTag(TagSpanId, val)
 	}
 
 	if err != nil && err != io.EOF {
