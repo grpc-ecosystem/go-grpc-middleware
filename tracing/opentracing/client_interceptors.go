@@ -114,8 +114,6 @@ func newClientSpanFromContext(ctx context.Context, tracer opentracing.Tracer, fu
 	if parent := opentracing.SpanFromContext(ctx); parent != nil {
 		parentSpanCtx = parent.Context()
 	}
-	// Inject tags for the first time
-	ctx = grpc_ctxtags.NewTagsForCtx(ctx)
 	opts := []opentracing.StartSpanOption{
 		opentracing.ChildOf(parentSpanCtx),
 		ext.SpanKindRPCClient,
