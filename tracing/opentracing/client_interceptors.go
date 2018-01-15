@@ -96,7 +96,7 @@ func (s *tracedClientStream) finishClientSpan(err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if !s.alreadyFinished {
-		finishClientSpan(s.context, context.Background(), s.clientSpan, err)
+		finishClientSpan(s.context, s.clientSpan, err)
 		s.alreadyFinished = true
 	}
 }

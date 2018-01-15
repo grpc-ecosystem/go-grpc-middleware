@@ -13,7 +13,7 @@ import (
 // UnaryServerInterceptor returns a new unary server interceptors that sets the values for request tags.
 func UnaryClientInterceptor(_ ...Option) grpc.UnaryClientInterceptor {
 	return func(parentCtx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		newCtx := NewTagsForCtx(parentCtx)
+		newCtx := newTagsForCtx(parentCtx)
 		err := invoker(newCtx, method, req, reply, cc, opts...)
 		return err
 	}
@@ -23,7 +23,7 @@ func UnaryClientInterceptor(_ ...Option) grpc.UnaryClientInterceptor {
 func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 	o := evaluateOptions(opts)
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		newCtx := NewTagsForCtx(ctx)
+		newCtx := newTagsForCtx(ctx)
 		if o.requestFieldsFunc != nil {
 			setRequestFieldTags(newCtx, o.requestFieldsFunc, info.FullMethod, req)
 		}
@@ -34,7 +34,7 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 // StreamClientInterceptor returns a new streaming server interceptor for OpenTracing.
 func StreamClientInterceptor(_ ...Option) grpc.StreamClientInterceptor {
 	return func(parentCtx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-		newCtx := NewTagsForCtx(parentCtx)
+		newCtx := newTagsForCtx(parentCtx)
 		return streamer(newCtx, desc, cc, method, opts...)
 	}
 }
@@ -43,7 +43,7 @@ func StreamClientInterceptor(_ ...Option) grpc.StreamClientInterceptor {
 func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 	o := evaluateOptions(opts)
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		newCtx := NewTagsForCtx(stream.Context())
+		newCtx := newTagsForCtx(stream.Context())
 		if o.requestFieldsFunc == nil {
 			// Short-circuit, don't do the expensive bit of allocating a wrappedStream.
 			wrappedStream := grpc_middleware.WrapServerStream(stream)
@@ -82,7 +82,7 @@ func (w *wrappedStream) RecvMsg(m interface{}) error {
 	return err
 }
 
-func NewTagsForCtx(ctx context.Context) context.Context {
+func newTagsForCtx(ctx context.Context) context.Context {
 	t := Extract(ctx) // will allocate a new one if it didn't exist.
 	if peer, ok := peer.FromContext(ctx); ok {
 		t.Set("peer.address", peer.Addr.String())
