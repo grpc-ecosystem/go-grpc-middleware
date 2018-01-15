@@ -150,7 +150,6 @@ func (s *OpentracingSuite) assertTracesCreated(methodName string) (clientSpan *m
 	}
 	require.NotNil(s.T(), clientSpan, "client span must be there")
 	require.NotNil(s.T(), serverSpan, "server span must be there")
-	assert.EqualValues(s.T(), serverSpan.Tag("grpc.request.value"), "something", "grpc_ctxtags must be propagated, in this case ones from request fields")
 	return clientSpan, serverSpan
 }
 
