@@ -45,7 +45,7 @@ func StreamClientInterceptor(opts ...Option) grpc.StreamClientInterceptor {
 			finishClientSpan(newCtx, clientSpan, err)
 			return nil, err
 		}
-		return &tracedClientStream{ClientStream: clientStream, clientSpan: clientSpan}, nil
+		return &tracedClientStream{ClientStream: clientStream, clientSpan: clientSpan, context: newCtx}, nil
 	}
 }
 
@@ -57,6 +57,7 @@ type tracedClientStream struct {
 	mu              sync.Mutex
 	alreadyFinished bool
 	clientSpan      opentracing.Span
+	context context.Context
 }
 
 func (s *tracedClientStream) Header() (metadata.MD, error) {
@@ -95,7 +96,7 @@ func (s *tracedClientStream) finishClientSpan(err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if !s.alreadyFinished {
-		finishClientSpan(context.Background(), s.clientSpan, err)
+		finishClientSpan(s.context, context.Background(), s.clientSpan, err)
 		s.alreadyFinished = true
 	}
 }
