@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
-// UnaryServerInterceptor returns a new unary server interceptors that sets the values for request tags.
+// UnaryServerInterceptor returns a new unary client interceptors that sets the values for request tags.
 func UnaryClientInterceptor(_ ...Option) grpc.UnaryClientInterceptor {
 	return func(parentCtx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		newCtx := newTagsForCtx(parentCtx)
@@ -31,7 +31,7 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 	}
 }
 
-// StreamClientInterceptor returns a new streaming server interceptor for OpenTracing.
+// StreamClientInterceptor returns a new streaming client interceptor for OpenTracing.
 func StreamClientInterceptor(_ ...Option) grpc.StreamClientInterceptor {
 	return func(parentCtx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		newCtx := newTagsForCtx(parentCtx)
