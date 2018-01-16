@@ -8,7 +8,8 @@ import (
 	"sync"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/net/context"
@@ -26,7 +27,7 @@ func UnaryClientInterceptor(opts ...Option) grpc.UnaryClientInterceptor {
 		}
 		newCtx, clientSpan := newClientSpanFromContext(parentCtx, o.tracer, method)
 		err := invoker(newCtx, method, req, reply, cc, opts...)
-		finishClientSpan(clientSpan, err)
+		finishClientSpan(newCtx, clientSpan, err)
 		return err
 	}
 }
@@ -41,10 +42,10 @@ func StreamClientInterceptor(opts ...Option) grpc.StreamClientInterceptor {
 		newCtx, clientSpan := newClientSpanFromContext(parentCtx, o.tracer, method)
 		clientStream, err := streamer(newCtx, desc, cc, method, opts...)
 		if err != nil {
-			finishClientSpan(clientSpan, err)
+			finishClientSpan(newCtx, clientSpan, err)
 			return nil, err
 		}
-		return &tracedClientStream{ClientStream: clientStream, clientSpan: clientSpan}, nil
+		return &tracedClientStream{ClientStream: clientStream, clientSpan: clientSpan, context: newCtx}, nil
 	}
 }
 
@@ -56,6 +57,7 @@ type tracedClientStream struct {
 	mu              sync.Mutex
 	alreadyFinished bool
 	clientSpan      opentracing.Span
+	context context.Context
 }
 
 func (s *tracedClientStream) Header() (metadata.MD, error) {
@@ -94,7 +96,7 @@ func (s *tracedClientStream) finishClientSpan(err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if !s.alreadyFinished {
-		finishClientSpan(s.clientSpan, err)
+		finishClientSpan(s.context, s.clientSpan, err)
 		s.alreadyFinished = true
 	}
 }
@@ -124,6 +126,8 @@ func newClientSpanFromContext(ctx context.Context, tracer opentracing.Tracer, fu
 		}
 	}
 	clientSpan := tracer.StartSpan(fullMethodName, opts...)
+
+	hackyInjectOpentracingIdsToTags(clientSpan, grpc_ctxtags.Extract(ctx))
 	// Make sure we add this to the metadata of the call, so it gets propagated:
 	md := metautils.ExtractOutgoing(ctx).Clone()
 	if err := tracer.Inject(clientSpan.Context(), opentracing.HTTPHeaders, metadataTextMap(md)); err != nil {
@@ -133,7 +137,16 @@ func newClientSpanFromContext(ctx context.Context, tracer opentracing.Tracer, fu
 	return opentracing.ContextWithSpan(ctxWithMetadata, clientSpan), clientSpan
 }
 
-func finishClientSpan(clientSpan opentracing.Span, err error) {
+func finishClientSpan(ctx context.Context, clientSpan opentracing.Span, err error) {
+	tagsMap := grpc_ctxtags.Extract(ctx).Values()
+	if val, ok := tagsMap[TagTraceId]; ok {
+		clientSpan.SetTag(TagTraceId, val)
+	}
+
+	if val, ok := tagsMap[TagSpanId]; ok {
+		clientSpan.SetTag(TagSpanId, val)
+	}
+
 	if err != nil && err != io.EOF {
 		ext.Error.Set(clientSpan, true)
 		clientSpan.LogFields(log.String("event", "error"), log.String("message", err.Error()))
