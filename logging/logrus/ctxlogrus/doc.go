@@ -1,5 +1,5 @@
 /*
-`ctx_logrus` is a ctxlogger that is backed by logrus
+`ctxlogrus` is a ctxlogger that is backed by logrus
 
 It accepts a user-configured `logrus.Logger` that will be used for logging. The same `logrus.Logger` will
 be populated into the `context.Context` passed into gRPC handler code.
@@ -11,4 +11,4 @@ extract once at the start of the function from the context and reuse it for the 
 
 Please see examples and tests for examples of use.
 */
-package ctx_logrus
+package ctxlogrus

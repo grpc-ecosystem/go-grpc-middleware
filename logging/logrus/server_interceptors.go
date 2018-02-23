@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus/ctxlogrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags/logrus"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -124,5 +125,5 @@ func newLoggerForCall(ctx context.Context, entry *logrus.Entry, fullMethodString
 	}
 
 	callLog = callLog.WithFields(ctx_logrus.Extract(ctx).Data)
-	return ctx_logrus.ToContext(ctx, callLog)
+	return ctxlogrus.ToContext(ctx, callLog)
 }
