@@ -1,4 +1,7 @@
-package grpc_logrus
+// Copyright 2018 AppsCode Inc. All Rights Reserved.
+// See LICENSE for licensing terms.
+
+package grpc_glog
 
 import (
 	"testing"
