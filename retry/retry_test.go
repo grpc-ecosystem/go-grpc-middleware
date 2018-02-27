@@ -11,6 +11,7 @@ import (
 
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
 
@@ -254,4 +255,90 @@ func (s *RetrySuite) assertPingListWasCorrect(stream pb_testproto.TestService_Pi
 		count += 1
 	}
 	require.EqualValues(s.T(), grpc_testing.ListResponseCount, count, "should have received all ping items")
+}
+
+type trackedInterceptor struct {
+	called int
+}
+
+func (ti *trackedInterceptor) UnaryClientInterceptor(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	ti.called++
+	return invoker(ctx, method, req, reply, cc, opts...)
+}
+
+func (ti *trackedInterceptor) StreamClientInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+	ti.called++
+	return streamer(ctx, desc, cc, method, opts...)
+}
+
+func TestChainedRetrySuite(t *testing.T) {
+	service := &failingService{
+		TestServiceServer: &grpc_testing.TestPingService{T: t},
+	}
+	preRetryInterceptor := &trackedInterceptor{}
+	postRetryInterceptor := &trackedInterceptor{}
+	s := &ChainedRetrySuite{
+		srv:                  service,
+		preRetryInterceptor:  preRetryInterceptor,
+		postRetryInterceptor: postRetryInterceptor,
+		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
+			TestService: service,
+			ClientOpts: []grpc.DialOption{
+				grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(preRetryInterceptor.UnaryClientInterceptor, grpc_retry.UnaryClientInterceptor(), postRetryInterceptor.UnaryClientInterceptor)),
+				grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(preRetryInterceptor.StreamClientInterceptor, grpc_retry.StreamClientInterceptor(), postRetryInterceptor.StreamClientInterceptor)),
+			},
+		},
+	}
+	suite.Run(t, s)
+}
+
+type ChainedRetrySuite struct {
+	*grpc_testing.InterceptorTestSuite
+	srv                  *failingService
+	preRetryInterceptor  *trackedInterceptor
+	postRetryInterceptor *trackedInterceptor
+}
+
+func (s *ChainedRetrySuite) SetupTest() {
+	s.srv.resetFailingConfiguration( /* don't fail */ 0, codes.OK, noSleep)
+	s.preRetryInterceptor.called = 0
+	s.postRetryInterceptor.called = 0
+}
+
+func (s *ChainedRetrySuite) TestUnaryWithChainedInterceptors_NoFailure() {
+	_, err := s.Client.Ping(s.SimpleCtx(), goodPing, grpc_retry.WithMax(2))
+	require.NoError(s.T(), err, "the invocation should succeed")
+	require.EqualValues(s.T(), 1, s.srv.requestCount(), "one request should have been made")
+	require.EqualValues(s.T(), 1, s.preRetryInterceptor.called, "pre-retry interceptor should be called once")
+	require.EqualValues(s.T(), 1, s.postRetryInterceptor.called, "post-retry interceptor should be called once")
+}
+
+func (s *ChainedRetrySuite) TestUnaryWithChainedInterceptors_WithRetry() {
+	s.srv.resetFailingConfiguration(2, codes.Unavailable, noSleep)
+	_, err := s.Client.Ping(s.SimpleCtx(), goodPing, grpc_retry.WithMax(2))
+	require.NoError(s.T(), err, "the second invocation should succeed")
+	require.EqualValues(s.T(), 2, s.srv.requestCount(), "two requests should have been made")
+	require.EqualValues(s.T(), 1, s.preRetryInterceptor.called, "pre-retry interceptor should be called once")
+	require.EqualValues(s.T(), 2, s.postRetryInterceptor.called, "post-retry interceptor should be called twice")
+}
+
+func (s *ChainedRetrySuite) TestStreamWithChainedInterceptors_NoFailure() {
+	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing, grpc_retry.WithMax(2))
+	require.NoError(s.T(), err, "the invocation should succeed")
+	_, err = stream.Recv()
+	require.NoError(s.T(), err, "the Recv should succeed")
+	require.EqualValues(s.T(), 1, s.srv.requestCount(), "one request should have been made")
+	require.EqualValues(s.T(), 1, s.preRetryInterceptor.called, "pre-retry interceptor should be called once")
+	require.EqualValues(s.T(), 1, s.postRetryInterceptor.called, "post-retry interceptor should be called once")
+}
+
+func (s *ChainedRetrySuite) TestStreamWithChainedInterceptors_WithRetry() {
+	s.srv.resetFailingConfiguration(2, codes.Unavailable, noSleep)
+	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing, grpc_retry.WithMax(2))
+	require.NoError(s.T(), err, "the second invocation should succeed")
+	_, err = stream.Recv()
+	require.NoError(s.T(), err, "the Recv should succeed")
+	require.EqualValues(s.T(), 2, s.srv.requestCount(), "two requests should have been made")
+	require.EqualValues(s.T(), 1, s.preRetryInterceptor.called, "pre-retry interceptor should be called once")
+	require.EqualValues(s.T(), 2, s.postRetryInterceptor.called, "post-retry interceptor should be called twice")
 }
