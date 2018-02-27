@@ -8,7 +8,7 @@ On calling `StreamServerInterceptor` or `UnaryServerInterceptor` this logging mi
 to the ctx so that it will be present on subsequent use of the `ctxlogrus` logger.
 
 This package also implements request and response *payload* logging, both for server-side and client-side. These will be
-logged as structured `jsonbp` fields for every message received/sent (both unary and streaming). For that please use
+logged as structured `jsonpb` fields for every message received/sent (both unary and streaming). For that please use
 `Payload*Interceptor` functions for that. Please note that the user-provided function that determines whetether to log
 the full request/response payload needs to be written with care, this can significantly slow down gRPC.
 
@@ -27,7 +27,7 @@ Below is a JSON formatted example of a log that would be logged by the server in
 	  "grpc.method": "Ping",				// string  method name
 	  "grpc.service": "mwitkow.testproto.TestService",      // string  full name of the called service
 	  "grpc.start_time": "2006-01-02T15:04:05Z07:00",       // string  RFC3339 representation of the start time
-      "grpc.request.deadline"					// string  RFC3339 deadline of the current request if supplied
+	  "grpc.request.deadline": "2006-01-02T15:04:05Z07:00",   // string  RFC3339 deadline of the current request if supplied
 	  "grpc.request.value": "something",			// string  value on the request
 	  "grpc.time_ms": 1.234,				// float32 run time of the call in ms
 	  "peer.address": {
