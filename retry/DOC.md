@@ -20,6 +20,9 @@ override the number of retries (setting them to more than 0) with a `grpc.Client
 Other default options are: retry on `ResourceExhausted` and `Unavailable` gRPC codes, use a 50ms
 linear backoff with 10% jitter.
 
+For chained interceptors, the retry interceptor will call every interceptor that follows it
+whenever when a retry happens.
+
 Please see examples for more advanced use.
 
 ## <a name="pkg-imports">Imported Packages</a>

@@ -278,8 +278,8 @@ func TestChainedRetrySuite(t *testing.T) {
 	preRetryInterceptor := &trackedInterceptor{}
 	postRetryInterceptor := &trackedInterceptor{}
 	s := &ChainedRetrySuite{
-		srv: service,
-		preRetryInterceptor: preRetryInterceptor,
+		srv:                  service,
+		preRetryInterceptor:  preRetryInterceptor,
 		postRetryInterceptor: postRetryInterceptor,
 		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
 			TestService: service,
@@ -294,8 +294,8 @@ func TestChainedRetrySuite(t *testing.T) {
 
 type ChainedRetrySuite struct {
 	*grpc_testing.InterceptorTestSuite
-	srv *failingService
-	preRetryInterceptor *trackedInterceptor
+	srv                  *failingService
+	preRetryInterceptor  *trackedInterceptor
 	postRetryInterceptor *trackedInterceptor
 }
 
