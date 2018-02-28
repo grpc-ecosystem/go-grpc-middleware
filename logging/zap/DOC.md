@@ -83,6 +83,7 @@ Please see examples and tests for examples of use.
 - [github.com/golang/protobuf/proto](https://godoc.org/github.com/golang/protobuf/proto)
 - [github.com/grpc-ecosystem/go-grpc-middleware](./../..)
 - [github.com/grpc-ecosystem/go-grpc-middleware/logging](./..)
+- [github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap](./ctxzap)
 - [github.com/grpc-ecosystem/go-grpc-middleware/tags/zap](./../../tags/zap)
 - [go.uber.org/zap](https://godoc.org/go.uber.org/zap)
 - [go.uber.org/zap/zapcore](https://godoc.org/go.uber.org/zap/zapcore)
@@ -155,7 +156,7 @@ var (
 func AddFields(ctx context.Context, fields ...zapcore.Field)
 ```
 AddFields adds zap fields to the logger.
-Deprecated: should use the ctx_zap.AddFields instead
+Deprecated: should use the ctxzap.AddFields instead
 
 ## <a name="DefaultClientCodeToLevel">func</a> [DefaultClientCodeToLevel](./options.go#L127)
 ``` go
@@ -187,7 +188,7 @@ DurationToTimeMillisField converts the duration to milliseconds and uses the key
 func Extract(ctx context.Context) *zap.Logger
 ```
 Extract takes the call-scoped Logger from grpc_zap middleware.
-Deprecated: should use the ctx_zap.Extract instead
+Deprecated: should use the ctxzap.Extract instead
 
 ## <a name="PayloadStreamClientInterceptor">func</a> [PayloadStreamClientInterceptor](./payload_interceptors.go#L74)
 ``` go
@@ -232,7 +233,7 @@ func StreamClientInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamClie
 ```
 StreamServerInterceptor returns a new streaming client interceptor that optionally logs the execution of external gRPC calls.
 
-## <a name="StreamServerInterceptor">func</a> [StreamServerInterceptor](./server_interceptors.go#L50)
+## <a name="StreamServerInterceptor">func</a> [StreamServerInterceptor](./server_interceptors.go#L51)
 ``` go
 func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServerInterceptor
 ```
@@ -244,7 +245,7 @@ func UnaryClientInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryClient
 ```
 UnaryClientInterceptor returns a new unary client interceptor that optionally logs the execution of external gRPC calls.
 
-## <a name="UnaryServerInterceptor">func</a> [UnaryServerInterceptor](./server_interceptors.go#L24)
+## <a name="UnaryServerInterceptor">func</a> [UnaryServerInterceptor](./server_interceptors.go#L25)
 ``` go
 func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServerInterceptor
 ```
