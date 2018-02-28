@@ -1,65 +1,25 @@
 package ctx_logrus
 
 import (
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus/ctxlogrus"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
 
-type ctxLoggerMarker struct{}
-
-type ctxLogger struct {
-	logger *logrus.Entry
-	fields logrus.Fields
-}
-
-var (
-	ctxLoggerKey = &ctxLoggerMarker{}
-)
-
 // AddFields adds logrus fields to the logger.
+// Deprecated: should use the ctxlogrus.Extract instead
 func AddFields(ctx context.Context, fields logrus.Fields) {
-	l, ok := ctx.Value(ctxLoggerKey).(*ctxLogger)
-	if !ok || l == nil {
-		return
-	}
-	for k, v := range fields {
-		l.fields[k] = v
-	}
+	ctxlogrus.AddFields(ctx, fields)
 }
 
-// Extract takes the call-scoped logrus.Entry from ctx_logrus middleware.
-//
-// If the ctx_logrus middleware wasn't used, a no-op `logrus.Entry` is returned. This makes it safe to
-// use regardless.
+// Extract takes the call-scoped logrus.Entry from grpc_logrus middleware.
+// Deprecated: should use the ctxlogrus.Extract instead
 func Extract(ctx context.Context) *logrus.Entry {
-	l, ok := ctx.Value(ctxLoggerKey).(*ctxLogger)
-	if !ok || l == nil {
-		return logrus.NewEntry(nullLogger)
-	}
-
-	fields := logrus.Fields{}
-
-	// Add grpc_ctxtags tags metadata until now.
-	tags := grpc_ctxtags.Extract(ctx)
-	for k, v := range tags.Values() {
-		fields[k] = v
-	}
-
-	// Add logrus fields added until now.
-	for k, v := range l.fields {
-		fields[k] = v
-	}
-
-	return l.logger.WithFields(fields)
+	return ctxlogrus.Extract(ctx)
 }
 
 // ToContext adds the logrus.Entry to the context for extraction later.
-// Returning the new context that has been created.
+// Depricated: should use ctxlogrus.ToContext instead
 func ToContext(ctx context.Context, entry *logrus.Entry) context.Context {
-	l := &ctxLogger{
-		logger: entry,
-		fields: logrus.Fields{},
-	}
-	return context.WithValue(ctx, ctxLoggerKey, l)
+	return ctxlogrus.ToContext(ctx, entry)
 }

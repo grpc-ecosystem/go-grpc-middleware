@@ -7,7 +7,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags/zap"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/net/context"
@@ -29,7 +29,7 @@ func PayloadUnaryServerInterceptor(logger *zap.Logger, decider grpc_logging.Serv
 			return handler(ctx, req)
 		}
 		// Use the provided zap.Logger for logging but use the fields from context.
-		logEntry := logger.With(append(serverCallFields(info.FullMethod), ctx_zap.TagsToFields(ctx)...)...)
+		logEntry := logger.With(append(serverCallFields(info.FullMethod), ctxzap.TagsToFields(ctx)...)...)
 		logProtoMessageAsJson(logEntry, req, "grpc.request.content", "server request payload logged as grpc.request.content field")
 		resp, err := handler(ctx, req)
 		if err == nil {
@@ -48,7 +48,7 @@ func PayloadStreamServerInterceptor(logger *zap.Logger, decider grpc_logging.Ser
 		if !decider(stream.Context(), info.FullMethod, srv) {
 			return handler(srv, stream)
 		}
-		logEntry := logger.With(append(serverCallFields(info.FullMethod), ctx_zap.TagsToFields(stream.Context())...)...)
+		logEntry := logger.With(append(serverCallFields(info.FullMethod), ctxzap.TagsToFields(stream.Context())...)...)
 		newStream := &loggingServerStream{ServerStream: stream, logger: logEntry}
 		return handler(srv, newStream)
 	}
