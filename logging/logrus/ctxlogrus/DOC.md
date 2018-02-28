@@ -4,6 +4,7 @@
 * [Overview](#pkg-overview)
 * [Imported Packages](#pkg-imports)
 * [Index](#pkg-index)
+* [Examples](#pkg-examples)
 
 ## <a name="pkg-overview">Overview</a>
 `ctxlogrus` is a ctxlogger that is backed by logrus
@@ -29,6 +30,9 @@ Please see examples and tests for examples of use.
 * [func Extract(ctx context.Context) \*logrus.Entry](#Extract)
 * [func ToContext(ctx context.Context, entry \*logrus.Entry) context.Context](#ToContext)
 
+#### <a name="pkg-examples">Examples</a>
+* [Extract (Unary)](#example_Extract_unary)
+
 #### <a name="pkg-files">Package files</a>
 [context.go](./context.go) [doc.go](./doc.go) [noop.go](./noop.go) 
 
@@ -46,6 +50,37 @@ Extract takes the call-scoped logrus.Entry from ctx_logrus middleware.
 
 If the ctx_logrus middleware wasn't used, a no-op `logrus.Entry` is returned. This makes it safe to
 use regardless.
+
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+package ctxlogrus_test
+
+import (
+    "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus/ctxlogrus"
+    "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+    "github.com/sirupsen/logrus"
+    "golang.org/x/net/context"
+)
+
+var logrusLogger *logrus.Logger
+
+// Simple unary handler that adds custom fields to the requests's context. These will be used for all log statements.
+func ExampleExtract_unary() {
+    ctx := context.Background()
+    // setting tags will be added to the loggerr as log fields
+    grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
+    // Extract a single request-scoped logrus.Logger and log messages.
+    l := ctxlogrus.Extract(ctx)
+    l.Info("some ping")
+    l.Info("another ping")
+}
+```
+
+</details>
 
 ## <a name="ToContext">func</a> [ToContext](./context.go#L59)
 ``` go

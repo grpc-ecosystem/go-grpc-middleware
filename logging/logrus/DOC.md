@@ -75,6 +75,63 @@ Note - due to implementation ZAP differs from Logrus in the "grpc.request.conten
 
 Please see examples and tests for examples of use.
 
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+// Logrus entry is used, allowing pre-definition of certain fields by the user.
+logrusEntry := logrus.NewEntry(logrusLogger)
+// Shared options for the logger, with a custom gRPC code to log level function.
+opts := []grpc_logrus.Option{
+    grpc_logrus.WithLevels(customFunc),
+}
+// Make sure that log statements internal to gRPC library are logged using the zapLogger as well.
+grpc_logrus.ReplaceGrpcLogger(logrusEntry)
+// Create a server, make sure we put the grpc_ctxtags context before everything else.
+_ = grpc.NewServer(
+    grpc_middleware.WithUnaryServerChain(
+        grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+        grpc_logrus.UnaryServerInterceptor(logrusEntry, opts...),
+    ),
+    grpc_middleware.WithStreamServerChain(
+        grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+        grpc_logrus.StreamServerInterceptor(logrusEntry, opts...),
+    ),
+)
+```
+
+</details>
+
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+// Logrus entry is used, allowing pre-definition of certain fields by the user.
+logrusEntry := logrus.NewEntry(logrusLogger)
+// Shared options for the logger, with a custom duration to log field function.
+opts := []grpc_logrus.Option{
+    grpc_logrus.WithDurationField(func(duration time.Duration) (key string, value interface{}) {
+        return "grpc.time_ns", duration.Nanoseconds()
+    }),
+}
+_ = grpc.NewServer(
+    grpc_middleware.WithUnaryServerChain(
+        grpc_ctxtags.UnaryServerInterceptor(),
+        grpc_logrus.UnaryServerInterceptor(logrusEntry, opts...),
+    ),
+    grpc_middleware.WithStreamServerChain(
+        grpc_ctxtags.StreamServerInterceptor(),
+        grpc_logrus.StreamServerInterceptor(logrusEntry, opts...),
+    ),
+)
+```
+
+</details>
+
 ## <a name="pkg-imports">Imported Packages</a>
 
 - [github.com/golang/protobuf/jsonpb](https://godoc.org/github.com/golang/protobuf/jsonpb)
@@ -115,7 +172,10 @@ Please see examples and tests for examples of use.
   * [func WithLevels(f CodeToLevel) Option](#WithLevels)
 
 #### <a name="pkg-examples">Examples</a>
+* [Extract (Unary)](#example_Extract_unary)
 * [WithDecider](#example_WithDecider)
+* [Package (Initialization)](#example__initialization)
+* [Package (InitializationWithDurationFieldOverride)](#example__initializationWithDurationFieldOverride)
 
 #### <a name="pkg-files">Package files</a>
 [client_interceptors.go](./client_interceptors.go) [context.go](./context.go) [doc.go](./doc.go) [grpclogger.go](./grpclogger.go) [options.go](./options.go) [payload_interceptors.go](./payload_interceptors.go) [server_interceptors.go](./server_interceptors.go) 
@@ -179,6 +239,25 @@ func Extract(ctx context.Context) *logrus.Entry
 ```
 Extract takes the call-scoped logrus.Entry from grpc_logrus middleware.
 Deprecated: should use the ctxlogrus.Extract instead
+
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+_ = func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
+    // Add fields the ctxtags of the request which will be added to all extracted loggers.
+    grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
+    // Extract a single request-scoped logrus.Logger and log messages.
+    l := ctx_logrus.Extract(ctx)
+    l.Info("some ping")
+    l.Info("another ping")
+    return &pb_testproto.PingResponse{Value: ping.Value}, nil
+}
+```
+
+</details>
 
 ## <a name="PayloadStreamClientInterceptor">func</a> [PayloadStreamClientInterceptor](./payload_interceptors.go#L74)
 ``` go
