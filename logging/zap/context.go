@@ -8,13 +8,13 @@ import (
 )
 
 // AddFields adds zap fields to the logger.
-// Deprecated: should use the ctx_zap.AddFields instead
+// Deprecated: should use the ctxzap.AddFields instead
 func AddFields(ctx context.Context, fields ...zapcore.Field) {
 	ctxzap.AddFields(ctx, fields...)
 }
 
 // Extract takes the call-scoped Logger from grpc_zap middleware.
-// Deprecated: should use the ctx_zap.Extract instead
+// Deprecated: should use the ctxzap.Extract instead
 func Extract(ctx context.Context) *zap.Logger {
 	return ctxzap.Extract(ctx)
 }
