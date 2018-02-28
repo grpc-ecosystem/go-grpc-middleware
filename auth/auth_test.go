@@ -110,7 +110,7 @@ func (s *AuthTestSuite) TestUnary_PassesAuth() {
 }
 
 func (s *AuthTestSuite) TestUnary_PassesWithPerRpcCredentials() {
-	grpcCreds := oauth.TokenSource{&fakeOAuth2TokenSource{accessToken: commonAuthToken}}
+	grpcCreds := oauth.TokenSource{TokenSource: &fakeOAuth2TokenSource{accessToken: commonAuthToken}}
 	client := s.NewClient(grpc.WithPerRPCCredentials(grpcCreds))
 	_, err := client.Ping(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "no error must occur")
@@ -141,7 +141,7 @@ func (s *AuthTestSuite) TestStream_PassesAuth() {
 }
 
 func (s *AuthTestSuite) TestStream_PassesWithPerRpcCredentials() {
-	grpcCreds := oauth.TokenSource{&fakeOAuth2TokenSource{accessToken: commonAuthToken}}
+	grpcCreds := oauth.TokenSource{TokenSource: &fakeOAuth2TokenSource{accessToken: commonAuthToken}}
 	client := s.NewClient(grpc.WithPerRPCCredentials(grpcCreds))
 	stream, err := client.PingList(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")

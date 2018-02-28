@@ -6,7 +6,7 @@ import (
 )
 
 // Simple example of server initialization code, with data automatically populated from `log_fields` Golang tags.
-func Example_Initialization() {
+func Example_initialization() {
 	opts := []grpc_ctxtags.Option{
 		grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.TagBasedRequestFieldExtractor("log_fields")),
 	}
@@ -17,7 +17,7 @@ func Example_Initialization() {
 }
 
 // Example using WithFieldExtractorForInitialReq
-func Example_InitializationForInitialReq() {
+func Example_initialisationWithOptions() {
 	opts := []grpc_ctxtags.Option{
 		grpc_ctxtags.WithFieldExtractorForInitialReq(grpc_ctxtags.TagBasedRequestFieldExtractor("log_fields")),
 	}
