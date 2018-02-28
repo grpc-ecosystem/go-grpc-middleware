@@ -156,7 +156,7 @@ var (
 func AddFields(ctx context.Context, fields ...zapcore.Field)
 ```
 AddFields adds zap fields to the logger.
-Deprecated: should use the ctx_zap.AddFields instead
+Deprecated: should use the ctxzap.AddFields instead
 
 ## <a name="DefaultClientCodeToLevel">func</a> [DefaultClientCodeToLevel](./options.go#L127)
 ``` go
@@ -188,7 +188,7 @@ DurationToTimeMillisField converts the duration to milliseconds and uses the key
 func Extract(ctx context.Context) *zap.Logger
 ```
 Extract takes the call-scoped Logger from grpc_zap middleware.
-Deprecated: should use the ctx_zap.Extract instead
+Deprecated: should use the ctxzap.Extract instead
 
 ## <a name="PayloadStreamClientInterceptor">func</a> [PayloadStreamClientInterceptor](./payload_interceptors.go#L74)
 ``` go
