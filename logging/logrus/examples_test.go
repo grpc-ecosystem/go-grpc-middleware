@@ -26,7 +26,7 @@ func Example_initialization() {
 	opts := []grpc_logrus.Option{
 		grpc_logrus.WithLevels(customFunc),
 	}
-	// Make sure that log statements internal to gRPC library are logged using the zapLogger as well.
+	// Make sure that log statements internal to gRPC library are logged using the logrus Logger as well.
 	grpc_logrus.ReplaceGrpcLogger(logrusEntry)
 	// Create a server, make sure we put the grpc_ctxtags context before everything else.
 	_ = grpc.NewServer(
