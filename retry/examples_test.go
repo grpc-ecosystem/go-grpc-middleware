@@ -23,7 +23,7 @@ func newCtx(timeout time.Duration) context.Context {
 }
 
 // Simple example of using the default interceptor configuration.
-func Example_DialSimple() {
+func Example_initialization() {
 	grpc.Dial("myservice.example.com",
 		grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor()),
 		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor()),
@@ -31,7 +31,7 @@ func Example_DialSimple() {
 }
 
 // Complex example with a 100ms linear backoff interval, and retry only on NotFound and Unavailable.
-func Example_DialComplex() {
+func Example_initializationWithOptions() {
 	opts := []grpc_retry.CallOption{
 		grpc_retry.WithBackoff(grpc_retry.BackoffLinear(100 * time.Millisecond)),
 		grpc_retry.WithCodes(codes.NotFound, codes.Aborted),
@@ -43,7 +43,7 @@ func Example_DialComplex() {
 }
 
 // Simple example of an idempotent `ServerStream` call, that will be retried automatically 3 times.
-func Example_SimpleCall() {
+func Example_simpleCall() {
 	client := pb_testproto.NewTestServiceClient(cc)
 	stream, _ := client.PingList(newCtx(1*time.Second), &pb_testproto.PingRequest{}, grpc_retry.WithMax(3))
 
@@ -67,7 +67,7 @@ func Example_SimpleCall() {
 //
 // `WithPerRetryTimeout` allows you to shorten the deadline of each retry call, allowing you to fit
 // multiple retries in the single parent deadline.
-func Example_DeadlineCall() {
+func ExampleWithPerRetryTimeout() {
 	client := pb_testproto.NewTestServiceClient(cc)
 	pong, _ := client.Ping(
 		newCtx(5*time.Second),

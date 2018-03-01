@@ -19,14 +19,14 @@ var (
 )
 
 // Initialization shows a relatively complex initialization sequence.
-func Example_Initialization() {
+func Example_initialization() {
 	// Logrus entry is used, allowing pre-definition of certain fields by the user.
 	logrusEntry := logrus.NewEntry(logrusLogger)
 	// Shared options for the logger, with a custom gRPC code to log level function.
 	opts := []grpc_logrus.Option{
 		grpc_logrus.WithLevels(customFunc),
 	}
-	// Make sure that log statements internal to gRPC library are logged using the zapLogger as well.
+	// Make sure that log statements internal to gRPC library are logged using the logrus Logger as well.
 	grpc_logrus.ReplaceGrpcLogger(logrusEntry)
 	// Create a server, make sure we put the grpc_ctxtags context before everything else.
 	_ = grpc.NewServer(
@@ -41,7 +41,7 @@ func Example_Initialization() {
 	)
 }
 
-func Example_InitializationWithDurationFieldOverride() {
+func Example_initializationWithDurationFieldOverride() {
 	// Logrus entry is used, allowing pre-definition of certain fields by the user.
 	logrusEntry := logrus.NewEntry(logrusLogger)
 	// Shared options for the logger, with a custom duration to log field function.
@@ -63,7 +63,7 @@ func Example_InitializationWithDurationFieldOverride() {
 }
 
 // Simple unary handler that adds custom fields to the requests's context. These will be used for all log statements.
-func Example_HandlerUsageUnaryPing() {
+func ExampleExtract_unary() {
 	_ = func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
 		// Add fields the ctxtags of the request which will be added to all extracted loggers.
 		grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)

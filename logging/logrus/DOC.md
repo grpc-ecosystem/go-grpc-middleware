@@ -13,7 +13,7 @@ It accepts a user-configured `logrus.Entry` that will be used for logging comple
 `logrus.Entry` will be used for logging completed gRPC calls, and be populated into the `context.Context` passed into gRPC handler code.
 
 On calling `StreamServerInterceptor` or `UnaryServerInterceptor` this logging middleware will add gRPC call information
-to the ctx so that it will be present on subsequent use of the `ctx_zap` logger.
+to the ctx so that it will be present on subsequent use of the `ctxlogrus` logger.
 
 This package also implements request and response *payload* logging, both for server-side and client-side. These will be
 logged as structured `jsonbp` fields for every message received/sent (both unary and streaming). For that please use
@@ -29,51 +29,105 @@ Logrus can also be made as a backend for gRPC library internals. For that use `R
 Below is a JSON formatted example of a log that would be logged by the server interceptor:
 
 		{
-		  "level": "info",									// string  logrus log levels
-		  "msg": "finished unary call",						// string  log message
-	
-		  "grpc.code": "OK",								// string  grpc status code
-		  "grpc.method": "Ping",							// string  method name
-		  "grpc.service": "mwitkow.testproto.TestService",  // string  full name of the called service
-		  "grpc.start_time": "2006-01-02T15:04:05Z07:00",   // string  RFC3339 representation of the start time
-	      "grpc.request.deadline"							// string  RFC3339 deadline of the current request if supplied
-		  "grpc.request.value": "something",				// string  value on the request
-		  "grpc.time_ms": 1.234,							// float32 run time of the call in ms
-	
+		  "level": "info",					// string  logrus log levels
+		  "msg": "finished unary call",				// string  log message
+		  "grpc.code": "OK",					// string  grpc status code
+		  "grpc.method": "Ping",				// string  method name
+		  "grpc.service": "mwitkow.testproto.TestService",      // string  full name of the called service
+		  "grpc.start_time": "2006-01-02T15:04:05Z07:00",       // string  RFC3339 representation of the start time
+	      "grpc.request.deadline"					// string  RFC3339 deadline of the current request if supplied
+		  "grpc.request.value": "something",			// string  value on the request
+		  "grpc.time_ms": 1.234,				// float32 run time of the call in ms
 		  "peer.address": {
-		    "IP": "127.0.0.1",								// string  IP address of calling party
-		    "Port": 60216,									// int     port call is coming in on
-		    "Zone": ""										// string  peer zone for caller
+		    "IP": "127.0.0.1",					// string  IP address of calling party
+		    "Port": 60216,					// int     port call is coming in on
+		    "Zone": ""						// string  peer zone for caller
 		  },
-		  "span.kind": "server",							// string  client | server
-		  "system": "grpc"									// string
+		  "span.kind": "server",				// string  client | server
+		  "system": "grpc"					// string
 	
-		  "custom_field": "custom_value",					// string  user defined field
-		  "custom_tags.int": 1337,							// int     user defined tag on the ctx
-		  "custom_tags.string": "something",				// string  user defined tag on the ctx
+		  "custom_field": "custom_value",			// string  user defined field
+		  "custom_tags.int": 1337,				// int     user defined tag on the ctx
+		  "custom_tags.string": "something",			// string  user defined tag on the ctx
 		}
 
 *Payload Interceptor*
 Below is a JSON formatted example of a log that would be logged by the payload interceptor:
 
 	{
-	  "level": "info",													// string logrus log levels
-	  "msg": "client request payload logged as grpc.request.content",   // string log message
+	  "level": "info",							// string logrus log levels
+	  "msg": "client request payload logged as grpc.request.content",   	// string log message
 	
-	  "grpc.request.content": {											// object content of RPC request
-	    "value": "something",											// string defined by caller
-	    "sleepTimeMs": 9999												// int    defined by caller
+	  "grpc.request.content": {						// object content of RPC request
+	    "value": "something",						// string defined by caller
+	    "sleepTimeMs": 9999							// int    defined by caller
 	  },
-	  "grpc.method": "Ping",											// string method being called
-	  "grpc.service": "mwitkow.testproto.TestService",					// string service being called
-	
-	  "span.kind": "client",											// string client | server
-	  "system": "grpc"													// string
+	  "grpc.method": "Ping",						// string method being called
+	  "grpc.service": "mwitkow.testproto.TestService",			// string service being called
+	  "span.kind": "client",						// string client | server
+	  "system": "grpc"							// string
 	}
 
 Note - due to implementation ZAP differs from Logrus in the "grpc.request.content" object by having an inner "msg" object.
 
 Please see examples and tests for examples of use.
+
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+// Logrus entry is used, allowing pre-definition of certain fields by the user.
+logrusEntry := logrus.NewEntry(logrusLogger)
+// Shared options for the logger, with a custom gRPC code to log level function.
+opts := []grpc_logrus.Option{
+    grpc_logrus.WithLevels(customFunc),
+}
+// Make sure that log statements internal to gRPC library are logged using the logrus Logger as well.
+grpc_logrus.ReplaceGrpcLogger(logrusEntry)
+// Create a server, make sure we put the grpc_ctxtags context before everything else.
+_ = grpc.NewServer(
+    grpc_middleware.WithUnaryServerChain(
+        grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+        grpc_logrus.UnaryServerInterceptor(logrusEntry, opts...),
+    ),
+    grpc_middleware.WithStreamServerChain(
+        grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+        grpc_logrus.StreamServerInterceptor(logrusEntry, opts...),
+    ),
+)
+```
+
+</details>
+
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+// Logrus entry is used, allowing pre-definition of certain fields by the user.
+logrusEntry := logrus.NewEntry(logrusLogger)
+// Shared options for the logger, with a custom duration to log field function.
+opts := []grpc_logrus.Option{
+    grpc_logrus.WithDurationField(func(duration time.Duration) (key string, value interface{}) {
+        return "grpc.time_ns", duration.Nanoseconds()
+    }),
+}
+_ = grpc.NewServer(
+    grpc_middleware.WithUnaryServerChain(
+        grpc_ctxtags.UnaryServerInterceptor(),
+        grpc_logrus.UnaryServerInterceptor(logrusEntry, opts...),
+    ),
+    grpc_middleware.WithStreamServerChain(
+        grpc_ctxtags.StreamServerInterceptor(),
+        grpc_logrus.StreamServerInterceptor(logrusEntry, opts...),
+    ),
+)
+```
+
+</details>
 
 ## <a name="pkg-imports">Imported Packages</a>
 
@@ -115,7 +169,10 @@ Please see examples and tests for examples of use.
   * [func WithLevels(f CodeToLevel) Option](#WithLevels)
 
 #### <a name="pkg-examples">Examples</a>
+* [Extract (Unary)](#example_Extract_unary)
 * [WithDecider](#example_WithDecider)
+* [Package (Initialization)](#example__initialization)
+* [Package (InitializationWithDurationFieldOverride)](#example__initializationWithDurationFieldOverride)
 
 #### <a name="pkg-files">Package files</a>
 [client_interceptors.go](./client_interceptors.go) [context.go](./context.go) [doc.go](./doc.go) [grpclogger.go](./grpclogger.go) [options.go](./options.go) [payload_interceptors.go](./payload_interceptors.go) [server_interceptors.go](./server_interceptors.go) 
@@ -179,6 +236,25 @@ func Extract(ctx context.Context) *logrus.Entry
 ```
 Extract takes the call-scoped logrus.Entry from grpc_logrus middleware.
 Deprecated: should use the ctxlogrus.Extract instead
+
+#### Example:
+
+<details>
+<summary>Click to expand code.</summary>
+
+```go
+_ = func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
+    // Add fields the ctxtags of the request which will be added to all extracted loggers.
+    grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
+    // Extract a single request-scoped logrus.Logger and log messages.
+    l := ctx_logrus.Extract(ctx)
+    l.Info("some ping")
+    l.Info("another ping")
+    return &pb_testproto.PingResponse{Value: ping.Value}, nil
+}
+```
+
+</details>
 
 ## <a name="PayloadStreamClientInterceptor">func</a> [PayloadStreamClientInterceptor](./payload_interceptors.go#L74)
 ``` go
