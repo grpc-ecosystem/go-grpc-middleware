@@ -21,7 +21,7 @@ func userClaimFromToken(struct{}) string {
 }
 
 // Simple example of server initialization code.
-func Example_ServerConfig() {
+func Example_serverConfig() {
 	exampleAuthFunc := func(ctx context.Context) (context.Context, error) {
 		token, err := grpc_auth.AuthFromMD(ctx, "bearer")
 		if err != nil {
