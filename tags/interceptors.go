@@ -66,7 +66,7 @@ func (w *wrappedStream) RecvMsg(m interface{}) error {
 }
 
 func newTagsForCtx(ctx context.Context) context.Context {
-	t := Extract(ctx) // will allocate a new one if it didn't exist.
+	t := newTags()
 	if peer, ok := peer.FromContext(ctx); ok {
 		t.Set("peer.address", peer.Addr.String())
 	}
