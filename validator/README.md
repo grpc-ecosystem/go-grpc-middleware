@@ -1,21 +1,21 @@
 # grpc_validator
---
+
     import "github.com/grpc-ecosystem/go-grpc-middleware/validator"
 
-`grpc_validator` a generic request contents validator server-side middleware for
+`grpc_validator` is a generic request contents validator server-side middleware for
 gRPC.
 
 
 ### Request Validator Middleware
 
-Validating input is important, and hard. It also causes a lot of boiler plate.
-This middleware checks for the existance of a `Validate` method on each of the
+Validating input is important, and hard. It also causes a lot of boilerplate code.
+This middleware checks for the existence of a `Validate` method on each of the
 messages of a gRPC request. This includes the single request of the `Unary`
 calls, as well as each message of the inbound Stream calls. In case of a
-validation failure, a `InvalidArgument` gRPC status is returned, alongside with
+validation failure, an `InvalidArgument` gRPC status is returned, along with
 a description of the validation failure.
 
-While it is generic, it was indented to be used with
+While it is generic, it was intended to be used with
 https://github.com/mwitkow/go-proto-validators, a Go protocol buffers codegen
 plugin that creates the `Validate` methods (including nested messages) based on
 declarative options in the `.proto` files themselves. For example:
@@ -38,12 +38,12 @@ declarative options in the `.proto` files themselves. For example:
       InnerMessage inner = 2 [(validator.field) = {msg_exists : true}];
     }
 
-The `OuterMessage.Validate` would include validation of regexes, existance of
+The `OuterMessage.Validate` would include validation of regexes, existence of
 the InnerMessage and the range values within it. The `grpc_validator` middleware
 would then automatically use that to check all messages processed by the server.
 
-Please consult https://github.com/mwitkow/go-proto-validators for details of
-`protoc` invoation and other parameters of customization.
+Please consult https://github.com/mwitkow/go-proto-validators for details on
+`protoc` invocation and other parameters of customization.
 
 ## Usage
 
@@ -52,7 +52,7 @@ Please consult https://github.com/mwitkow/go-proto-validators for details of
 ```go
 func StreamServerInterceptor() grpc.StreamServerInterceptor
 ```
-StreamServerInterceptor returns a new streaming server interceptors that
+StreamServerInterceptor returns a new streaming server interceptor that
 validates incoming messages.
 
 The stage at which invalid messages will be rejected with `InvalidArgument`
@@ -66,7 +66,7 @@ happen before reaching any userspace handlers. For `ClientStream` (n:1) or
 ```go
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor
 ```
-UnaryServerInterceptor returns a new unary server interceptors that validates
+UnaryServerInterceptor returns a new unary server interceptor that validates
 incoming messages.
 
 Invalid messages will be rejected with `InvalidArgument` before reaching any
