@@ -33,7 +33,7 @@ func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) map[string
 }
 
 // TagBasedRequestFieldExtractor is a function that relies on Go struct tags to export log fields from requests.
-// These are usualy coming from a protoc-plugin, such as Gogo protobuf.
+// These are usually coming from a protoc-plugin, such as Gogo protobuf.
 //
 //  message Metadata {
 //     repeated string tags = 1 [ (gogoproto.moretags) = "log_field:\"meta_tags\"" ];
