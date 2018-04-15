@@ -26,7 +26,7 @@ var (
 	}
 )
 
-// BackoffFunc denotes a family of functions that controll the backoff duration between call retries.
+// BackoffFunc denotes a family of functions that control the backoff duration between call retries.
 //
 // They are called with an identifier of the attempt, and should return a time the system client should
 // hold off for. If the time returned is longer than the `context.Context.Deadline` of the request
