@@ -215,7 +215,7 @@ var (
     // SystemField is used in every log statement made through grpc_zap. Can be overwritten before any initialization code.
     SystemField = zap.String("system", "grpc")
 
-    // ServerField is used in every server-side log statment made through grpc_zap.Can be overwritten before initialization.
+    // ServerField is used in every server-side log statement made through grpc_zap.Can be overwritten before initialization.
     ServerField = zap.String("span.kind", "server")
 )
 ```
@@ -232,7 +232,7 @@ DefaultDurationToField is the default implementation of converting request durat
 
 ``` go
 var (
-    // JsonPBMarshaller is the marshaller used for serializing protobuf messages.
+    // JsonPbMarshaller is the marshaller used for serializing protobuf messages.
     JsonPbMarshaller = &jsonpb.Marshaler{}
 )
 ```
@@ -300,13 +300,13 @@ _ = func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.Pin
 ``` go
 func PayloadStreamClientInterceptor(logger *zap.Logger, decider grpc_logging.ClientPayloadLoggingDecider) grpc.StreamClientInterceptor
 ```
-PayloadStreamServerInterceptor returns a new streaming client interceptor that logs the paylods of requests and responses.
+PayloadStreamClientInterceptor returns a new streaming client interceptor that logs the paylods of requests and responses.
 
 ## <a name="PayloadStreamServerInterceptor">func</a> [PayloadStreamServerInterceptor](./payload_interceptors.go#L46)
 ``` go
 func PayloadStreamServerInterceptor(logger *zap.Logger, decider grpc_logging.ServerPayloadLoggingDecider) grpc.StreamServerInterceptor
 ```
-PayloadUnaryServerInterceptor returns a new server server interceptors that logs the payloads of requests.
+PayloadStreamServerInterceptor returns a new server server interceptors that logs the payloads of requests.
 
 This *only* works when placed *after* the `grpc_zap.StreamServerInterceptor`. However, the logging can be done to a
 separate instance of the logger.
@@ -337,7 +337,7 @@ This should be called *before* any other initialization, preferably from init() 
 ``` go
 func StreamClientInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamClientInterceptor
 ```
-StreamServerInterceptor returns a new streaming client interceptor that optionally logs the execution of external gRPC calls.
+StreamClientInterceptor returns a new streaming client interceptor that optionally logs the execution of external gRPC calls.
 
 ## <a name="StreamServerInterceptor">func</a> [StreamServerInterceptor](./server_interceptors.go#L51)
 ``` go
