@@ -12,11 +12,12 @@ before_install:
   - chmod +x $GOPATH/bin/dep
 
 install:
+  - sudo apt-get install coreutils
   - dep ensure
 
 script:
- - make test
  - make checkdocs
+ - make test
  
 after_success:
   - bash <(curl -s https://codecov.io/bash)

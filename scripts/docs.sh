@@ -35,6 +35,7 @@ function check {
     if [ "$count" = "0" ]; then
         return 0
     else
+        echo "Your markdown docs seem to be out of sync with the package docs. Please run make and consult CONTRIBUTING.MD"
         return 1
     fi
 }
