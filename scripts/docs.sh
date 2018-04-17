@@ -11,8 +11,7 @@ function generate_markdown {
     echo "Generating Github markdown"
     oldpwd=$(pwd)
     for i in $(find . -iname 'doc.go' -not -path "*vendor/*"); do
-        dir=${i%/*}
-        realdir=$(realpath $dir)
+        realdir=$(cd $(dirname ${i}) && pwd -P)
         package=${realdir##${GOPATH}/src/}
         echo "$package"
         cd ${dir}
@@ -22,6 +21,22 @@ function generate_markdown {
     done;
 }
 
-go get github.com/devnev/godoc2ghmd
-generate_markdown
-echo "returning $?"
+function generate {
+    go get github.com/devnev/godoc2ghmd
+    generate_markdown
+    echo "returning $?"
+}
+
+function check {
+    generate
+    count=$(git diff --numstat | wc -l | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+    echo $count
+    if [ "$count" = "0" ]; then
+        return 0
+    else
+        echo "Your markdown docs seem to be out of sync with the package docs. Please run make and consult CONTRIBUTING.MD"
+        return 1
+    fi
+}
+
+"$@"
