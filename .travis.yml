@@ -12,7 +12,6 @@ before_install:
   - chmod +x $GOPATH/bin/dep
 
 install:
-  - sudo apt-get install coreutils
   - dep ensure
 
 script:
