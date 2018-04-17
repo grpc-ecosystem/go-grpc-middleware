@@ -69,7 +69,7 @@ new span.
 ``` go
 func StreamClientInterceptor(opts ...Option) grpc.StreamClientInterceptor
 ```
-StreamClientInterceptor returns a new streaming server interceptor for OpenTracing.
+StreamClientInterceptor returns a new streaming client interceptor for OpenTracing.
 
 ## <a name="StreamServerInterceptor">func</a> [StreamServerInterceptor](./server_interceptors.go#L37)
 ``` go
