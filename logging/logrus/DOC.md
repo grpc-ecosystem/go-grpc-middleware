@@ -194,7 +194,7 @@ DefaultDurationToField is the default implementation of converting request durat
 
 ``` go
 var (
-    // JsonPBMarshaller is the marshaller used for serializing protobuf messages.
+    // JsonPbMarshaller is the marshaller used for serializing protobuf messages.
     JsonPbMarshaller = &jsonpb.Marshaler{}
 )
 ```
@@ -260,13 +260,13 @@ _ = func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.Pin
 ``` go
 func PayloadStreamClientInterceptor(entry *logrus.Entry, decider grpc_logging.ClientPayloadLoggingDecider) grpc.StreamClientInterceptor
 ```
-PayloadStreamServerInterceptor returns a new streaming client interceptor that logs the paylods of requests and responses.
+PayloadStreamClientInterceptor returns a new streaming client interceptor that logs the paylods of requests and responses.
 
 ## <a name="PayloadStreamServerInterceptor">func</a> [PayloadStreamServerInterceptor](./payload_interceptors.go#L45)
 ``` go
 func PayloadStreamServerInterceptor(entry *logrus.Entry, decider grpc_logging.ServerPayloadLoggingDecider) grpc.StreamServerInterceptor
 ```
-PayloadUnaryServerInterceptor returns a new server server interceptors that logs the payloads of requests.
+PayloadStreamServerInterceptor returns a new server server interceptors that logs the payloads of requests.
 
 This *only* works when placed *after* the `grpc_logrus.StreamServerInterceptor`. However, the logging can be done to a
 separate instance of the logger.
@@ -315,7 +315,7 @@ UnaryClientInterceptor returns a new unary client interceptor that optionally lo
 ``` go
 func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServerInterceptor
 ```
-PayloadUnaryServerInterceptor returns a new unary server interceptors that adds logrus.Entry to the context.
+UnaryServerInterceptor returns a new unary server interceptors that adds logrus.Entry to the context.
 
 ## <a name="CodeToLevel">type</a> [CodeToLevel](./options.go#L53)
 ``` go

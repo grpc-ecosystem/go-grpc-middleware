@@ -158,7 +158,7 @@ changed through options (e.g. WithMax) on creation of the interceptor or on call
 ``` go
 type BackoffFunc func(attempt uint) time.Duration
 ```
-BackoffFunc denotes a family of functions that controll the backoff duration between call retries.
+BackoffFunc denotes a family of functions that control the backoff duration between call retries.
 
 They are called with an identifier of the attempt, and should return a time the system client should
 hold off for. If the time returned is longer than the `context.Context.Deadline` of the request
@@ -186,7 +186,7 @@ type CallOption struct {
     // contains filtered or unexported fields
 }
 ```
-callOption is a grpc.CallOption that is local to grpc_retry.
+CallOption is a grpc.CallOption that is local to grpc_retry.
 
 ### <a name="Disable">func</a> [Disable](./options.go#L40)
 ``` go

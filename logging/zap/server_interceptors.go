@@ -17,7 +17,7 @@ var (
 	// SystemField is used in every log statement made through grpc_zap. Can be overwritten before any initialization code.
 	SystemField = zap.String("system", "grpc")
 
-	// ServerField is used in every server-side log statment made through grpc_zap.Can be overwritten before initialization.
+	// ServerField is used in every server-side log statement made through grpc_zap.Can be overwritten before initialization.
 	ServerField = zap.String("span.kind", "server")
 )
 
