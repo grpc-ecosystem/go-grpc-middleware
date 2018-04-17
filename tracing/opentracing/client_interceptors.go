@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// UnaryClientInterceptor returns a new unary server interceptor for OpenTracing.
+// UnaryClientInterceptor returns a new unary client interceptor for OpenTracing.
 func UnaryClientInterceptor(opts ...Option) grpc.UnaryClientInterceptor {
 	o := evaluateOptions(opts)
 	return func(parentCtx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
@@ -31,7 +31,7 @@ func UnaryClientInterceptor(opts ...Option) grpc.UnaryClientInterceptor {
 	}
 }
 
-// StreamClientInterceptor returns a new streaming server interceptor for OpenTracing.
+// StreamClientInterceptor returns a new streaming client interceptor for OpenTracing.
 func StreamClientInterceptor(opts ...Option) grpc.StreamClientInterceptor {
 	o := evaluateOptions(opts)
 	return func(parentCtx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
