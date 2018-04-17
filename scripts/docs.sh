@@ -9,9 +9,11 @@ function print_real_go_files {
 
 function generate_markdown {
     echo "Generating Github markdown"
+    echo $(which realpath)
     oldpwd=$(pwd)
     for i in $(find . -iname 'doc.go' -not -path "*vendor/*"); do
         dir=${i%/*}
+
         realdir=$(realpath $dir)
         package=${realdir##${GOPATH}/src/}
         echo "$package"
