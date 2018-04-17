@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	// JsonPBMarshaller is the marshaller used for serializing protobuf messages.
+	// JsonPbMarshaller is the marshaller used for serializing protobuf messages.
 	JsonPbMarshaller = &jsonpb.Marshaler{}
 )
 
@@ -39,7 +39,7 @@ func PayloadUnaryServerInterceptor(logger *zap.Logger, decider grpc_logging.Serv
 	}
 }
 
-// PayloadUnaryServerInterceptor returns a new server server interceptors that logs the payloads of requests.
+// PayloadStreamServerInterceptor returns a new server server interceptors that logs the payloads of requests.
 //
 // This *only* works when placed *after* the `grpc_zap.StreamServerInterceptor`. However, the logging can be done to a
 // separate instance of the logger.
@@ -70,7 +70,7 @@ func PayloadUnaryClientInterceptor(logger *zap.Logger, decider grpc_logging.Clie
 	}
 }
 
-// PayloadStreamServerInterceptor returns a new streaming client interceptor that logs the paylods of requests and responses.
+// PayloadStreamClientInterceptor returns a new streaming client interceptor that logs the paylods of requests and responses.
 func PayloadStreamClientInterceptor(logger *zap.Logger, decider grpc_logging.ClientPayloadLoggingDecider) grpc.StreamClientInterceptor {
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		if !decider(ctx, method) {
