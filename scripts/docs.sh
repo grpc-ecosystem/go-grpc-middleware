@@ -3,18 +3,30 @@
 
 GOBIN=${GOBIN:="$GOPATH/bin"}
 
+function myrealpath {
+    f=$@;
+    if [ -d "$f" ]; then
+        base="";
+        dir="$f";
+    else
+        base="/$(basename "$f")";
+        dir=$(dirname "$f");
+    fi;
+    dir=$(cd "$dir" && /bin/pwd);
+    echo "$dir$base"
+}
+
 function print_real_go_files {
     grep --files-without-match 'DO NOT EDIT!' $(find . -iname '*.go') --exclude=./vendor/*
 }
 
 function generate_markdown {
     echo "Generating Github markdown"
-    echo $(which realpath)
     oldpwd=$(pwd)
     for i in $(find . -iname 'doc.go' -not -path "*vendor/*"); do
         dir=${i%/*}
 
-        realdir=$(realpath $dir)
+        realdir=$(myrealpath $dir)
         package=${realdir##${GOPATH}/src/}
         echo "$package"
         cd ${dir}
