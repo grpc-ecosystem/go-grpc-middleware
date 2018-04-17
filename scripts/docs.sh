@@ -22,6 +22,21 @@ function generate_markdown {
     done;
 }
 
-go get github.com/devnev/godoc2ghmd
-generate_markdown
-echo "returning $?"
+function generate {
+    go get github.com/devnev/godoc2ghmd
+    generate_markdown
+    echo "returning $?"
+}
+
+function check {
+    generate
+    count=$(git diff --numstat | wc -l | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+    echo $count
+    if [ "$count" = "0" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+"$@"
