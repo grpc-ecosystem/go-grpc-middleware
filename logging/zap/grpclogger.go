@@ -11,42 +11,8 @@ import (
 	"os"
 	"strconv"
 )
-
-// ReplaceGrpcLogger sets the given zap.Logger as a gRPC-level logger.
-// This should be called *before* any other initialization, preferably from init() functions.
-func ReplaceGrpcLogger(logger *zap.Logger) {
-	zgl := &zapGrpcLogger{logger.With(SystemField, zap.Bool("grpc_log", true))}
-	grpclog.SetLogger(zgl)
-}
-
-type zapGrpcLogger struct {
-	logger *zap.Logger
-}
-
-func (l *zapGrpcLogger) Fatal(args ...interface{}) {
-	l.logger.Fatal(fmt.Sprint(args...))
-}
-
-func (l *zapGrpcLogger) Fatalf(format string, args ...interface{}) {
-	l.logger.Fatal(fmt.Sprintf(format, args...))
-}
-
-func (l *zapGrpcLogger) Fatalln(args ...interface{}) {
-	l.logger.Fatal(fmt.Sprint(args...))
-}
-
-func (l *zapGrpcLogger) Print(args ...interface{}) {
-	l.logger.Info(fmt.Sprint(args...))
-}
-
-func (l *zapGrpcLogger) Printf(format string, args ...interface{}) {
-	l.logger.Info(fmt.Sprintf(format, args...))
-}
-
-func (l *zapGrpcLogger) Println(args ...interface{}) {
-	l.logger.Info(fmt.Sprint(args...))
-}
-
+// ReplaceGrpcLoggerV2 replaces the grpc_log.LoggerV2 with the input zap.Logger
+// This logger adheres to the grpc go environment variables GRPC_GO_LOG_VERBOSITY_LEVEL and GRPC_GO_LOG_SEVERITY_LEVEL.
 func ReplaceGrpcLoggerV2(logger *zap.Logger) {
 	zgl := &zapGrpcLoggerV2{}
 	verbosity := os.Getenv("GRPC_GO_LOG_VERBOSITY_LEVEL")
@@ -57,11 +23,11 @@ func ReplaceGrpcLoggerV2(logger *zap.Logger) {
 	logLevel := os.Getenv("GRPC_GO_LOG_SEVERITY_LEVEL")
 	switch logLevel {
 	case "", "ERROR", "error": // If env is unset, set level to ERROR.
-		zgl.severity = error
+		zgl.severity = errorLevel
 	case "WARNING", "warning":
-		zgl.severity = warn
+		zgl.severity = warnLevel
 	case "INFO", "info":
-		zgl.severity = info
+		zgl.severity = infoLevel
 	}
 
 	zgl.Logger = logger.With(zap.String("system", "grpc"), zap.Bool("grpc_log", true))
@@ -70,9 +36,9 @@ func ReplaceGrpcLoggerV2(logger *zap.Logger) {
 }
 
 const (
-	error = iota
-	warn
-	info
+	errorLevel = iota
+	warnLevel
+	infoLevel
 )
 
 type zapGrpcLoggerV2 struct {
@@ -82,37 +48,37 @@ type zapGrpcLoggerV2 struct {
 }
 
 func (l *zapGrpcLoggerV2) Info(args ...interface{}) {
-	if l.severity >= info {
+	if l.severity >= infoLevel {
 		l.Info(fmt.Sprint(args...))
 	}
 }
 
 func (l *zapGrpcLoggerV2) Infoln(args ...interface{}) {
-	if l.severity >= info {
+	if l.severity >= infoLevel {
 		l.Info(fmt.Sprint(args...))
 	}
 }
 
 func (l *zapGrpcLoggerV2) Infof(format string, args ...interface{}) {
-	if l.severity >= info {
+	if l.severity >= infoLevel {
 		l.Info(fmt.Sprintf(format, args...))
 	}
 }
 
 func (l *zapGrpcLoggerV2) Warning(args ...interface{}) {
-	if l.severity >= warn {
+	if l.severity >= warnLevel {
 		l.Warn(fmt.Sprint(args...))
 	}
 }
 
 func (l *zapGrpcLoggerV2) Warningln(args ...interface{}) {
-	if l.severity >= warn {
+	if l.severity >= warnLevel {
 		l.Warn(fmt.Sprint(args...))
 	}
 }
 
 func (l *zapGrpcLoggerV2) Warningf(format string, args ...interface{}) {
-	if l.severity >= warn {
+	if l.severity >= warnLevel {
 		l.Warn(fmt.Sprintf(format, args...))
 	}
 }
