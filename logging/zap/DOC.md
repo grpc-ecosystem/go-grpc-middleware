@@ -23,7 +23,7 @@ logged as structured `jsonpb` fields for every message received/sent (both unary
 `Payload*Interceptor` functions for that. Please note that the user-provided function that determines whetether to log
 the full request/response payload needs to be written with care, this can significantly slow down gRPC.
 
-ZAP can also be made as a backend for gRPC library internals. For that use `ReplaceGrpcLogger`.
+ZAP can also be made as a backend for gRPC library internals. For that use `ReplaceGrpcLoggerV2`.
 
 *Server Interceptor*
 Below is a JSON formatted example of a log that would be logged by the server interceptor:
@@ -88,7 +88,7 @@ opts := []grpc_zap.Option{
     grpc_zap.WithLevels(customFunc),
 }
 // Make sure that log statements internal to gRPC library are logged using the zapLogger as well.
-grpc_zap.ReplaceGrpcLogger(zapLogger)
+grpc_zap.ReplaceGrpcLoggerV2(zapLogger)
 // Create a server, make sure we put the grpc_ctxtags context before everything else.
 _ = grpc.NewServer(
     grpc_middleware.WithUnaryServerChain(
@@ -188,6 +188,7 @@ _ = grpc.NewServer(
 * [func PayloadUnaryClientInterceptor(logger \*zap.Logger, decider grpc\_logging.ClientPayloadLoggingDecider) grpc.UnaryClientInterceptor](#PayloadUnaryClientInterceptor)
 * [func PayloadUnaryServerInterceptor(logger \*zap.Logger, decider grpc\_logging.ServerPayloadLoggingDecider) grpc.UnaryServerInterceptor](#PayloadUnaryServerInterceptor)
 * [func ReplaceGrpcLogger(logger \*zap.Logger)](#ReplaceGrpcLogger)
+* [func ReplaceGrpcLoggerV2(logger \*zap.Logger)](#ReplaceGrpcLoggerV2)
 * [func StreamClientInterceptor(logger \*zap.Logger, opts ...Option) grpc.StreamClientInterceptor](#StreamClientInterceptor)
 * [func StreamServerInterceptor(logger \*zap.Logger, opts ...Option) grpc.StreamServerInterceptor](#StreamServerInterceptor)
 * [func UnaryClientInterceptor(logger \*zap.Logger, opts ...Option) grpc.UnaryClientInterceptor](#UnaryClientInterceptor)
@@ -332,6 +333,13 @@ func ReplaceGrpcLogger(logger *zap.Logger)
 ```
 ReplaceGrpcLogger sets the given zap.Logger as a gRPC-level logger.
 This should be called *before* any other initialization, preferably from init() functions.
+
+## <a name="ReplaceGrpcLoggerV2">func</a> [ReplaceGrpcLoggerV2](./grpclogger.go#L52)
+``` go
+func ReplaceGrpcLoggerV2(logger *zap.Logger)
+```
+ReplaceGrpcLoggerV2 replaces the grpc_log.LoggerV2 with the input zap.Logger
+This logger adheres to the grpc go environment variables GRPC_GO_LOG_VERBOSITY_LEVEL and GRPC_GO_LOG_SEVERITY_LEVEL.
 
 ## <a name="StreamClientInterceptor">func</a> [StreamClientInterceptor](./client_interceptors.go#L34)
 ``` go
