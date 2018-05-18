@@ -5,6 +5,9 @@ package grpc_opentracing_test
 
 import (
 	"encoding/json"
+	"errors"
+	"strconv"
+	"strings"
 	"testing"
 
 	"fmt"
@@ -84,24 +87,43 @@ func TestTaggingSuite(t *testing.T) {
 		grpc_opentracing.WithTracer(mockTracer),
 	}
 	s := &OpentracingSuite{
-		mockTracer: mockTracer,
-		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
-			TestService: &tracingAssertService{TestServiceServer: &grpc_testing.TestPingService{T: t}, T: t},
-			ClientOpts: []grpc.DialOption{
-				grpc.WithUnaryInterceptor(grpc_opentracing.UnaryClientInterceptor(opts...)),
-				grpc.WithStreamInterceptor(grpc_opentracing.StreamClientInterceptor(opts...)),
-			},
-			ServerOpts: []grpc.ServerOption{
-				grpc_middleware.WithStreamServerChain(
-					grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-					grpc_opentracing.StreamServerInterceptor(opts...)),
-				grpc_middleware.WithUnaryServerChain(
-					grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-					grpc_opentracing.UnaryServerInterceptor(opts...)),
-			},
-		},
+		mockTracer:           mockTracer,
+		InterceptorTestSuite: makeInterceptorTestSuite(t, opts),
 	}
 	suite.Run(t, s)
+}
+
+func TestTaggingSuiteJaeger(t *testing.T) {
+	mockTracer := mocktracer.New()
+	mockTracer.RegisterInjector(opentracing.HTTPHeaders, jaegerFormatInjector{})
+	mockTracer.RegisterExtractor(opentracing.HTTPHeaders, jaegerFormatExtractor{})
+	opts := []grpc_opentracing.Option{
+		grpc_opentracing.WithTracer(mockTracer),
+	}
+	s := &OpentracingSuite{
+		mockTracer:           mockTracer,
+		InterceptorTestSuite: makeInterceptorTestSuite(t, opts),
+	}
+	suite.Run(t, s)
+}
+
+func makeInterceptorTestSuite(t *testing.T, opts []grpc_opentracing.Option) *grpc_testing.InterceptorTestSuite {
+
+	return &grpc_testing.InterceptorTestSuite{
+		TestService: &tracingAssertService{TestServiceServer: &grpc_testing.TestPingService{T: t}, T: t},
+		ClientOpts: []grpc.DialOption{
+			grpc.WithUnaryInterceptor(grpc_opentracing.UnaryClientInterceptor(opts...)),
+			grpc.WithStreamInterceptor(grpc_opentracing.StreamClientInterceptor(opts...)),
+		},
+		ServerOpts: []grpc.ServerOption{
+			grpc_middleware.WithStreamServerChain(
+				grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+				grpc_opentracing.StreamServerInterceptor(opts...)),
+			grpc_middleware.WithUnaryServerChain(
+				grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+				grpc_opentracing.UnaryServerInterceptor(opts...)),
+		},
+	}
 }
 
 type OpentracingSuite struct {
@@ -115,9 +137,11 @@ func (s *OpentracingSuite) SetupTest() {
 
 func (s *OpentracingSuite) createContextFromFakeHttpRequestParent(ctx context.Context) context.Context {
 	hdr := http.Header{}
+	hdr.Set("uber-trace-id", fmt.Sprintf("%d:%d:%d:1", fakeInboundTraceId, fakeInboundSpanId, fakeInboundSpanId))
 	hdr.Set("mockpfx-ids-traceid", fmt.Sprint(fakeInboundTraceId))
 	hdr.Set("mockpfx-ids-spanid", fmt.Sprint(fakeInboundSpanId))
 	hdr.Set("mockpfx-ids-sampled", fmt.Sprint(true))
+
 	parentSpanContext, err := s.mockTracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(hdr))
 	require.NoError(s.T(), err, "parsing a fake HTTP request headers shouldn't fail, ever")
 	fakeSpan := s.mockTracer.StartSpan(
@@ -203,4 +227,61 @@ func (s *OpentracingSuite) TestPingError_PropagatesTraces() {
 	clientSpan, serverSpan := s.assertTracesCreated("/mwitkow.testproto.TestService/PingError")
 	assert.Equal(s.T(), true, clientSpan.Tag("error"), "client span needs to be marked as an error")
 	assert.Equal(s.T(), true, serverSpan.Tag("error"), "server span needs to be marked as an error")
+}
+
+type jaegerFormatInjector struct{}
+
+func (jaegerFormatInjector) Inject(ctx mocktracer.MockSpanContext, carrier interface{}) error {
+	w := carrier.(opentracing.TextMapWriter)
+	flags := 0
+	if ctx.Sampled {
+		flags = 1
+	}
+	w.Set("uber-trace-id", fmt.Sprintf("%d:%d::%d", ctx.TraceID, ctx.SpanID, flags))
+
+	return nil
+}
+
+type jaegerFormatExtractor struct{}
+
+func (jaegerFormatExtractor) Extract(carrier interface{}) (mocktracer.MockSpanContext, error) {
+	rval := mocktracer.MockSpanContext{0, 0, true, nil}
+	reader, ok := carrier.(opentracing.TextMapReader)
+	if !ok {
+		return rval, opentracing.ErrInvalidCarrier
+	}
+	err := reader.ForeachKey(func(key, val string) error {
+		lowerKey := strings.ToLower(key)
+		switch {
+		case lowerKey == "uber-trace-id":
+			parts := strings.Split(val, ":")
+			if len(parts) != 4 {
+
+				return errors.New("invalid trace id format")
+			}
+			traceId, err := strconv.Atoi(parts[0])
+			if err != nil {
+				return err
+			}
+			rval.TraceID = traceId
+			spanId, err := strconv.Atoi(parts[1])
+			if err != nil {
+				return err
+			}
+			rval.SpanID = spanId
+			flags, err := strconv.Atoi(parts[3])
+			if err != nil {
+				return err
+			}
+			rval.Sampled = flags%2 == 1
+		}
+		return nil
+	})
+	if rval.TraceID == 0 || rval.SpanID == 0 {
+		return rval, opentracing.ErrSpanContextNotFound
+	}
+	if err != nil {
+		return rval, err
+	}
+	return rval, nil
 }

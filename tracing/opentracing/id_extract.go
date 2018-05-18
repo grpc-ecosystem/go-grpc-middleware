@@ -22,6 +22,8 @@ const (
 // Most tracers have them encoded as keys with 'traceid' and 'spanid':
 // https://github.com/openzipkin/zipkin-go-opentracing/blob/594640b9ef7e5c994e8d9499359d693c032d738c/propagation_ot.go#L29
 // https://github.com/opentracing/basictracer-go/blob/1b32af207119a14b1b231d451df3ed04a72efebf/propagation_ot.go#L26
+// Jaeger from Uber use one-key schema with next format '{trace-id}:{span-id}:{parent-span-id}:{flags}'
+// https://www.jaegertracing.io/docs/client-libraries/#trace-span-identity
 func hackyInjectOpentracingIdsToTags(span opentracing.Span, tags grpc_ctxtags.Tags) {
 	if err := span.Tracer().Inject(span.Context(), opentracing.HTTPHeaders, &hackyTagsCarrier{tags}); err != nil {
 		grpclog.Printf("grpc_opentracing: failed extracting trace info into ctx %v", err)
@@ -38,5 +40,11 @@ func (t *hackyTagsCarrier) Set(key, val string) {
 		t.Tags.Set(TagTraceId, val) // this will most likely be base-16 (hex) encoded
 	} else if (strings.Contains(key, "spanid") && !strings.Contains(key, "parent")) || (strings.Contains(strings.ToLower(key), "spanid") && !strings.Contains(strings.ToLower(key), "parent")) {
 		t.Tags.Set(TagSpanId, val) // this will most likely be base-16 (hex) encoded
+	} else if key == "uber-trace-id" {
+		parts := strings.Split(val, ":")
+		if len(parts) >= 2 {
+			t.Tags.Set(TagTraceId, parts[0])
+			t.Tags.Set(TagSpanId, parts[1])
+		}
 	}
 }
