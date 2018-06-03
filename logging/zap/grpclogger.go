@@ -68,7 +68,6 @@ func ReplaceGrpcLoggerV2(logger *zap.Logger) {
 		zgl.severity = infoLevel
 	}
 
-	zgl.Logger = logger.With(zap.String("system", "grpc"), zap.Bool("grpc_log", true))
 	grpclog.SetLoggerV2(zgl)
 
 }
