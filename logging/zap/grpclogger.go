@@ -6,14 +6,16 @@ package grpc_zap
 import (
 	"fmt"
 
-	"go.uber.org/zap"
-	"google.golang.org/grpc/grpclog"
 	"os"
 	"strconv"
+
+	"go.uber.org/zap"
+	"google.golang.org/grpc/grpclog"
 )
 
 // ReplaceGrpcLogger sets the given zap.Logger as a gRPC-level logger.
 // This should be called *before* any other initialization, preferably from init() functions.
+// Deprecated: use ReplaceGrpcLoggerV2
 func ReplaceGrpcLogger(logger *zap.Logger) {
 	zgl := &zapGrpcLogger{logger.With(SystemField, zap.Bool("grpc_log", true))}
 	grpclog.SetLogger(zgl)
@@ -50,7 +52,7 @@ func (l *zapGrpcLogger) Println(args ...interface{}) {
 // ReplaceGrpcLoggerV2 replaces the grpc_log.LoggerV2 with the input zap.Logger
 // This logger adheres to the grpc go environment variables GRPC_GO_LOG_VERBOSITY_LEVEL and GRPC_GO_LOG_SEVERITY_LEVEL.
 func ReplaceGrpcLoggerV2(logger *zap.Logger) {
-	zgl := &zapGrpcLoggerV2{}
+	zgl := &zapGrpcLoggerV2{Logger: logger.With(SystemField, zap.Bool("grpc_log", true))}
 	verbosity := os.Getenv("GRPC_GO_LOG_VERBOSITY_LEVEL")
 	if v, err := strconv.Atoi(verbosity); err == nil {
 		zgl.verbosity = v
