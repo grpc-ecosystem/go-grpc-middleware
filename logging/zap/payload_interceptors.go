@@ -3,9 +3,10 @@ package grpc_zap
 import (
 	"fmt"
 
-	"github.com/gengo/grpc-gateway/runtime"
 	"github.com/golang/protobuf/proto"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/net/context"
