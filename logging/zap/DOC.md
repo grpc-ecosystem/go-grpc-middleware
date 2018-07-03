@@ -31,7 +31,7 @@ Below is a JSON formatted example of a log that would be logged by the server in
 	{
 	  "level": "info",									// string  zap log levels
 	  "msg": "finished unary call",						// string  log message
-
+	
 	  "grpc.code": "OK",								// string  grpc status code
 	  "grpc.method": "Ping",							// string  method name
 	  "grpc.service": "mwitkow.testproto.TestService",  // string  full name of the called service
@@ -39,7 +39,7 @@ Below is a JSON formatted example of a log that would be logged by the server in
 	  "grpc.request.deadline": "2006-01-02T15:04:05Z07:00",   // string  RFC3339 deadline of the current request if supplied
 	  "grpc.request.value": "something",				// string  value on the request
 	  "grpc.time_ms": 1.345,							// float32 run time of the call in ms
-
+	
 	  "peer.address": {
 	    "IP": "127.0.0.1",								// string  IP address of calling party
 	    "Port": 60216,									// int     port call is coming in on
@@ -47,7 +47,7 @@ Below is a JSON formatted example of a log that would be logged by the server in
 	  },
 	  "span.kind": "server",							// string  client | server
 	  "system": "grpc"									// string
-
+	
 	  "custom_field": "custom_value",					// string  user defined field
 	  "custom_tags.int": 1337,							// int     user defined tag on the ctx
 	  "custom_tags.string": "something",				// string  user defined tag on the ctx
@@ -59,7 +59,7 @@ Below is a JSON formatted example of a log that would be logged by the payload i
 	{
 	  "level": "info",													// string zap log levels
 	  "msg": "client request payload logged as grpc.request.content",   // string log message
-
+	
 	  "grpc.request.content": {											// object content of RPC request
 	    "msg" : {														// object ZAP specific inner object
 		  "value": "something",											// string defined by caller
@@ -68,7 +68,7 @@ Below is a JSON formatted example of a log that would be logged by the payload i
 	  },
 	  "grpc.method": "Ping",											// string method being called
 	  "grpc.service": "mwitkow.testproto.TestService",					// string service being called
-
+	
 	  "span.kind": "client",											// string client | server
 	  "system": "grpc"													// string
 	}
@@ -162,12 +162,12 @@ _ = grpc.NewServer(
 
 ## <a name="pkg-imports">Imported Packages</a>
 
-- [github.com/golang/protobuf/jsonpb](https://godoc.org/github.com/golang/protobuf/jsonpb)
 - [github.com/golang/protobuf/proto](https://godoc.org/github.com/golang/protobuf/proto)
-- [github.com/grpc-ecosystem/go-grpc-middleware](./../..)
-- [github.com/grpc-ecosystem/go-grpc-middleware/logging](./..)
-- [github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap](./ctxzap)
-- [github.com/grpc-ecosystem/go-grpc-middleware/tags/zap](./../../tags/zap)
+- [github.com/grpc-ecosystem/go-grpc-middleware](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware)
+- [github.com/grpc-ecosystem/go-grpc-middleware/logging](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware/logging)
+- [github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap)
+- [github.com/grpc-ecosystem/go-grpc-middleware/tags/zap](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware/tags/zap)
+- [github.com/grpc-ecosystem/grpc-gateway/runtime](https://godoc.org/github.com/grpc-ecosystem/grpc-gateway/runtime)
 - [go.uber.org/zap](https://godoc.org/go.uber.org/zap)
 - [go.uber.org/zap/zapcore](https://godoc.org/go.uber.org/zap/zapcore)
 - [golang.org/x/net/context](https://godoc.org/golang.org/x/net/context)
@@ -194,6 +194,7 @@ _ = grpc.NewServer(
 * [func UnaryServerInterceptor(logger \*zap.Logger, opts ...Option) grpc.UnaryServerInterceptor](#UnaryServerInterceptor)
 * [type CodeToLevel](#CodeToLevel)
 * [type DurationToField](#DurationToField)
+* [type Marshaler](#Marshaler)
 * [type Option](#Option)
   * [func WithCodes(f grpc\_logging.ErrorToCode) Option](#WithCodes)
   * [func WithDecider(f grpc\_logging.Decider) Option](#WithDecider)
@@ -207,7 +208,7 @@ _ = grpc.NewServer(
 * [Package (InitializationWithDurationFieldOverride)](#example__initializationWithDurationFieldOverride)
 
 #### <a name="pkg-files">Package files</a>
-[client_interceptors.go](./client_interceptors.go) [context.go](./context.go) [doc.go](./doc.go) [grpclogger.go](./grpclogger.go) [options.go](./options.go) [payload_interceptors.go](./payload_interceptors.go) [server_interceptors.go](./server_interceptors.go)
+[client_interceptors.go](./client_interceptors.go) [context.go](./context.go) [doc.go](./doc.go) [grpclogger.go](./grpclogger.go) [options.go](./options.go) [payload_interceptors.go](./payload_interceptors.go) [server_interceptors.go](./server_interceptors.go) 
 
 ## <a name="pkg-variables">Variables</a>
 ``` go
@@ -229,13 +230,6 @@ var (
 var DefaultDurationToField = DurationToTimeMillisField
 ```
 DefaultDurationToField is the default implementation of converting request duration to a Zap field.
-
-``` go
-var (
-    // JsonPbMarshaler is the marshaler used for serializing protobuf messages.
-    JsonPbMarshaler Marshaler = &runtime.JSONPb{}
-)
-```
 
 ## <a name="AddFields">func</a> [AddFields](./context.go#L12)
 ``` go
@@ -296,13 +290,13 @@ _ = func(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.Pin
 
 </details>
 
-## <a name="PayloadStreamClientInterceptor">func</a> [PayloadStreamClientInterceptor](./payload_interceptors.go#L74)
+## <a name="PayloadStreamClientInterceptor">func</a> [PayloadStreamClientInterceptor](./payload_interceptors.go#L78)
 ``` go
 func PayloadStreamClientInterceptor(logger *zap.Logger, decider grpc_logging.ClientPayloadLoggingDecider) grpc.StreamClientInterceptor
 ```
 PayloadStreamClientInterceptor returns a new streaming client interceptor that logs the paylods of requests and responses.
 
-## <a name="PayloadStreamServerInterceptor">func</a> [PayloadStreamServerInterceptor](./payload_interceptors.go#L46)
+## <a name="PayloadStreamServerInterceptor">func</a> [PayloadStreamServerInterceptor](./payload_interceptors.go#L50)
 ``` go
 func PayloadStreamServerInterceptor(logger *zap.Logger, decider grpc_logging.ServerPayloadLoggingDecider) grpc.StreamServerInterceptor
 ```
@@ -311,13 +305,13 @@ PayloadStreamServerInterceptor returns a new server server interceptors that log
 This *only* works when placed *after* the `grpc_zap.StreamServerInterceptor`. However, the logging can be done to a
 separate instance of the logger.
 
-## <a name="PayloadUnaryClientInterceptor">func</a> [PayloadUnaryClientInterceptor](./payload_interceptors.go#L58)
+## <a name="PayloadUnaryClientInterceptor">func</a> [PayloadUnaryClientInterceptor](./payload_interceptors.go#L62)
 ``` go
 func PayloadUnaryClientInterceptor(logger *zap.Logger, decider grpc_logging.ClientPayloadLoggingDecider) grpc.UnaryClientInterceptor
 ```
 PayloadUnaryClientInterceptor returns a new unary client interceptor that logs the paylods of requests and responses.
 
-## <a name="PayloadUnaryServerInterceptor">func</a> [PayloadUnaryServerInterceptor](./payload_interceptors.go#L26)
+## <a name="PayloadUnaryServerInterceptor">func</a> [PayloadUnaryServerInterceptor](./payload_interceptors.go#L30)
 ``` go
 func PayloadUnaryServerInterceptor(logger *zap.Logger, decider grpc_logging.ServerPayloadLoggingDecider) grpc.UnaryServerInterceptor
 ```
@@ -368,6 +362,21 @@ CodeToLevel function defines the mapping between gRPC return codes and intercept
 type DurationToField func(duration time.Duration) zapcore.Field
 ```
 DurationToField function defines how to produce duration fields for logging
+
+## <a name="Marshaler">type</a> [Marshaler](./payload_interceptors.go#L17-L19)
+``` go
+type Marshaler interface {
+    Marshal(v interface{}) ([]byte, error)
+}
+```
+Marshaler interface for JsonPbMarshaler
+
+``` go
+var (
+    // JsonPbMarshaler is the marshaler used for serializing protobuf messages.
+    JsonPbMarshaler Marshaler = &runtime.JSONPb{}
+)
+```
 
 ## <a name="Option">type</a> [Option](./options.go#L48)
 ``` go
