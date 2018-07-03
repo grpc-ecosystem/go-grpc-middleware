@@ -31,7 +31,7 @@ Below is a JSON formatted example of a log that would be logged by the server in
 	{
 	  "level": "info",									// string  zap log levels
 	  "msg": "finished unary call",						// string  log message
-	
+
 	  "grpc.code": "OK",								// string  grpc status code
 	  "grpc.method": "Ping",							// string  method name
 	  "grpc.service": "mwitkow.testproto.TestService",  // string  full name of the called service
@@ -39,7 +39,7 @@ Below is a JSON formatted example of a log that would be logged by the server in
 	  "grpc.request.deadline": "2006-01-02T15:04:05Z07:00",   // string  RFC3339 deadline of the current request if supplied
 	  "grpc.request.value": "something",				// string  value on the request
 	  "grpc.time_ms": 1.345,							// float32 run time of the call in ms
-	
+
 	  "peer.address": {
 	    "IP": "127.0.0.1",								// string  IP address of calling party
 	    "Port": 60216,									// int     port call is coming in on
@@ -47,7 +47,7 @@ Below is a JSON formatted example of a log that would be logged by the server in
 	  },
 	  "span.kind": "server",							// string  client | server
 	  "system": "grpc"									// string
-	
+
 	  "custom_field": "custom_value",					// string  user defined field
 	  "custom_tags.int": 1337,							// int     user defined tag on the ctx
 	  "custom_tags.string": "something",				// string  user defined tag on the ctx
@@ -59,7 +59,7 @@ Below is a JSON formatted example of a log that would be logged by the payload i
 	{
 	  "level": "info",													// string zap log levels
 	  "msg": "client request payload logged as grpc.request.content",   // string log message
-	
+
 	  "grpc.request.content": {											// object content of RPC request
 	    "msg" : {														// object ZAP specific inner object
 		  "value": "something",											// string defined by caller
@@ -68,7 +68,7 @@ Below is a JSON formatted example of a log that would be logged by the payload i
 	  },
 	  "grpc.method": "Ping",											// string method being called
 	  "grpc.service": "mwitkow.testproto.TestService",					// string service being called
-	
+
 	  "span.kind": "client",											// string client | server
 	  "system": "grpc"													// string
 	}
@@ -207,7 +207,7 @@ _ = grpc.NewServer(
 * [Package (InitializationWithDurationFieldOverride)](#example__initializationWithDurationFieldOverride)
 
 #### <a name="pkg-files">Package files</a>
-[client_interceptors.go](./client_interceptors.go) [context.go](./context.go) [doc.go](./doc.go) [grpclogger.go](./grpclogger.go) [options.go](./options.go) [payload_interceptors.go](./payload_interceptors.go) [server_interceptors.go](./server_interceptors.go) 
+[client_interceptors.go](./client_interceptors.go) [context.go](./context.go) [doc.go](./doc.go) [grpclogger.go](./grpclogger.go) [options.go](./options.go) [payload_interceptors.go](./payload_interceptors.go) [server_interceptors.go](./server_interceptors.go)
 
 ## <a name="pkg-variables">Variables</a>
 ``` go
@@ -232,8 +232,8 @@ DefaultDurationToField is the default implementation of converting request durat
 
 ``` go
 var (
-    // JsonPbMarshaller is the marshaller used for serializing protobuf messages.
-    JsonPbMarshaller = &jsonpb.Marshaler{}
+    // JsonPbMarshaler is the marshaler used for serializing protobuf messages.
+    JsonPbMarshaler Marshaler = &runtime.JSONPb{}
 )
 ```
 
