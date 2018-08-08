@@ -55,7 +55,6 @@ func UnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterceptor 
 				} else {
 					logTrace(parentCtx, "grpc_retry attempt: %d, context error from retry call", attempt)
 					// its the callCtx deadline or cancellation, in which case try again.
-					continue
 				}
 			}
 			if !isRetriable(lastErr, callOpts) {
