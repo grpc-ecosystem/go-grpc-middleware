@@ -21,7 +21,7 @@ func DefaultErrorToCode(err error) codes.Code {
 type Decider func(fullMethodName string, err error) bool
 
 // DefaultDeciderMethod is the default implementation of decider to see if you should log the call
-// by default this if always true so all calls are logged
+// by default this is always true so all calls are logged
 func DefaultDeciderMethod(fullMethodName string, err error) bool {
 	return true
 }

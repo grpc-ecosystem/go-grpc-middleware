@@ -46,14 +46,14 @@ See relevant packages below.
 * [type ServerPayloadLoggingDecider](#ServerPayloadLoggingDecider)
 
 #### <a name="pkg-files">Package files</a>
-[common.go](./common.go) [doc.go](./doc.go) 
+[common.go](./common.go) [doc.go](./doc.go)
 
 ## <a name="DefaultDeciderMethod">func</a> [DefaultDeciderMethod](./common.go#L25)
 ``` go
 func DefaultDeciderMethod(fullMethodName string, err error) bool
 ```
 DefaultDeciderMethod is the default implementation of decider to see if you should log the call
-by default this if always true so all calls are logged
+by default this is always true so all calls are logged
 
 ## <a name="DefaultErrorToCode">func</a> [DefaultErrorToCode](./common.go#L16)
 ``` go
