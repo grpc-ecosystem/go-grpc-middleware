@@ -42,6 +42,19 @@ func Example_initializationWithOptions() {
 	)
 }
 
+// Example with an exponential backoff starting with 100ms.
+//
+// Each next interval is the previous interval multiplied by 2.
+func Example_initializationWithExponentialBackoff() {
+	opts := []grpc_retry.CallOption{
+		grpc_retry.WithBackoff(grpc_retry.BackoffExponential(100 * time.Millisecond)),
+	}
+	grpc.Dial("myservice.example.com",
+		grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor(opts...)),
+		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(opts...)),
+	)
+}
+
 // Simple example of an idempotent `ServerStream` call, that will be retried automatically 3 times.
 func Example_simpleCall() {
 	client := pb_testproto.NewTestServiceClient(cc)
