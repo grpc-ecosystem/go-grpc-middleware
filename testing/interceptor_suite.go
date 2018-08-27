@@ -36,36 +36,67 @@ type InterceptorTestSuite struct {
 	ServerOpts  []grpc.ServerOption
 	ClientOpts  []grpc.DialOption
 
+	serverAddr     string
 	ServerListener net.Listener
 	Server         *grpc.Server
 	clientConn     *grpc.ClientConn
 	Client         pb_testproto.TestServiceClient
+
+	restartServerWithDelayedStart chan time.Duration
+	serverRunning                 chan bool
 }
 
 func (s *InterceptorTestSuite) SetupSuite() {
-	var err error
-	s.ServerListener, err = net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(s.T(), err, "must be able to allocate a port for serverListener")
-	if *flagTls {
-		creds, err := credentials.NewServerTLSFromFile(
-			path.Join(getTestingCertsPath(), "localhost.crt"),
-			path.Join(getTestingCertsPath(), "localhost.key"),
-		)
-		require.NoError(s.T(), err, "failed reading server credentials for localhost.crt")
-		s.ServerOpts = append(s.ServerOpts, grpc.Creds(creds))
-	}
-	// This is the point where we hook up the interceptor
-	s.Server = grpc.NewServer(s.ServerOpts...)
-	// Crete a service of the instantiator hasn't provided one.
-	if s.TestService == nil {
-		s.TestService = &TestPingService{T: s.T()}
-	}
-	pb_testproto.RegisterTestServiceServer(s.Server, s.TestService)
+	s.restartServerWithDelay = make(chan time.Duration)
+	s.serverRunning = make(chan bool)
+
+	s.serverAddr = "127.0.0.1:0"
 
 	go func() {
-		s.Server.Serve(s.ServerListener)
+		for {
+			var err error
+			s.ServerListener, err = net.Listen("tcp", s.serverAddr)
+			s.serverAddr = s.ServerListener.Addr().String()
+			require.NoError(s.T(), err, "must be able to allocate a port for serverListener")
+			if *flagTls {
+				creds, err := credentials.NewServerTLSFromFile(
+					path.Join(getTestingCertsPath(), "localhost.crt"),
+					path.Join(getTestingCertsPath(), "localhost.key"),
+				)
+				require.NoError(s.T(), err, "failed reading server credentials for localhost.crt")
+				s.ServerOpts = append(s.ServerOpts, grpc.Creds(creds))
+			}
+			// This is the point where we hook up the interceptor
+			s.Server = grpc.NewServer(s.ServerOpts...)
+			// Crete a service of the instantiator hasn't provided one.
+			if s.TestService == nil {
+				s.TestService = &TestPingService{T: s.T()}
+			}
+			pb_testproto.RegisterTestServiceServer(s.Server, s.TestService)
+
+			go func() {
+				s.Server.Serve(s.ServerListener)
+			}()
+			if s.Client == nil {
+				s.Client = s.NewClient(s.ClientOpts...)
+			}
+
+			s.serverRunning <- true
+
+			d := <-s.restartServerWithDelayedStart
+			s.Server.Stop()
+			s.serverRunning <- false
+			time.Sleep(d)
+		}
 	}()
-	s.Client = s.NewClient(s.ClientOpts...)
+
+	<-s.serverRunning
+}
+
+func (s *InterceptorTestSuite) RestartServer(delayedStart time.Duration) <-chan bool {
+	s.restartServerWithDelayedStart <- delayedStart
+	<-s.serverRunning
+	return s.serverRunning
 }
 
 func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) pb_testproto.TestServiceClient {
@@ -84,7 +115,7 @@ func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) pb_testpro
 }
 
 func (s *InterceptorTestSuite) ServerAddr() string {
-	return s.ServerListener.Addr().String()
+	return s.serverAddr
 }
 
 func (s *InterceptorTestSuite) SimpleCtx() context.Context {

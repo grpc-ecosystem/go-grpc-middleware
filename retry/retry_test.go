@@ -11,10 +11,11 @@ import (
 
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/retry"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/net/context"
@@ -31,16 +32,18 @@ var (
 
 type failingService struct {
 	pb_testproto.TestServiceServer
+	mu sync.Mutex
+
 	reqCounter uint
 	reqModulo  uint
 	reqSleep   time.Duration
 	reqError   codes.Code
-	mu         sync.Mutex
 }
 
 func (s *failingService) resetFailingConfiguration(modulo uint, errorCode codes.Code, sleepTime time.Duration) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.reqCounter = 0
 	s.reqModulo = modulo
 	s.reqError = errorCode
@@ -240,6 +243,24 @@ func (s *RetrySuite) TestServerStream_PerCallDeadline_FailsOnParent() {
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
 	_, err = stream.Recv()
 	require.Equal(s.T(), codes.DeadlineExceeded, grpc.Code(err), "failre code must be a gRPC error of Deadline class")
+}
+
+func (s *RetrySuite) TestServerStream_CallFailsOnOutOfRetries() {
+	restarted := s.RestartServer(3 * retryTimeout)
+	_, err := s.Client.PingList(s.SimpleCtx(), goodPing)
+	assert.Error(s.T(), err, "establishing the connection should not succeed")
+	<-restarted
+}
+
+func (s *RetrySuite) TestServerStream_CallRetrySucceeds() {
+	restarted := s.RestartServer(retryTimeout)
+
+	_, err := s.Client.PingList(s.SimpleCtx(), goodPing,
+		grpc_retry.WithMax(40),
+	)
+
+	assert.NoError(s.T(), err, "establishing the connection should succeed")
+	<-restarted
 }
 
 func (s *RetrySuite) assertPingListWasCorrect(stream pb_testproto.TestService_PingListClient) {
