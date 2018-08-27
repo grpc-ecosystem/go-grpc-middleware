@@ -85,7 +85,6 @@ func (s *InterceptorTestSuite) SetupSuite() {
 
 			d := <-s.restartServerWithDelayedStart
 			s.Server.Stop()
-			s.serverRunning <- false
 			time.Sleep(d)
 		}
 	}()
@@ -95,7 +94,7 @@ func (s *InterceptorTestSuite) SetupSuite() {
 
 func (s *InterceptorTestSuite) RestartServer(delayedStart time.Duration) <-chan bool {
 	s.restartServerWithDelayedStart <- delayedStart
-	<-s.serverRunning
+	time.Sleep(10 * time.Millisecond)
 	return s.serverRunning
 }
 
