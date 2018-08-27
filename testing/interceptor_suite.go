@@ -47,7 +47,7 @@ type InterceptorTestSuite struct {
 }
 
 func (s *InterceptorTestSuite) SetupSuite() {
-	s.restartServerWithDelay = make(chan time.Duration)
+	s.restartServerWithDelayedStart = make(chan time.Duration)
 	s.serverRunning = make(chan bool)
 
 	s.serverAddr = "127.0.0.1:0"
