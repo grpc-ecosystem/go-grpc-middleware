@@ -252,6 +252,14 @@ func (s *RetrySuite) TestServerStream_CallFailsOnOutOfRetries() {
 	<-restarted
 }
 
+func (s *RetrySuite) TestServerStream_CallFailsOnDeadlineExceeded() {
+	restarted := s.RestartServer(3 * retryTimeout)
+	ctx, _ := context.WithTimeout(context.TODO(), retryTimeout)
+	_, err := s.Client.PingList(ctx, goodPing)
+	assert.Error(s.T(), err, "establishing the connection should not succeed")
+	<-restarted
+}
+
 func (s *RetrySuite) TestServerStream_CallRetrySucceeds() {
 	restarted := s.RestartServer(retryTimeout)
 
