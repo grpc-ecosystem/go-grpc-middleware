@@ -248,7 +248,10 @@ func (s *RetrySuite) TestServerStream_PerCallDeadline_FailsOnParent() {
 func (s *RetrySuite) TestServerStream_CallFailsOnOutOfRetries() {
 	restarted := s.RestartServer(3 * retryTimeout)
 	_, err := s.Client.PingList(s.SimpleCtx(), goodPing)
-	assert.Error(s.T(), err, "establishing the connection should not succeed")
+
+	require.Error(s.T(), err, "establishing the connection should not succeed")
+	assert.Equal(s.T(), codes.Unavailable, grpc.Code(err))
+
 	<-restarted
 }
 
@@ -256,7 +259,10 @@ func (s *RetrySuite) TestServerStream_CallFailsOnDeadlineExceeded() {
 	restarted := s.RestartServer(3 * retryTimeout)
 	ctx, _ := context.WithTimeout(context.TODO(), retryTimeout)
 	_, err := s.Client.PingList(ctx, goodPing)
-	assert.Error(s.T(), err, "establishing the connection should not succeed")
+
+	require.Error(s.T(), err, "establishing the connection should not succeed")
+	assert.Equal(s.T(), codes.DeadlineExceeded, grpc.Code(err))
+
 	<-restarted
 }
 
