@@ -2,17 +2,25 @@ sudo: false
 language: go
 go:
   - 1.8.x
+  - 1.9.x
+  - 1.10.x
+  - 1.11.x
 env:
-  - DEP_VERSION="0.3.2"
+  global:
+    - DEP_VERSION="0.3.2"
+    - GO111MODULE=on
 
 before_install:
   # Download the binary to bin folder in $GOPATH
-  - curl -L -s https://github.com/golang/dep/releases/download/v${DEP_VERSION}/dep-linux-amd64 -o $GOPATH/bin/dep
-  # Make the binary executable
-  - chmod +x $GOPATH/bin/dep
+  - if [ $TRAVIS_GO_VERSION == "1.8.x" ] || [ $TRAVIS_GO_VERSION == "1.9.x" ] || [ $TRAVIS_GO_VERSION == "1.10.x" ]; then
+      curl -L -s https://github.com/golang/dep/releases/download/v${DEP_VERSION}/dep-linux-amd64 -o $GOPATH/bin/dep;
+      chmod +x $GOPATH/bin/dep;
+    fi
 
 install:
-  - dep ensure
+  - if [ $TRAVIS_GO_VERSION == "1.8.x" ] || [ $TRAVIS_GO_VERSION == "1.9.x" ] || [ $TRAVIS_GO_VERSION == "1.10.x" ]; then
+      dep ensure;
+    fi
 
 script:
  - make checkdocs

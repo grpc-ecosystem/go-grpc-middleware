@@ -22,7 +22,9 @@ function generate_markdown {
 }
 
 function generate {
+    GO111MODULE=off
     go get github.com/devnev/godoc2ghmd
+    GO111MODULE=on
     generate_markdown
     echo "returning $?"
 }
