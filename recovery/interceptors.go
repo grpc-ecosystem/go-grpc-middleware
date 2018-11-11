@@ -4,6 +4,7 @@
 package grpc_recovery
 
 import (
+	"fmt"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -42,7 +43,13 @@ func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 
 func recoverFrom(p interface{}, r RecoveryHandlerFunc) error {
 	if r == nil {
-		return grpc.Errorf(codes.Internal, "%s", p)
+		switch p.(type) {
+		case string:
+		case fmt.Stringer:
+			return grpc.Errorf(codes.Internal, "%s", p)
+		default:
+			return grpc.Errorf(codes.Internal, "%#v", p)
+		}
 	}
 	return r(p)
 }
