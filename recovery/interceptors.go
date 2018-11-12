@@ -42,14 +42,14 @@ func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 }
 
 func recoverFrom(p interface{}, r RecoveryHandlerFunc) error {
-	if r == nil {
-		switch p.(type) {
-		case string:
-		case fmt.Stringer:
-			return grpc.Errorf(codes.Internal, "%s", p)
-		default:
-			return grpc.Errorf(codes.Internal, "%#v", p)
-		}
+	if r != nil {
+		return r(p)
 	}
-	return r(p)
+
+	switch p.(type) {
+	case string, fmt.Stringer:
+		return grpc.Errorf(codes.Internal, "%s", p)
+	}
+
+	return grpc.Errorf(codes.Internal, "%#v", p)
 }
