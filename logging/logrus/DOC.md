@@ -183,7 +183,7 @@ var (
     // SystemField is used in every log statement made through grpc_logrus. Can be overwritten before any initialization code.
     SystemField = "system"
 
-    // KindField describes the log gield used to incicate whether this is a server or a client log statment.
+    // KindField describes the log field used to indicate whether this is a server or a client log statment.
     KindField = "span.kind"
 )
 ```
