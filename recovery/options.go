@@ -7,12 +7,12 @@ import "golang.org/x/net/context"
 
 var (
 	defaultOptions = &options{
-		recoveryHandlerFunc: nil,
+		recoveryHandlerFuncContext: nil,
 	}
 )
 
 type options struct {
-	recoveryHandlerFunc RecoveryHandlerFuncContext
+	recoveryHandlerFuncContext RecoveryHandlerFuncContext
 }
 
 func evaluateOptions(opts []Option) *options {
@@ -29,7 +29,7 @@ type Option func(*options)
 // WithRecoveryHandler customizes the function for recovering from a panic.
 func WithRecoveryHandler(f RecoveryHandlerFunc) Option {
 	return func(o *options) {
-		o.recoveryHandlerFunc = RecoveryHandlerFuncContext(func(ctx context.Context, p interface{}) error {
+		o.recoveryHandlerFuncContext = RecoveryHandlerFuncContext(func(ctx context.Context, p interface{}) error {
 			return f(p)
 		})
 	}
@@ -38,6 +38,6 @@ func WithRecoveryHandler(f RecoveryHandlerFunc) Option {
 // WithRecoveryHandlerContext customizes the function for recovering from a panic.
 func WithRecoveryHandlerContext(f RecoveryHandlerFuncContext) Option {
 	return func(o *options) {
-		o.recoveryHandlerFunc = f
+		o.recoveryHandlerFuncContext = f
 	}
 }
