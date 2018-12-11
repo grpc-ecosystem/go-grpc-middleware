@@ -6,6 +6,8 @@ package grpc_ratelimit_test
 import (
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/ratelimit"
 	"github.com/grpc-ecosystem/go-grpc-middleware/ratelimit/tokenbucket"
 	"google.golang.org/grpc"
 )
@@ -18,10 +20,16 @@ func Example_initialization() {
 	streamRateLimiter := tokenbucket.NewTokenBucketRateLimiter(1*time.Second, 5, 5)
 	_ = grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
-			grpc_ratelimit.UnaryServerInterceptor(unaryRateLimiter, 1*time.Second),
+			grpc_ratelimit.UnaryServerInterceptor(
+				grpc_ratelimit.WithLimiter(unaryRateLimiter),
+				grpc_ratelimit.WithMaxWaitDuration(10*time.Second),
+			),
 		),
 		grpc_middleware.WithStreamServerChain(
-			grpc_ratelimit.StreamServerInterceptor(streamRateLimiter, 10*time.Second),
+			grpc_ratelimit.StreamServerInterceptor(
+				grpc_ratelimit.WithLimiter(streamRateLimiter),
+				grpc_ratelimit.WithMaxWaitDuration(5*time.Second),
+			),
 		),
 	)
 }
