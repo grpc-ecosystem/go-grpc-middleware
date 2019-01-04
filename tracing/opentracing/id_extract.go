@@ -1,6 +1,3 @@
-// Copyright 2017 Michal Witkowski. All Rights Reserved.
-// See LICENSE for licensing terms.
-
 package grpc_opentracing
 
 import (
@@ -12,11 +9,12 @@ import (
 )
 
 const (
-	TagTraceId = "trace.traceid"
-	TagSpanId  = "trace.spanid"
+	TagTraceId           = "trace.traceid"
+	TagSpanId            = "trace.spanid"
+	JaegerNotSampledFlag = "0"
 )
 
-// hackyInjectOpentracingIdsToTags writes the given context to the ctxtags.
+// injectOpentracingIdsToTags writes the given context to the ctxtags if the trace is sampled.
 // This is done in an incredibly hacky way, because the public-facing interface of opentracing doesn't give access to
 // the TraceId and SpanId of the SpanContext. Only the Tracer's Inject/Extract methods know what these are.
 // Most tracers have them encoded as keys with 'traceid' and 'spanid':
@@ -24,27 +22,46 @@ const (
 // https://github.com/opentracing/basictracer-go/blob/1b32af207119a14b1b231d451df3ed04a72efebf/propagation_ot.go#L26
 // Jaeger from Uber use one-key schema with next format '{trace-id}:{span-id}:{parent-span-id}:{flags}'
 // https://www.jaegertracing.io/docs/client-libraries/#trace-span-identity
-func hackyInjectOpentracingIdsToTags(span opentracing.Span, tags grpc_ctxtags.Tags) {
-	if err := span.Tracer().Inject(span.Context(), opentracing.HTTPHeaders, &hackyTagsCarrier{tags}); err != nil {
-		grpclog.Printf("grpc_opentracing: failed extracting trace info into ctx %v", err)
+func injectOpentracingIdsToTags(span opentracing.Span, tags grpc_ctxtags.Tags) {
+	carrier := &tagsCarrier{}
+	if err := span.Tracer().Inject(span.Context(), opentracing.HTTPHeaders, carrier); err != nil {
+		grpclog.Infof("grpc_opentracing: failed extracting trace info into ctx %v", err)
+	}
+
+	if carrier.sampled {
+		tags.Set(TagTraceId, carrier.traceID)
+		tags.Set(TagSpanId, carrier.spanID)
 	}
 }
 
-// hackyTagsCarrier is a really hacky way of
-type hackyTagsCarrier struct {
-	grpc_ctxtags.Tags
+// tagsCarrier is a really hacky way of
+type tagsCarrier struct {
+	sampled bool
+	traceID string
+	spanID  string
 }
 
-func (t *hackyTagsCarrier) Set(key, val string) {
-	if strings.Contains(key, "traceid") || strings.Contains(strings.ToLower(key), "traceid") {
-		t.Tags.Set(TagTraceId, val) // this will most likely be base-16 (hex) encoded
-	} else if (strings.Contains(key, "spanid") && !strings.Contains(key, "parent")) || (strings.Contains(strings.ToLower(key), "spanid") && !strings.Contains(strings.ToLower(key), "parent")) {
-		t.Tags.Set(TagSpanId, val) // this will most likely be base-16 (hex) encoded
-	} else if key == "uber-trace-id" {
+func (t *tagsCarrier) Set(key, val string) {
+	if strings.Contains(strings.ToLower(key), "traceid") {
+		t.traceID = val
+	}
+
+	if strings.Contains(strings.ToLower(key), "spanid") && !strings.Contains(strings.ToLower(key), "parent") {
+		t.spanID = val
+	}
+
+	if strings.Contains(strings.ToLower(key), "sampled") && val == "true" {
+		t.sampled = true
+	}
+
+	if key == "uber-trace-id" {
 		parts := strings.Split(val, ":")
-		if len(parts) >= 2 {
-			t.Tags.Set(TagTraceId, parts[0])
-			t.Tags.Set(TagSpanId, parts[1])
+		if len(parts) == 4 {
+			if parts[3] != JaegerNotSampledFlag {
+				t.traceID = parts[0]
+				t.spanID = parts[1]
+				t.sampled = true
+			}
 		}
 	}
 }
