@@ -45,6 +45,8 @@ func (s *tracingAssertService) Ping(ctx context.Context, ping *pb_testproto.Ping
 	tags := grpc_ctxtags.Extract(ctx)
 	assert.True(s.T, tags.Has(grpc_opentracing.TagTraceId), "tags must contain traceid")
 	assert.True(s.T, tags.Has(grpc_opentracing.TagSpanId), "tags must contain spanid")
+	assert.True(s.T, tags.Has(grpc_opentracing.TagSampled), "tags must contain sampled")
+	assert.Equal(s.T, tags.Values()[grpc_opentracing.TagSampled], "true", "sampled must be set to true")
 	return s.TestServiceServer.Ping(ctx, ping)
 }
 
@@ -58,14 +60,18 @@ func (s *tracingAssertService) PingList(ping *pb_testproto.PingRequest, stream p
 	tags := grpc_ctxtags.Extract(stream.Context())
 	assert.True(s.T, tags.Has(grpc_opentracing.TagTraceId), "tags must contain traceid")
 	assert.True(s.T, tags.Has(grpc_opentracing.TagSpanId), "tags must contain spanid")
+	assert.True(s.T, tags.Has(grpc_opentracing.TagSampled), "tags must contain sampled")
+	assert.Equal(s.T, tags.Values()[grpc_opentracing.TagSampled], "true", "sampled must be set to true")
 	return s.TestServiceServer.PingList(ping, stream)
 }
 
 func (s *tracingAssertService) PingEmpty(ctx context.Context, empty *pb_testproto.Empty) (*pb_testproto.PingResponse, error) {
 	assert.NotNil(s.T, opentracing.SpanFromContext(ctx), "handlers must have the spancontext in their context, otherwise propagation will fail")
 	tags := grpc_ctxtags.Extract(ctx)
-	assert.False(s.T, tags.Has(grpc_opentracing.TagTraceId), "tags must not contain traceid")
-	assert.False(s.T, tags.Has(grpc_opentracing.TagSpanId), "tags must not contain spanid")
+	assert.True(s.T, tags.Has(grpc_opentracing.TagTraceId), "tags must contain traceid")
+	assert.True(s.T, tags.Has(grpc_opentracing.TagSpanId), "tags must contain spanid")
+	assert.True(s.T, tags.Has(grpc_opentracing.TagSampled), "tags must contain sampled")
+	assert.Equal(s.T, tags.Values()[grpc_opentracing.TagSampled], "false", "sampled must be set to false")
 	return s.TestServiceServer.PingEmpty(ctx, empty)
 }
 

@@ -11,10 +11,11 @@ import (
 const (
 	TagTraceId           = "trace.traceid"
 	TagSpanId            = "trace.spanid"
+	TagSampled           = "trace.sampled"
 	JaegerNotSampledFlag = "0"
 )
 
-// injectOpentracingIdsToTags writes the given context to the ctxtags if the trace is sampled.
+// injectOpentracingIdsToTags writes the given context to the ctxtags if the trace.
 // This is done in an incredibly hacky way, because the public-facing interface of opentracing doesn't give access to
 // the TraceId and SpanId of the SpanContext. Only the Tracer's Inject/Extract methods know what these are.
 // Most tracers have them encoded as keys with 'traceid' and 'spanid':
@@ -23,44 +24,39 @@ const (
 // Jaeger from Uber use one-key schema with next format '{trace-id}:{span-id}:{parent-span-id}:{flags}'
 // https://www.jaegertracing.io/docs/client-libraries/#trace-span-identity
 func injectOpentracingIdsToTags(span opentracing.Span, tags grpc_ctxtags.Tags) {
-	carrier := &tagsCarrier{}
-	if err := span.Tracer().Inject(span.Context(), opentracing.HTTPHeaders, carrier); err != nil {
+	if err := span.Tracer().Inject(span.Context(), opentracing.HTTPHeaders, &tagsCarrier{tags}); err != nil {
 		grpclog.Infof("grpc_opentracing: failed extracting trace info into ctx %v", err)
-	}
-
-	if carrier.sampled {
-		tags.Set(TagTraceId, carrier.traceID)
-		tags.Set(TagSpanId, carrier.spanID)
 	}
 }
 
 // tagsCarrier is a really hacky way of
 type tagsCarrier struct {
-	sampled bool
-	traceID string
-	spanID  string
+	grpc_ctxtags.Tags
 }
 
 func (t *tagsCarrier) Set(key, val string) {
 	if strings.Contains(strings.ToLower(key), "traceid") {
-		t.traceID = val
+		t.Tags.Set(TagTraceId, val) // this will most likely be base-16 (hex) encoded
 	}
 
 	if strings.Contains(strings.ToLower(key), "spanid") && !strings.Contains(strings.ToLower(key), "parent") {
-		t.spanID = val
+		t.Tags.Set(TagSpanId, val) // this will most likely be base-16 (hex) encoded
 	}
 
-	if strings.Contains(strings.ToLower(key), "sampled") && val == "true" {
-		t.sampled = true
+	if strings.Contains(strings.ToLower(key), "sampled") {
+		t.Tags.Set(TagSampled, val)
 	}
 
 	if key == "uber-trace-id" {
 		parts := strings.Split(val, ":")
 		if len(parts) == 4 {
+			t.Tags.Set(TagTraceId, parts[0])
+			t.Tags.Set(TagSpanId, parts[1])
+
 			if parts[3] != JaegerNotSampledFlag {
-				t.traceID = parts[0]
-				t.spanID = parts[1]
-				t.sampled = true
+				t.Tags.Set(TagSampled, "true")
+			} else {
+				t.Tags.Set(TagSampled, "false")
 			}
 		}
 	}
