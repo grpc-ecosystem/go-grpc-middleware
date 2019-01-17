@@ -48,8 +48,6 @@ func (t *tagsCarrier) Set(key, val string) {
 		switch val {
 		case "true", "false":
 			t.Tags.Set(TagSampled, val)
-		default:
-			t.Tags.Set(TagSampled, "")
 		}
 	}
 
