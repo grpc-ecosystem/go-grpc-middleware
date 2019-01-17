@@ -3,8 +3,8 @@ package grpc_opentracing
 import (
 	"strings"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/opentracing/opentracing-go"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	opentracing "github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc/grpclog"
 )
 
@@ -45,7 +45,12 @@ func (t *tagsCarrier) Set(key, val string) {
 	}
 
 	if strings.Contains(key, "sampled") {
-		t.Tags.Set(TagSampled, val)
+		switch val {
+		case "true", "false":
+			t.Tags.Set(TagSampled, val)
+		default:
+			t.Tags.Set(TagSampled, "")
+		}
 	}
 
 	if key == "uber-trace-id" {
