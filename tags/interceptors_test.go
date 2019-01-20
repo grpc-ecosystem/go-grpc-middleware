@@ -206,7 +206,7 @@ func (s *ClientStreamedTaggingSuite) TestPingStream_WithCustomTagsFirstRequest()
 
 func TestMetadataTaggingSuite(t *testing.T) {
 	opts := []grpc_ctxtags.Option{
-		grpc_ctxtags.WithMetadataExtractor(grpc_ctxtags.TagBasedRequestMetadataExtractor("md.", "key")),
+		grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.TagBasedRequestMetadataExtractor("md.","key")),
 	}
 	s := &MetadataTaggingSuite{
 		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{

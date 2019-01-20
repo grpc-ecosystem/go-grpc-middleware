@@ -18,9 +18,6 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 		if o.requestFieldsFunc != nil {
 			setRequestFieldTags(newCtx, o.requestFieldsFunc, info.FullMethod, req)
 		}
-		if o.metadataExtractorFunc != nil {
-			setRequestMetadataTags(newCtx, o.metadataExtractorFunc, req)
-		}
 		return handler(newCtx, req)
 	}
 }
@@ -30,8 +27,7 @@ func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 	o := evaluateOptions(opts)
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		newCtx := newTagsForCtx(stream.Context())
-		if o.requestFieldsFunc == nil && o.metadataExtractorFunc == nil {
-			// Short-circuit, don't do the expensive bit of allocating a wrappedStream.
+		if o.requestFieldsFunc == nil {
 			wrappedStream := grpc_middleware.WrapServerStream(stream)
 			wrappedStream.WrappedContext = newCtx
 			return handler(srv, wrappedStream)
@@ -65,9 +61,6 @@ func (w *wrappedStream) RecvMsg(m interface{}) error {
 		if w.opts.requestFieldsFunc != nil {
 			setRequestFieldTags(w.Context(), w.opts.requestFieldsFunc, w.info.FullMethod, m)
 		}
-		if w.opts.metadataExtractorFunc != nil {
-			setRequestMetadataTags(w.Context(), w.opts.metadataExtractorFunc, m)
-		}
 	}
 	return err
 }
@@ -80,8 +73,8 @@ func newTagsForCtx(ctx context.Context) context.Context {
 	return setInContext(ctx, t)
 }
 
-func setRequestFieldTags(ctx context.Context, f RequestFieldExtractorFunc, fullMethodName string, req interface{}) {
-	if valMap := f(fullMethodName, req); valMap != nil {
+func setRequestFieldTags(ctx context.Context, f RequestFieldExtractorWithContextFunc, fullMethodName string, req interface{}) {
+	if valMap := f(ctx, fullMethodName, req); valMap != nil {
 		t := Extract(ctx)
 		for k, v := range valMap {
 			t.Set("grpc.request."+k, v)
@@ -89,6 +82,3 @@ func setRequestFieldTags(ctx context.Context, f RequestFieldExtractorFunc, fullM
 	}
 }
 
-func setRequestMetadataTags(ctx context.Context, f RequestMetadataExtractorFunc, req interface{}) {
-	f(ctx, req)
-}
