@@ -3,8 +3,10 @@
   version = "1.2.0"
 
 [[constraint]]
+  # As defined in: github.com/grpc-ecosystem/grpc-gateway
+  # https://github.com/grpc-ecosystem/grpc-gateway/blob/master/Gopkg.toml#L38
   name = "github.com/golang/protobuf"
-  version = "1.2.0"
+  revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
 
 [[constraint]]
   name = "github.com/opentracing/opentracing-go"
