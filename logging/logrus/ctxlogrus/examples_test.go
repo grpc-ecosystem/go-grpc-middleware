@@ -5,10 +5,7 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus/ctxlogrus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/sirupsen/logrus"
 )
-
-var logrusLogger *logrus.Logger
 
 // Simple unary handler that adds custom fields to the requests's context. These will be used for all log statements.
 func ExampleExtract_unary() {
