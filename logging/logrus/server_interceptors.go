@@ -9,7 +9,6 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus/ctxlogrus"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags/logrus"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
@@ -18,7 +17,7 @@ var (
 	// SystemField is used in every log statement made through grpc_logrus. Can be overwritten before any initialization code.
 	SystemField = "system"
 
-	// KindField describes the log gield used to incicate whether this is a server or a client log statment.
+	// KindField describes the log field used to indicate whether this is a server or a client log statement.
 	KindField = "span.kind"
 )
 
@@ -46,7 +45,7 @@ func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServe
 		}
 
 		levelLogf(
-			ctx_logrus.Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
+			ctxlogrus.Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
 			level,
 			"finished unary call with code "+code.String())
 
@@ -80,7 +79,7 @@ func StreamServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamSer
 		}
 
 		levelLogf(
-			ctx_logrus.Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
+			ctxlogrus.Extract(newCtx).WithFields(fields), // re-extract logger from newCtx, as it may have extra fields that changed in the holder.
 			level,
 			"finished streaming call with code "+code.String())
 
@@ -124,6 +123,6 @@ func newLoggerForCall(ctx context.Context, entry *logrus.Entry, fullMethodString
 			})
 	}
 
-	callLog = callLog.WithFields(ctx_logrus.Extract(ctx).Data)
+	callLog = callLog.WithFields(ctxlogrus.Extract(ctx).Data)
 	return ctxlogrus.ToContext(ctx, callLog)
 }

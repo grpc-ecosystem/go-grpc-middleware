@@ -55,7 +55,7 @@ func PayloadStreamServerInterceptor(logger *zap.Logger, decider grpc_logging.Ser
 	}
 }
 
-// PayloadUnaryClientInterceptor returns a new unary client interceptor that logs the paylods of requests and responses.
+// PayloadUnaryClientInterceptor returns a new unary client interceptor that logs the payloads of requests and responses.
 func PayloadUnaryClientInterceptor(logger *zap.Logger, decider grpc_logging.ClientPayloadLoggingDecider) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		if !decider(ctx, method) {
@@ -71,7 +71,7 @@ func PayloadUnaryClientInterceptor(logger *zap.Logger, decider grpc_logging.Clie
 	}
 }
 
-// PayloadStreamClientInterceptor returns a new streaming client interceptor that logs the paylods of requests and responses.
+// PayloadStreamClientInterceptor returns a new streaming client interceptor that logs the payloads of requests and responses.
 func PayloadStreamClientInterceptor(logger *zap.Logger, decider grpc_logging.ClientPayloadLoggingDecider) grpc.StreamClientInterceptor {
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		if !decider(ctx, method) {
