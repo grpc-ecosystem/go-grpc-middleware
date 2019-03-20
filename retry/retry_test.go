@@ -4,6 +4,7 @@
 package grpc_retry_test
 
 import (
+	"context"
 	"io"
 	"sync"
 	"testing"
@@ -18,7 +19,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )

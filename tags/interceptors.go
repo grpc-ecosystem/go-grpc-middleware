@@ -4,8 +4,9 @@
 package grpc_ctxtags
 
 import (
+	"context"
+
 	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 )
