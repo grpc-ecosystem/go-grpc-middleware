@@ -24,3 +24,21 @@ func BackoffLinearWithJitter(waitBetween time.Duration, jitterFraction float64) 
 		return backoffutils.JitterUp(waitBetween, jitterFraction)
 	}
 }
+
+// BackoffExponential produces increasing intervals for each attempt.
+//
+// The scalar is multiplied times 2 raised to the current attempt. So the first
+// retry with a scalar of 100ms is 100ms, while the 5th attempt would be 3.2s.
+func BackoffExponential(scalar time.Duration) BackoffFunc {
+	return func(attempt uint) time.Duration {
+		return scalar * time.Duration(backoffutils.ExponentBase2(attempt))
+	}
+}
+
+// BackoffExponentialWithJitter creates an exponential backoff like
+// BackoffExponential does, but adds jitter.
+func BackoffExponentialWithJitter(scalar time.Duration, jitterFraction float64) BackoffFunc {
+	return func(attempt uint) time.Duration {
+		return backoffutils.JitterUp(scalar*time.Duration(backoffutils.ExponentBase2(attempt)), jitterFraction)
+	}
+}

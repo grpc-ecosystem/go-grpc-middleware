@@ -85,22 +85,45 @@ func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientIntercepto
 		if desc.ClientStreams {
 			return nil, grpc.Errorf(codes.Unimplemented, "grpc_retry: cannot retry on ClientStreams, set grpc_retry.Disable()")
 		}
-		logTrace(parentCtx, "grpc_retry attempt: %d, no backoff for this call", 0)
-		callCtx := perCallContext(parentCtx, callOpts, 0)
-		newStreamer, err := streamer(callCtx, desc, cc, method, grpcOpts...)
-		if err != nil {
-			// TODO(mwitkow): Maybe dial and transport errors should be retriable?
-			return nil, err
+
+		var lastErr error
+		for attempt := uint(0); attempt < callOpts.max; attempt++ {
+			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
+				return nil, err
+			}
+			callCtx := perCallContext(parentCtx, callOpts, 0)
+
+			var newStreamer grpc.ClientStream
+			newStreamer, lastErr = streamer(callCtx, desc, cc, method, grpcOpts...)
+			if lastErr == nil {
+				retryingStreamer := &serverStreamingRetryingStream{
+					ClientStream: newStreamer,
+					callOpts:     callOpts,
+					parentCtx:    parentCtx,
+					streamerCall: func(ctx context.Context) (grpc.ClientStream, error) {
+						return streamer(ctx, desc, cc, method, grpcOpts...)
+					},
+				}
+				return retryingStreamer, nil
+			}
+
+			logTrace(parentCtx, "grpc_retry attempt: %d, got err: %v", attempt, lastErr)
+			if isContextError(lastErr) {
+				if parentCtx.Err() != nil {
+					logTrace(parentCtx, "grpc_retry attempt: %d, parent context error: %v", attempt, parentCtx.Err())
+					// its the parent context deadline or cancellation.
+					return nil, lastErr
+				} else {
+					logTrace(parentCtx, "grpc_retry attempt: %d, context error from retry call", attempt)
+					// its the callCtx deadline or cancellation, in which case try again.
+					continue
+				}
+			}
+			if !isRetriable(lastErr, callOpts) {
+				return nil, lastErr
+			}
 		}
-		retryingStreamer := &serverStreamingRetryingStream{
-			ClientStream: newStreamer,
-			callOpts:     callOpts,
-			parentCtx:    parentCtx,
-			streamerCall: func(ctx context.Context) (grpc.ClientStream, error) {
-				return streamer(ctx, desc, cc, method, grpcOpts...)
-			},
-		}
-		return retryingStreamer, nil
+		return nil, lastErr
 	}
 }
 
@@ -231,7 +254,7 @@ func (s *serverStreamingRetryingStream) reestablishStreamAndResendBuffer(callCtx
 func waitRetryBackoff(attempt uint, parentCtx context.Context, callOpts *options) error {
 	var waitTime time.Duration = 0
 	if attempt > 0 {
-		waitTime = callOpts.backoffFunc(attempt)
+		waitTime = callOpts.backoffFunc(parentCtx, attempt)
 	}
 	if waitTime > 0 {
 		logTrace(parentCtx, "grpc_retry attempt: %d, backoff for %v", attempt, waitTime)
