@@ -56,6 +56,10 @@ func newServerSpanFromInbound(ctx context.Context, tracer opentracing.Tracer, fu
 		grpclog.Printf("grpc_opentracing: failed parsing trace information: %v", err)
 	}
 
+	if tracer == nil {
+		tracer = opentracing.GlobalTracer()
+	}
+
 	serverSpan := tracer.StartSpan(
 		fullMethodName,
 		// this is magical, it attaches the new span to the parent parentSpanContext, and creates an unparented one if empty.

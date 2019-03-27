@@ -32,9 +32,6 @@ func evaluateOptions(opts []Option) *options {
 	for _, o := range opts {
 		o(optCopy)
 	}
-	if optCopy.tracer == nil {
-		optCopy.tracer = opentracing.GlobalTracer()
-	}
 	return optCopy
 }
 
@@ -50,6 +47,10 @@ func WithFilterFunc(f FilterFunc) Option {
 // WithTracer sets a custom tracer to be used for this middleware, otherwise the opentracing.GlobalTracer is used.
 func WithTracer(tracer opentracing.Tracer) Option {
 	return func(o *options) {
-		o.tracer = tracer
+		if tracer == nil {
+			o.tracer = opentracing.GlobalTracer()
+		} else {
+			o.tracer = tracer
+		}
 	}
 }

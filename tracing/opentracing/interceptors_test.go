@@ -82,7 +82,19 @@ func TestTaggingSuite(t *testing.T) {
 	}
 	s := &OpentracingSuite{
 		mockTracer:           mockTracer,
-		InterceptorTestSuite: makeInterceptorTestSuite(t, opts),
+		InterceptorTestSuite: makeInterceptorTestSuite(t, opts, opts),
+	}
+	suite.Run(t, s)
+}
+
+func TestTaggingSuite2(t *testing.T) {
+	mockTracer := mocktracer.New()
+	opts := []grpc_opentracing.Option{
+		grpc_opentracing.WithTracer(mockTracer),
+	}
+	s := &OpentracingSuite{
+		mockTracer:           mockTracer,
+		InterceptorTestSuite: makeInterceptorTestSuite(t, nil, opts),
 	}
 	suite.Run(t, s)
 }
@@ -96,26 +108,26 @@ func TestTaggingSuiteJaeger(t *testing.T) {
 	}
 	s := &OpentracingSuite{
 		mockTracer:           mockTracer,
-		InterceptorTestSuite: makeInterceptorTestSuite(t, opts),
+		InterceptorTestSuite: makeInterceptorTestSuite(t, opts, opts),
 	}
 	suite.Run(t, s)
 }
 
-func makeInterceptorTestSuite(t *testing.T, opts []grpc_opentracing.Option) *grpc_testing.InterceptorTestSuite {
+func makeInterceptorTestSuite(t *testing.T, clientOpts, serverOpts []grpc_opentracing.Option) *grpc_testing.InterceptorTestSuite {
 
 	return &grpc_testing.InterceptorTestSuite{
 		TestService: &tracingAssertService{TestServiceServer: &grpc_testing.TestPingService{T: t}, T: t},
 		ClientOpts: []grpc.DialOption{
-			grpc.WithUnaryInterceptor(grpc_opentracing.UnaryClientInterceptor(opts...)),
-			grpc.WithStreamInterceptor(grpc_opentracing.StreamClientInterceptor(opts...)),
+			grpc.WithUnaryInterceptor(grpc_opentracing.UnaryClientInterceptor(clientOpts...)),
+			grpc.WithStreamInterceptor(grpc_opentracing.StreamClientInterceptor(clientOpts...)),
 		},
 		ServerOpts: []grpc.ServerOption{
 			grpc_middleware.WithStreamServerChain(
 				grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-				grpc_opentracing.StreamServerInterceptor(opts...)),
+				grpc_opentracing.StreamServerInterceptor(serverOpts...)),
 			grpc_middleware.WithUnaryServerChain(
 				grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-				grpc_opentracing.UnaryServerInterceptor(opts...)),
+				grpc_opentracing.UnaryServerInterceptor(serverOpts...)),
 		},
 	}
 }

@@ -25,6 +25,9 @@ func UnaryClientInterceptor(opts ...Option) grpc.UnaryClientInterceptor {
 			return invoker(parentCtx, method, req, reply, cc, opts...)
 		}
 		newCtx, clientSpan := newClientSpanFromContext(parentCtx, o.tracer, method)
+		if clientSpan == nil {
+			return invoker(parentCtx, method, req, reply, cc, opts...)
+		}
 		err := invoker(newCtx, method, req, reply, cc, opts...)
 		finishClientSpan(clientSpan, err)
 		return err
@@ -39,6 +42,9 @@ func StreamClientInterceptor(opts ...Option) grpc.StreamClientInterceptor {
 			return streamer(parentCtx, desc, cc, method, opts...)
 		}
 		newCtx, clientSpan := newClientSpanFromContext(parentCtx, o.tracer, method)
+		if clientSpan == nil {
+			return streamer(parentCtx, desc, cc, method, opts...)
+		}
 		clientStream, err := streamer(newCtx, desc, cc, method, opts...)
 		if err != nil {
 			finishClientSpan(clientSpan, err)
@@ -112,6 +118,15 @@ func newClientSpanFromContext(ctx context.Context, tracer opentracing.Tracer, fu
 	var parentSpanCtx opentracing.SpanContext
 	if parent := opentracing.SpanFromContext(ctx); parent != nil {
 		parentSpanCtx = parent.Context()
+		if tracer == nil {
+			tracer = parent.Tracer()
+		}
+	}
+	if tracer == nil {
+		tracer = opentracing.GlobalTracer()
+		if _, ok := tracer.(opentracing.NoopTracer); ok {
+			return ctx, nil
+		}
 	}
 	opts := []opentracing.StartSpanOption{
 		opentracing.ChildOf(parentSpanCtx),
