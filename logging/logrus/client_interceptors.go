@@ -4,11 +4,11 @@
 package grpc_logrus
 
 import (
+	"context"
 	"path"
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
