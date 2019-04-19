@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/oauth"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -40,7 +41,7 @@ func buildDummyAuthFunction(expectedScheme string, expectedToken string) func(ct
 			return nil, err
 		}
 		if token != expectedToken {
-			return nil, grpc.Errorf(codes.PermissionDenied, "buildDummyAuthFunction bad token")
+			return nil, status.Errorf(codes.PermissionDenied, "buildDummyAuthFunction bad token")
 		}
 		return context.WithValue(ctx, authedMarker, "marker_exists"), nil
 	}
@@ -94,7 +95,7 @@ func (s *AuthTestSuite) TestUnary_NoAuth() {
 	defer cancel()
 	_, err := s.Client.Ping(ctx, goodPing)
 	assert.Error(s.T(), err, "there must be an error")
-	assert.Equal(s.T(), codes.Unauthenticated, grpc.Code(err), "must error with unauthenticated")
+	assert.Equal(s.T(), codes.Unauthenticated, status.Code(err), "must error with unauthenticated")
 }
 
 func (s *AuthTestSuite) TestUnary_BadAuth() {
@@ -102,7 +103,7 @@ func (s *AuthTestSuite) TestUnary_BadAuth() {
 	defer cancel()
 	_, err := s.Client.Ping(ctxWithToken(ctx, "bearer", "bad_token"), goodPing)
 	assert.Error(s.T(), err, "there must be an error")
-	assert.Equal(s.T(), codes.PermissionDenied, grpc.Code(err), "must error with permission denied")
+	assert.Equal(s.T(), codes.PermissionDenied, status.Code(err), "must error with permission denied")
 }
 
 func (s *AuthTestSuite) TestUnary_PassesAuth() {
@@ -128,7 +129,7 @@ func (s *AuthTestSuite) TestStream_NoAuth() {
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	_, err = stream.Recv()
 	assert.Error(s.T(), err, "there must be an error")
-	assert.Equal(s.T(), codes.Unauthenticated, grpc.Code(err), "must error with unauthenticated")
+	assert.Equal(s.T(), codes.Unauthenticated, status.Code(err), "must error with unauthenticated")
 }
 
 func (s *AuthTestSuite) TestStream_BadAuth() {
@@ -138,7 +139,7 @@ func (s *AuthTestSuite) TestStream_BadAuth() {
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	_, err = stream.Recv()
 	assert.Error(s.T(), err, "there must be an error")
-	assert.Equal(s.T(), codes.PermissionDenied, grpc.Code(err), "must error with permission denied")
+	assert.Equal(s.T(), codes.PermissionDenied, status.Code(err), "must error with permission denied")
 }
 
 func (s *AuthTestSuite) TestStream_PassesAuth() {

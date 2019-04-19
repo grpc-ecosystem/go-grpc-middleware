@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -72,8 +73,8 @@ func (s *RecoverySuite) TestUnary_PanickingRequest() {
 	defer cancel()
 	_, err := s.Client.Ping(ctx, panicPing)
 	require.Error(s.T(), err, "there must be an error")
-	assert.Equal(s.T(), codes.Internal, grpc.Code(err), "must error with internal")
-	assert.Equal(s.T(), "very bad thing happened", grpc.ErrorDesc(err), "must error with message")
+	assert.Equal(s.T(), codes.Internal, status.Code(err), "must error with internal")
+	assert.Equal(s.T(), "very bad thing happened", status.Convert(err).Message(), "must error with message")
 }
 
 func (s *RecoverySuite) TestStream_SuccessfulReceive() {
@@ -93,14 +94,14 @@ func (s *RecoverySuite) TestStream_PanickingReceive() {
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	_, err = stream.Recv()
 	require.Error(s.T(), err, "there must be an error")
-	assert.Equal(s.T(), codes.Internal, grpc.Code(err), "must error with internal")
-	assert.Equal(s.T(), "very bad thing happened", grpc.ErrorDesc(err), "must error with message")
+	assert.Equal(s.T(), codes.Internal, status.Code(err), "must error with internal")
+	assert.Equal(s.T(), "very bad thing happened", status.Convert(err).Message(), "must error with message")
 }
 
 func TestRecoveryOverrideSuite(t *testing.T) {
 	opts := []grpc_recovery.Option{
 		grpc_recovery.WithRecoveryHandler(func(p interface{}) (err error) {
-			return grpc.Errorf(codes.Unknown, "panic triggered: %v", p)
+			return status.Errorf(codes.Unknown, "panic triggered: %v", p)
 		}),
 	}
 	s := &RecoveryOverrideSuite{
@@ -133,8 +134,8 @@ func (s *RecoveryOverrideSuite) TestUnary_PanickingRequest() {
 	defer cancel()
 	_, err := s.Client.Ping(ctx, panicPing)
 	require.Error(s.T(), err, "there must be an error")
-	assert.Equal(s.T(), codes.Unknown, grpc.Code(err), "must error with unknown")
-	assert.Equal(s.T(), "panic triggered: very bad thing happened", grpc.ErrorDesc(err), "must error with message")
+	assert.Equal(s.T(), codes.Unknown, status.Code(err), "must error with unknown")
+	assert.Equal(s.T(), "panic triggered: very bad thing happened", status.Convert(err).Message(), "must error with message")
 }
 
 func (s *RecoveryOverrideSuite) TestStream_SuccessfulReceive() {
@@ -154,6 +155,6 @@ func (s *RecoveryOverrideSuite) TestStream_PanickingReceive() {
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	_, err = stream.Recv()
 	require.Error(s.T(), err, "there must be an error")
-	assert.Equal(s.T(), codes.Unknown, grpc.Code(err), "must error with unknown")
-	assert.Equal(s.T(), "panic triggered: very bad thing happened", grpc.ErrorDesc(err), "must error with message")
+	assert.Equal(s.T(), codes.Unknown, status.Code(err), "must error with unknown")
+	assert.Equal(s.T(), "panic triggered: very bad thing happened", status.Convert(err).Message(), "must error with message")
 }
