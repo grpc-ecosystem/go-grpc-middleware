@@ -19,10 +19,11 @@ var (
 	DefaultRetriableCodes = []codes.Code{codes.ResourceExhausted, codes.Unavailable}
 
 	defaultOptions = &options{
-		max:            0, // disabed
-		perCallTimeout: 0, // disabled
-		includeHeader:  true,
-		codes:          DefaultRetriableCodes,
+		max:              0, // disabled
+		perCallTimeout:   0, // disabled
+		includeHeader:    true,
+		includeMaxHeader: false,
+		codes:            DefaultRetriableCodes,
 		backoffFunc: BackoffFuncContext(func(ctx context.Context, attempt uint) time.Duration {
 			return BackoffLinearWithJitter(50*time.Millisecond /*jitter*/, 0.10)(attempt)
 		}),
@@ -102,12 +103,23 @@ func WithPerRetryTimeout(timeout time.Duration) CallOption {
 	}}
 }
 
+// WithMaxAttemptsHeader sets an option that will include a header with the maximum number of
+// retry attempts that will be made.
+//
+// This could be used for observability to know how many retries will be attempted.
+func WithMaxAttemptsHeader() CallOption {
+	return CallOption{applyFunc: func(o *options) {
+		o.includeMaxHeader = true
+	}}
+}
+
 type options struct {
-	max            uint
-	perCallTimeout time.Duration
-	includeHeader  bool
-	codes          []codes.Code
-	backoffFunc    BackoffFuncContext
+	max              uint
+	perCallTimeout   time.Duration
+	includeHeader    bool
+	includeMaxHeader bool
+	codes            []codes.Code
+	backoffFunc      BackoffFuncContext
 }
 
 // CallOption is a grpc.CallOption that is local to grpc_retry.
