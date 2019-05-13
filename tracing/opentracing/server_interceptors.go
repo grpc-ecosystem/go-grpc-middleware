@@ -7,7 +7,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-	"github.com/opentracing/opentracing-go"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/net/context"
@@ -28,7 +28,7 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 		}
 		newCtx, serverSpan := newServerSpanFromInbound(ctx, o.tracer, info.FullMethod)
 		resp, err := handler(newCtx, req)
-		finishServerSpan(ctx, serverSpan, err)
+		finishServerSpan(ctx, serverSpan, err, false)
 		return resp, err
 	}
 }
@@ -44,7 +44,7 @@ func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 		wrappedStream := grpc_middleware.WrapServerStream(stream)
 		wrappedStream.WrappedContext = newCtx
 		err := handler(srv, wrappedStream)
-		finishServerSpan(newCtx, serverSpan, err)
+		finishServerSpan(newCtx, serverSpan, err, false)
 		return err
 	}
 }
@@ -67,7 +67,7 @@ func newServerSpanFromInbound(ctx context.Context, tracer opentracing.Tracer, fu
 	return opentracing.ContextWithSpan(ctx, serverSpan), serverSpan
 }
 
-func finishServerSpan(ctx context.Context, serverSpan opentracing.Span, err error) {
+func finishServerSpan(ctx context.Context, serverSpan opentracing.Span, err error, active bool) {
 	// Log context information
 	tags := grpc_ctxtags.Extract(ctx)
 	for k, v := range tags.Values() {
@@ -79,7 +79,7 @@ func finishServerSpan(ctx context.Context, serverSpan opentracing.Span, err erro
 			serverSpan.SetTag(k, v)
 		}
 	}
-	if err != nil {
+	if active || err != nil {
 		ext.Error.Set(serverSpan, true)
 		serverSpan.LogFields(log.String("event", "error"), log.String("message", err.Error()))
 	}
