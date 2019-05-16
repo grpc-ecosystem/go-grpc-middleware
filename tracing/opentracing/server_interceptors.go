@@ -79,7 +79,7 @@ func finishServerSpan(ctx context.Context, serverSpan opentracing.Span, err erro
 			serverSpan.SetTag(k, v)
 		}
 	}
-	if active || err != nil {
+	if active && err != nil {
 		ext.Error.Set(serverSpan, true)
 		serverSpan.LogFields(log.String("event", "error"), log.String("message", err.Error()))
 	}
