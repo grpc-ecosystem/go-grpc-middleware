@@ -1,10 +1,9 @@
-// Copyright 2018 Zheng Dayu. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-package grpc_ratelimit
+package ratelimit
 
 import (
-	"time"
+	"fmt"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -13,22 +12,17 @@ import (
 )
 
 type Limiter interface {
-	WaitMaxDuration(time.Duration) bool
+	Limit() bool
 }
 
 type rateLimiter struct {
-	limiter         Limiter
-	maxWaitDuration time.Duration
-}
-
-func (r *rateLimiter) Wait() bool {
-	return r.limiter.WaitMaxDuration(r.maxWaitDuration)
+	limiter Limiter
 }
 
 type emptyLimiter struct{}
 
-func (e *emptyLimiter) WaitMaxDuration(time.Duration) bool {
-	return true
+func (e *emptyLimiter) Limit() bool {
+	return false
 }
 
 func emptyRatelimiter() *rateLimiter {
@@ -44,23 +38,26 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 		opt(ratelimiter)
 	}
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		if ratelimiter.Wait() {
-			return handler(ctx, req)
+		if ratelimiter.limiter.Limit() {
+			return nil, status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_ratelimit middleare, please retry later.", info.FullMethod)
 		}
-		return nil, status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_ratelimit middleare, please retry later.", info.FullMethod)
+		return handler(ctx, req)
 	}
 }
 
-// StreamServerInterceptor returns a new stream server interceptors that performs request rate limit.
+// StreamServerInterceptor returns a new stream server interceptor that performs rate limiting on the request.
 func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 	ratelimiter := emptyRatelimiter()
+	fmt.Println(ratelimiter.limiter.Limit())
 	for _, opt := range opts {
 		opt(ratelimiter)
 	}
+	fmt.Println(ratelimiter.limiter.Limit())
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		if ratelimiter.Wait() {
-			return handler(srv, stream)
+		fmt.Println(ratelimiter.limiter.Limit())
+		if ratelimiter.limiter.Limit() {
+			return status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_ratelimit middleare, please retry later.", info.FullMethod)
 		}
-		return status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_ratelimit middleare, please retry later.", info.FullMethod)
+		return handler(srv, stream)
 	}
 }

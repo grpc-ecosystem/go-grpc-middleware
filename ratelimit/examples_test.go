@@ -1,7 +1,7 @@
 // Copyright 2018 Zheng Dayu. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-package grpc_ratelimit_test
+package ratelimit_test
 
 import (
 	"time"
@@ -13,22 +13,20 @@ import (
 )
 
 // Simple example of server initialization code.
-func Example_initialization() {
+func Example() {
 	// Create unary/stream rateLimiters, based on token bucket here.
 	// You can implement your own ratelimiter for the interface.
-	unaryRateLimiter := tokenbucket.NewTokenBucketRateLimiter(1*time.Second, 10, 10)
-	streamRateLimiter := tokenbucket.NewTokenBucketRateLimiter(1*time.Second, 5, 5)
+	unaryRateLimiter := tokenbucket.NewTokenBucketRateLimiter(1*time.Second, 10, 10, 10*time.Second)
+	streamRateLimiter := tokenbucket.NewTokenBucketRateLimiter(1*time.Second, 5, 5, 5*time.Second)
 	_ = grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
-			grpc_ratelimit.UnaryServerInterceptor(
-				grpc_ratelimit.WithLimiter(unaryRateLimiter),
-				grpc_ratelimit.WithMaxWaitDuration(10*time.Second),
+			ratelimit.UnaryServerInterceptor(
+				ratelimit.WithRateLimiter(unaryRateLimiter),
 			),
 		),
 		grpc_middleware.WithStreamServerChain(
-			grpc_ratelimit.StreamServerInterceptor(
-				grpc_ratelimit.WithLimiter(streamRateLimiter),
-				grpc_ratelimit.WithMaxWaitDuration(5*time.Second),
+			ratelimit.StreamServerInterceptor(
+				ratelimit.WithRateLimiter(streamRateLimiter),
 			),
 		),
 	)

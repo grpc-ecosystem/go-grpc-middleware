@@ -1,86 +1,106 @@
-package grpc_ratelimit
+package ratelimit
 
 import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/ratelimit/tokenbucket"
 	"github.com/stretchr/testify/assert"
 )
 
 const errMsgFake = "fake error"
 
-func TestEmptyUnaryServerInterceptor(t *testing.T) {
+func TestUnaryServerInterceptor_NoLimit(t *testing.T) {
 	interceptor := UnaryServerInterceptor()
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return nil, errors.New(errMsgFake)
 	}
-	var ctx context.Context
-	var req interface{}
-	var info *grpc.UnaryServerInfo
-	req2, err := interceptor(ctx, req, info, handler)
-	assert.Nil(t, req2)
+	req, err := interceptor(nil, nil, nil, handler)
+	assert.Nil(t, req)
 	assert.EqualError(t, err, errMsgFake)
 }
 
-func TestRateLimitUnaryServerInterceptor(t *testing.T) {
-	unaryRateLimiter := tokenbucket.NewTokenBucketRateLimiter(1*time.Second, 1, 1)
+type mockPassLimiter struct{}
+
+func (*mockPassLimiter) Limit() bool {
+	return false
+}
+
+func TestUnaryServerInterceptor_RateLimitPass(t *testing.T) {
+	unaryRateLimiter := &mockPassLimiter{}
 	interceptor := UnaryServerInterceptor(
-		WithLimiter(unaryRateLimiter),
-		WithMaxWaitDuration(1*time.Millisecond),
+		WithRateLimiter(unaryRateLimiter),
 	)
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return nil, errors.New(errMsgFake)
 	}
-	var ctx context.Context
-	var req interface{}
-	var info *grpc.UnaryServerInfo
-	req2, err := interceptor(ctx, req, info, handler)
-	assert.Nil(t, req2)
+	info := &grpc.UnaryServerInfo{
+		FullMethod: "FakeMethod",
+	}
+	req, err := interceptor(nil, nil, info, handler)
+	assert.Nil(t, req)
 	assert.EqualError(t, err, errMsgFake)
 }
 
-func TestRateLimitStreamServerInterceptor(t *testing.T) {
-	unaryRateLimiter := tokenbucket.NewTokenBucketRateLimiter(1*time.Second, 1, 1)
+type mockFailLimiter struct{}
+
+func (*mockFailLimiter) Limit() bool {
+	return true
+}
+
+func TestUnaryServerInterceptor_RateLimitFail(t *testing.T) {
+	unaryRateLimiter := &mockFailLimiter{}
+	interceptor := UnaryServerInterceptor(
+		WithRateLimiter(unaryRateLimiter),
+	)
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return nil, errors.New(errMsgFake)
+	}
+	info := &grpc.UnaryServerInfo{
+		FullMethod: "FakeMethod",
+	}
+	req, err := interceptor(nil, nil, info, handler)
+	assert.Nil(t, req)
+	assert.EqualError(t, err, "rpc error: code = ResourceExhausted desc = FakeMethod is rejected by grpc_ratelimit middleare, please retry later.")
+}
+
+func TestStreamServerInterceptor_NoLimit(t *testing.T) {
+	interceptor := StreamServerInterceptor()
+	handler := func(srv interface{}, stream grpc.ServerStream) error {
+		return errors.New(errMsgFake)
+	}
+	err := interceptor(nil, nil, nil, handler)
+	assert.EqualError(t, err, errMsgFake)
+}
+
+func TestStreamServerInterceptor_RateLimitPass(t *testing.T) {
+	streamRateLimiter := &mockPassLimiter{}
 	interceptor := StreamServerInterceptor(
-		WithLimiter(unaryRateLimiter),
-		WithMaxWaitDuration(1*time.Millisecond),
+		WithRateLimiter(streamRateLimiter),
 	)
 	handler := func(srv interface{}, stream grpc.ServerStream) error {
 		return errors.New(errMsgFake)
 	}
-	var srv interface{}
-	var ss *mockServerStream
-	var info *grpc.StreamServerInfo
-	err := interceptor(srv, ss, info, handler)
+	info := &grpc.StreamServerInfo{
+		FullMethod: "FakeMethod",
+	}
+	err := interceptor(nil, nil, info, handler)
 	assert.EqualError(t, err, errMsgFake)
 }
 
-type mockServerStream struct{}
-
-func (mss *mockServerStream) SetHeader(metadata.MD) error {
-	return nil
-}
-
-func (mss *mockServerStream) SendHeader(metadata.MD) error {
-	return nil
-}
-
-func (mss *mockServerStream) SetTrailer(metadata.MD) {}
-
-func (mss *mockServerStream) Context() context.Context {
-	return context.Background()
-}
-
-func (mss *mockServerStream) SendMsg(m interface{}) error {
-	return nil
-}
-
-func (mss *mockServerStream) RecvMsg(m interface{}) error {
-	return nil
+func TestStreamServerInterceptor_RateLimitFail(t *testing.T) {
+	streamRateLimiter := &mockFailLimiter{}
+	interceptor := StreamServerInterceptor(
+		WithRateLimiter(streamRateLimiter),
+	)
+	handler := func(srv interface{}, stream grpc.ServerStream) error {
+		return errors.New(errMsgFake)
+	}
+	info := &grpc.StreamServerInfo{
+		FullMethod: "FakeMethod",
+	}
+	err := interceptor(nil, nil, info, handler)
+	assert.EqualError(t, err, "rpc error: code = ResourceExhausted desc = FakeMethod is rejected by grpc_ratelimit middleare, please retry later.")
 }
