@@ -1,5 +1,3 @@
-// See LICENSE for licensing terms.
-
 /*
 `ratelimit` a generic server-side ratelimit middleware for gRPC.
 

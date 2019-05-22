@@ -1,6 +1,3 @@
-// Copyright 2018 Zheng Dayu. All Rights Reserved.
-// See LICENSE for licensing terms.
-
 package ratelimit_test
 
 import (
@@ -20,14 +17,10 @@ func Example() {
 	streamRateLimiter := tokenbucket.NewTokenBucketRateLimiter(1*time.Second, 5, 5, 5*time.Second)
 	_ = grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
-			ratelimit.UnaryServerInterceptor(
-				ratelimit.WithRateLimiter(unaryRateLimiter),
-			),
+			ratelimit.UnaryServerInterceptor(unaryRateLimiter),
 		),
 		grpc_middleware.WithStreamServerChain(
-			ratelimit.StreamServerInterceptor(
-				ratelimit.WithRateLimiter(streamRateLimiter),
-			),
+			ratelimit.StreamServerInterceptor(streamRateLimiter),
 		),
 	)
 }

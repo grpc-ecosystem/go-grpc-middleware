@@ -1,6 +1,3 @@
-// Copyright 2018 Zheng Dayu. All Rights Reserved.
-// See LICENSE for licensing terms.
-
 package tokenbucket
 
 import (

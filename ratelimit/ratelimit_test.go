@@ -12,16 +12,6 @@ import (
 
 const errMsgFake = "fake error"
 
-func TestUnaryServerInterceptor_NoLimit(t *testing.T) {
-	interceptor := UnaryServerInterceptor()
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return nil, errors.New(errMsgFake)
-	}
-	req, err := interceptor(nil, nil, nil, handler)
-	assert.Nil(t, req)
-	assert.EqualError(t, err, errMsgFake)
-}
-
 type mockPassLimiter struct{}
 
 func (*mockPassLimiter) Limit() bool {
@@ -29,10 +19,7 @@ func (*mockPassLimiter) Limit() bool {
 }
 
 func TestUnaryServerInterceptor_RateLimitPass(t *testing.T) {
-	unaryRateLimiter := &mockPassLimiter{}
-	interceptor := UnaryServerInterceptor(
-		WithRateLimiter(unaryRateLimiter),
-	)
+	interceptor := UnaryServerInterceptor(&mockPassLimiter{})
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return nil, errors.New(errMsgFake)
 	}
@@ -51,10 +38,7 @@ func (*mockFailLimiter) Limit() bool {
 }
 
 func TestUnaryServerInterceptor_RateLimitFail(t *testing.T) {
-	unaryRateLimiter := &mockFailLimiter{}
-	interceptor := UnaryServerInterceptor(
-		WithRateLimiter(unaryRateLimiter),
-	)
+	interceptor := UnaryServerInterceptor(&mockFailLimiter{})
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return nil, errors.New(errMsgFake)
 	}
@@ -66,20 +50,8 @@ func TestUnaryServerInterceptor_RateLimitFail(t *testing.T) {
 	assert.EqualError(t, err, "rpc error: code = ResourceExhausted desc = FakeMethod is rejected by grpc_ratelimit middleare, please retry later.")
 }
 
-func TestStreamServerInterceptor_NoLimit(t *testing.T) {
-	interceptor := StreamServerInterceptor()
-	handler := func(srv interface{}, stream grpc.ServerStream) error {
-		return errors.New(errMsgFake)
-	}
-	err := interceptor(nil, nil, nil, handler)
-	assert.EqualError(t, err, errMsgFake)
-}
-
 func TestStreamServerInterceptor_RateLimitPass(t *testing.T) {
-	streamRateLimiter := &mockPassLimiter{}
-	interceptor := StreamServerInterceptor(
-		WithRateLimiter(streamRateLimiter),
-	)
+	interceptor := StreamServerInterceptor(&mockPassLimiter{})
 	handler := func(srv interface{}, stream grpc.ServerStream) error {
 		return errors.New(errMsgFake)
 	}
@@ -91,10 +63,7 @@ func TestStreamServerInterceptor_RateLimitPass(t *testing.T) {
 }
 
 func TestStreamServerInterceptor_RateLimitFail(t *testing.T) {
-	streamRateLimiter := &mockFailLimiter{}
-	interceptor := StreamServerInterceptor(
-		WithRateLimiter(streamRateLimiter),
-	)
+	interceptor := StreamServerInterceptor(&mockFailLimiter{})
 	handler := func(srv interface{}, stream grpc.ServerStream) error {
 		return errors.New(errMsgFake)
 	}
