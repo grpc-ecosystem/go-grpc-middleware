@@ -3,9 +3,9 @@ package ratelimit_test
 import (
 	"time"
 
+	"github.com/ceshihao/ratelimiter/tokenbucket"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/ratelimit"
-	"github.com/grpc-ecosystem/go-grpc-middleware/ratelimit/tokenbucket"
 	"google.golang.org/grpc"
 )
 
