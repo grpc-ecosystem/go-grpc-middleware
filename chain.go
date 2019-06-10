@@ -134,37 +134,23 @@ func ChainUnaryClient(interceptors ...grpc.UnaryClientInterceptor) grpc.UnaryCli
 // Execution is done in left-to-right order, including passing of context.
 // For example ChainStreamClient(one, two, three) will execute one before two before three.
 func ChainStreamClient(interceptors ...grpc.StreamClientInterceptor) grpc.StreamClientInterceptor {
-	n := len(interceptors)
-
-	if n > 1 {
-		lastI := n - 1
+	switch len(interceptors) {
+	case 0:
+		// Dummy interceptor maintained for backward compatibility to avoid returning nil.
 		return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-			var (
-				chainHandler grpc.Streamer
-				curI         int
-			)
-
-			chainHandler = func(currentCtx context.Context, currentDesc *grpc.StreamDesc, currentConn *grpc.ClientConn, currentMethod string, currentOpts ...grpc.CallOption) (grpc.ClientStream, error) {
-				if curI == lastI {
-					return streamer(currentCtx, currentDesc, currentConn, currentMethod, currentOpts...)
-				}
-				curI++
-				stream, err := interceptors[curI](currentCtx, currentDesc, currentConn, currentMethod, chainHandler, currentOpts...)
-				curI--
-				return stream, err
-			}
-
-			return interceptors[0](ctx, desc, cc, method, chainHandler, opts...)
+			return streamer(ctx, desc, cc, method, opts...)
 		}
-	}
-
-	if n == 1 {
+	case 1:
 		return interceptors[0]
 	}
-
-	// n == 0; Dummy interceptor maintained for backward compatibility to avoid returning nil.
+	first, rest := interceptors[0], ChainStreamClient(interceptors[1:]...)
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-		return streamer(ctx, desc, cc, method, opts...)
+		// Provide a streamer to the first interceptor that will invoke the rest
+		// of the interceptors with whatever streamer the first interceptor
+		// happens to provide.
+		return first(ctx, desc, cc, method, func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+			return rest(ctx, desc, cc, method, streamer, opts...)
+		}, opts...)
 	}
 }
 
