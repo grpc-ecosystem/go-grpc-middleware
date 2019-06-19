@@ -1,22 +1,26 @@
 package grpc_zap
 
 import (
-	"bytes"
 	"fmt"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
+// Marshaler interface for JsonPbMarshaler
+type Marshaler interface {
+	Marshal(v interface{}) ([]byte, error)
+}
+
 var (
-	// JsonPbMarshaller is the marshaller used for serializing protobuf messages.
-	JsonPbMarshaller = &jsonpb.Marshaler{}
+	// JsonPbMarshaler is the marshaler used for serializing protobuf messages.
+	JsonPbMarshaler Marshaler = &runtime.JSONPb{}
 )
 
 // PayloadUnaryServerInterceptor returns a new unary server interceptors that logs the payloads of requests.
@@ -141,9 +145,9 @@ func (j *jsonpbObjectMarshaler) MarshalLogObject(e zapcore.ObjectEncoder) error 
 }
 
 func (j *jsonpbObjectMarshaler) MarshalJSON() ([]byte, error) {
-	b := &bytes.Buffer{}
-	if err := JsonPbMarshaller.Marshal(b, j.pb); err != nil {
+	bytes, err := JsonPbMarshaler.Marshal(j.pb)
+	if err != nil {
 		return nil, fmt.Errorf("jsonpb serializer failed: %v", err)
 	}
-	return b.Bytes(), nil
+	return bytes, nil
 }
