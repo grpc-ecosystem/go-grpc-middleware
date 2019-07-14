@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags/zap"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	ctx_zap "github.com/grpc-ecosystem/go-grpc-middleware/tags/zap"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -26,7 +26,7 @@ func Example_initialization() {
 		grpc_zap.WithLevels(customFunc),
 	}
 	// Make sure that log statements internal to gRPC library are logged using the zapLogger as well.
-	grpc_zap.ReplaceGrpcLogger(zapLogger)
+	grpc_zap.ReplaceGrpcLoggerV2(zapLogger)
 	// Create a server, make sure we put the grpc_ctxtags context before everything else.
 	_ = grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
