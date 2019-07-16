@@ -26,7 +26,7 @@ func Example_initialization() {
 		grpc_zap.WithLevels(customFunc),
 	}
 	// Make sure that log statements internal to gRPC library are logged using the zapLogger as well.
-	grpc_zap.ReplaceGrpcLoggerV2(zapLogger, grpc_zap.DefaultGrpcLoggerV2Options)
+	grpc_zap.ReplaceGrpcLoggerV2(zapLogger)
 	// Create a server, make sure we put the grpc_ctxtags context before everything else.
 	_ = grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
