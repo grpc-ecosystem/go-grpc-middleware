@@ -12,7 +12,7 @@ import (
 
 // ReplaceGrpcLogger sets the given zap.Logger as a gRPC-level logger.
 // This should be called *before* any other initialization, preferably from init() functions.
-// Deprecated: use ReplaceGrpcLoggerV2
+// Deprecated: use ReplaceGrpcLoggerV2.
 func ReplaceGrpcLogger(logger *zap.Logger) {
 	zgl := &zapGrpcLogger{logger.With(SystemField, zap.Bool("grpc_log", true))}
 	grpclog.SetLogger(zgl)
@@ -46,16 +46,16 @@ func (l *zapGrpcLogger) Println(args ...interface{}) {
 	l.logger.Info(fmt.Sprint(args...))
 }
 
-// GrpcLoggerV2Options allows you to set grpclogger options when using ReplaceGrpcLoggerV2
+// GrpcLoggerV2Options allows you to set grpclogger options when using ReplaceGrpcLoggerV2.
 type GrpcLoggerV2Options struct {
 	verbosity int
 }
 
-// DefaultGrpcLoggerV2Options is a set of sane default options for ReplaceGrpcLoggerV2
+// DefaultGrpcLoggerV2Options is a set of default options for ReplaceGrpcLoggerV2.
 var DefaultGrpcLoggerV2Options = &GrpcLoggerV2Options{}
 
-// ReplaceGrpcLoggerV2 replaces the grpc_log.LoggerV2 with the input zap.Logger
-// This logger allows you to set grpc verbosity level
+// ReplaceGrpcLoggerV2 replaces the grpc_log.LoggerV2 with the input zap.Logger.
+// This logger allows you to set grpc verbosity level.
 func ReplaceGrpcLoggerV2(logger *zap.Logger, opts *GrpcLoggerV2Options) {
 	zgl := &zapGrpcLoggerV2{Logger: logger.With(SystemField, zap.Bool("grpc_log", true))}
 
