@@ -54,63 +54,63 @@ func ReplaceGrpcLoggerV2(logger *zap.Logger) {
 // ReplaceGrpcLoggerV2WithVerbosity replaces the grpc_.LoggerV2 with the provided logger and verbosity.
 func ReplaceGrpcLoggerV2WithVerbosity(logger *zap.Logger, verbosity int) {
 	zgl := &zapGrpcLoggerV2{
-		Logger:    logger.With(SystemField, zap.Bool("grpc_log", true)),
+		logger:    logger.With(SystemField, zap.Bool("grpc_log", true)),
 		verbosity: verbosity,
 	}
 	grpclog.SetLoggerV2(zgl)
 }
 
 type zapGrpcLoggerV2 struct {
-	*zap.Logger
+	logger    *zap.Logger
 	verbosity int
 }
 
 func (l *zapGrpcLoggerV2) Info(args ...interface{}) {
-	l.Logger.Info(fmt.Sprint(args...))
+	l.logger.Info(fmt.Sprint(args...))
 }
 
 func (l *zapGrpcLoggerV2) Infoln(args ...interface{}) {
-	l.Logger.Info(fmt.Sprint(args...))
+	l.logger.Info(fmt.Sprint(args...))
 }
 
 func (l *zapGrpcLoggerV2) Infof(format string, args ...interface{}) {
-	l.Logger.Info(fmt.Sprintf(format, args...))
+	l.logger.Info(fmt.Sprintf(format, args...))
 }
 
 func (l *zapGrpcLoggerV2) Warning(args ...interface{}) {
-	l.Logger.Warn(fmt.Sprint(args...))
+	l.logger.Warn(fmt.Sprint(args...))
 }
 
 func (l *zapGrpcLoggerV2) Warningln(args ...interface{}) {
-	l.Logger.Warn(fmt.Sprint(args...))
+	l.logger.Warn(fmt.Sprint(args...))
 }
 
 func (l *zapGrpcLoggerV2) Warningf(format string, args ...interface{}) {
-	l.Logger.Warn(fmt.Sprintf(format, args...))
+	l.logger.Warn(fmt.Sprintf(format, args...))
 }
 
 func (l *zapGrpcLoggerV2) Error(args ...interface{}) {
-	l.Logger.Error(fmt.Sprint(args...))
+	l.logger.Error(fmt.Sprint(args...))
 }
 
 func (l *zapGrpcLoggerV2) Errorln(args ...interface{}) {
-	l.Logger.Error(fmt.Sprint(args...))
+	l.logger.Error(fmt.Sprint(args...))
 }
 
 func (l *zapGrpcLoggerV2) Errorf(format string, args ...interface{}) {
-	l.Logger.Error(fmt.Sprintf(format, args...))
+	l.logger.Error(fmt.Sprintf(format, args...))
 }
 
 func (l *zapGrpcLoggerV2) Fatal(args ...interface{}) {
-	l.Logger.Fatal(fmt.Sprint(args...))
+	l.logger.Fatal(fmt.Sprint(args...))
 }
 
 func (l *zapGrpcLoggerV2) Fatalln(args ...interface{}) {
-	l.Logger.Fatal(fmt.Sprint(args...))
+	l.logger.Fatal(fmt.Sprint(args...))
 }
 
 func (l *zapGrpcLoggerV2) Fatalf(format string, args ...interface{}) {
-	l.Logger.Fatal(fmt.Sprintf(format, args...))
+	l.logger.Fatal(fmt.Sprintf(format, args...))
 }
 
 func (l *zapGrpcLoggerV2) V(level int) bool {
