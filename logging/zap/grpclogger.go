@@ -46,14 +46,13 @@ func (l *zapGrpcLogger) Println(args ...interface{}) {
 	l.logger.Info(fmt.Sprint(args...))
 }
 
-// ReplaceGrpcLoggerV2 replaces the grpc_log.LoggerV2 with the input zap.Logger.
-// This logger allows you to set grpc verbosity level.
+// ReplaceGrpcLoggerV2 replaces the grpc_log.LoggerV2 with the provided logger.
 func ReplaceGrpcLoggerV2(logger *zap.Logger) {
-	ReplaceGrpcLoggerV2WithVerosity(logger, 0)
+	ReplaceGrpcLoggerV2WithVerbosity(logger, 0)
 }
 
-// ReplaceGrpcLoggerV2WithVerosity replaces the grpc_.LoggerV2 with the provided logger and verbosity.
-func ReplaceGrpcLoggerV2WithVerosity(logger *zap.Logger, verbosity int) {
+// ReplaceGrpcLoggerV2WithVerbosity replaces the grpc_.LoggerV2 with the provided logger and verbosity.
+func ReplaceGrpcLoggerV2WithVerbosity(logger *zap.Logger, verbosity int) {
 	zgl := &zapGrpcLoggerV2{
 		Logger:    logger.With(SystemField, zap.Bool("grpc_log", true)),
 		verbosity: verbosity,
