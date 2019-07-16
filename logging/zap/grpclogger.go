@@ -46,11 +46,12 @@ func (l *zapGrpcLogger) Println(args ...interface{}) {
 	l.logger.Info(fmt.Sprint(args...))
 }
 
+// GrpcLoggerV2Options allows you to set grpclogger options when using ReplaceGrpcLoggerV2
 type GrpcLoggerV2Options struct {
 	verbosity int
 }
 
-// DefaultGrpcLoggerV2Options is the default options for ReplaceGrpcLoggerV2
+// DefaultGrpcLoggerV2Options is a set of sane default options for ReplaceGrpcLoggerV2
 var DefaultGrpcLoggerV2Options = &GrpcLoggerV2Options{}
 
 // ReplaceGrpcLoggerV2 replaces the grpc_log.LoggerV2 with the input zap.Logger
