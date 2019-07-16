@@ -12,7 +12,7 @@ import (
 
 // ReplaceGrpcLogger sets the given zap.Logger as a gRPC-level logger.
 // This should be called *before* any other initialization, preferably from init() functions.
-// Deprecated: use ReplaceLoggerV2.
+// Deprecated: use ReplaceGrpcLoggerV2.
 func ReplaceGrpcLogger(logger *zap.Logger) {
 	zgl := &zapGrpcLogger{logger.With(SystemField, zap.Bool("grpc_log", true))}
 	grpclog.SetLogger(zgl)
