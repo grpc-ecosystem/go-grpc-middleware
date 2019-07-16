@@ -74,43 +74,30 @@ const (
 type zapGrpcLoggerV2 struct {
 	*zap.Logger
 	verbosity int
-	severity  int
 }
 
 func (l *zapGrpcLoggerV2) Info(args ...interface{}) {
-	if l.severity >= infoLevel {
-		l.Logger.Info(fmt.Sprint(args...))
-	}
+	l.Logger.Info(fmt.Sprint(args...))
 }
 
 func (l *zapGrpcLoggerV2) Infoln(args ...interface{}) {
-	if l.severity >= infoLevel {
-		l.Logger.Info(fmt.Sprint(args...))
-	}
+	l.Logger.Info(fmt.Sprint(args...))
 }
 
 func (l *zapGrpcLoggerV2) Infof(format string, args ...interface{}) {
-	if l.severity >= infoLevel {
-		l.Logger.Info(fmt.Sprintf(format, args...))
-	}
+	l.Logger.Info(fmt.Sprintf(format, args...))
 }
 
 func (l *zapGrpcLoggerV2) Warning(args ...interface{}) {
-	if l.severity >= warnLevel {
-		l.Logger.Warn(fmt.Sprint(args...))
-	}
+	l.Logger.Warn(fmt.Sprint(args...))
 }
 
 func (l *zapGrpcLoggerV2) Warningln(args ...interface{}) {
-	if l.severity >= warnLevel {
-		l.Logger.Warn(fmt.Sprint(args...))
-	}
+	l.Logger.Warn(fmt.Sprint(args...))
 }
 
 func (l *zapGrpcLoggerV2) Warningf(format string, args ...interface{}) {
-	if l.severity >= warnLevel {
-		l.Logger.Warn(fmt.Sprintf(format, args...))
-	}
+	l.Logger.Warn(fmt.Sprintf(format, args...))
 }
 
 func (l *zapGrpcLoggerV2) Error(args ...interface{}) {
