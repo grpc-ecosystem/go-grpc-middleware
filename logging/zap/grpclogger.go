@@ -65,12 +65,6 @@ func ReplaceGrpcLoggerV2(logger *zap.Logger, opts *GrpcLoggerV2Options) {
 	grpclog.SetLoggerV2(zgl)
 }
 
-const (
-	errorLevel = iota
-	warnLevel
-	infoLevel
-)
-
 type zapGrpcLoggerV2 struct {
 	*zap.Logger
 	verbosity int
