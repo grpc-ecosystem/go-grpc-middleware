@@ -5,8 +5,6 @@ package grpc_zap
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc/grpclog"
@@ -48,25 +46,20 @@ func (l *zapGrpcLogger) Println(args ...interface{}) {
 	l.logger.Info(fmt.Sprint(args...))
 }
 
+type GrpcLoggerV2Options struct {
+	verbosity int
+}
+
+// DefaultGrpcLoggerV2Options is the default options for ReplaceGrpcLoggerV2
+var DefaultGrpcLoggerV2Options = &GrpcLoggerV2Options{}
+
 // ReplaceGrpcLoggerV2 replaces the grpc_log.LoggerV2 with the input zap.Logger
-// This logger adheres to the grpc go environment variables GRPC_GO_LOG_VERBOSITY_LEVEL and GRPC_GO_LOG_SEVERITY_LEVEL.
-func ReplaceGrpcLoggerV2(logger *zap.Logger) {
+// This logger allows you to set grpc verbosity level
+func ReplaceGrpcLoggerV2(logger *zap.Logger, opts *GrpcLoggerV2Options) {
 	zgl := &zapGrpcLoggerV2{Logger: logger.With(SystemField, zap.Bool("grpc_log", true))}
 
-	verbosity := os.Getenv("GRPC_GO_LOG_VERBOSITY_LEVEL")
-	if v, err := strconv.Atoi(verbosity); err == nil {
-		zgl.verbosity = v
-	}
-
-	// We don't want to change the zap core of the input logger so we won't set logger level of input zap.Logger
-	logLevel := os.Getenv("GRPC_GO_LOG_SEVERITY_LEVEL")
-	switch logLevel {
-	case "", "ERROR", "error": // If env is unset, set level to ERROR.
-		zgl.severity = errorLevel
-	case "WARNING", "warning":
-		zgl.severity = warnLevel
-	case "INFO", "info":
-		zgl.severity = infoLevel
+	if opts != nil {
+		zgl.verbosity = opts.verbosity
 	}
 
 	grpclog.SetLoggerV2(zgl)
