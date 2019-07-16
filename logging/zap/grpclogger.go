@@ -53,8 +53,11 @@ func ReplaceGrpcLoggerV2(logger *zap.Logger) {
 }
 
 // ReplaceGrpcLoggerV2WithVerosity replaces the grpc_.LoggerV2 with the provided logger and verbosity.
-func ReplaceGrpcLoggerV2WithVerosity(logger *zap.Logger, verosity int) {
-	zgl := &zapGrpcLoggerV2{Logger: logger.With(SystemField, zap.Bool("grpc_log", true))}
+func ReplaceGrpcLoggerV2WithVerosity(logger *zap.Logger, verbosity int) {
+	zgl := &zapGrpcLoggerV2{
+		Logger:    logger.With(SystemField, zap.Bool("grpc_log", true)),
+		verbosity: verbosity,
+	}
 	grpclog.SetLoggerV2(zgl)
 }
 
