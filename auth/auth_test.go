@@ -4,13 +4,9 @@
 package grpc_auth_test
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc"
-
+	"context"
 	"fmt"
-
+	"testing"
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/auth"
@@ -19,8 +15,9 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
+	"github.com/stretchr/testify/suite"
 	"golang.org/x/oauth2"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/oauth"
 	"google.golang.org/grpc/metadata"
