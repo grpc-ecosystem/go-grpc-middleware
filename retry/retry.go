@@ -4,13 +4,13 @@
 package grpc_retry
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"sync"
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-	"golang.org/x/net/context"
 	"golang.org/x/net/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

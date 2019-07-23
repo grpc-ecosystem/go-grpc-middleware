@@ -4,6 +4,7 @@
 package grpc_opentracing
 
 import (
+	"context"
 	"io"
 	"sync"
 
@@ -11,7 +12,6 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/metadata"
