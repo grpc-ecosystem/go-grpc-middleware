@@ -14,6 +14,10 @@ Types of changes:
 
 ## [Unreleased]
 
+### Added
+
+- [#223](https://github.com/grpc-ecosystem/go-grpc-middleware/pull/223) Add go-kit logging middleware - [adrien-f](https://github.com/adrien-f)
+
 ## [v1.1.0] - 2019-09-12
 ### Added
 - [#226](https://github.com/grpc-ecosystem/go-grpc-middleware/pull/226) Support for go modules.
