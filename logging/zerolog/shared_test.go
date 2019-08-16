@@ -1,18 +1,18 @@
-package grpc_kit_test
+package grpc_zerolog_test
 
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/Ahmet-Kaplan/go-grpc-middleware/logging/zerolog/ctxzr"
+	ctx_zr "github.com/Ahmet-Kaplan/go-grpc-middleware/tags/zerolog"
 	"io"
 	"testing"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"context"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	ctx_kit "github.com/grpc-ecosystem/go-grpc-middleware/tags/kit"
 	grpc_testing "github.com/grpc-ecosystem/go-grpc-middleware/testing"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
-	"golang.org/x/net/context"
+	"github.com/rs/zerolog"
 )
 
 var (
@@ -25,9 +25,10 @@ type loggingPingService struct {
 
 func (s *loggingPingService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
 	grpc_ctxtags.Extract(ctx).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
-	ctx_kit.AddFields(ctx, []interface{}{"custom_field", "custom_value"})
-	_ = level.Info(ctx_kit.Extract(ctx)).Log("msg", "some ping")
-	return s.TestServiceServer.Ping(ctx, ping)
+	ctx_zr.AddFields(ctx, []interface{}{"custom_field", "custom_value"})
+	var ctxLog = ctx_zr.Extract(ctx)
+	ctxLog.Fields = append(ctxLog.Fields, "msg", "some ping")
+	return s.TestServiceServer.Ping(ctxzr.ToContext(ctx, ctxLog), ping)
 }
 
 func (s *loggingPingService) PingError(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.Empty, error) {
@@ -36,8 +37,9 @@ func (s *loggingPingService) PingError(ctx context.Context, ping *pb_testproto.P
 
 func (s *loggingPingService) PingList(ping *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
 	grpc_ctxtags.Extract(stream.Context()).Set("custom_tags.string", "something").Set("custom_tags.int", 1337)
-	ctx_kit.AddFields(stream.Context(), []interface{}{"custom_field", "custom_value"})
-	_ = level.Info(ctx_kit.Extract(stream.Context())).Log("msg", "some pinglist")
+	ctx_zr.AddFields(stream.Context(), []interface{}{"custom_field", "custom_value"})
+	var ctxLog = ctx_zr.Extract(stream.Context())
+	ctxLog.Fields = append(ctxLog.Fields, "msg", "some pinglist")
 	return s.TestServiceServer.PingList(ping, stream)
 }
 
@@ -45,19 +47,19 @@ func (s *loggingPingService) PingEmpty(ctx context.Context, empty *pb_testproto.
 	return s.TestServiceServer.PingEmpty(ctx, empty)
 }
 
-type kitBaseSuite struct {
+type ZRBaseSuite struct {
 	*grpc_testing.InterceptorTestSuite
 	mutexBuffer *grpc_testing.MutexReadWriter
 	buffer      *bytes.Buffer
-	logger      log.Logger
+	logger      *ctxzr.CtxLogger
 }
 
-func newKitBaseSuite(t *testing.T) *kitBaseSuite {
+func newZRBaseSuite(t *testing.T) *ZRBaseSuite {
 	b := &bytes.Buffer{}
 	muB := grpc_testing.NewMutexReadWriter(b)
-	logger := log.NewJSONLogger(log.NewSyncWriter(muB))
-	return &kitBaseSuite{
-		logger:      logger,
+	logger := zerolog.New(muB)
+	return &ZRBaseSuite{
+		logger:      &ctxzr.CtxLogger{Logger: logger},
 		buffer:      b,
 		mutexBuffer: muB,
 		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
@@ -66,13 +68,13 @@ func newKitBaseSuite(t *testing.T) *kitBaseSuite {
 	}
 }
 
-func (s *kitBaseSuite) SetupTest() {
+func (s *ZRBaseSuite) SetupTest() {
 	s.mutexBuffer.Lock()
 	s.buffer.Reset()
 	s.mutexBuffer.Unlock()
 }
 
-func (s *kitBaseSuite) getOutputJSONs() []map[string]interface{} {
+func (s *ZRBaseSuite) getOutputJSONs() []map[string]interface{} {
 	ret := make([]map[string]interface{}, 0)
 	dec := json.NewDecoder(s.mutexBuffer)
 
@@ -83,7 +85,7 @@ func (s *kitBaseSuite) getOutputJSONs() []map[string]interface{} {
 			break
 		}
 		if err != nil {
-			s.T().Fatalf("failed decoding output from go-kit JSON: %v", err)
+			s.T().Fatalf("failed decoding output from go-zerolog JSON: %v", err)
 		}
 
 		ret = append(ret, val)

@@ -1,13 +1,15 @@
-package grpc_kit
+package grpc_zerolog
 
 import (
+	"fmt"
+	"github.com/rs/zerolog"
 	"path"
 	"time"
 
-	"github.com/go-kit/kit/log"
+	"context"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/kit/ctxkit"
-	"golang.org/x/net/context"
+	//"github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog/ctxzr"
+	"github.com/Ahmet-Kaplan/go-grpc-middleware/logging/zerolog/ctxzr"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -20,7 +22,7 @@ var (
 )
 
 // UnaryServerInterceptor returns a new unary server interceptors that adds zap.Logger to the context.
-func UnaryServerInterceptor(logger log.Logger, opts ...Option) grpc.UnaryServerInterceptor {
+func UnaryServerInterceptor(logger zerolog.Logger, opts ...Option) grpc.UnaryServerInterceptor {
 	o := evaluateServerOpt(opts)
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		startTime := time.Now()
@@ -38,7 +40,7 @@ func UnaryServerInterceptor(logger log.Logger, opts ...Option) grpc.UnaryServerI
 	}
 }
 
-func StreamServerInterceptor(logger log.Logger, opts ...Option) grpc.StreamServerInterceptor {
+func StreamServerInterceptor(logger zerolog.Logger, opts ...Option) grpc.StreamServerInterceptor {
 	o := evaluateServerOpt(opts)
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		startTime := time.Now()
@@ -59,15 +61,16 @@ func StreamServerInterceptor(logger log.Logger, opts ...Option) grpc.StreamServe
 	}
 }
 
-func injectLogger(ctx context.Context, logger log.Logger, fullMethodString string, start time.Time) context.Context {
-	f := ctxkit.TagsToFields(ctx)
+func injectLogger(ctx context.Context, logger zerolog.Logger, fullMethodString string, start time.Time) context.Context {
+	f := ctxzr.TagsToFields(ctx)
 	f = append(f, "grpc.start_time", start.Format(time.RFC3339))
 	if d, ok := ctx.Deadline(); ok {
 		f = append(f, "grpc.request.deadline", d.Format(time.RFC3339))
 	}
 	f = append(f, serverCallFields(fullMethodString)...)
-	callLog := log.With(logger, f...)
-	return ctxkit.ToContext(ctx, callLog)
+	var injectLog = ctxzr.CtxLogger{Logger: logger, Fields: f}
+
+	return ctxzr.ToContext(ctx, &injectLog)
 }
 
 func serverCallFields(fullMethodString string) []interface{} {
@@ -82,9 +85,11 @@ func serverCallFields(fullMethodString string) []interface{} {
 }
 
 func logCall(ctx context.Context, options *options, msg string, code codes.Code, startTime time.Time, err error) {
-	extractedLogger := ctxkit.Extract(ctx)
-	extractedLogger = options.levelFunc(code, extractedLogger)
+
+	extractedLogger := ctxzr.Extract(ctx)
+
+	var logEvent = options.levelFunc(code, extractedLogger.Logger)
 	args := []interface{}{"msg", msg, "error", err, "grpc.code", code.String()}
 	args = append(args, options.durationFunc(time.Since(startTime))...)
-	_ = extractedLogger.Log(args...)
+	logEvent.Msg(fmt.Sprint(args...))
 }

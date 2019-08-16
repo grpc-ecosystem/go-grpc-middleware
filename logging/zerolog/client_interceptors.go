@@ -1,15 +1,16 @@
 // Copyright 2017 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-package grpc_kit
+package grpc_zerolog
 
 import (
+	"context"
+	"fmt"
+	"github.com/Ahmet-Kaplan/go-grpc-middleware/logging/zerolog/ctxzr"
+	"github.com/rs/zerolog"
+	"google.golang.org/grpc"
 	"path"
 	"time"
-
-	"github.com/go-kit/kit/log"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 )
 
 var (
@@ -18,35 +19,36 @@ var (
 )
 
 // UnaryClientInterceptor returns a new unary client interceptor that optionally logs the execution of external gRPC calls.
-func UnaryClientInterceptor(logger log.Logger, opts ...Option) grpc.UnaryClientInterceptor {
+func UnaryClientInterceptor(logger zerolog.Logger, opts ...Option) grpc.UnaryClientInterceptor {
 	o := evaluateClientOpt(opts)
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		fields := newClientLoggerFields(ctx, method)
 		startTime := time.Now()
 		err := invoker(ctx, method, req, reply, cc, opts...)
-		logFinalClientLine(o, log.With(logger, fields...), startTime, err, "finished client unary call")
+		logFinalClientLine(o, &ctxzr.CtxLogger{Logger: logger, Fields: fields}, startTime, err, "finished client unary call")
 		return err
 	}
 }
 
 // StreamClientInterceptor returns a new streaming client interceptor that optionally logs the execution of external gRPC calls.
-func StreamClientInterceptor(logger log.Logger, opts ...Option) grpc.StreamClientInterceptor {
+func StreamClientInterceptor(logger zerolog.Logger, opts ...Option) grpc.StreamClientInterceptor {
 	o := evaluateClientOpt(opts)
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		fields := newClientLoggerFields(ctx, method)
 		startTime := time.Now()
 		clientStream, err := streamer(ctx, desc, cc, method, opts...)
-		logFinalClientLine(o, log.With(logger, fields...), startTime, err, "finished client streaming call")
+		logFinalClientLine(o, &ctxzr.CtxLogger{Logger: logger, Fields: fields}, startTime, err, "finished client streaming call")
 		return clientStream, err
 	}
 }
 
-func logFinalClientLine(o *options, logger log.Logger, startTime time.Time, err error, msg string) {
+func logFinalClientLine(o *options, logger *ctxzr.CtxLogger, startTime time.Time, err error, msg string) {
 	code := o.codeFunc(err)
-	logger = o.levelFunc(code, logger)
+	var loggerEvent = o.levelFunc(code, logger.Logger)
 	args := []interface{}{"msg", msg, "error", err, "grpc.code", code.String()}
 	args = append(args, o.durationFunc(time.Now().Sub(startTime))...)
-	_ = logger.Log(args...)
+	//loggerEvent.Str("msg",msg).Err(err).Str("grpc.code",code.String()).Str("time",time.Now().Sub(startTime).String())
+	loggerEvent.Msg(fmt.Sprint(args...))
 }
 
 func newClientLoggerFields(ctx context.Context, fullMethodString string) []interface{} {

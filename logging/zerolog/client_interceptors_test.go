@@ -1,14 +1,13 @@
-package grpc_kit_test
+package grpc_zerolog_test
 
 import (
+	grpc_zerolog "github.com/Ahmet-Kaplan/go-grpc-middleware/logging/zerolog"
+	"github.com/rs/zerolog"
 	"io"
 	"runtime"
 	"strings"
 	"testing"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
-	grpc_kit "github.com/grpc-ecosystem/go-grpc-middleware/logging/kit"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,36 +16,36 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func customClientCodeToLevel(c codes.Code, logger log.Logger) log.Logger {
+func customClientCodeToLevel(c codes.Code, logger zerolog.Logger) *zerolog.Event {
 	if c == codes.Unauthenticated {
 		// Make this a special case for tests, and an error.
-		return level.Error(logger)
+		return logger.Error()
 	}
-	return grpc_kit.DefaultClientCodeToLevel(c, logger)
+	return grpc_zerolog.DefaultClientCodeToLevel(c, logger)
 }
 
-func TestKitClientSuite(t *testing.T) {
+func TestZRClientSuite(t *testing.T) {
 	if strings.HasPrefix(runtime.Version(), "go1.7") {
 		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
 		return
 	}
-	opts := []grpc_kit.Option{
-		grpc_kit.WithLevels(customClientCodeToLevel),
+	opts := []grpc_zerolog.Option{
+		grpc_zerolog.WithLevels(customClientCodeToLevel),
 	}
-	b := newKitBaseSuite(t)
-	b.logger = level.NewFilter(b.logger, level.AllowDebug()) // a lot of our stuff is on debug level by default
+	b := newZRBaseSuite(t)
+	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	b.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
-		grpc.WithUnaryInterceptor(grpc_kit.UnaryClientInterceptor(b.logger, opts...)),
-		grpc.WithStreamInterceptor(grpc_kit.StreamClientInterceptor(b.logger, opts...)),
+		grpc.WithUnaryInterceptor(grpc_zerolog.UnaryClientInterceptor(b.logger.Logger, opts...)),
+		grpc.WithStreamInterceptor(grpc_zerolog.StreamClientInterceptor(b.logger.Logger, opts...)),
 	}
-	suite.Run(t, &kitClientSuite{b})
+	suite.Run(t, &ZRClientSuite{b})
 }
 
-type kitClientSuite struct {
-	*kitBaseSuite
+type ZRClientSuite struct {
+	*ZRBaseSuite
 }
 
-func (s *kitClientSuite) TestPing() {
+func (s *ZRClientSuite) TestPing() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
 
@@ -62,7 +61,7 @@ func (s *kitClientSuite) TestPing() {
 	assert.Contains(s.T(), msgs[0], "grpc.time_ms", "interceptor log statement should contain execution time (duration in ms)")
 }
 
-func (s *kitClientSuite) TestPingList() {
+func (s *ZRClientSuite) TestPingList() {
 	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	for {
@@ -84,30 +83,30 @@ func (s *kitClientSuite) TestPingList() {
 	assert.Contains(s.T(), msgs[0], "grpc.time_ms", "interceptor log statement should contain execution time (duration in ms)")
 }
 
-func (s *kitClientSuite) TestPingError_WithCustomLevels() {
+func (s *ZRClientSuite) TestPingError_WithCustomLevels() {
 	for _, tcase := range []struct {
 		code  codes.Code
-		level level.Value
+		level zerolog.Level
 		msg   string
 	}{
 		{
 			code:  codes.Internal,
-			level: level.WarnValue(),
+			level: zerolog.WarnLevel,
 			msg:   "Internal must remap to WarnLevel in DefaultClientCodeToLevel",
 		},
 		{
 			code:  codes.NotFound,
-			level: level.DebugValue(),
+			level: zerolog.DebugLevel,
 			msg:   "NotFound must remap to DebugLevel in DefaultClientCodeToLevel",
 		},
 		{
 			code:  codes.FailedPrecondition,
-			level: level.DebugValue(),
+			level: zerolog.DebugLevel,
 			msg:   "FailedPrecondition must remap to DebugLevel in DefaultClientCodeToLevel",
 		},
 		{
 			code:  codes.Unauthenticated,
-			level: level.ErrorValue(),
+			level: zerolog.ErrorLevel,
 			msg:   "Unauthenticated is overwritten to ErrorLevel with customClientCodeToLevel override, which probably didn't work",
 		},
 	} {
@@ -128,28 +127,28 @@ func (s *kitClientSuite) TestPingError_WithCustomLevels() {
 	}
 }
 
-func TestKitClientOverrideSuite(t *testing.T) {
+func TestZRClientOverrideSuite(t *testing.T) {
 	if strings.HasPrefix(runtime.Version(), "go1.7") {
 		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
 		return
 	}
-	opts := []grpc_kit.Option{
-		grpc_kit.WithDurationField(grpc_kit.DurationToDurationField),
+	opts := []grpc_zerolog.Option{
+		grpc_zerolog.WithDurationField(grpc_zerolog.DurationToDurationField),
 	}
-	b := newKitBaseSuite(t)
-	b.logger = level.NewFilter(b.logger, level.AllowDebug()) // a lot of our stuff is on debug level by default
+	b := newZRBaseSuite(t)
+	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	b.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
-		grpc.WithUnaryInterceptor(grpc_kit.UnaryClientInterceptor(b.logger, opts...)),
-		grpc.WithStreamInterceptor(grpc_kit.StreamClientInterceptor(b.logger, opts...)),
+		grpc.WithUnaryInterceptor(grpc_zerolog.UnaryClientInterceptor(b.logger.Logger, opts...)),
+		grpc.WithStreamInterceptor(grpc_zerolog.StreamClientInterceptor(b.logger.Logger, opts...)),
 	}
-	suite.Run(t, &kitClientOverrideSuite{b})
+	suite.Run(t, &ZRClientOverrideSuite{b})
 }
 
-type kitClientOverrideSuite struct {
-	*kitBaseSuite
+type ZRClientOverrideSuite struct {
+	*ZRBaseSuite
 }
 
-func (s *kitClientOverrideSuite) TestPing_HasOverrides() {
+func (s *ZRClientOverrideSuite) TestPing_HasOverrides() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
 
@@ -163,7 +162,7 @@ func (s *kitClientOverrideSuite) TestPing_HasOverrides() {
 	assert.Contains(s.T(), msgs[0], "grpc.duration", "message must contain overridden duration")
 }
 
-func (s *kitClientOverrideSuite) TestPingList_HasOverrides() {
+func (s *ZRClientOverrideSuite) TestPingList_HasOverrides() {
 	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	for {

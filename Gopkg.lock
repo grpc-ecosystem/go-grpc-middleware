@@ -19,7 +19,7 @@
 
 [[projects]]
   digest = "1:48e65aaf8ce34ffb3e8d56daa9417826db162afbc2040705db331e9a2e9eebe3"
-  name = "github.com/go-kit/kit"
+  name = "github.com/rs/zerolog"
   packages = [
     "log",
     "log/level",
@@ -297,8 +297,8 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/go-kit/kit/log",
-    "github.com/go-kit/kit/log/level",
+    "github.com/rs/zerolog/log",
+    "github.com/rs/zerolog",
     "github.com/gogo/protobuf/gogoproto",
     "github.com/golang/protobuf/jsonpb",
     "github.com/golang/protobuf/proto",
@@ -312,7 +312,7 @@
     "github.com/stretchr/testify/suite",
     "go.uber.org/zap",
     "go.uber.org/zap/zapcore",
-    "golang.org/x/net/context",
+    "context",
     "golang.org/x/net/trace",
     "golang.org/x/oauth2",
     "google.golang.org/grpc",
