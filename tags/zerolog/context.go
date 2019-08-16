@@ -2,7 +2,7 @@ package ctx_zerolog
 
 import (
 	"context"
-	"github.com/Ahmet-Kaplan/go-grpc-middleware/logging/zerolog/ctxzr"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog/ctxzr"
 )
 
 // AddFields adds logrus fields to the logger.
