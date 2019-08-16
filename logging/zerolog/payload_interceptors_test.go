@@ -1,24 +1,24 @@
-package grpc_kit_test
+package grpc_zerolog_test
 
 import (
+	"github.com/rs/zerolog"
 	"io"
 	"runtime"
 	"strings"
 	"testing"
 
-	"github.com/go-kit/kit/log"
+	"context"
+	grpc_zerolog "github.com/Ahmet-Kaplan/go-grpc-middleware/logging/zerolog"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_kit "github.com/grpc-ecosystem/go-grpc-middleware/logging/kit"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
-func TestKitPayloadSuite(t *testing.T) {
+func TestZRPayloadSuite(t *testing.T) {
 	if strings.HasPrefix(runtime.Version(), "go1.7") {
 		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
 		return
@@ -27,30 +27,30 @@ func TestKitPayloadSuite(t *testing.T) {
 	alwaysLoggingDeciderServer := func(ctx context.Context, fullMethodName string, servingObject interface{}) bool { return true }
 	alwaysLoggingDeciderClient := func(ctx context.Context, fullMethodName string) bool { return true }
 
-	b := newKitBaseSuite(t)
+	b := newZRBaseSuite(t)
 	b.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
-		grpc.WithUnaryInterceptor(grpc_kit.PayloadUnaryClientInterceptor(b.logger, alwaysLoggingDeciderClient)),
-		grpc.WithStreamInterceptor(grpc_kit.PayloadStreamClientInterceptor(b.logger, alwaysLoggingDeciderClient)),
+		grpc.WithUnaryInterceptor(grpc_zerolog.PayloadUnaryClientInterceptor(b.logger.Logger, alwaysLoggingDeciderClient)),
+		grpc.WithStreamInterceptor(grpc_zerolog.PayloadStreamClientInterceptor(b.logger.Logger, alwaysLoggingDeciderClient)),
 	}
-	noOpLogger := log.NewNopLogger()
+	noOpLogger := zerolog.Nop()
 	b.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
 		grpc_middleware.WithStreamServerChain(
 			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_kit.StreamServerInterceptor(noOpLogger),
-			grpc_kit.PayloadStreamServerInterceptor(b.logger, alwaysLoggingDeciderServer)),
+			grpc_zerolog.StreamServerInterceptor(noOpLogger),
+			grpc_zerolog.PayloadStreamServerInterceptor(b.logger.Logger, alwaysLoggingDeciderServer)),
 		grpc_middleware.WithUnaryServerChain(
 			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_kit.UnaryServerInterceptor(noOpLogger),
-			grpc_kit.PayloadUnaryServerInterceptor(b.logger, alwaysLoggingDeciderServer)),
+			grpc_zerolog.UnaryServerInterceptor(noOpLogger),
+			grpc_zerolog.PayloadUnaryServerInterceptor(b.logger.Logger, alwaysLoggingDeciderServer)),
 	}
-	suite.Run(t, &kitPayloadSuite{b})
+	suite.Run(t, &ZRPayloadSuite{b})
 }
 
-type kitPayloadSuite struct {
-	*kitBaseSuite
+type ZRPayloadSuite struct {
+	*ZRBaseSuite
 }
 
-func (s *kitPayloadSuite) getServerAndClientMessages(expectedServer int, expectedClient int) (serverMsgs []map[string]interface{}, clientMsgs []map[string]interface{}) {
+func (s *ZRPayloadSuite) getServerAndClientMessages(expectedServer int, expectedClient int) (serverMsgs []map[string]interface{}, clientMsgs []map[string]interface{}) {
 	msgs := s.getOutputJSONs()
 	for _, m := range msgs {
 		if m["span.kind"] == "server" {
@@ -64,7 +64,7 @@ func (s *kitPayloadSuite) getServerAndClientMessages(expectedServer int, expecte
 	return serverMsgs, clientMsgs
 }
 
-func (s *kitPayloadSuite) TestPing_LogsBothRequestAndResponse() {
+func (s *ZRPayloadSuite) TestPing_LogsBothRequestAndResponse() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 
 	require.NoError(s.T(), err, "there must be not be an error on a successful call")
@@ -84,7 +84,7 @@ func (s *kitPayloadSuite) TestPing_LogsBothRequestAndResponse() {
 	assert.Contains(s.T(), serverResp, "grpc.response.content", "response payload must be logged in a structured way")
 }
 
-func (s *kitPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
+func (s *ZRPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
 	_, err := s.Client.PingError(s.SimpleCtx(), &pb_testproto.PingRequest{Value: "something", ErrorCodeReturned: uint32(4)})
 
 	require.Error(s.T(), err, "there must be an error on an unsuccessful call")
@@ -99,7 +99,7 @@ func (s *kitPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
 	assert.Contains(s.T(), serverMsgs[0], "grpc.request.content", "request payload must be logged in a structured way")
 }
 
-func (s *kitPayloadSuite) TestPingStream_LogsAllRequestsAndResponses() {
+func (s *ZRPayloadSuite) TestPingStream_LogsAllRequestsAndResponses() {
 	messagesExpected := 20
 	stream, err := s.Client.PingStream(s.SimpleCtx())
 

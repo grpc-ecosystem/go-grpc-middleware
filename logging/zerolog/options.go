@@ -1,11 +1,10 @@
-package grpc_kit
+package grpc_zerolog
 
 import (
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/logging"
+	"github.com/rs/zerolog"
 	"google.golang.org/grpc/codes"
 )
 
@@ -27,7 +26,7 @@ type options struct {
 
 type Option func(*options)
 
-type CodeToLevel func(code codes.Code, logger log.Logger) log.Logger
+type CodeToLevel func(code codes.Code, logger zerolog.Logger) *zerolog.Event
 type DurationToField func(duration time.Duration) []interface{}
 
 func evaluateServerOpt(opts []Option) *options {
@@ -79,29 +78,29 @@ func WithDurationField(f DurationToField) Option {
 }
 
 // DefaultCodeToLevel is the default implementation of gRPC return codes and interceptor log level for server side.
-func DefaultCodeToLevel(code codes.Code, logger log.Logger) log.Logger {
+func DefaultCodeToLevel(code codes.Code, logger zerolog.Logger) *zerolog.Event {
 	switch code {
 	case codes.OK, codes.Canceled, codes.InvalidArgument, codes.NotFound, codes.AlreadyExists, codes.Unauthenticated:
-		return level.Info(logger)
+		return logger.Info()
 	case codes.DeadlineExceeded, codes.PermissionDenied, codes.ResourceExhausted, codes.FailedPrecondition, codes.Aborted, codes.OutOfRange, codes.Unavailable:
-		return level.Warn(logger)
+		return logger.Warn()
 	case codes.Unknown, codes.Unimplemented, codes.Internal, codes.DataLoss:
-		return level.Error(logger)
+		return logger.Error()
 	default:
-		return level.Error(logger)
+		return logger.Error()
 	}
 }
 
-func DefaultClientCodeToLevel(code codes.Code, logger log.Logger) log.Logger {
+func DefaultClientCodeToLevel(code codes.Code, logger zerolog.Logger) *zerolog.Event {
 	switch code {
 	case codes.OK, codes.Canceled, codes.InvalidArgument, codes.NotFound, codes.AlreadyExists, codes.ResourceExhausted, codes.FailedPrecondition, codes.Aborted, codes.OutOfRange:
-		return level.Debug(logger)
+		return logger.Debug()
 	case codes.Unknown, codes.DeadlineExceeded, codes.PermissionDenied, codes.Unauthenticated:
-		return level.Info(logger)
+		return logger.Info()
 	case codes.Unimplemented, codes.Internal, codes.Unavailable, codes.DataLoss:
-		return level.Warn(logger)
+		return logger.Warn()
 	default:
-		return level.Info(logger)
+		return logger.Info()
 	}
 }
 
