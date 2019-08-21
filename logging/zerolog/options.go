@@ -26,7 +26,7 @@ type options struct {
 
 type Option func(*options)
 
-type CodeToLevel func(code codes.Code, logger zerolog.Logger) *zerolog.Event
+type CodeToLevel func(code codes.Code, logger *zerolog.Logger) *zerolog.Event
 type DurationToField func(duration time.Duration) []interface{}
 
 func evaluateServerOpt(opts []Option) *options {
@@ -78,7 +78,7 @@ func WithDurationField(f DurationToField) Option {
 }
 
 // DefaultCodeToLevel is the default implementation of gRPC return codes and interceptor log level for server side.
-func DefaultCodeToLevel(code codes.Code, logger zerolog.Logger) *zerolog.Event {
+func DefaultCodeToLevel(code codes.Code, logger *zerolog.Logger) *zerolog.Event {
 	switch code {
 	case codes.OK, codes.Canceled, codes.InvalidArgument, codes.NotFound, codes.AlreadyExists, codes.Unauthenticated:
 		return logger.Info()
@@ -91,7 +91,7 @@ func DefaultCodeToLevel(code codes.Code, logger zerolog.Logger) *zerolog.Event {
 	}
 }
 
-func DefaultClientCodeToLevel(code codes.Code, logger zerolog.Logger) *zerolog.Event {
+func DefaultClientCodeToLevel(code codes.Code, logger *zerolog.Logger) *zerolog.Event {
 	switch code {
 	case codes.OK, codes.Canceled, codes.InvalidArgument, codes.NotFound, codes.AlreadyExists, codes.ResourceExhausted, codes.FailedPrecondition, codes.Aborted, codes.OutOfRange:
 		return logger.Debug()

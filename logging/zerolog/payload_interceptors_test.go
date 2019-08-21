@@ -36,11 +36,11 @@ func TestZRPayloadSuite(t *testing.T) {
 	b.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
 		grpc_middleware.WithStreamServerChain(
 			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zerolog.StreamServerInterceptor(noOpLogger),
+			grpc_zerolog.StreamServerInterceptor(&noOpLogger),
 			grpc_zerolog.PayloadStreamServerInterceptor(b.logger.Logger, alwaysLoggingDeciderServer)),
 		grpc_middleware.WithUnaryServerChain(
 			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zerolog.UnaryServerInterceptor(noOpLogger),
+			grpc_zerolog.UnaryServerInterceptor(&noOpLogger),
 			grpc_zerolog.PayloadUnaryServerInterceptor(b.logger.Logger, alwaysLoggingDeciderServer)),
 	}
 	suite.Run(t, &ZRPayloadSuite{b})

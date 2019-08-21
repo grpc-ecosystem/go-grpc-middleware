@@ -9,13 +9,13 @@ import (
 type ctxMarker struct{}
 
 type CtxLogger struct {
-	Logger zerolog.Logger
+	Logger *zerolog.Logger
 	Fields []interface{}
 }
 
 var (
 	ctxMarkerKey = &ctxMarker{}
-	nullLogger   = zerolog.Logger{}
+	nullLogger   = &zerolog.Logger{}
 )
 
 // AddFields adds fields to the logger.

@@ -22,7 +22,7 @@ var (
 )
 
 // UnaryServerInterceptor returns a new unary server interceptors that adds zap.Logger to the context.
-func UnaryServerInterceptor(logger zerolog.Logger, opts ...Option) grpc.UnaryServerInterceptor {
+func UnaryServerInterceptor(logger *zerolog.Logger, opts ...Option) grpc.UnaryServerInterceptor {
 	o := evaluateServerOpt(opts)
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		startTime := time.Now()
@@ -40,7 +40,7 @@ func UnaryServerInterceptor(logger zerolog.Logger, opts ...Option) grpc.UnarySer
 	}
 }
 
-func StreamServerInterceptor(logger zerolog.Logger, opts ...Option) grpc.StreamServerInterceptor {
+func StreamServerInterceptor(logger *zerolog.Logger, opts ...Option) grpc.StreamServerInterceptor {
 	o := evaluateServerOpt(opts)
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		startTime := time.Now()
@@ -61,7 +61,7 @@ func StreamServerInterceptor(logger zerolog.Logger, opts ...Option) grpc.StreamS
 	}
 }
 
-func injectLogger(ctx context.Context, logger zerolog.Logger, fullMethodString string, start time.Time) context.Context {
+func injectLogger(ctx context.Context, logger *zerolog.Logger, fullMethodString string, start time.Time) context.Context {
 	f := ctxzr.TagsToFields(ctx)
 	f = append(f, "grpc.start_time", start.Format(time.RFC3339))
 	if d, ok := ctx.Deadline(); ok {

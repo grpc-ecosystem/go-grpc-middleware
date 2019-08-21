@@ -6,7 +6,7 @@ package grpc_zerolog
 import (
 	"context"
 	"fmt"
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog/ctxzr"
+	"github.com/Ahmet-Kaplan/go-grpc-middleware/logging/zerolog/ctxzr"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 	"path"
@@ -19,7 +19,7 @@ var (
 )
 
 // UnaryClientInterceptor returns a new unary client interceptor that optionally logs the execution of external gRPC calls.
-func UnaryClientInterceptor(logger zerolog.Logger, opts ...Option) grpc.UnaryClientInterceptor {
+func UnaryClientInterceptor(logger *zerolog.Logger, opts ...Option) grpc.UnaryClientInterceptor {
 	o := evaluateClientOpt(opts)
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		fields := newClientLoggerFields(ctx, method)
@@ -31,7 +31,7 @@ func UnaryClientInterceptor(logger zerolog.Logger, opts ...Option) grpc.UnaryCli
 }
 
 // StreamClientInterceptor returns a new streaming client interceptor that optionally logs the execution of external gRPC calls.
-func StreamClientInterceptor(logger zerolog.Logger, opts ...Option) grpc.StreamClientInterceptor {
+func StreamClientInterceptor(logger *zerolog.Logger, opts ...Option) grpc.StreamClientInterceptor {
 	o := evaluateClientOpt(opts)
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		fields := newClientLoggerFields(ctx, method)
