@@ -44,11 +44,12 @@ func StreamClientInterceptor(logger *zerolog.Logger, opts ...Option) grpc.Stream
 
 func logFinalClientLine(o *options, logger *ctxzr.CtxLogger, startTime time.Time, err error, msg string) {
 	code := o.codeFunc(err)
-	var loggerEvent = o.levelFunc(code, logger.Logger)
+	var level = o.levelFunc(code)
 	args := []interface{}{"msg", msg, "error", err, "grpc.code", code.String()}
 	args = append(args, o.durationFunc(time.Now().Sub(startTime))...)
 	//loggerEvent.Str("msg",msg).Err(err).Str("grpc.code",code.String()).Str("time",time.Now().Sub(startTime).String())
-	loggerEvent.Msg(fmt.Sprint(args...))
+	logger.Logger.WithLevel(level).Msg(fmt.Sprint(args...))
+
 }
 
 func newClientLoggerFields(ctx context.Context, fullMethodString string) []interface{} {
