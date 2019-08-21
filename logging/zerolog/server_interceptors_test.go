@@ -20,12 +20,12 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func customCodeToLevel(c codes.Code, logger *zerolog.Logger) *zerolog.Event {
+func customCodeToLevel(c codes.Code) zerolog.Level {
 	if c == codes.Unauthenticated {
 		// Make this a special case for tests, and an error.
-		return logger.Error()
+		return zerolog.ErrorLevel
 	}
-	return grpc_zerolog.DefaultCodeToLevel(c, logger)
+	return grpc_zerolog.DefaultCodeToLevel(c)
 }
 
 func TestZRLoggingSuite(t *testing.T) {
