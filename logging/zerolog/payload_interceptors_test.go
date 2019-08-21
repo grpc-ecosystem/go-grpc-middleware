@@ -32,7 +32,7 @@ func TestZRPayloadSuite(t *testing.T) {
 		grpc.WithUnaryInterceptor(grpc_zerolog.PayloadUnaryClientInterceptor(b.logger.Logger, alwaysLoggingDeciderClient)),
 		grpc.WithStreamInterceptor(grpc_zerolog.PayloadStreamClientInterceptor(b.logger.Logger, alwaysLoggingDeciderClient)),
 	}
-	noOpLogger := zerolog.Nop()
+	noOpLogger := zerolog.New(zerolog.Nop())
 	b.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
 		grpc_middleware.WithStreamServerChain(
 			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),

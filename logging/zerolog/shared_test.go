@@ -56,6 +56,8 @@ type ZRBaseSuite struct {
 func newZRBaseSuite(t *testing.T) *ZRBaseSuite {
 	b := &bytes.Buffer{}
 	muB := grpc_testing.NewMutexReadWriter(b)
+	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+
 	logger := zerolog.New(muB)
 	fields := []interface{}{}
 	return &ZRBaseSuite{
