@@ -26,7 +26,7 @@ type options struct {
 
 type Option func(*options)
 
-type CodeToLevel func(code codes.Code, logger *zerolog.Logger) *zerolog.Event
+type CodeToLevel func(code codes.Code) zerolog.Level
 type DurationToField func(duration time.Duration) []interface{}
 
 func evaluateServerOpt(opts []Option) *options {
@@ -78,29 +78,29 @@ func WithDurationField(f DurationToField) Option {
 }
 
 // DefaultCodeToLevel is the default implementation of gRPC return codes and interceptor log level for server side.
-func DefaultCodeToLevel(code codes.Code, logger *zerolog.Logger) *zerolog.Event {
+func DefaultCodeToLevel(code codes.Code) zerolog.Level {
 	switch code {
 	case codes.OK, codes.Canceled, codes.InvalidArgument, codes.NotFound, codes.AlreadyExists, codes.Unauthenticated:
-		return logger.Info()
+		return zerolog.InfoLevel
 	case codes.DeadlineExceeded, codes.PermissionDenied, codes.ResourceExhausted, codes.FailedPrecondition, codes.Aborted, codes.OutOfRange, codes.Unavailable:
-		return logger.Warn()
+		return zerolog.WarnLevel
 	case codes.Unknown, codes.Unimplemented, codes.Internal, codes.DataLoss:
-		return logger.Error()
+		return zerolog.ErrorLevel
 	default:
-		return logger.Error()
+		return zerolog.ErrorLevel
 	}
 }
 
-func DefaultClientCodeToLevel(code codes.Code, logger *zerolog.Logger) *zerolog.Event {
+func DefaultClientCodeToLevel(code codes.Code) zerolog.Level {
 	switch code {
 	case codes.OK, codes.Canceled, codes.InvalidArgument, codes.NotFound, codes.AlreadyExists, codes.ResourceExhausted, codes.FailedPrecondition, codes.Aborted, codes.OutOfRange:
-		return logger.Debug()
+		return zerolog.DebugLevel
 	case codes.Unknown, codes.DeadlineExceeded, codes.PermissionDenied, codes.Unauthenticated:
-		return logger.Info()
+		return zerolog.InfoLevel
 	case codes.Unimplemented, codes.Internal, codes.Unavailable, codes.DataLoss:
-		return logger.Warn()
+		return zerolog.WarnLevel
 	default:
-		return logger.Info()
+		return zerolog.InfoLevel
 	}
 }
 

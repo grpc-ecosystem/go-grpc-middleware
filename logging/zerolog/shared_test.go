@@ -57,8 +57,9 @@ func newZRBaseSuite(t *testing.T) *ZRBaseSuite {
 	b := &bytes.Buffer{}
 	muB := grpc_testing.NewMutexReadWriter(b)
 	logger := zerolog.New(muB)
+	fields := []interface{}{}
 	return &ZRBaseSuite{
-		logger:      &ctxzr.CtxLogger{Logger: &logger},
+		logger:      &ctxzr.CtxLogger{Logger: &logger, Fields: fields},
 		buffer:      b,
 		mutexBuffer: muB,
 		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
