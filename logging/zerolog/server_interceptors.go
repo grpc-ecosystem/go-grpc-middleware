@@ -88,8 +88,8 @@ func logCall(ctx context.Context, options *options, msg string, code codes.Code,
 
 	extractedLogger := ctxzr.Extract(ctx)
 
-	var logEvent = options.levelFunc(code, extractedLogger.Logger)
+	var level = options.levelFunc(code)
 	args := []interface{}{"msg", msg, "error", err, "grpc.code", code.String()}
 	args = append(args, options.durationFunc(time.Since(startTime))...)
-	logEvent.Msg(fmt.Sprint(args...))
+	extractedLogger.Logger.WithLevel(level).Msg(fmt.Sprint(args...))
 }
