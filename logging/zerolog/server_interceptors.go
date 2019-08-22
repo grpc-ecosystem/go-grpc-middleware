@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"context"
-	grpc_middleware "go-grpc-middleware"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	//"github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog/ctxzr"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog/ctxzr"
 	"google.golang.org/grpc"
