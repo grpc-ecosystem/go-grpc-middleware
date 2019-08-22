@@ -8,7 +8,7 @@ import (
 	"context"
 	grpc_middleware "go-grpc-middleware"
 	//"github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog/ctxzr"
-	"go-grpc-middleware/logging/zerolog/ctxzr"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog/ctxzr"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
