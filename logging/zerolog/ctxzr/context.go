@@ -2,8 +2,8 @@ package ctxzr
 
 import (
 	"context"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/rs/zerolog"
-	grpc_ctxtags "go-grpc-middleware/tags"
 )
 
 type ctxMarker struct{}

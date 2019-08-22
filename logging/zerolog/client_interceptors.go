@@ -5,8 +5,8 @@ package grpc_zerolog
 
 import (
 	"context"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog/ctxzr"
 	"github.com/rs/zerolog"
-	"go-grpc-middleware/logging/zerolog/ctxzr"
 	"google.golang.org/grpc"
 	"path"
 	"time"

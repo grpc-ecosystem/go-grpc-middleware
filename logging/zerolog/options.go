@@ -3,8 +3,8 @@ package grpc_zerolog
 import (
 	"time"
 
+	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/logging"
 	"github.com/rs/zerolog"
-	grpc_logging "go-grpc-middleware/logging"
 	"google.golang.org/grpc/codes"
 )
 

@@ -1,20 +1,20 @@
 package grpc_zerolog_test
 
 import (
-	grpc_zerolog "go-grpc-middleware/logging/zerolog"
+	grpc_zerolog "github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog"
 	"io"
 	"runtime"
 	"strings"
 	"testing"
 	"time"
 
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	grpc_middleware "go-grpc-middleware"
-	grpc_ctxtags "go-grpc-middleware/tags"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
