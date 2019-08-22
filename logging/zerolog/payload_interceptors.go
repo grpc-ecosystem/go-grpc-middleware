@@ -3,13 +3,13 @@ package grpc_zerolog
 import (
 	"bytes"
 	"fmt"
-	"github.com/Ahmet-Kaplan/go-grpc-middleware/logging/zerolog/ctxzr"
+	"go-grpc-middleware/logging/zerolog/ctxzr"
 
 	"context"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/logging"
 	"github.com/rs/zerolog"
+	grpc_logging "go-grpc-middleware/logging"
 	"google.golang.org/grpc"
 )
 
@@ -28,7 +28,7 @@ func PayloadUnaryServerInterceptor(logger *zerolog.Logger, decider grpc_logging.
 			return handler(ctx, req)
 		}
 		// Use the provided log.Logger for logging but use the fields from context.
-		resLogger := ctxzr.CtxLogger{Logger: logger, Fields: append(serverCallFields(info.FullMethod), ctxzr.TagsToFields(ctx)...)}
+		resLogger := ctxzr.CtxLogger{Logger: logger, Fields: ctxzr.MergeFields(serverCallFields(info.FullMethod), ctxzr.TagsToFields(ctx))}
 
 		logProtoMessageAsJson(&resLogger, req, "grpc.request.content", "server request payload logged as grpc.request.content field")
 		resp, err := handler(ctx, req)
@@ -48,7 +48,7 @@ func PayloadStreamServerInterceptor(logger *zerolog.Logger, decider grpc_logging
 		if !decider(stream.Context(), info.FullMethod, srv) {
 			return handler(srv, stream)
 		}
-		logEntry := ctxzr.CtxLogger{Logger: logger, Fields: append(serverCallFields(info.FullMethod), ctxzr.TagsToFields(stream.Context())...)}
+		logEntry := ctxzr.CtxLogger{Logger: logger, Fields: ctxzr.MergeFields(serverCallFields(info.FullMethod), ctxzr.TagsToFields(stream.Context()))}
 
 		newStream := &loggingServerStream{ServerStream: stream, logger: &logEntry}
 		return handler(srv, newStream)
@@ -130,11 +130,10 @@ func logProtoMessageAsJson(logger *ctxzr.CtxLogger, pbMsg interface{}, key strin
 	if p, ok := pbMsg.(proto.Message); ok {
 		payload, err := (&jsonpbObjectMarshaler{pb: p}).MarshalJSON()
 		if err != nil {
-			logger.Fields = append(logger.Fields, key, msg)
-			logger.Logger.Err(err).Msg(fmt.Sprint(logger.Fields))
+			logger.Logger.Err(err).Fields(logger.Fields).RawJSON(key, payload).Msg(msg)
+		} else {
+			logger.Logger.Info().Fields(logger.Fields).RawJSON(key, payload).Msg(msg)
 		}
-		logger.Fields = append(logger.Fields, key, string(payload))
-		logger.Logger.Info().Msg(fmt.Sprint(logger.Fields))
 	}
 }
 

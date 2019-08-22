@@ -1,15 +1,14 @@
 package grpc_zerolog
 
 import (
-	"fmt"
 	"github.com/rs/zerolog"
 	"path"
 	"time"
 
 	"context"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_middleware "go-grpc-middleware"
 	//"github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog/ctxzr"
-	"github.com/Ahmet-Kaplan/go-grpc-middleware/logging/zerolog/ctxzr"
+	"go-grpc-middleware/logging/zerolog/ctxzr"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -34,7 +33,7 @@ func UnaryServerInterceptor(logger *zerolog.Logger, opts ...Option) grpc.UnarySe
 		}
 
 		code := o.codeFunc(err)
-		logCall(newCtx, o, "finished unary call with code "+code.String(), code, startTime, err)
+		logCall(newCtx, o, "finished unary call with code "+code.String(), code, startTime)
 
 		return resp, err
 	}
@@ -55,7 +54,7 @@ func StreamServerInterceptor(logger *zerolog.Logger, opts ...Option) grpc.Stream
 		}
 
 		code := o.codeFunc(err)
-		logCall(newCtx, o, "finished streaming call with code "+code.String(), code, startTime, err)
+		logCall(newCtx, o, "finished streaming call with code "+code.String(), code, startTime)
 
 		return err
 	}
@@ -63,33 +62,44 @@ func StreamServerInterceptor(logger *zerolog.Logger, opts ...Option) grpc.Stream
 
 func injectLogger(ctx context.Context, logger *zerolog.Logger, fullMethodString string, start time.Time) context.Context {
 	f := ctxzr.TagsToFields(ctx)
-	f = append(f, "grpc.start_time", start.Format(time.RFC3339))
+	f["grpc.start_time"] = start.Format(time.RFC3339)
 	if d, ok := ctx.Deadline(); ok {
-		f = append(f, "grpc.request.deadline", d.Format(time.RFC3339))
+		f["grpc.request.deadline"] = d.Format(time.RFC3339)
 	}
-	f = append(f, serverCallFields(fullMethodString)...)
+	for k, v := range serverCallFields(fullMethodString) {
+		f[k] = v
+	}
+
 	var injectLog = ctxzr.CtxLogger{Logger: logger, Fields: f}
 
 	return ctxzr.ToContext(ctx, &injectLog)
 }
 
-func serverCallFields(fullMethodString string) []interface{} {
+func serverCallFields(fullMethodString string) map[string]interface{} {
 	service := path.Dir(fullMethodString)[1:]
 	method := path.Base(fullMethodString)
-	return []interface{}{
-		"system", SystemField,
-		"span.kind", ServerField,
-		"grpc.service", service,
-		"grpc.method", method,
+	return map[string]interface{}{
+		"system":       SystemField,
+		"span.kind":    ServerField,
+		"grpc.service": service,
+		"grpc.method":  method,
 	}
 }
 
-func logCall(ctx context.Context, options *options, msg string, code codes.Code, startTime time.Time, err error) {
+func logCall(ctx context.Context, options *options, msg string, code codes.Code, startTime time.Time) {
 
 	extractedLogger := ctxzr.Extract(ctx)
 
 	var level = options.levelFunc(code)
-	args := []interface{}{"msg", msg, "error", err, "grpc.code", code.String()}
-	args = append(args, options.durationFunc(time.Since(startTime))...)
-	extractedLogger.Logger.WithLevel(level).Msg(fmt.Sprint(args...))
+	logger := extractedLogger.Logger.WithLevel(level)
+
+	args := make(map[string]interface{}, 0)
+	args["grpc.code"] = code.String()
+
+	for k, v := range extractedLogger.Fields {
+		args[k] = v
+	}
+	args["msg"] = msg
+
+	options.durationFunc(logger.Fields(args), time.Since(startTime)).Send()
 }

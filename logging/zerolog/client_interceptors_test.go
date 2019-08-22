@@ -1,8 +1,8 @@
 package grpc_zerolog_test
 
 import (
-	grpc_zerolog "github.com/Ahmet-Kaplan/go-grpc-middleware/logging/zerolog"
 	"github.com/rs/zerolog"
+	grpc_zerolog "go-grpc-middleware/logging/zerolog"
 	"io"
 	"runtime"
 	"strings"

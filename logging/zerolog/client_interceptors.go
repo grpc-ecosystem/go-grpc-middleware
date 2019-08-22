@@ -5,9 +5,8 @@ package grpc_zerolog
 
 import (
 	"context"
-	"fmt"
-	"github.com/Ahmet-Kaplan/go-grpc-middleware/logging/zerolog/ctxzr"
 	"github.com/rs/zerolog"
+	"go-grpc-middleware/logging/zerolog/ctxzr"
 	"google.golang.org/grpc"
 	"path"
 	"time"
@@ -45,20 +44,27 @@ func StreamClientInterceptor(logger *zerolog.Logger, opts ...Option) grpc.Stream
 func logFinalClientLine(o *options, logger *ctxzr.CtxLogger, startTime time.Time, err error, msg string) {
 	code := o.codeFunc(err)
 	var level = o.levelFunc(code)
-	args := []interface{}{"msg", msg, "error", err, "grpc.code", code.String()}
-	args = append(args, o.durationFunc(time.Now().Sub(startTime))...)
-	//loggerEvent.Str("msg",msg).Err(err).Str("grpc.code",code.String()).Str("time",time.Now().Sub(startTime).String())
-	logger.Logger.WithLevel(level).Msg(fmt.Sprint(args...))
 
+	clientLogger := logger.Logger.WithLevel(level).Err(err)
+	args := make(map[string]interface{})
+	args["grpc.code"] = code.String()
+
+	for k, v := range logger.Fields {
+		args[k] = v
+	}
+	args["msg"] = msg
+	clientLogger.Fields(args)
+	// Add Duration to Fields and Send
+	o.durationFunc(clientLogger.Fields(args), time.Since(startTime)).Send()
 }
 
-func newClientLoggerFields(ctx context.Context, fullMethodString string) []interface{} {
+func newClientLoggerFields(ctx context.Context, fullMethodString string) map[string]interface{} {
 	service := path.Dir(fullMethodString)[1:]
 	method := path.Base(fullMethodString)
-	return []interface{}{
-		"system", "grpc",
-		"span.kind", "client",
-		"grpc.service", service,
-		"grpc.method", method,
+	return map[string]interface{}{
+		"system":       "grpc",
+		"span.kind":    "client",
+		"grpc.service": service,
+		"grpc.method":  method,
 	}
 }

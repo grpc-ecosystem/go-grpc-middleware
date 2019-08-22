@@ -1,20 +1,20 @@
 package grpc_zerolog_test
 
 import (
-	grpc_zerolog "github.com/Ahmet-Kaplan/go-grpc-middleware/logging/zerolog"
+	grpc_zerolog "go-grpc-middleware/logging/zerolog"
 	"io"
 	"runtime"
 	"strings"
 	"testing"
 	"time"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	grpc_middleware "go-grpc-middleware"
+	grpc_ctxtags "go-grpc-middleware/tags"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -108,7 +108,7 @@ func (s *ZRServerSuite) TestPingError_WithCustomLevels() {
 		{
 			code:  codes.Unauthenticated,
 			level: zerolog.ErrorLevel,
-			msg:   "Unauthenticated is overwritten to DPanicLevel with customCodeToLevel override, which probably didn't work",
+			msg:   "Unauthenticated is overwritten to PanicLevel with customCodeToLevel override, which probably didn't work",
 		},
 	} {
 		s.buffer.Reset()

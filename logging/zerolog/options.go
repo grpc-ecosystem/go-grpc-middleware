@@ -3,8 +3,8 @@ package grpc_zerolog
 import (
 	"time"
 
-	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/logging"
 	"github.com/rs/zerolog"
+	grpc_logging "go-grpc-middleware/logging"
 	"google.golang.org/grpc/codes"
 )
 
@@ -27,7 +27,7 @@ type options struct {
 type Option func(*options)
 
 type CodeToLevel func(code codes.Code) zerolog.Level
-type DurationToField func(duration time.Duration) []interface{}
+type DurationToField func(logEvent *zerolog.Event, duration time.Duration) *zerolog.Event
 
 func evaluateServerOpt(opts []Option) *options {
 	optCopy := &options{}
@@ -107,16 +107,12 @@ func DefaultClientCodeToLevel(code codes.Code) zerolog.Level {
 var DefaultDurationToField = DurationToTimeMillisField
 
 // DurationToTimeMillisField converts the duration to milliseconds and uses the key `grpc.time_ms`.
-func DurationToTimeMillisField(duration time.Duration) []interface{} {
-	return []interface{}{"grpc.time_ms", durationToMilliseconds(duration)}
+func DurationToTimeMillisField(logEvent *zerolog.Event, duration time.Duration) *zerolog.Event {
+	return logEvent.Dur("grpc.time_ms", duration)
 }
 
 // DurationToDurationField uses a Duration field to log the request duration
 // and leaves it up to Zap's encoder settings to determine how that is output.
-func DurationToDurationField(duration time.Duration) []interface{} {
-	return []interface{}{"grpc.duration", duration}
-}
-
-func durationToMilliseconds(duration time.Duration) float32 {
-	return float32(duration.Nanoseconds()/1000) / 1000
+func DurationToDurationField(logEvent *zerolog.Event, duration time.Duration) *zerolog.Event {
+	return logEvent.Dur("grpc.duration", duration)
 }
