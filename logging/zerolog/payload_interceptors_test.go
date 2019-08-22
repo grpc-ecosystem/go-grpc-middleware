@@ -8,13 +8,13 @@ import (
 	"testing"
 
 	"context"
-	grpc_zerolog "github.com/Ahmet-Kaplan/go-grpc-middleware/logging/zerolog"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	grpc_middleware "go-grpc-middleware"
+	grpc_zerolog "go-grpc-middleware/logging/zerolog"
+	grpc_ctxtags "go-grpc-middleware/tags"
 	"google.golang.org/grpc"
 )
 
