@@ -22,6 +22,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
+// TODO(domgreen): This is blocking us from upgrading to later versions of gRPC. Fix in new PR.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type Empty struct {
