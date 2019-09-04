@@ -11,7 +11,6 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -283,7 +282,7 @@ func (s *zapServerOverridenDeciderSuite) TestPing_HasOverriddenDecider() {
 
 func (s *zapServerOverridenDeciderSuite) TestPingError_HasOverriddenDecider() {
 	code := codes.NotFound
-	level := logrus.InfoLevel
+	level := zapcore.InfoLevel
 	msg := "NotFound must remap to InfoLevel in DefaultCodeToLevel"
 
 	s.buffer.Reset()
