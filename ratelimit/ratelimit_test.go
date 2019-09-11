@@ -47,7 +47,7 @@ func TestUnaryServerInterceptor_RateLimitFail(t *testing.T) {
 	}
 	req, err := interceptor(nil, nil, info, handler)
 	assert.Nil(t, req)
-	assert.EqualError(t, err, "rpc error: code = ResourceExhausted desc = FakeMethod is rejected by grpc_ratelimit middleare, please retry later.")
+	assert.EqualError(t, err, "rpc error: code = ResourceExhausted desc = FakeMethod is rejected by grpc_ratelimit middleware, please retry later.")
 }
 
 func TestStreamServerInterceptor_RateLimitPass(t *testing.T) {
@@ -71,5 +71,5 @@ func TestStreamServerInterceptor_RateLimitFail(t *testing.T) {
 		FullMethod: "FakeMethod",
 	}
 	err := interceptor(nil, nil, info, handler)
-	assert.EqualError(t, err, "rpc error: code = ResourceExhausted desc = FakeMethod is rejected by grpc_ratelimit middleare, please retry later.")
+	assert.EqualError(t, err, "rpc error: code = ResourceExhausted desc = FakeMethod is rejected by grpc_ratelimit middleware, please retry later.")
 }
