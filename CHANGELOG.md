@@ -14,7 +14,7 @@ Types of changes:
 
 ## [Unreleased]
 
-## 1.1.0 - 2019-09-12
+## [v1.1.0] - 2019-09-12
 ### Added
 - [#226](https://github.com/grpc-ecosystem/go-grpc-middleware/pull/226) Support for go modules.
 - [#221](https://github.com/grpc-ecosystem/go-grpc-middleware/pull/221) logging/zap add support for gRPC LoggerV2  - [kush-patel-hs](https://github.com/kush-patel-hs)
@@ -32,7 +32,7 @@ Types of changes:
 - [172](https://github.com/grpc-ecosystem/go-grpc-middleware/pull/172) Passing ctx into retry and recover - [johanbrandhorst](https://github.com/johanbrandhorst)
 - Numerious documentation fixes.
 
-## 1.0.0 - 2018-05-08
+## v1.0.0 - 2018-05-08
 ### Added
 - grpc_auth 
 - grpc_ctxtags
@@ -43,4 +43,5 @@ Types of changes:
 - grpc_validator
 - grpc_recovery
 
-[Unreleased]: https://github.com/grpc-ecosystem/go-grpc-middleware/compare/v1.0.0...HEAD 
+[Unreleased]: https://github.com/grpc-ecosystem/go-grpc-middleware/compare/v1.1.0...HEAD 
+[v1.1.0]: https://github.com/grpc-ecosystem/go-grpc-middleware/compare/v1.0.0...v1.1.0 
