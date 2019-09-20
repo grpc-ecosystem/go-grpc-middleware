@@ -76,9 +76,7 @@ func (s *tracedClientStream) SendMsg(m interface{}) error {
 
 func (s *tracedClientStream) CloseSend() error {
 	err := s.ClientStream.CloseSend()
-	if err != nil {
-		s.finishClientSpan(err)
-	}
+	s.finishClientSpan(err)
 	return err
 }
 
