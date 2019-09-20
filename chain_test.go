@@ -161,7 +161,7 @@ func TestChainStreamClient(t *testing.T) {
 	}
 	chain := ChainStreamClient(first, second)
 	someStream, err := chain(parentContext, fakeStreamDesc, nil, someServiceName, streamer, parentOpts...)
-	require.NoError(t, err, "chain must not return an error as nothing there reutrned it")
+	require.NoError(t, err, "chain must not return an error")
 	require.Equal(t, clientStream, someStream, "chain must return invokers's clientstream")
 }
 
