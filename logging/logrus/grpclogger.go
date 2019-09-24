@@ -11,5 +11,15 @@ import (
 // ReplaceGrpcLogger sets the given logrus.Logger as a gRPC-level logger.
 // This should be called *before* any other initialization, preferably from init() functions.
 func ReplaceGrpcLogger(logger *logrus.Entry) {
-	grpclog.SetLogger(logger.WithField("system", SystemField))
+	grpclog.SetLoggerV2(&logrusGrpcLoggerV2{
+		logger.WithField("system", SystemField),
+	})
+}
+
+type logrusGrpcLoggerV2 struct {
+	*logrus.Entry
+}
+
+func (l *logrusGrpcLoggerV2) V(level int) bool {
+	return int(l.Level) >= level
 }
