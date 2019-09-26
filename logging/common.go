@@ -5,7 +5,9 @@ package grpc_logging
 
 import (
 	"context"
+	"io"
 
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -34,3 +36,8 @@ type ServerPayloadLoggingDecider func(ctx context.Context, fullMethodName string
 // ClientPayloadLoggingDecider is a user-provided function for deciding whether to log the client-side
 // request/response payloads
 type ClientPayloadLoggingDecider func(ctx context.Context, fullMethodName string) bool
+
+// JsonPbMarshaller is a marshaller that serializes protobuf messages.
+type JsonPbMarshaler interface {
+	Marshal(out io.Writer, pb proto.Message) error
+}
