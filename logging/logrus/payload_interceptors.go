@@ -15,6 +15,7 @@ import (
 
 var (
 	// JsonPbMarshaller is the marshaller used for serializing protobuf messages.
+	// If needed, this variable can be reassigned with a different marshaller with the same Marshal() signature.
 	JsonPbMarshaller grpc_logging.JsonPbMarshaler = &jsonpb.Marshaler{}
 )
 
