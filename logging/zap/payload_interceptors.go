@@ -16,7 +16,7 @@ import (
 
 var (
 	// JsonPbMarshaller is the marshaller used for serializing protobuf messages.
-	JsonPbMarshaller = &jsonpb.Marshaler{}
+	JsonPbMarshaller grpc_logging.JsonPbMarshaler = &jsonpb.Marshaler{}
 )
 
 // PayloadUnaryServerInterceptor returns a new unary server interceptors that logs the payloads of requests.
