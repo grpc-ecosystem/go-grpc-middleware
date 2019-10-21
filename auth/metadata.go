@@ -31,7 +31,7 @@ func AuthFromMD(ctx context.Context, expectedScheme string) (string, error) {
 	if len(splits) < 2 {
 		return "", grpc.Errorf(codes.Unauthenticated, "Bad authorization string")
 	}
-	if strings.ToLower(splits[0]) != strings.ToLower(expectedScheme) {
+	if !strings.EqualFold(splits[0], expectedScheme) {
 		return "", grpc.Errorf(codes.Unauthenticated, "Request unauthenticated with "+expectedScheme)
 	}
 	return splits[1], nil
