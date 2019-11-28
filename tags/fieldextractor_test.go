@@ -3,7 +3,10 @@
 
 package grpc_ctxtags_test
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 import (
 	pb_gogotestproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/gogotestproto"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
@@ -49,4 +52,17 @@ func TestTaggedRequestFiledExtractor_PongRequest(t *testing.T) {
 	valMap := grpc_ctxtags.TagBasedRequestFieldExtractor("log_field")("", req)
 	assert.EqualValues(t, "some_id", valMap["pong_id"])
 	assert.EqualValues(t, []string{"tagone", "tagtwo"}, valMap["meta_tags"])
+}
+
+// Test to ensure TagBasedRequestFieldExtractor does not panic when encountering private struct members such as
+// when using gogoproto.stdtime which results in a time.Time that has private struct members
+func TestTaggedRequestFiledExtractor_GogoTime(t *testing.T) {
+	ts := time.Date(2010, 01, 01, 0, 0, 0, 0, time.UTC)
+	req := &pb_gogotestproto.GoGoProtoStdTime{
+		Timestamp: &ts,
+	}
+	assert.NotPanics(t, func() {
+		valMap := grpc_ctxtags.TagBasedRequestFieldExtractor("log_field")("", req)
+		assert.Empty(t, valMap)
+	})
 }

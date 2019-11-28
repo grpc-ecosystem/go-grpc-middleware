@@ -4,6 +4,7 @@ syntax = "proto3";
 package mwitkow.testproto;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
 
 option (gogoproto.gogoproto_import) = false;
 
@@ -34,3 +35,6 @@ message PongRequest {
     Metadata meta = 2;
 }
 
+message GoGoProtoStdTime {
+    google.protobuf.Timestamp timestamp = 1 [(gogoproto.stdtime) = true];
+}
