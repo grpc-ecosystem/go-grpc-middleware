@@ -1,7 +1,4 @@
-// Copyright 2017 Michal Witkowski. All Rights Reserved.
-// See LICENSE for licensing terms.
-
-package grpc_zerolog
+package zerolog
 
 import (
 	"context"
@@ -10,11 +7,6 @@ import (
 	"google.golang.org/grpc"
 	"path"
 	"time"
-)
-
-var (
-// ClientField is used in every client-side log statement made through grpc_zap. Can be overwritten before initialization.
-//ClientField = zap.String("span.kind", "client")
 )
 
 // UnaryClientInterceptor returns a new unary client interceptor that optionally logs the execution of external gRPC calls.
@@ -42,8 +34,8 @@ func StreamClientInterceptor(logger *zerolog.Logger, opts ...Option) grpc.Stream
 }
 
 func logFinalClientLine(o *options, logger *ctxzr.CtxLogger, startTime time.Time, err error, msg string) {
-	code := o.codeFunc(err)
-	var level = o.levelFunc(code)
+	code  := o.codeFunc(err)
+	level := o.levelFunc(code)
 
 	clientLogger := logger.Logger.WithLevel(level).Err(err)
 	args := make(map[string]interface{})
