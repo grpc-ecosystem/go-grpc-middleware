@@ -10,17 +10,16 @@ import (
 	"testing"
 	"time"
 
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
-
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
-
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -64,7 +63,7 @@ func (s *failingService) maybeFailRequest() error {
 		return nil
 	}
 	time.Sleep(s.reqSleep)
-	return grpc.Errorf(s.reqError, "maybeFailRequest: failing it")
+	return status.Errorf(s.reqError, "maybeFailRequest: failing it")
 }
 
 func (s *failingService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
@@ -128,7 +127,7 @@ func (s *RetrySuite) TestUnary_FailsOnNonRetriableError() {
 	s.srv.resetFailingConfiguration(5, codes.Internal, noSleep)
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	require.Error(s.T(), err, "error must occur from the failing service")
-	require.Equal(s.T(), codes.Internal, grpc.Code(err), "failure code must come from retrier")
+	require.Equal(s.T(), codes.Internal, status.Code(err), "failure code must come from retrier")
 }
 
 func (s *RetrySuite) TestCallOptionsDontPanicWithoutInterceptor() {
@@ -151,7 +150,7 @@ func (s *RetrySuite) TestServerStream_FailsOnNonRetriableError() {
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	_, err = stream.Recv()
 	require.Error(s.T(), err, "error must occur from the failing service")
-	require.Equal(s.T(), codes.Internal, grpc.Code(err), "failure code must come from retrier")
+	require.Equal(s.T(), codes.Internal, status.Code(err), "failure code must come from retrier")
 }
 
 func (s *RetrySuite) TestUnary_SucceedsOnRetriableError() {
@@ -196,7 +195,7 @@ func (s *RetrySuite) TestUnary_PerCallDeadline_FailsOnParent() {
 	_, err := s.Client.Ping(ctx, goodPing, grpc_retry.WithPerRetryTimeout(deadlinePerCall),
 		grpc_retry.WithMax(5))
 	require.Error(s.T(), err, "the retries must fail due to context deadline exceeded")
-	require.Equal(s.T(), codes.DeadlineExceeded, grpc.Code(err), "failre code must be a gRPC error of Deadline class")
+	require.Equal(s.T(), codes.DeadlineExceeded, status.Code(err), "failre code must be a gRPC error of Deadline class")
 }
 
 func (s *RetrySuite) TestServerStream_SucceedsOnRetriableError() {
@@ -242,7 +241,7 @@ func (s *RetrySuite) TestServerStream_PerCallDeadline_FailsOnParent() {
 		grpc_retry.WithMax(5))
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
 	_, err = stream.Recv()
-	require.Equal(s.T(), codes.DeadlineExceeded, grpc.Code(err), "failre code must be a gRPC error of Deadline class")
+	require.Equal(s.T(), codes.DeadlineExceeded, status.Code(err), "failre code must be a gRPC error of Deadline class")
 }
 
 func (s *RetrySuite) TestServerStream_CallFailsOnOutOfRetries() {
@@ -250,7 +249,7 @@ func (s *RetrySuite) TestServerStream_CallFailsOnOutOfRetries() {
 	_, err := s.Client.PingList(s.SimpleCtx(), goodPing)
 
 	require.Error(s.T(), err, "establishing the connection should not succeed")
-	assert.Equal(s.T(), codes.Unavailable, grpc.Code(err))
+	assert.Equal(s.T(), codes.Unavailable, status.Code(err))
 
 	<-restarted
 }
@@ -261,7 +260,7 @@ func (s *RetrySuite) TestServerStream_CallFailsOnDeadlineExceeded() {
 	_, err := s.Client.PingList(ctx, goodPing)
 
 	require.Error(s.T(), err, "establishing the connection should not succeed")
-	assert.Equal(s.T(), codes.DeadlineExceeded, grpc.Code(err))
+	assert.Equal(s.T(), codes.DeadlineExceeded, status.Code(err))
 
 	<-restarted
 }

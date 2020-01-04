@@ -6,12 +6,10 @@ package grpc_ctxtags_test
 import (
 	"testing"
 	"time"
-)
-import (
-	pb_gogotestproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/gogotestproto"
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	pb_gogotestproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/gogotestproto"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

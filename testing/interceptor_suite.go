@@ -98,7 +98,7 @@ func (s *InterceptorTestSuite) RestartServer(delayedStart time.Duration) <-chan 
 }
 
 func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) pb_testproto.TestServiceClient {
-	newDialOpts := append(dialOpts, grpc.WithBlock(), grpc.WithTimeout(2*time.Second))
+	newDialOpts := append(dialOpts, grpc.WithBlock())
 	if *flagTls {
 		creds, err := credentials.NewClientTLSFromFile(
 			path.Join(getTestingCertsPath(), "localhost.crt"), "localhost")
@@ -107,7 +107,9 @@ func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) pb_testpro
 	} else {
 		newDialOpts = append(newDialOpts, grpc.WithInsecure())
 	}
-	clientConn, err := grpc.Dial(s.ServerAddr(), newDialOpts...)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	clientConn, err := grpc.DialContext(ctx, s.ServerAddr(), newDialOpts...)
 	require.NoError(s.T(), err, "must not error on client Dial")
 	return pb_testproto.NewTestServiceClient(clientConn)
 }

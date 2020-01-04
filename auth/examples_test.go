@@ -7,10 +7,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-)
-
-var (
-	cc *grpc.ClientConn
+	"google.golang.org/grpc/status"
 )
 
 func parseToken(token string) (struct{}, error) {
@@ -30,7 +27,7 @@ func Example_serverConfig() {
 		}
 		tokenInfo, err := parseToken(token)
 		if err != nil {
-			return nil, grpc.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
+			return nil, status.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
 		}
 		grpc_ctxtags.Extract(ctx).Set("auth.sub", userClaimFromToken(tokenInfo))
 		newCtx := context.WithValue(ctx, "tokenInfo", tokenInfo)

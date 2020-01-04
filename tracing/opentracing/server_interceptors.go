@@ -54,7 +54,7 @@ func newServerSpanFromInbound(ctx context.Context, tracer opentracing.Tracer, fu
 	md := metautils.ExtractIncoming(ctx)
 	parentSpanContext, err := tracer.Extract(opentracing.HTTPHeaders, metadataTextMap(md))
 	if err != nil && err != opentracing.ErrSpanContextNotFound {
-		grpclog.Printf("grpc_opentracing: failed parsing trace information: %v", err)
+		grpclog.Infof("grpc_opentracing: failed parsing trace information: %v", err)
 	}
 
 	serverSpan := tracer.StartSpan(
