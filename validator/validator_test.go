@@ -4,20 +4,18 @@
 package grpc_validator_test
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc"
-
 	"io"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/codes"
+	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/validator"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -50,7 +48,7 @@ func (s *ValidatorTestSuite) TestValidPasses_Unary() {
 func (s *ValidatorTestSuite) TestInvalidErrors_Unary() {
 	_, err := s.Client.Ping(s.SimpleCtx(), badPing)
 	assert.Error(s.T(), err, "no error expected")
-	assert.Equal(s.T(), codes.InvalidArgument, grpc.Code(err), "gRPC status must be InvalidArgument")
+	assert.Equal(s.T(), codes.InvalidArgument, status.Code(err), "gRPC status must be InvalidArgument")
 }
 
 func (s *ValidatorTestSuite) TestValidPasses_ServerStream() {
@@ -70,7 +68,7 @@ func (s *ValidatorTestSuite) TestInvalidErrors_ServerStream() {
 	require.NoError(s.T(), err, "no error on stream establishment expected")
 	_, err = stream.Recv()
 	assert.Error(s.T(), err, "error should be received on first message")
-	assert.Equal(s.T(), codes.InvalidArgument, grpc.Code(err), "gRPC status must be InvalidArgument")
+	assert.Equal(s.T(), codes.InvalidArgument, status.Code(err), "gRPC status must be InvalidArgument")
 }
 
 func (s *ValidatorTestSuite) TestInvalidErrors_BidiStream() {
@@ -87,7 +85,7 @@ func (s *ValidatorTestSuite) TestInvalidErrors_BidiStream() {
 	stream.Send(badPing)
 	_, err = stream.Recv()
 	assert.Error(s.T(), err, "receiving a good ping should return a good pong")
-	assert.Equal(s.T(), codes.InvalidArgument, grpc.Code(err), "gRPC status must be InvalidArgument")
+	assert.Equal(s.T(), codes.InvalidArgument, status.Code(err), "gRPC status must be InvalidArgument")
 
 	err = stream.CloseSend()
 	assert.NoError(s.T(), err, "there should be no error closing the stream on send")

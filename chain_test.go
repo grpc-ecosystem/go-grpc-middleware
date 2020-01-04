@@ -111,7 +111,7 @@ func TestChainUnaryClient(t *testing.T) {
 		requireContextValue(t, ctx, "parent", "second must know the parent context value")
 		require.Equal(t, someServiceName, method, "second must know someService")
 		require.Len(t, opts, 1, "second should see parent CallOptions")
-		wrappedOpts := append(opts, grpc.FailFast(true))
+		wrappedOpts := append(opts, grpc.WaitForReady(false))
 		wrappedCtx := context.WithValue(ctx, "second", 1)
 		return invoker(wrappedCtx, method, req, reply, cc, wrappedOpts...)
 	}
@@ -145,7 +145,7 @@ func TestChainStreamClient(t *testing.T) {
 		requireContextValue(t, ctx, "parent", "second must know the parent context value")
 		require.Equal(t, someServiceName, method, "second must know someService")
 		require.Len(t, opts, 1, "second should see parent CallOptions")
-		wrappedOpts := append(opts, grpc.FailFast(true))
+		wrappedOpts := append(opts, grpc.WaitForReady(false))
 		wrappedCtx := context.WithValue(ctx, "second", 1)
 		return streamer(wrappedCtx, desc, cc, method, wrappedOpts...)
 	}

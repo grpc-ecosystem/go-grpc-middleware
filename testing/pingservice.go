@@ -13,9 +13,8 @@ import (
 	"testing"
 
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
-
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -40,12 +39,12 @@ func (s *TestPingService) Ping(ctx context.Context, ping *pb_testproto.PingReque
 
 func (s *TestPingService) PingError(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.Empty, error) {
 	code := codes.Code(ping.ErrorCodeReturned)
-	return nil, grpc.Errorf(code, "Userspace error.")
+	return nil, status.Errorf(code, "Userspace error.")
 }
 
 func (s *TestPingService) PingList(ping *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
 	if ping.ErrorCodeReturned != 0 {
-		return grpc.Errorf(codes.Code(ping.ErrorCodeReturned), "foobar")
+		return status.Errorf(codes.Code(ping.ErrorCodeReturned), "foobar")
 	}
 	// Send user trailers and headers.
 	for i := 0; i < ListResponseCount; i++ {
