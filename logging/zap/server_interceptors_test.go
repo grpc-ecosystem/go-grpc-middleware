@@ -262,14 +262,14 @@ func TestZapServerOverrideSuppressedSuite(t *testing.T) {
 			grpc_ctxtags.UnaryServerInterceptor(),
 			grpc_zap.UnaryServerInterceptor(b.log, opts...)),
 	}
-	suite.Run(t, &zapServerOverridenDeciderSuite{b})
+	suite.Run(t, &zapServerOverriddenDeciderSuite{b})
 }
 
-type zapServerOverridenDeciderSuite struct {
+type zapServerOverriddenDeciderSuite struct {
 	*zapBaseSuite
 }
 
-func (s *zapServerOverridenDeciderSuite) TestPing_HasOverriddenDecider() {
+func (s *zapServerOverriddenDeciderSuite) TestPing_HasOverriddenDecider() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "there must be not be an error on a successful call")
 	msgs := s.getOutputJSONs()
@@ -280,7 +280,7 @@ func (s *zapServerOverridenDeciderSuite) TestPing_HasOverriddenDecider() {
 	assert.Equal(s.T(), msgs[0]["msg"], "some ping", "handler's message must contain user message")
 }
 
-func (s *zapServerOverridenDeciderSuite) TestPingError_HasOverriddenDecider() {
+func (s *zapServerOverriddenDeciderSuite) TestPingError_HasOverriddenDecider() {
 	code := codes.NotFound
 	level := zapcore.InfoLevel
 	msg := "NotFound must remap to InfoLevel in DefaultCodeToLevel"
@@ -299,7 +299,7 @@ func (s *zapServerOverridenDeciderSuite) TestPingError_HasOverriddenDecider() {
 	assert.Equal(s.T(), m["level"], level.String(), msg)
 }
 
-func (s *zapServerOverridenDeciderSuite) TestPingList_HasOverriddenDecider() {
+func (s *zapServerOverriddenDeciderSuite) TestPingList_HasOverriddenDecider() {
 	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	for {

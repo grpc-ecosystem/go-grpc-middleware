@@ -79,14 +79,14 @@ func (s *ValidatorTestSuite) TestInvalidErrors_BidiStream() {
 
 	stream.Send(goodPing)
 	_, err = stream.Recv()
-	assert.NoError(s.T(), err, "receving a good ping should return a good pong")
+	assert.NoError(s.T(), err, "receiving a good ping should return a good pong")
 	stream.Send(goodPing)
 	_, err = stream.Recv()
-	assert.NoError(s.T(), err, "receving a good ping should return a good pong")
+	assert.NoError(s.T(), err, "receiving a good ping should return a good pong")
 
 	stream.Send(badPing)
 	_, err = stream.Recv()
-	assert.Error(s.T(), err, "receving a good ping should return a good pong")
+	assert.Error(s.T(), err, "receiving a good ping should return a good pong")
 	assert.Equal(s.T(), codes.InvalidArgument, grpc.Code(err), "gRPC status must be InvalidArgument")
 
 	err = stream.CloseSend()

@@ -20,7 +20,7 @@ func Extract(ctx context.Context) *logrus.Entry {
 }
 
 // ToContext adds the logrus.Entry to the context for extraction later.
-// Depricated: should use ctxlogrus.ToContext instead
+// Deprecated: should use ctxlogrus.ToContext instead
 func ToContext(ctx context.Context, entry *logrus.Entry) context.Context {
 	return ctxlogrus.ToContext(ctx, entry)
 }

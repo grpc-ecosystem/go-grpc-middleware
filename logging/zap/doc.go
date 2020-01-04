@@ -12,7 +12,7 @@ is a string representing the time (RFC3339) when the current call will expire.
 
 This package also implements request and response *payload* logging, both for server-side and client-side. These will be
 logged as structured `jsonpb` fields for every message received/sent (both unary and streaming). For that please use
-`Payload*Interceptor` functions for that. Please note that the user-provided function that determines whetether to log
+`Payload*Interceptor` functions for that. Please note that the user-provided function that determines whether to log
 the full request/response payload needs to be written with care, this can significantly slow down gRPC.
 
 ZAP can also be made as a backend for gRPC library internals. For that use `ReplaceGrpcLoggerV2`.

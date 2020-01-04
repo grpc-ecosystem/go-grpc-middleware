@@ -158,7 +158,7 @@ func (s *RetrySuite) TestUnary_SucceedsOnRetriableError() {
 	s.srv.resetFailingConfiguration(3, codes.DataLoss, noSleep) // see retriable_errors
 	out, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "the third invocation should succeed")
-	require.NotNil(s.T(), out, "Pong must be not nill")
+	require.NotNil(s.T(), out, "Pong must be not nil")
 	require.EqualValues(s.T(), 3, s.srv.requestCount(), "three requests should have been made")
 }
 
@@ -166,7 +166,7 @@ func (s *RetrySuite) TestUnary_OverrideFromDialOpts() {
 	s.srv.resetFailingConfiguration(5, codes.ResourceExhausted, noSleep) // default is 3 and retriable_errors
 	out, err := s.Client.Ping(s.SimpleCtx(), goodPing, grpc_retry.WithCodes(codes.ResourceExhausted), grpc_retry.WithMax(5))
 	require.NoError(s.T(), err, "the fifth invocation should succeed")
-	require.NotNil(s.T(), out, "Pong must be not nill")
+	require.NotNil(s.T(), out, "Pong must be not nil")
 	require.EqualValues(s.T(), 5, s.srv.requestCount(), "five requests should have been made")
 }
 
@@ -178,7 +178,7 @@ func (s *RetrySuite) TestUnary_PerCallDeadline_Succeeds() {
 	out, err := s.Client.Ping(s.SimpleCtx(), goodPing, grpc_retry.WithPerRetryTimeout(deadlinePerCall),
 		grpc_retry.WithMax(5))
 	require.NoError(s.T(), err, "the fifth invocation should succeed")
-	require.NotNil(s.T(), out, "Pong must be not nill")
+	require.NotNil(s.T(), out, "Pong must be not nil")
 	require.EqualValues(s.T(), 5, s.srv.requestCount(), "five requests should have been made")
 }
 
@@ -284,7 +284,7 @@ func (s *RetrySuite) assertPingListWasCorrect(stream pb_testproto.TestService_Pi
 		if err == io.EOF {
 			break
 		}
-		require.NotNil(s.T(), pong, "received values must not be nill")
+		require.NotNil(s.T(), pong, "received values must not be nil")
 		require.NoError(s.T(), err, "no errors during receive on client side")
 		require.Equal(s.T(), goodPing.Value, pong.Value, "the returned pong contained the outgoing ping")
 		count += 1
