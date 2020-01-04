@@ -21,7 +21,7 @@ import (
 const (
 	// DefaultPongValue is the default value used.
 	DefaultResponseValue = "default_response_value"
-	// ListResponseCount is the expeted number of responses to PingList
+	// ListResponseCount is the expected number of responses to PingList
 	ListResponseCount = 100
 )
 

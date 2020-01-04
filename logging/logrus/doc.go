@@ -9,7 +9,7 @@ to the ctx so that it will be present on subsequent use of the `ctxlogrus` logge
 
 This package also implements request and response *payload* logging, both for server-side and client-side. These will be
 logged as structured `jsonpb` fields for every message received/sent (both unary and streaming). For that please use
-`Payload*Interceptor` functions for that. Please note that the user-provided function that determines whetether to log
+`Payload*Interceptor` functions for that. Please note that the user-provided function that determines whether to log
 the full request/response payload needs to be written with care, this can significantly slow down gRPC.
 
 If a deadline is present on the gRPC request the grpc.request.deadline tag is populated when the request begins. grpc.request.deadline
