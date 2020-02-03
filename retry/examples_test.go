@@ -90,3 +90,17 @@ func ExampleWithPerRetryTimeout() {
 
 	fmt.Printf("got pong: %v", pong)
 }
+
+// Simple example of using the reconnection configuration.
+func Example_initializationWithReconnectionOoption() {
+	opts := []grpc_retry.CallOption{
+		grpc_retry.WithCodes(codes.NotFound, codes.Aborted),
+		grpc_retry.WithMax(2),
+		grpc_retry.WithReconnectCodes(codes.Unavailable),
+		grpc_retry.WithReconnectMax(1),
+	}
+	grpc.Dial("myservice.example.com",
+		grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor(opts...)),
+		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(opts...)),
+	)
+}

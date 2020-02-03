@@ -17,6 +17,7 @@ var (
 	// `ResourceExhausted` means that the user quota, e.g. per-RPC limits, have been reached.
 	// `Unavailable` means that system is currently unavailable and the client should retry again.
 	DefaultRetriableCodes = []codes.Code{codes.ResourceExhausted, codes.Unavailable}
+	DefaultReconnectCodes = []codes.Code{codes.ResourceExhausted, codes.Unavailable, codes.Unknown, codes.DeadlineExceeded}
 
 	defaultOptions = &options{
 		max:            0, // disabled
@@ -26,6 +27,9 @@ var (
 		backoffFunc: BackoffFuncContext(func(ctx context.Context, attempt uint) time.Duration {
 			return BackoffLinearWithJitter(50*time.Millisecond /*jitter*/, 0.10)(attempt)
 		}),
+
+		reconnectMax:   0, // ResetConnectBackoff is disabled
+		reconnectCodes: DefaultReconnectCodes,
 	}
 )
 
@@ -49,13 +53,23 @@ type BackoffFuncContext func(ctx context.Context, attempt uint) time.Duration
 //
 // Its semantically the same to `WithMax`
 func Disable() CallOption {
-	return WithMax(0)
+	return CallOption{applyFunc: func(o *options) {
+		o.max = 0
+		o.reconnectMax = 0
+	}}
 }
 
 // WithMax sets the maximum number of retries on this call, or this interceptor.
 func WithMax(maxRetries uint) CallOption {
 	return CallOption{applyFunc: func(o *options) {
 		o.max = maxRetries
+	}}
+}
+
+// WithResetMax sets the maximum number of reset connection on this call, or this interceptor.
+func WithReconnectMax(maxRetries uint) CallOption {
+	return CallOption{applyFunc: func(o *options) {
+		o.reconnectMax = maxRetries
 	}}
 }
 
@@ -86,6 +100,19 @@ func WithCodes(retryCodes ...codes.Code) CallOption {
 	}}
 }
 
+// WithReconnectCodes sets which codes should be use for reset connection.
+//
+// Please *use with care*, as you may be retrying non-idempotent calls.
+//
+// Please use it carefully and over net problems only
+//
+// Default value is *codes.ResourceExhausted, codes.Unavailable, codes.Unknown, codes.DeadlineExceeded*
+func WithReconnectCodes(retryCodes ...codes.Code) CallOption {
+	return CallOption{applyFunc: func(o *options) {
+		o.reconnectCodes = retryCodes
+	}}
+}
+
 // WithPerRetryTimeout sets the RPC timeout per call (including initial call) on this call, or this interceptor.
 //
 // The context.Deadline of the call takes precedence and sets the maximum time the whole invocation
@@ -108,6 +135,9 @@ type options struct {
 	includeHeader  bool
 	codes          []codes.Code
 	backoffFunc    BackoffFuncContext
+
+	reconnectMax   uint
+	reconnectCodes []codes.Code
 }
 
 // CallOption is a grpc.CallOption that is local to grpc_retry.

@@ -169,6 +169,106 @@ func (s *RetrySuite) TestUnary_OverrideFromDialOpts() {
 	require.EqualValues(s.T(), 5, s.srv.requestCount(), "five requests should have been made")
 }
 
+func (s *RetrySuite) TestUnary_OverrideFromDialOpts_ResetConnection() {
+
+	// error case 1. This tests 5 attempts connection to server with error without reconnect
+	s.srv.resetFailingConfiguration(14, codes.Aborted, noSleep)
+	out, err := s.Client.Ping(s.SimpleCtx(), goodPing,
+		grpc_retry.WithCodes(codes.Aborted),
+		grpc_retry.WithMax(5),
+	)
+	require.Error(s.T(), err, "error must occur from the failing service")
+	require.Nil(s.T(), out, "Pong must be nil")
+	require.Equal(s.T(), codes.Aborted, status.Code(err), "failure code must come from retrier")
+	require.EqualValues(s.T(), 5, s.srv.requestCount(), "five requests should have been made")
+
+	// error case 2. This tests 1 re-connection to server
+	s.srv.resetFailingConfiguration(14, codes.Aborted, noSleep)
+	out, err = s.Client.Ping(s.SimpleCtx(), goodPing,
+		grpc_retry.WithCodes(codes.Aborted),
+		grpc_retry.WithMax(5),
+		// by default ResourceExhausted, Unavailable, Unknown, DeadlineExceeded
+		grpc_retry.WithReconnectCodes(codes.Aborted),
+		grpc_retry.WithReconnectMax(1),
+	)
+	require.Error(s.T(), err, "error must occur from the failing service")
+	require.Nil(s.T(), out, "Pong must be nil")
+	require.Equal(s.T(), codes.Aborted, status.Code(err), "failure code must come from retrier")
+	require.EqualValues(s.T(), 10, s.srv.requestCount(), "ten (5+5) requests should have been made")
+
+	// success case. This tests 2 re-connections to server
+	s.srv.resetFailingConfiguration(14, codes.Aborted, noSleep)
+	out, err = s.Client.Ping(s.SimpleCtx(), goodPing,
+		grpc_retry.WithCodes(codes.Aborted),
+		grpc_retry.WithMax(5),
+		// by default ResourceExhausted, Unavailable, Unknown, DeadlineExceeded
+		grpc_retry.WithReconnectCodes(codes.Aborted),
+		grpc_retry.WithReconnectMax(2),
+	)
+	require.NoError(s.T(), err, "the 14th invocation should succeed")
+	require.NotNil(s.T(), out, "Pong must be not nil")
+	require.EqualValues(s.T(), 14, s.srv.requestCount(), "fourteen (5+5+4) requests should have been made")
+}
+
+func (s *RetrySuite) TestUnary_OverrideFromDialOpts_ResetConnection_Codes() {
+	// This tests that reconnection codes are used for retries.
+
+	// error case
+	s.srv.resetFailingConfiguration(7, codes.Unavailable, noSleep)
+	out, err := s.Client.Ping(s.SimpleCtx(), goodPing,
+		grpc_retry.WithCodes(codes.DataLoss),
+		grpc_retry.WithMax(5),
+	)
+	require.Error(s.T(), err, "error must occur from the failing service")
+	require.Nil(s.T(), out, "Pong must be nil")
+	require.Equal(s.T(), codes.Unavailable, status.Code(err), "failure code must come from retrier")
+	require.EqualValues(s.T(), 1, s.srv.requestCount(), "single requests should have been made")
+
+	// success case
+	s.srv.resetFailingConfiguration(7, codes.Unavailable, noSleep)
+	out, err = s.Client.Ping(s.SimpleCtx(), goodPing,
+		grpc_retry.WithMax(5),
+		grpc_retry.WithCodes(codes.DataLoss, codes.Unavailable),
+		grpc_retry.WithReconnectMax(2),
+		// by default ResourceExhausted, Unavailable, Unknown, DeadlineExceeded
+		grpc_retry.WithReconnectCodes(codes.Unavailable),
+	)
+	require.NoError(s.T(), err, "the 7th invocation should succeed")
+	require.NotNil(s.T(), out, "Pong must be not nil")
+	require.EqualValues(s.T(), 7, s.srv.requestCount(), "seven (5+2) requests should have been made")
+}
+
+func (s *RetrySuite) TestUnary_OverrideFromDialOpts_ResetConnection_Codes2() {
+	// This tests that reconnection codes are used for retries.
+	// codes.DataLoss doesn't activate reset connection
+
+	s.srv.resetFailingConfiguration(3, codes.DataLoss, noSleep)
+	out, err := s.Client.Ping(s.SimpleCtx(), goodPing,
+		grpc_retry.WithMax(5),
+		grpc_retry.WithCodes(codes.DataLoss),
+		grpc_retry.WithReconnectMax(2),
+		// by default ResourceExhausted, Unavailable, Unknown, DeadlineExceeded
+		grpc_retry.WithReconnectCodes(codes.Unavailable),
+	)
+	require.NoError(s.T(), err, "the 3th invocation should succeed")
+	require.NotNil(s.T(), out, "Pong must be not nil")
+	require.EqualValues(s.T(), 3, s.srv.requestCount(), "three requests should have been made")
+}
+
+func (s *RetrySuite) TestUnary_OverrideFromDialOpts_ResetConnection_Attempts() {
+	// This tests that at least one attempt should be requested for each reset of connection
+	s.srv.resetFailingConfiguration(2, codes.Unavailable, noSleep)
+	out, err := s.Client.Ping(s.SimpleCtx(), goodPing,
+		grpc_retry.WithMax(0),
+		grpc_retry.WithReconnectMax(1),
+		// by default ResourceExhausted, Unavailable, Unknown, DeadlineExceeded
+		grpc_retry.WithReconnectCodes(codes.Unavailable),
+	)
+	require.NoError(s.T(), err, "the second invocation should succeed")
+	require.NotNil(s.T(), out, "Pong must be not nil")
+	require.EqualValues(s.T(), 2, s.srv.requestCount(), "two (1+1) requests should have been made")
+}
+
 func (s *RetrySuite) TestUnary_PerCallDeadline_Succeeds() {
 	// This tests 5 requests, with first 4 sleeping for 10 millisecond, and the retry logic firing
 	// a retry call with a 5 millisecond deadline. The 5th one doesn't sleep and succeeds.
