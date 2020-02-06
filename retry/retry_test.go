@@ -57,13 +57,17 @@ func (s *failingService) requestCount() uint {
 
 func (s *failingService) maybeFailRequest() error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.reqCounter += 1
-	if (s.reqModulo > 0) && (s.reqCounter%s.reqModulo == 0) {
+	reqModulo := s.reqModulo
+	reqCounter := s.reqCounter
+	reqSleep := s.reqSleep
+	reqError := s.reqError
+	s.mu.Unlock()
+	if (reqModulo > 0) && (reqCounter%reqModulo == 0) {
 		return nil
 	}
-	time.Sleep(s.reqSleep)
-	return status.Errorf(s.reqError, "maybeFailRequest: failing it")
+	time.Sleep(reqSleep)
+	return status.Errorf(reqError, "maybeFailRequest: failing it")
 }
 
 func (s *failingService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
