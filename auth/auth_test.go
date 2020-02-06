@@ -34,8 +34,10 @@ var (
 
 // TODO(mwitkow): Add auth from metadata client dialer, which requires TLS.
 
-func buildDummyAuthFunction(expectedScheme string, expectedToken string) func(ctx context.Context) (context.Context, error) {
-	return func(ctx context.Context) (context.Context, error) {
+func buildDummyAuthFunction(expectedScheme string, expectedToken string) func(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return func(ctx context.Context, fullMethodName string) (context.Context, error) {
+		// Can make a filter like:
+		// if fullMethodName != "/package.service/some-method" {
 		token, err := grpc_auth.AuthFromMD(ctx, expectedScheme)
 		if err != nil {
 			return nil, err
@@ -43,6 +45,7 @@ func buildDummyAuthFunction(expectedScheme string, expectedToken string) func(ct
 		if token != expectedToken {
 			return nil, status.Errorf(codes.PermissionDenied, "buildDummyAuthFunction bad token")
 		}
+		// }
 		return context.WithValue(ctx, authedMarker, "marker_exists"), nil
 	}
 }
@@ -155,7 +158,7 @@ type authOverrideTestService struct {
 
 func (s *authOverrideTestService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	assert.NotEmpty(s.T, fullMethodName, "method name of caller is passed around")
-	return buildDummyAuthFunction("bearer", overrideAuthToken)(ctx)
+	return buildDummyAuthFunction("bearer", overrideAuthToken)(ctx, fullMethodName)
 }
 
 func TestAuthOverrideTestSuite(t *testing.T) {
