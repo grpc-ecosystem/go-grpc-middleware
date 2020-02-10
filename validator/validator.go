@@ -29,6 +29,20 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
+// UnaryClientInterceptor returns a new unary client interceptor that validates outgoing messages.
+//
+// Invalid messages will be rejected with `InvalidArgument` before sending the request to server.
+func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		if v, ok := req.(validator); ok {
+			if err := v.Validate(); err != nil {
+				return status.Errorf(codes.InvalidArgument, err.Error())
+			}
+		}
+		return invoker(ctx, method, req, reply, cc, opts...)
+	}
+}
+
 // StreamServerInterceptor returns a new streaming server interceptor that validates incoming messages.
 //
 // The stage at which invalid messages will be rejected with `InvalidArgument` varies based on the
