@@ -7,9 +7,9 @@ import (
 	"io"
 	"testing"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
+	grpc_testing "github.com/grpc-ecosystem/go-grpc-middleware/testing"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
-	"github.com/grpc-ecosystem/go-grpc-middleware/validator"
+	grpc_validator "github.com/grpc-ecosystem/go-grpc-middleware/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -34,6 +34,15 @@ func TestValidatorTestSuite(t *testing.T) {
 		},
 	}
 	suite.Run(t, s)
+
+	cs := &ClientValidatorTestSuite{
+		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
+			ClientOpts: []grpc.DialOption{
+				grpc.WithUnaryInterceptor(grpc_validator.UnaryClientInterceptor()),
+			},
+		},
+	}
+	suite.Run(t, cs)
 }
 
 type ValidatorTestSuite struct {
@@ -89,4 +98,19 @@ func (s *ValidatorTestSuite) TestInvalidErrors_BidiStream() {
 
 	err = stream.CloseSend()
 	assert.NoError(s.T(), err, "there should be no error closing the stream on send")
+}
+
+type ClientValidatorTestSuite struct {
+	*grpc_testing.InterceptorTestSuite
+}
+
+func (s *ClientValidatorTestSuite) TestValidPasses_Unary() {
+	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	assert.NoError(s.T(), err, "no error expected")
+}
+
+func (s *ClientValidatorTestSuite) TestInvalidErrors_Unary() {
+	_, err := s.Client.Ping(s.SimpleCtx(), badPing)
+	assert.Error(s.T(), err, "error expected")
+	assert.Equal(s.T(), codes.InvalidArgument, status.Code(err), "gRPC status must be InvalidArgument")
 }
