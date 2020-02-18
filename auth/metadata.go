@@ -25,7 +25,6 @@ func AuthFromMD(ctx context.Context, expectedScheme string) (string, error) {
 	val := metautils.ExtractIncoming(ctx).Get(headerAuthorize)
 	if val == "" {
 		return "", status.Errorf(codes.Unauthenticated, "Request unauthenticated with "+expectedScheme)
-
 	}
 	splits := strings.SplitN(val, " ", 2)
 	if len(splits) < 2 {

@@ -17,7 +17,6 @@ func scaleDuration(d time.Duration, factor float64) time.Duration {
 }
 
 func TestJitterUp(t *testing.T) {
-
 	// arguments to jitterup
 	duration := 10 * time.Second
 	variance := 0.10
@@ -46,5 +45,4 @@ func TestJitterUp(t *testing.T) {
 
 	assert.True(t, highCount != 0, "at least one sample should reach to >%s", high)
 	assert.True(t, lowCount != 0, "at least one sample should to <%s", low)
-
 }

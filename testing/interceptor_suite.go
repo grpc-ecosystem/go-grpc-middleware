@@ -134,7 +134,6 @@ func (s *InterceptorTestSuite) TearDownSuite() {
 		s.Server.GracefulStop()
 		s.T().Logf("stopped grpc.Server at: %v", s.ServerAddr())
 		s.ServerListener.Close()
-
 	}
 	if s.clientConn != nil {
 		s.clientConn.Close()
