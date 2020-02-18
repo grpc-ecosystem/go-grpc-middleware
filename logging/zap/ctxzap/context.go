@@ -27,7 +27,6 @@ func AddFields(ctx context.Context, fields ...zapcore.Field) {
 		return
 	}
 	l.fields = append(l.fields, fields...)
-
 }
 
 // Extract takes the call-scoped Logger from grpc_zap middleware.

@@ -227,7 +227,6 @@ func (s *serverStreamingRetryingStream) receiveMsgAndIndicateRetry(m interface{}
 		}
 	}
 	return isRetriable(err, s.callOpts), err
-
 }
 
 func (s *serverStreamingRetryingStream) reestablishStreamAndResendBuffer(callCtx context.Context) (grpc.ClientStream, error) {

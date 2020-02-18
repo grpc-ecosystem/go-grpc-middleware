@@ -100,7 +100,6 @@ func TestTaggingSuiteJaeger(t *testing.T) {
 }
 
 func makeInterceptorTestSuite(t *testing.T, opts []grpc_opentracing.Option) *grpc_testing.InterceptorTestSuite {
-
 	return &grpc_testing.InterceptorTestSuite{
 		TestService: &tracingAssertService{TestServiceServer: &grpc_testing.TestPingService{T: t}, T: t},
 		ClientOpts: []grpc.DialOption{
@@ -259,7 +258,6 @@ func (jaegerFormatExtractor) Extract(carrier interface{}) (mocktracer.MockSpanCo
 		case lowerKey == "uber-trace-id":
 			parts := strings.Split(val, ":")
 			if len(parts) != 4 {
-
 				return errors.New("invalid trace id format")
 			}
 			traceId, err := strconv.Atoi(parts[0])

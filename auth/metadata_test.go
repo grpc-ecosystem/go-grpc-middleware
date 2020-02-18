@@ -70,5 +70,4 @@ func TestAuthFromMD(t *testing.T) {
 		}
 		assert.Equal(t, run.value, out, run.msg)
 	}
-
 }

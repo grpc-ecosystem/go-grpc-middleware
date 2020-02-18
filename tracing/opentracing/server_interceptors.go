@@ -75,7 +75,6 @@ func finishServerSpan(ctx context.Context, serverSpan opentracing.Span, err erro
 		// Don't tag errors, log them instead.
 		if vErr, ok := v.(error); ok {
 			serverSpan.LogKV(k, vErr.Error())
-
 		} else {
 			serverSpan.SetTag(k, v)
 		}
