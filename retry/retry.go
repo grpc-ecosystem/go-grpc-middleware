@@ -52,9 +52,10 @@ func UnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterceptor 
 					logTrace(parentCtx, "grpc_retry attempt: %d, parent context error: %v", attempt, parentCtx.Err())
 					// its the parent context deadline or cancellation.
 					return lastErr
-				} else {
+				} else if callOpts.perCallTimeout != 0 {
 					logTrace(parentCtx, "grpc_retry attempt: %d, context error from retry call", attempt)
 					// its the callCtx deadline or cancellation, in which case try again.
+					continue
 				}
 			}
 			if !isRetriable(lastErr, callOpts) {
@@ -113,7 +114,7 @@ func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientIntercepto
 					logTrace(parentCtx, "grpc_retry attempt: %d, parent context error: %v", attempt, parentCtx.Err())
 					// its the parent context deadline or cancellation.
 					return nil, lastErr
-				} else {
+				} else if callOpts.perCallTimeout != 0 {
 					logTrace(parentCtx, "grpc_retry attempt: %d, context error from retry call", attempt)
 					// its the callCtx deadline or cancellation, in which case try again.
 					continue
@@ -219,7 +220,7 @@ func (s *serverStreamingRetryingStream) receiveMsgAndIndicateRetry(m interface{}
 		if s.parentCtx.Err() != nil {
 			logTrace(s.parentCtx, "grpc_retry parent context error: %v", s.parentCtx.Err())
 			return false, err
-		} else {
+		} else if s.callOpts.perCallTimeout != 0 {
 			logTrace(s.parentCtx, "grpc_retry context error from retry call")
 			// its the callCtx deadline or cancellation, in which case try again.
 			return true, err
