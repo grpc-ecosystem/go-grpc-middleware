@@ -53,8 +53,9 @@ func UnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterceptor 
 					// its the parent context deadline or cancellation.
 					return lastErr
 				} else if callOpts.perCallTimeout != 0 {
+					// We have set a perCallTimeout in the retry middleware, which would result in a context error if
+					// the deadline was exceeded, in which case try again.
 					logTrace(parentCtx, "grpc_retry attempt: %d, context error from retry call", attempt)
-					// its the callCtx deadline or cancellation, in which case try again.
 					continue
 				}
 			}
@@ -115,8 +116,9 @@ func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientIntercepto
 					// its the parent context deadline or cancellation.
 					return nil, lastErr
 				} else if callOpts.perCallTimeout != 0 {
+					// We have set a perCallTimeout in the retry middleware, which would result in a context error if
+					// the deadline was exceeded, in which case try again.
 					logTrace(parentCtx, "grpc_retry attempt: %d, context error from retry call", attempt)
-					// its the callCtx deadline or cancellation, in which case try again.
 					continue
 				}
 			}
@@ -221,8 +223,9 @@ func (s *serverStreamingRetryingStream) receiveMsgAndIndicateRetry(m interface{}
 			logTrace(s.parentCtx, "grpc_retry parent context error: %v", s.parentCtx.Err())
 			return false, err
 		} else if s.callOpts.perCallTimeout != 0 {
+			// We have set a perCallTimeout in the retry middleware, which would result in a context error if
+			// the deadline was exceeded, in which case try again.
 			logTrace(s.parentCtx, "grpc_retry context error from retry call")
-			// its the callCtx deadline or cancellation, in which case try again.
 			return true, err
 		}
 	}
