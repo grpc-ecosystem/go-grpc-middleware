@@ -133,7 +133,6 @@ func (s *RetrySuite) TestUnary_FailsOnNonRetriableError() {
 	require.Error(s.T(), err, "error must occur from the failing service")
 	require.Equal(s.T(), codes.Internal, status.Code(err), "failure code must come from retrier")
 	require.EqualValues(s.T(), 1, s.srv.requestCount(), "one request should have been made")
-
 }
 
 func (s *RetrySuite) TestUnary_FailsOnNonRetriableContextError() {
