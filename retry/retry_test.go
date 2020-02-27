@@ -132,6 +132,15 @@ func (s *RetrySuite) TestUnary_FailsOnNonRetriableError() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	require.Error(s.T(), err, "error must occur from the failing service")
 	require.Equal(s.T(), codes.Internal, status.Code(err), "failure code must come from retrier")
+	require.EqualValues(s.T(), 1, s.srv.requestCount(), "one request should have been made")
+}
+
+func (s *RetrySuite) TestUnary_FailsOnNonRetriableContextError() {
+	s.srv.resetFailingConfiguration(5, codes.Canceled, noSleep)
+	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	require.Error(s.T(), err, "error must occur from the failing service")
+	require.Equal(s.T(), codes.Canceled, status.Code(err), "failure code must come from retrier")
+	require.EqualValues(s.T(), 1, s.srv.requestCount(), "one request should have been made")
 }
 
 func (s *RetrySuite) TestCallOptionsDontPanicWithoutInterceptor() {

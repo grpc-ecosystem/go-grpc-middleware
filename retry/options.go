@@ -96,6 +96,8 @@ func WithCodes(retryCodes ...codes.Code) CallOption {
 //
 // A value of 0 disables the timeout overrides completely and returns to each retry call using the
 // parent `context.Deadline`.
+//
+// Note that when this is enabled, any DeadlineExceeded errors that are propagated up will be retried.
 func WithPerRetryTimeout(timeout time.Duration) CallOption {
 	return CallOption{applyFunc: func(o *options) {
 		o.perCallTimeout = timeout
