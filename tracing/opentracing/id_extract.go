@@ -25,8 +25,9 @@ const (
 // https://www.jaegertracing.io/docs/client-libraries/#trace-span-identity
 // Datadog uses keys ending with 'trace-id' and 'parent-id' (for span) by default:
 // https://github.com/DataDog/dd-trace-go/blob/v1/ddtrace/tracer/textmap.go#L77
-func injectOpentracingIdsToTags(span opentracing.Span, tags grpc_ctxtags.Tags) {
-	if err := span.Tracer().Inject(span.Context(), opentracing.HTTPHeaders, &tagsCarrier{tags}); err != nil {
+func injectOpentracingIdsToTags(traceHeaderName string, span opentracing.Span, tags grpc_ctxtags.Tags) {
+	if err := span.Tracer().Inject(span.Context(), opentracing.HTTPHeaders,
+		&tagsCarrier{Tags: tags, traceHeaderName: traceHeaderName}); err != nil {
 		grpclog.Infof("grpc_opentracing: failed extracting trace info into ctx %v", err)
 	}
 }
@@ -34,6 +35,7 @@ func injectOpentracingIdsToTags(span opentracing.Span, tags grpc_ctxtags.Tags) {
 // tagsCarrier is a really hacky way of
 type tagsCarrier struct {
 	grpc_ctxtags.Tags
+	traceHeaderName string
 }
 
 func (t *tagsCarrier) Set(key, val string) {
@@ -53,7 +55,7 @@ func (t *tagsCarrier) Set(key, val string) {
 		}
 	}
 
-	if key == "uber-trace-id" {
+	if key == t.traceHeaderName {
 		parts := strings.Split(val, ":")
 		if len(parts) == 4 {
 			t.Tags.Set(TagTraceId, parts[0])

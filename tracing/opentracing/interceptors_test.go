@@ -13,11 +13,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/mocktracer"
 	"github.com/stretchr/testify/assert"
@@ -25,12 +20,19 @@ import (
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 )
 
 var (
 	goodPing           = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
 	fakeInboundTraceId = 1337
 	fakeInboundSpanId  = 999
+	traceHeaderName    = "uber-trace-id"
 )
 
 type tracingAssertService struct {
@@ -77,6 +79,7 @@ func TestTaggingSuite(t *testing.T) {
 	mockTracer := mocktracer.New()
 	opts := []grpc_opentracing.Option{
 		grpc_opentracing.WithTracer(mockTracer),
+		grpc_opentracing.WithTraceHeaderName(traceHeaderName),
 	}
 	s := &OpentracingSuite{
 		mockTracer:           mockTracer,
@@ -133,7 +136,7 @@ func (s *OpentracingSuite) createContextFromFakeHttpRequestParent(ctx context.Co
 	}
 
 	hdr := http.Header{}
-	hdr.Set("uber-trace-id", fmt.Sprintf("%d:%d:%d:%d", fakeInboundTraceId, fakeInboundSpanId, fakeInboundSpanId, jFlag))
+	hdr.Set(traceHeaderName, fmt.Sprintf("%d:%d:%d:%d", fakeInboundTraceId, fakeInboundSpanId, fakeInboundSpanId, jFlag))
 	hdr.Set("mockpfx-ids-traceid", fmt.Sprint(fakeInboundTraceId))
 	hdr.Set("mockpfx-ids-spanid", fmt.Sprint(fakeInboundSpanId))
 	hdr.Set("mockpfx-ids-sampled", fmt.Sprint(sampled))
@@ -239,7 +242,7 @@ func (jaegerFormatInjector) Inject(ctx mocktracer.MockSpanContext, carrier inter
 	if ctx.Sampled {
 		flags = 1
 	}
-	w.Set("uber-trace-id", fmt.Sprintf("%d:%d::%d", ctx.TraceID, ctx.SpanID, flags))
+	w.Set(traceHeaderName, fmt.Sprintf("%d:%d::%d", ctx.TraceID, ctx.SpanID, flags))
 
 	return nil
 }
@@ -255,7 +258,7 @@ func (jaegerFormatExtractor) Extract(carrier interface{}) (mocktracer.MockSpanCo
 	err := reader.ForeachKey(func(key, val string) error {
 		lowerKey := strings.ToLower(key)
 		switch {
-		case lowerKey == "uber-trace-id":
+		case lowerKey == traceHeaderName:
 			parts := strings.Split(val, ":")
 			if len(parts) != 4 {
 				return errors.New("invalid trace id format")
