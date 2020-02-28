@@ -22,8 +22,9 @@ var (
 type FilterFunc func(ctx context.Context, fullMethodName string) bool
 
 type options struct {
-	filterOutFunc FilterFunc
-	tracer        opentracing.Tracer
+	filterOutFunc   FilterFunc
+	tracer          opentracing.Tracer
+	traceHeaderName string
 }
 
 func evaluateOptions(opts []Option) *options {
@@ -35,6 +36,9 @@ func evaluateOptions(opts []Option) *options {
 	if optCopy.tracer == nil {
 		optCopy.tracer = opentracing.GlobalTracer()
 	}
+	if optCopy.traceHeaderName == "" {
+		optCopy.traceHeaderName = "uber-trace-id"
+	}
 	return optCopy
 }
 
@@ -44,6 +48,14 @@ type Option func(*options)
 func WithFilterFunc(f FilterFunc) Option {
 	return func(o *options) {
 		o.filterOutFunc = f
+	}
+}
+
+// WithTraceHeaderName customizes the trace header name where trace metadata passed with requests.
+// Default one is `uber-trace-id`
+func WithTraceHeaderName(name string) Option {
+	return func(o *options) {
+		o.traceHeaderName = name
 	}
 }
 
