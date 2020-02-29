@@ -1,16 +1,16 @@
-package grpc_auth_test
+package auth_test
 
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	grpcauth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func parseToken(token string) (struct{}, error) {
+func parseToken(string) (struct{}, error) {
 	return struct{}{}, nil
 }
 
@@ -21,7 +21,7 @@ func userClaimFromToken(struct{}) string {
 // Simple example of server initialization code.
 func Example_serverConfig() {
 	exampleAuthFunc := func(ctx context.Context) (context.Context, error) {
-		token, err := grpc_auth.AuthFromMD(ctx, "bearer")
+		token, err := grpcauth.AuthFromMD(ctx, "bearer")
 		if err != nil {
 			return nil, err
 		}
@@ -35,7 +35,7 @@ func Example_serverConfig() {
 	}
 
 	_ = grpc.NewServer(
-		grpc.StreamInterceptor(grpc_auth.StreamServerInterceptor(exampleAuthFunc)),
-		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(exampleAuthFunc)),
+		grpc.StreamInterceptor(grpcauth.StreamServerInterceptor(exampleAuthFunc)),
+		grpc.UnaryInterceptor(grpcauth.UnaryServerInterceptor(exampleAuthFunc)),
 	)
 }

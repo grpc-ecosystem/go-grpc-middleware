@@ -2,7 +2,7 @@
 // See LICENSE for licensing terms.
 
 /*
-`grpc_auth` a generic server-side auth middleware for gRPC.
+`auth` a generic server-side auth middleware for gRPC.
 
 Server Side Auth Middleware
 
@@ -17,4 +17,4 @@ It also allows for per-service implementation overrides of `AuthFunc`. See `Serv
 
 Please see examples for simple examples of use.
 */
-package grpc_auth
+package auth

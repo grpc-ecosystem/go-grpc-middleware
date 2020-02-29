@@ -1,7 +1,7 @@
 // Copyright 2016 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-package grpc_auth_test
+package auth_test
 
 import (
 	"context"
@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
+	"github.com/grpc-ecosystem/go-grpc-middleware/grpctesting"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/grpctesting/testproto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,7 +36,7 @@ var (
 
 func buildDummyAuthFunction(expectedScheme string, expectedToken string) func(ctx context.Context) (context.Context, error) {
 	return func(ctx context.Context) (context.Context, error) {
-		token, err := grpc_auth.AuthFromMD(ctx, expectedScheme)
+		token, err := auth.AuthFromMD(ctx, expectedScheme)
 		if err != nil {
 			return nil, err
 		}
@@ -75,11 +75,11 @@ func ctxWithToken(ctx context.Context, scheme string, token string) context.Cont
 func TestAuthTestSuite(t *testing.T) {
 	authFunc := buildDummyAuthFunction("bearer", commonAuthToken)
 	s := &AuthTestSuite{
-		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
-			TestService: &assertingPingService{&grpc_testing.TestPingService{T: t}, t},
+		InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
+			TestService: &assertingPingService{&grpctesting.TestPingService{T: t}, t},
 			ServerOpts: []grpc.ServerOption{
-				grpc.StreamInterceptor(grpc_auth.StreamServerInterceptor(authFunc)),
-				grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authFunc)),
+				grpc.StreamInterceptor(auth.StreamServerInterceptor(authFunc)),
+				grpc.UnaryInterceptor(auth.UnaryServerInterceptor(authFunc)),
 			},
 		},
 	}
@@ -87,7 +87,7 @@ func TestAuthTestSuite(t *testing.T) {
 }
 
 type AuthTestSuite struct {
-	*grpc_testing.InterceptorTestSuite
+	*grpctesting.InterceptorTestSuite
 }
 
 func (s *AuthTestSuite) TestUnary_NoAuth() {
@@ -161,11 +161,11 @@ func (s *authOverrideTestService) AuthFuncOverride(ctx context.Context, fullMeth
 func TestAuthOverrideTestSuite(t *testing.T) {
 	authFunc := buildDummyAuthFunction("bearer", commonAuthToken)
 	s := &AuthOverrideTestSuite{
-		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
-			TestService: &authOverrideTestService{&assertingPingService{&grpc_testing.TestPingService{T: t}, t}, t},
+		InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
+			TestService: &authOverrideTestService{&assertingPingService{&grpctesting.TestPingService{T: t}, t}, t},
 			ServerOpts: []grpc.ServerOption{
-				grpc.StreamInterceptor(grpc_auth.StreamServerInterceptor(authFunc)),
-				grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authFunc)),
+				grpc.StreamInterceptor(auth.StreamServerInterceptor(authFunc)),
+				grpc.UnaryInterceptor(auth.UnaryServerInterceptor(authFunc)),
 			},
 		},
 	}
@@ -173,7 +173,7 @@ func TestAuthOverrideTestSuite(t *testing.T) {
 }
 
 type AuthOverrideTestSuite struct {
-	*grpc_testing.InterceptorTestSuite
+	*grpctesting.InterceptorTestSuite
 }
 
 func (s *AuthOverrideTestSuite) TestUnary_PassesAuth() {

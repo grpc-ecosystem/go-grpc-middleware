@@ -2,7 +2,7 @@
 // See LICENSE for licensing terms.
 
 /*
-`grpc_middleware` is a collection of gRPC middleware packages: interceptors, helpers and tools.
+`middleware` is a collection of gRPC middleware packages: interceptors, helpers and tools.
 
 Middleware
 
@@ -66,4 +66,4 @@ needed. For example:
 	   return handler(srv, stream)
 	}
 */
-package grpc_middleware
+package middleware

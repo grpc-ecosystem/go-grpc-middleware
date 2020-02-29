@@ -3,7 +3,7 @@
 
 // gRPC Server Interceptor chaining middleware.
 
-package grpc_middleware
+package middleware
 
 import (
 	"context"
