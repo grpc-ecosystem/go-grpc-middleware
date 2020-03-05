@@ -1,4 +1,4 @@
-# Go gRPC Middleware
+# Go gRPC Middleware V2
 
 [![Travis Build](https://travis-ci.org/grpc-ecosystem/go-grpc-middleware.svg?branch=master)](https://travis-ci.org/grpc-ecosystem/go-grpc-middleware)
 [![Go Report Card](https://goreportcard.com/badge/github.com/grpc-ecosystem/go-grpc-middleware)](https://goreportcard.com/report/github.com/grpc-ecosystem/go-grpc-middleware)
@@ -22,27 +22,27 @@ These are generic building blocks that make it easy to build multiple microservi
 The purpose of this repository is to act as a go-to point for such reusable functionality. It contains
 some of them itself, but also will link to useful external repos.
 
-`grpc_middleware` itself provides support for chaining interceptors, here's an example:
+`middleware` itself provides support for chaining interceptors, here's an example:
 
 ```go
 import "github.com/grpc-ecosystem/go-grpc-middleware"
 
 myServer := grpc.NewServer(
-    grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-        grpc_ctxtags.StreamServerInterceptor(),
-        grpc_opentracing.StreamServerInterceptor(),
-        grpc_prometheus.StreamServerInterceptor,
-        grpc_zap.StreamServerInterceptor(zapLogger),
-        grpc_auth.StreamServerInterceptor(myAuthFunction),
-        grpc_recovery.StreamServerInterceptor(),
+    grpc.StreamInterceptor(middleware.ChainStreamServer(
+        tags.StreamServerInterceptor(),
+        opentracing.StreamServerInterceptor(),
+        prometheus.StreamServerInterceptor,
+        zap.StreamServerInterceptor(zapLogger),
+        auth.StreamServerInterceptor(myAuthFunction),
+        recovery.StreamServerInterceptor(),
     )),
-    grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-        grpc_ctxtags.UnaryServerInterceptor(),
-        grpc_opentracing.UnaryServerInterceptor(),
-        grpc_prometheus.UnaryServerInterceptor,
-        grpc_zap.UnaryServerInterceptor(zapLogger),
-        grpc_auth.UnaryServerInterceptor(myAuthFunction),
-        grpc_recovery.UnaryServerInterceptor(),
+    grpc.UnaryInterceptor(middleware.ChainUnaryServer(
+        tags.UnaryServerInterceptor(),
+        opentracing.UnaryServerInterceptor(),
+        prometheus.UnaryServerInterceptor,
+        zap.UnaryServerInterceptor(zapLogger),
+        auth.UnaryServerInterceptor(myAuthFunction),
+        recovery.UnaryServerInterceptor(),
     )),
 )
 ```
@@ -52,26 +52,25 @@ myServer := grpc.NewServer(
 *Please send a PR to add new interceptors or middleware to this list*
 
 #### Auth
-   * [`grpc_auth`](auth) - a customizable (via `AuthFunc`) piece of auth middleware 
+   * [`auth`](auth) - a customizable (via `AuthFunc`) piece of auth middleware 
 
 #### Logging
-   * [`grpc_ctxtags`](tags/) - a library that adds a `Tag` map to context, with data populated from request body
-   * [`grpc_zap`](logging/zap/) - integration of [zap](https://github.com/uber-go/zap) logging library into gRPC handlers.
-   * [`grpc_logrus`](logging/logrus/) - integration of [logrus](https://github.com/sirupsen/logrus) logging library into gRPC handlers.
-   * [`grpc_kit`](logging/kit/) - integration of [go-kit](https://github.com/go-kit/kit/tree/master/log) logging library into gRPC handlers.
+   * [`tags`](interceptors/tags) - a library that adds a `Tag` map to context, with data populated from request body
+   * [`zap`](providers/zap) - integration of [zap](https://github.com/uber-go/zap) logging library into gRPC handlers.
+   * [`logrus`](providers/logrus) - integration of [logrus](https://github.com/sirupsen/logrus) logging library into gRPC handlers.
+   * [`kit`](providers/kit) - integration of [go-kit](https://github.com/go-kit/kit/tree/master/log) logging library into gRPC handlers.
 
 #### Monitoring
    * [`grpc_prometheus`⚡](https://github.com/grpc-ecosystem/go-grpc-prometheus) - Prometheus client-side and server-side monitoring middleware
-   * [`otgrpc`⚡](https://github.com/grpc-ecosystem/grpc-opentracing/tree/master/go/otgrpc) - [OpenTracing](http://opentracing.io/) client-side and server-side interceptors
-   * [`grpc_opentracing`](tracing/opentracing) - [OpenTracing](http://opentracing.io/) client-side and server-side interceptors with support for streaming and handler-returned tags
+   * [`opentracing`](interceptors/tracing) - [OpenTracing](http://opentracing.io/) client-side and server-side interceptors with support for streaming and handler-returned tags
 
 #### Client
-   * [`grpc_retry`](retry/) - a generic gRPC response code retry mechanism, client-side middleware
+   * [`retry`](interceptors/retry) - a generic gRPC response code retry mechanism, client-side middleware
 
 #### Server
-   * [`grpc_validator`](validator/) - codegen inbound message validation from `.proto` options
-   * [`grpc_recovery`](recovery/) - turn panics into gRPC errors
-   * [`ratelimit`](ratelimit/) - grpc rate limiting by your own limiter
+   * [`validator`](interceptors/validator) - codegen inbound message validation from `.proto` options
+   * [`recovery`](interceptors/recovery) - turn panics into gRPC errors
+   * [`ratelimit`](interceptors/ratelimit) - grpc rate limiting by your own limiter
 
 
 ## Status

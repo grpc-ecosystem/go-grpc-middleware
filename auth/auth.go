@@ -1,12 +1,12 @@
 // Copyright 2016 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-package grpc_auth
+package auth
 
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware"
+	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 )
 
@@ -61,7 +61,7 @@ func StreamServerInterceptor(authFunc AuthFunc) grpc.StreamServerInterceptor {
 		if err != nil {
 			return err
 		}
-		wrapped := grpc_middleware.WrapServerStream(stream)
+		wrapped := middleware.WrapServerStream(stream)
 		wrapped.WrappedContext = newCtx
 		return handler(srv, wrapped)
 	}

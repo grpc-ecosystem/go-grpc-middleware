@@ -25,7 +25,7 @@ Types of changes:
 - [#181](https://github.com/grpc-ecosystem/go-grpc-middleware/pull/181) Rate Limit support - [ceshihao](https://github.com/ceshihao)
 - [#161](https://github.com/grpc-ecosystem/go-grpc-middleware/pull/161) Retry on server stream call - [lonnblad](https://github.com/lonnblad)
 - [#152](https://github.com/grpc-ecosystem/go-grpc-middleware/pull/152) Exponential backoff functions - [polyfloyd](https://github.com/polyfloyd)
-- [#147](https://github.com/grpc-ecosystem/go-grpc-middleware/pull/147) Jaeger support for ctxtags extraction - [vporoshok](https://github.com/vporoshok)
+- [#147](https://github.com/grpc-ecosystem/go-grpc-middleware/pull/147) Jaeger support for tags extraction - [vporoshok](https://github.com/vporoshok)
 - [#184](https://github.com/grpc-ecosystem/go-grpc-middleware/pull/184) ctxTags identifies if the call was sampled
 
 ### Deprecated
