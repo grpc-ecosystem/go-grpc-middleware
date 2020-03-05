@@ -11,6 +11,8 @@
 
 [gRPC Go](https://github.com/grpc/grpc-go) Middleware: interceptors, helpers, utilities.
 
+**NOTE: V2 is under development. If you want to be up to date, or better (!) help us improve go-grpc-middleware please follow on https://github.com/grpc-ecosystem/go-grpc-middleware/issues/275.**
+
 ## Middleware
 
 [gRPC Go](https://github.com/grpc/grpc-go) recently acquired support for
