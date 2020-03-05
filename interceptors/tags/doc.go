@@ -1,5 +1,5 @@
 /*
-`ctxtags` adds a Tag object to the context that can be used by other middleware to add context about a request.
+`tags` adds a Tag object to the context that can be used by other middleware to add context about a request.
 
 Request Context Tags
 
@@ -19,4 +19,4 @@ will be no-ops. This is to ensure that code doesn't panic if the interceptors we
 Tags fields are typed, and shallow and should follow the OpenTracing semantics convention:
 https://github.com/opentracing/specification/blob/master/semantic_conventions.md
 */
-package ctxtags
+package tags

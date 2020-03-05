@@ -6,7 +6,7 @@ import (
 	"github.com/go-kit/kit/log"
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/logging"
-	ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
 	"github.com/grpc-ecosystem/go-grpc-middleware/providers/kit"
 	"google.golang.org/grpc"
 )
@@ -24,14 +24,14 @@ func Example_initialization() {
 	opts := []logging.Option{
 		logging.WithLevels(customFunc),
 	}
-	// Create a server, make sure we put the ctxtags context before everything else.
+	// Create a server, make sure we put the tags context before everything else.
 	_ = grpc.NewServer(
 		middleware.WithUnaryServerChain(
-			ctxtags.UnaryServerInterceptor(ctxtags.WithFieldExtractor(ctxtags.CodeGenRequestFieldExtractor)),
+			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.UnaryServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
 		middleware.WithStreamServerChain(
-			ctxtags.StreamServerInterceptor(ctxtags.WithFieldExtractor(ctxtags.CodeGenRequestFieldExtractor)),
+			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.StreamServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
 	)
@@ -44,14 +44,14 @@ func Example_initializationWithDurationFieldOverride() {
 	opts := []logging.Option{
 		logging.WithDurationField(customDurationToFields),
 	}
-	// Create a server, make sure we put the ctxtags context before everything else.
+	// Create a server, make sure we put the tags context before everything else.
 	_ = grpc.NewServer(
 		middleware.WithUnaryServerChain(
-			ctxtags.UnaryServerInterceptor(),
+			tags.UnaryServerInterceptor(),
 			logging.UnaryServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
 		middleware.WithStreamServerChain(
-			ctxtags.StreamServerInterceptor(),
+			tags.StreamServerInterceptor(),
 			logging.StreamServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
 	)
@@ -72,14 +72,14 @@ func ExampleWithDecider() {
 			return true
 		}),
 	}
-	// Create a server, make sure we put the ctxtags context before everything else.
+	// Create a server, make sure we put the tags context before everything else.
 	_ = []grpc.ServerOption{
 		middleware.WithUnaryServerChain(
-			ctxtags.UnaryServerInterceptor(),
+			tags.UnaryServerInterceptor(),
 			logging.UnaryServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
 		middleware.WithStreamServerChain(
-			ctxtags.StreamServerInterceptor(),
+			tags.StreamServerInterceptor(),
 			logging.StreamServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
 	}
@@ -93,15 +93,15 @@ func ExampleWithPayloadLogging() {
 		return fullMethodName == "/blah.foo.healthcheck/Check"
 	}
 
-	// Create a server, make sure we put the ctxtags context before everything else.
+	// Create a server, make sure we put the tags context before everything else.
 	_ = []grpc.ServerOption{
 		middleware.WithUnaryServerChain(
-			ctxtags.UnaryServerInterceptor(),
+			tags.UnaryServerInterceptor(),
 			logging.UnaryServerInterceptor(kit.InterceptorLogger(logger)),
 			logging.PayloadUnaryServerInterceptor(kit.InterceptorLogger(logger), payloadDecider),
 		),
 		middleware.WithStreamServerChain(
-			ctxtags.StreamServerInterceptor(),
+			tags.StreamServerInterceptor(),
 			logging.StreamServerInterceptor(kit.InterceptorLogger(logger)),
 			logging.PayloadStreamServerInterceptor(kit.InterceptorLogger(logger), payloadDecider),
 		),

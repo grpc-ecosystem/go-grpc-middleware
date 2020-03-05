@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors"
-	ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
 	"google.golang.org/grpc"
 )
 
 // extractFields returns all fields from tags.
-func extractFields(tags ctxtags.Tags) Fields {
+func extractFields(tags tags.Tags) Fields {
 	var fields Fields
 	for k, v := range tags.Values() {
 		fields = append(fields, k, v)
@@ -39,7 +39,7 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 		err = nil
 	}
 	// Get optional, fresh tags.
-	logger := c.logger.With(extractFields(ctxtags.Extract(c.ctx))...)
+	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 
 	code := c.opts.codeFunc(err)
 	logger = logger.With("grpc.code", code.String())
@@ -84,28 +84,28 @@ func (r *reportable) reporter(ctx context.Context, typ interceptors.GRPCType, se
 }
 
 // UnaryClientInterceptor returns a new unary client interceptor that optionally logs the execution of external gRPC calls.
-// Logger will use all tags (from ctxtags package) available in current context as fields.
+// Logger will use all tags (from tags package) available in current context as fields.
 func UnaryClientInterceptor(logger Logger, opts ...Option) grpc.UnaryClientInterceptor {
 	o := evaluateClientOpt(opts)
 	return interceptors.UnaryClientInterceptor(&reportable{logger: logger, opts: o})
 }
 
 // StreamClientInterceptor returns a new streaming client interceptor that optionally logs the execution of external gRPC calls.
-// Logger will use all tags (from ctxtags package) available in current context as fields.
+// Logger will use all tags (from tags package) available in current context as fields.
 func StreamClientInterceptor(logger Logger, opts ...Option) grpc.StreamClientInterceptor {
 	o := evaluateClientOpt(opts)
 	return interceptors.StreamClientInterceptor(&reportable{logger: logger, opts: o})
 }
 
 // UnaryServerInterceptor returns a new unary server interceptors that optionally logs endpoint handling.
-// Logger will use all tags (from ctxtags package) available in current context as fields.
+// Logger will use all tags (from tags package) available in current context as fields.
 func UnaryServerInterceptor(logger Logger, opts ...Option) grpc.UnaryServerInterceptor {
 	o := evaluateServerOpt(opts)
 	return interceptors.UnaryServerInterceptor(&reportable{logger: logger, opts: o})
 }
 
 // StreamServerInterceptor returns a new stream server interceptors that optionally logs endpoint handling.
-// Logger will use all tags (from ctxtags package) available in current context as fields.
+// Logger will use all tags (from tags package) available in current context as fields.
 func StreamServerInterceptor(logger Logger, opts ...Option) grpc.StreamServerInterceptor {
 	o := evaluateServerOpt(opts)
 	return interceptors.StreamServerInterceptor(&reportable{logger: logger, opts: o})

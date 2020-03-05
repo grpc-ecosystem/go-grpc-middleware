@@ -13,7 +13,7 @@ import (
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/grpctesting/testproto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/logging"
-	ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -47,10 +47,10 @@ func TestPayloadSuite(t *testing.T) {
 	}
 	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
 		middleware.WithStreamServerChain(
-			ctxtags.StreamServerInterceptor(ctxtags.WithFieldExtractor(ctxtags.CodeGenRequestFieldExtractor)),
+			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.PayloadStreamServerInterceptor(s.logger, alwaysLoggingDeciderServer)),
 		middleware.WithUnaryServerChain(
-			ctxtags.UnaryServerInterceptor(ctxtags.WithFieldExtractor(ctxtags.CodeGenRequestFieldExtractor)),
+			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.PayloadUnaryServerInterceptor(s.logger, alwaysLoggingDeciderServer)),
 	}
 	suite.Run(t, s)

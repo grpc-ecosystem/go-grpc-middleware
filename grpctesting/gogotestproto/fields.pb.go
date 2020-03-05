@@ -3,15 +3,16 @@
 
 //  This file is used for testing discovery of log fields from requests using reflection and gogo proto more tags.
 
-package mwitkow_testproto
+package gogotestproto
 
 import (
 	fmt "fmt"
+	math "math"
+	time "time"
+
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
-	time "time"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

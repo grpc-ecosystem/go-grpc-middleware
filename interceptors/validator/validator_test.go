@@ -1,15 +1,15 @@
 // Copyright 2016 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-package grpcvalidator_test
+package validator_test
 
 import (
 	"io"
 	"testing"
 
-	grpc_testing "github.com/grpc-ecosystem/go-grpc-middleware/grpctesting"
+	"github.com/grpc-ecosystem/go-grpc-middleware/grpctesting"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/grpctesting/testproto"
-	grpc_validator "github.com/grpc-ecosystem/go-grpc-middleware/interceptors/validator"
+	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -26,19 +26,19 @@ var (
 
 func TestValidatorTestSuite(t *testing.T) {
 	s := &ValidatorTestSuite{
-		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
+		InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 			ServerOpts: []grpc.ServerOption{
-				grpc.StreamInterceptor(grpc_validator.StreamServerInterceptor()),
-				grpc.UnaryInterceptor(grpc_validator.UnaryServerInterceptor()),
+				grpc.StreamInterceptor(validator.StreamServerInterceptor()),
+				grpc.UnaryInterceptor(validator.UnaryServerInterceptor()),
 			},
 		},
 	}
 	suite.Run(t, s)
 
 	cs := &ClientValidatorTestSuite{
-		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
+		InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 			ClientOpts: []grpc.DialOption{
-				grpc.WithUnaryInterceptor(grpc_validator.UnaryClientInterceptor()),
+				grpc.WithUnaryInterceptor(validator.UnaryClientInterceptor()),
 			},
 		},
 	}
@@ -46,7 +46,7 @@ func TestValidatorTestSuite(t *testing.T) {
 }
 
 type ValidatorTestSuite struct {
-	*grpc_testing.InterceptorTestSuite
+	*grpctesting.InterceptorTestSuite
 }
 
 func (s *ValidatorTestSuite) TestValidPasses_Unary() {
@@ -101,7 +101,7 @@ func (s *ValidatorTestSuite) TestInvalidErrors_BidiStream() {
 }
 
 type ClientValidatorTestSuite struct {
-	*grpc_testing.InterceptorTestSuite
+	*grpctesting.InterceptorTestSuite
 }
 
 func (s *ClientValidatorTestSuite) TestValidPasses_Unary() {

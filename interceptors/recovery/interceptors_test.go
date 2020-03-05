@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpctesting "github.com/grpc-ecosystem/go-grpc-middleware/grpctesting"
+	"github.com/grpc-ecosystem/go-grpc-middleware/grpctesting"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/grpctesting/testproto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/recovery"
 	"github.com/stretchr/testify/assert"

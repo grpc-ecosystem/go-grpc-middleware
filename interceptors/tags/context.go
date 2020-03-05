@@ -1,4 +1,4 @@
-package ctxtags
+package tags
 
 import (
 	"context"

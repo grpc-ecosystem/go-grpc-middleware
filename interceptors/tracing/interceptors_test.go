@@ -22,9 +22,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	grpctesting "github.com/grpc-ecosystem/go-grpc-middleware/grpctesting"
+	"github.com/grpc-ecosystem/go-grpc-middleware/grpctesting"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/grpctesting/testproto"
-	ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
 	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tracing"
 )
 
@@ -42,7 +42,7 @@ type tracingAssertService struct {
 
 func (s *tracingAssertService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
 	assert.NotNil(s.T, opentracing.SpanFromContext(ctx), "handlers must have the spancontext in their context, otherwise propagation will fail")
-	tags := ctxtags.Extract(ctx)
+	tags := tags.Extract(ctx)
 	assert.True(s.T, tags.Has(tracing.TagTraceId), "tags must contain traceid")
 	assert.True(s.T, tags.Has(tracing.TagSpanId), "tags must contain spanid")
 	assert.True(s.T, tags.Has(tracing.TagSampled), "tags must contain sampled")
@@ -57,7 +57,7 @@ func (s *tracingAssertService) PingError(ctx context.Context, ping *pb_testproto
 
 func (s *tracingAssertService) PingList(ping *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
 	assert.NotNil(s.T, opentracing.SpanFromContext(stream.Context()), "handlers must have the spancontext in their context, otherwise propagation will fail")
-	tags := ctxtags.Extract(stream.Context())
+	tags := tags.Extract(stream.Context())
 	assert.True(s.T, tags.Has(tracing.TagTraceId), "tags must contain traceid")
 	assert.True(s.T, tags.Has(tracing.TagSpanId), "tags must contain spanid")
 	assert.True(s.T, tags.Has(tracing.TagSampled), "tags must contain sampled")
@@ -67,7 +67,7 @@ func (s *tracingAssertService) PingList(ping *pb_testproto.PingRequest, stream p
 
 func (s *tracingAssertService) PingEmpty(ctx context.Context, empty *pb_testproto.Empty) (*pb_testproto.PingResponse, error) {
 	assert.NotNil(s.T, opentracing.SpanFromContext(ctx), "handlers must have the spancontext in their context, otherwise propagation will fail")
-	tags := ctxtags.Extract(ctx)
+	tags := tags.Extract(ctx)
 	assert.True(s.T, tags.Has(tracing.TagTraceId), "tags must contain traceid")
 	assert.True(s.T, tags.Has(tracing.TagSpanId), "tags must contain spanid")
 	assert.True(s.T, tags.Has(tracing.TagSampled), "tags must contain sampled")
@@ -111,10 +111,10 @@ func makeInterceptorTestSuite(t *testing.T, opts []tracing.Option) *grpctesting.
 		},
 		ServerOpts: []grpc.ServerOption{
 			middleware.WithStreamServerChain(
-				ctxtags.StreamServerInterceptor(ctxtags.WithFieldExtractor(ctxtags.CodeGenRequestFieldExtractor)),
+				tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 				tracing.StreamServerInterceptor(opts...)),
 			middleware.WithUnaryServerChain(
-				ctxtags.UnaryServerInterceptor(ctxtags.WithFieldExtractor(ctxtags.CodeGenRequestFieldExtractor)),
+				tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 				tracing.UnaryServerInterceptor(opts...)),
 		},
 	}
@@ -173,7 +173,7 @@ func (s *OpentracingSuite) assertTracesCreated(methodName string) (clientSpan *m
 	}
 	require.NotNil(s.T(), clientSpan, "client span must be there")
 	require.NotNil(s.T(), serverSpan, "server span must be there")
-	assert.EqualValues(s.T(), serverSpan.Tag("grpc.request.value"), "something", "ctxtags must be propagated, in this case ones from request fields")
+	assert.EqualValues(s.T(), serverSpan.Tag("grpc.request.value"), "something", "tags must be propagated, in this case ones from request fields")
 	return clientSpan, serverSpan
 }
 

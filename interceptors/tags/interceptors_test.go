@@ -1,4 +1,4 @@
-package ctxtags_test
+package tags_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 
 	grpctesting "github.com/grpc-ecosystem/go-grpc-middleware/grpctesting"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/grpctesting/testproto"
-	ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -40,7 +40,7 @@ type tagPingBack struct {
 }
 
 func (s *tagPingBack) Ping(ctx context.Context, _ *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
-	return &pb_testproto.PingResponse{Value: tagsToJson(ctxtags.Extract(ctx).Values())}, nil
+	return &pb_testproto.PingResponse{Value: tagsToJson(tags.Extract(ctx).Values())}, nil
 }
 
 func (s *tagPingBack) PingError(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.Empty, error) {
@@ -48,7 +48,7 @@ func (s *tagPingBack) PingError(ctx context.Context, ping *pb_testproto.PingRequ
 }
 
 func (s *tagPingBack) PingList(_ *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
-	out := &pb_testproto.PingResponse{Value: tagsToJson(ctxtags.Extract(stream.Context()).Values())}
+	out := &pb_testproto.PingResponse{Value: tagsToJson(tags.Extract(stream.Context()).Values())}
 	return stream.Send(out)
 }
 
@@ -65,7 +65,7 @@ func (s *tagPingBack) PingStream(stream pb_testproto.TestService_PingStreamServe
 		if err != nil {
 			return err
 		}
-		out := &pb_testproto.PingResponse{Value: tagsToJson(ctxtags.Extract(stream.Context()).Values())}
+		out := &pb_testproto.PingResponse{Value: tagsToJson(tags.Extract(stream.Context()).Values())}
 		err = stream.Send(out)
 		if err != nil {
 			return err
@@ -73,15 +73,15 @@ func (s *tagPingBack) PingStream(stream pb_testproto.TestService_PingStreamServe
 	}
 }
 func TestTaggingSuite(t *testing.T) {
-	opts := []ctxtags.Option{
-		ctxtags.WithFieldExtractor(ctxtags.CodeGenRequestFieldExtractor),
+	opts := []tags.Option{
+		tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor),
 	}
 	s := &TaggingSuite{
 		InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 			TestService: &tagPingBack{&grpctesting.TestPingService{T: t}},
 			ServerOpts: []grpc.ServerOption{
-				grpc.StreamInterceptor(ctxtags.StreamServerInterceptor(opts...)),
-				grpc.UnaryInterceptor(ctxtags.UnaryServerInterceptor(opts...)),
+				grpc.StreamInterceptor(tags.StreamServerInterceptor(opts...)),
+				grpc.UnaryInterceptor(tags.UnaryServerInterceptor(opts...)),
 			},
 		},
 	}
@@ -144,8 +144,8 @@ func (s *TaggingSuite) TestPingList_WithCustomTags() {
 }
 
 func TestTaggingOnInitialRequestSuite(t *testing.T) {
-	opts := []ctxtags.Option{
-		ctxtags.WithFieldExtractor(ctxtags.CodeGenRequestFieldExtractor),
+	opts := []tags.Option{
+		tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor),
 	}
 	// Embeds TaggingSuite as the behaviour should be identical in
 	// the case of unary and server-streamed calls
@@ -154,8 +154,8 @@ func TestTaggingOnInitialRequestSuite(t *testing.T) {
 			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 				TestService: &tagPingBack{&grpctesting.TestPingService{T: t}},
 				ServerOpts: []grpc.ServerOption{
-					grpc.StreamInterceptor(ctxtags.StreamServerInterceptor(opts...)),
-					grpc.UnaryInterceptor(ctxtags.UnaryServerInterceptor(opts...)),
+					grpc.StreamInterceptor(tags.StreamServerInterceptor(opts...)),
+					grpc.UnaryInterceptor(tags.UnaryServerInterceptor(opts...)),
 				},
 			},
 		},

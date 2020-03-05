@@ -42,4 +42,4 @@ check all messages processed by the server.
 Please consult https://github.com/mwitkow/go-proto-validators for details on `protoc` invocation and
 other parameters of customization.
 */
-package grpcvalidator
+package validator

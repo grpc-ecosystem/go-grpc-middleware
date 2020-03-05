@@ -24,7 +24,7 @@ GO111MODULE=on go install "github.com/gogo/protobuf/protoc-gen-gogofast"
 GOGOPROTO_ROOT="$(GO111MODULE=on go list -f '{{ .Dir }}' -m github.com/gogo/protobuf)"
 GOGOPROTO_PATH="${GOGOPROTO_ROOT}:${GOGOPROTO_ROOT}/protobuf"
 
-DIRS="grpctesting/testproto"
+DIRS="grpctesting/testproto grpctesting/gogotestproto"
 echo "generating code"
 for dir in ${DIRS}; do
 	pushd ${dir}

@@ -3,7 +3,7 @@ package tracing
 import (
 	"strings"
 
-	ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc/grpclog"
 )
@@ -15,7 +15,7 @@ const (
 	jaegerNotSampledFlag = "0"
 )
 
-// injectOpentracingIdsToTags writes trace data to ctxtags.
+// injectOpentracingIdsToTags writes trace data to tags.
 // This is done in an incredibly hacky way, because the public-facing interface of opentracing doesn't give access to
 // the TraceId and SpanId of the SpanContext. Only the Tracer's Inject/Extract methods know what these are.
 // Most tracers have them encoded as keys with 'traceid' and 'spanid':
@@ -25,7 +25,7 @@ const (
 // https://www.jaegertracing.io/docs/client-libraries/#trace-span-identity
 // Datadog uses keys ending with 'trace-id' and 'parent-id' (for span) by default:
 // https://github.com/DataDog/dd-trace-go/blob/v1/ddtrace/tracer/textmap.go#L77
-func injectOpentracingIdsToTags(traceHeaderName string, span opentracing.Span, tags ctxtags.Tags) {
+func injectOpentracingIdsToTags(traceHeaderName string, span opentracing.Span, tags tags.Tags) {
 	if err := span.Tracer().Inject(span.Context(), opentracing.HTTPHeaders,
 		&tagsCarrier{Tags: tags, traceHeaderName: traceHeaderName}); err != nil {
 		grpclog.Infof("grpc_opentracing: failed extracting trace info into ctx %v", err)
@@ -34,7 +34,7 @@ func injectOpentracingIdsToTags(traceHeaderName string, span opentracing.Span, t
 
 // tagsCarrier is a really hacky way of
 type tagsCarrier struct {
-	ctxtags.Tags
+	tags.Tags
 	traceHeaderName string
 }
 

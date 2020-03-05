@@ -16,14 +16,14 @@ functions for chaining said interceptors, metadata convenience methods and more.
 Chaining
 
 By default, gRPC doesn't allow one to have more than one interceptor either on the client nor on
-the server side. `grpc_middleware` provides convenient chaining methods
+the server side. `middleware` provides convenient chaining methods
 
 Simple way of turning a multiple interceptors into a single interceptor. Here's an example for
 server chaining:
 
 	myServer := grpc.NewServer(
-	    grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(loggingStream, monitoringStream, authStream)),
-	    grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(loggingUnary, monitoringUnary, authUnary),
+	    grpc.StreamInterceptor(middleware.ChainStreamServer(loggingStream, monitoringStream, authStream)),
+	    grpc.UnaryInterceptor(middleware.ChainUnaryServer(loggingUnary, monitoringUnary, authUnary),
 	)
 
 These interceptors will be executed from left to right: logging, monitoring and auth.
@@ -32,8 +32,8 @@ Here's an example for client side chaining:
 
 	clientConn, err = grpc.Dial(
 	    address,
-	        grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(monitoringClientUnary, retryUnary)),
-	        grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(monitoringClientStream, retryStream)),
+	        grpc.WithUnaryInterceptor(middleware.ChainUnaryClient(monitoringClientUnary, retryUnary)),
+	        grpc.WithStreamInterceptor(middleware.ChainStreamClient(monitoringClientStream, retryStream)),
 	)
 	client = pb_testproto.NewTestServiceClient(clientConn)
 	resp, err := client.PingEmpty(s.ctx, &myservice.Request{Msg: "hello"})
@@ -61,7 +61,7 @@ the `grpc.ServerStream` object. To pass values through context, a wrapper (`Wrap
 needed. For example:
 
 	func FakeAuthStreamingInterceptor(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	   newStream := grpc_middleware.WrapServerStream(stream)
+	   newStream := middleware.WrapServerStream(stream)
 	   newStream.WrappedContext = context.WithValue(ctx, "user_id", "john@example.com")
 	   return handler(srv, stream)
 	}

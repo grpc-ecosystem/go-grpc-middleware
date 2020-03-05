@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors"
-	ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -31,7 +31,7 @@ type opentracingServerReporter struct {
 
 func (o *opentracingServerReporter) PostCall(err error, _ time.Duration) {
 	// Finish span and log context information.
-	tags := ctxtags.Extract(o.ctx)
+	tags := tags.Extract(o.ctx)
 	for k, v := range tags.Values() {
 		o.serverSpan.SetTag(k, v)
 	}
@@ -89,6 +89,6 @@ func newServerSpanFromInbound(ctx context.Context, tracer opentracing.Tracer, tr
 		grpcTag,
 	)
 
-	injectOpentracingIdsToTags(traceHeaderName, serverSpan, ctxtags.Extract(ctx))
+	injectOpentracingIdsToTags(traceHeaderName, serverSpan, tags.Extract(ctx))
 	return opentracing.ContextWithSpan(ctx, serverSpan), serverSpan
 }

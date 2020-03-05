@@ -1,6 +1,6 @@
 // Manual code for validation tests.
 
-package grpc_middleware_testproto
+package testproto
 
 import "errors"
 

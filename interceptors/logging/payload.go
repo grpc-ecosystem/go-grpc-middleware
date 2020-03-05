@@ -9,7 +9,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors"
-	ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
 	"google.golang.org/grpc"
 )
 
@@ -31,7 +31,7 @@ func (c *serverPayloadReporter) PostMsgSend(req interface{}, err error, duration
 		fmt.Println(err)
 		return
 	}
-	logger := c.logger.With(extractFields(ctxtags.Extract(c.ctx))...)
+	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	// For server send message is the response.
 	logProtoMessageAsJson(logger.With("grpc.send.duration", duration.String()), req, "grpc.response.content", "response payload logged as grpc.response.content field")
 }
@@ -41,7 +41,7 @@ func (c *serverPayloadReporter) PostMsgReceive(reply interface{}, err error, dur
 		fmt.Println(err)
 		return
 	}
-	logger := c.logger.With(extractFields(ctxtags.Extract(c.ctx))...)
+	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	// For server recv message is the request..
 	logProtoMessageAsJson(logger.With("grpc.recv.duration", duration.String()), reply, "grpc.request.content", "request payload logged as grpc.request.content field")
 }
@@ -58,7 +58,7 @@ func (c *clientPayloadReporter) PostMsgSend(req interface{}, err error, duration
 		fmt.Println(err)
 		return
 	}
-	logger := c.logger.With(extractFields(ctxtags.Extract(c.ctx))...)
+	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	logProtoMessageAsJson(logger.With("grpc.send.duration", duration.String()), req, "grpc.request.content", "request payload logged as grpc.request.content field")
 }
 
@@ -67,7 +67,7 @@ func (c *clientPayloadReporter) PostMsgReceive(reply interface{}, err error, dur
 		fmt.Println(err)
 		return
 	}
-	logger := c.logger.With(extractFields(ctxtags.Extract(c.ctx))...)
+	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	logProtoMessageAsJson(logger.With("grpc.recv.duration", duration.String()), reply, "grpc.response.content", "response payload logged as grpc.response.content field")
 }
 
@@ -107,25 +107,25 @@ func (r *payloadReportable) ClientReporter(ctx context.Context, _ interface{}, t
 }
 
 // PayloadUnaryServerInterceptor returns a new unary server interceptors that logs the payloads of requests on INFO level.
-// Logger tags will be used from ctxtags context.
+// Logger tags will be used from tags context.
 func PayloadUnaryServerInterceptor(logger Logger, decider ServerPayloadLoggingDecider) grpc.UnaryServerInterceptor {
 	return interceptors.UnaryServerInterceptor(&payloadReportable{logger: logger, serverDecider: decider})
 }
 
 // PayloadStreamServerInterceptor returns a new server server interceptors that logs the payloads of requests on INFO level.
-// Logger tags will be used from ctxtags context.
+// Logger tags will be used from tags context.
 func PayloadStreamServerInterceptor(logger Logger, decider ServerPayloadLoggingDecider) grpc.StreamServerInterceptor {
 	return interceptors.StreamServerInterceptor(&payloadReportable{logger: logger, serverDecider: decider})
 }
 
 // PayloadUnaryClientInterceptor returns a new unary client interceptor that logs the paylods of requests and responses on INFO level.
-// Logger tags will be used from ctxtags context.
+// Logger tags will be used from tags context.
 func PayloadUnaryClientInterceptor(logger Logger, decider ClientPayloadLoggingDecider) grpc.UnaryClientInterceptor {
 	return interceptors.UnaryClientInterceptor(&payloadReportable{logger: logger, clientDecider: decider})
 }
 
 // PayloadStreamClientInterceptor returns a new streaming client interceptor that logs the paylods of requests and responses on INFO level.
-// Logger tags will be used from ctxtags context.
+// Logger tags will be used from tags context.
 func PayloadStreamClientInterceptor(logger Logger, decider ClientPayloadLoggingDecider) grpc.StreamClientInterceptor {
 	return interceptors.StreamClientInterceptor(&payloadReportable{logger: logger, clientDecider: decider})
 }

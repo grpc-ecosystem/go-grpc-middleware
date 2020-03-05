@@ -13,7 +13,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/grpctesting"
 	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/logging"
-	ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -173,10 +173,10 @@ func TestSuite(t *testing.T) {
 	}
 	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
 		middleware.WithStreamServerChain(
-			ctxtags.StreamServerInterceptor(ctxtags.WithFieldExtractor(ctxtags.CodeGenRequestFieldExtractor)),
+			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.StreamServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel))),
 		middleware.WithUnaryServerChain(
-			ctxtags.UnaryServerInterceptor(ctxtags.WithFieldExtractor(ctxtags.CodeGenRequestFieldExtractor)),
+			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.UnaryServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel))),
 	}
 	suite.Run(t, s)
@@ -336,10 +336,10 @@ func TestCustomDurationSuite(t *testing.T) {
 	}
 	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
 		middleware.WithStreamServerChain(
-			ctxtags.StreamServerInterceptor(ctxtags.WithFieldExtractor(ctxtags.CodeGenRequestFieldExtractor)),
+			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.StreamServerInterceptor(s.logger, logging.WithDurationField(logging.DurationToDurationField))),
 		middleware.WithUnaryServerChain(
-			ctxtags.UnaryServerInterceptor(ctxtags.WithFieldExtractor(ctxtags.CodeGenRequestFieldExtractor)),
+			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.UnaryServerInterceptor(s.logger, logging.WithDurationField(logging.DurationToDurationField))),
 	}
 	suite.Run(t, s)
@@ -438,10 +438,10 @@ func TestCustomDeciderSuite(t *testing.T) {
 	}
 	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
 		middleware.WithStreamServerChain(
-			ctxtags.StreamServerInterceptor(ctxtags.WithFieldExtractor(ctxtags.CodeGenRequestFieldExtractor)),
+			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.StreamServerInterceptor(s.logger, opts)),
 		middleware.WithUnaryServerChain(
-			ctxtags.UnaryServerInterceptor(ctxtags.WithFieldExtractor(ctxtags.CodeGenRequestFieldExtractor)),
+			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.UnaryServerInterceptor(s.logger, opts)),
 	}
 	suite.Run(t, s)
