@@ -40,8 +40,9 @@ func UnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterceptor 
 			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 				return err
 			}
-			callCtx, _ := perCallContext(parentCtx, callOpts, attempt)
+			callCtx, cancel := perCallContext(parentCtx, callOpts, attempt)
 			lastErr = invoker(callCtx, method, req, reply, cc, grpcOpts...)
+			cancel()
 			// TODO(mwitkow): Maybe dial and transport errors should be retriable?
 			if lastErr == nil {
 				return nil
@@ -93,7 +94,7 @@ func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientIntercepto
 			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 				return nil, err
 			}
-			callCtx, _ := perCallContext(parentCtx, callOpts, 0)
+			callCtx, cancel := perCallContext(parentCtx, callOpts, 0)
 
 			var newStreamer grpc.ClientStream
 			newStreamer, lastErr = streamer(callCtx, desc, cc, method, grpcOpts...)
@@ -109,6 +110,7 @@ func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientIntercepto
 				return retryingStreamer, nil
 			}
 
+			cancel()
 			logTrace(parentCtx, "grpc_retry attempt: %d, got err: %v", attempt, lastErr)
 			if isContextError(lastErr) {
 				if parentCtx.Err() != nil {
@@ -188,10 +190,11 @@ func (s *serverStreamingRetryingStream) RecvMsg(m interface{}) error {
 		if err := waitRetryBackoff(attempt, s.parentCtx, s.callOpts); err != nil {
 			return err
 		}
-		callCtx, _ := perCallContext(s.parentCtx, s.callOpts, attempt)
+		callCtx, cancel := perCallContext(s.parentCtx, s.callOpts, attempt)
 		newStream, err := s.reestablishStreamAndResendBuffer(callCtx)
 		if err != nil {
 			// TODO(mwitkow): Maybe dial and transport errors should be retriable?
+			cancel()
 			return err
 		}
 		s.setStream(newStream)
@@ -200,6 +203,7 @@ func (s *serverStreamingRetryingStream) RecvMsg(m interface{}) error {
 		if !attemptRetry {
 			return lastErr
 		}
+		cancel()
 	}
 	return lastErr
 }
