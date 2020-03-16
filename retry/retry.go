@@ -40,7 +40,7 @@ func UnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterceptor 
 			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 				return err
 			}
-			callCtx := perCallContext(parentCtx, callOpts, attempt)
+			callCtx, _ := perCallContext(parentCtx, callOpts, attempt)
 			lastErr = invoker(callCtx, method, req, reply, cc, grpcOpts...)
 			// TODO(mwitkow): Maybe dial and transport errors should be retriable?
 			if lastErr == nil {
@@ -93,7 +93,7 @@ func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientIntercepto
 			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 				return nil, err
 			}
-			callCtx := perCallContext(parentCtx, callOpts, 0)
+			callCtx, _ := perCallContext(parentCtx, callOpts, 0)
 
 			var newStreamer grpc.ClientStream
 			newStreamer, lastErr = streamer(callCtx, desc, cc, method, grpcOpts...)
@@ -188,7 +188,7 @@ func (s *serverStreamingRetryingStream) RecvMsg(m interface{}) error {
 		if err := waitRetryBackoff(attempt, s.parentCtx, s.callOpts); err != nil {
 			return err
 		}
-		callCtx := perCallContext(s.parentCtx, s.callOpts, attempt)
+		callCtx, _ := perCallContext(s.parentCtx, s.callOpts, attempt)
 		newStream, err := s.reestablishStreamAndResendBuffer(callCtx)
 		if err != nil {
 			// TODO(mwitkow): Maybe dial and transport errors should be retriable?
@@ -291,16 +291,21 @@ func isContextError(err error) bool {
 	return code == codes.DeadlineExceeded || code == codes.Canceled
 }
 
-func perCallContext(parentCtx context.Context, callOpts *options, attempt uint) context.Context {
-	ctx := parentCtx
+func perCallContext(parentCtx context.Context, callOpts *options, attempt uint) (context.Context, context.CancelFunc) {
+	var (
+		ctx    context.Context
+		cancel context.CancelFunc
+	)
 	if callOpts.perCallTimeout != 0 {
-		ctx, _ = context.WithTimeout(ctx, callOpts.perCallTimeout)
+		ctx, cancel = context.WithTimeout(parentCtx, callOpts.perCallTimeout)
+	} else {
+		ctx, cancel = context.WithCancel(parentCtx)
 	}
 	if attempt > 0 && callOpts.includeHeader {
 		mdClone := metautils.ExtractOutgoing(ctx).Clone().Set(AttemptMetadataKey, fmt.Sprintf("%d", attempt))
 		ctx = mdClone.ToOutgoing(ctx)
 	}
-	return ctx
+	return ctx, cancel
 }
 
 func contextErrToGrpcErr(err error) error {
