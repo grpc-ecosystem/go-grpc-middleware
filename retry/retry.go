@@ -296,14 +296,9 @@ func isContextError(err error) bool {
 }
 
 func perCallContext(parentCtx context.Context, callOpts *options, attempt uint) (context.Context, context.CancelFunc) {
-	var (
-		ctx    context.Context
-		cancel context.CancelFunc
-	)
+	ctx, cancel := context.WithCancel(parentCtx)
 	if callOpts.perCallTimeout != 0 {
 		ctx, cancel = context.WithTimeout(parentCtx, callOpts.perCallTimeout)
-	} else {
-		ctx, cancel = context.WithCancel(parentCtx)
 	}
 	if attempt > 0 && callOpts.includeHeader {
 		mdClone := metautils.ExtractOutgoing(ctx).Clone().Set(AttemptMetadataKey, fmt.Sprintf("%d", attempt))
