@@ -7,9 +7,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	grpc_testing "github.com/grpc-ecosystem/go-grpc-middleware/testing"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,8 +20,9 @@ import (
 )
 
 var (
-	goodPing  = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
-	panicPing = &pb_testproto.PingRequest{Value: "panic", SleepTimeMs: 9999}
+	goodPing     = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
+	panicPing    = &pb_testproto.PingRequest{Value: "panic", SleepTimeMs: 9999}
+	nilPanicPing = &pb_testproto.PingRequest{Value: "nilpanic", SleepTimeMs: 9999}
 )
 
 type recoveryAssertService struct {
@@ -32,12 +33,18 @@ func (s *recoveryAssertService) Ping(ctx context.Context, ping *pb_testproto.Pin
 	if ping.Value == "panic" {
 		panic("very bad thing happened")
 	}
+	if ping.Value == "nilpanic" {
+		panic(nil)
+	}
 	return s.TestServiceServer.Ping(ctx, ping)
 }
 
 func (s *recoveryAssertService) PingList(ping *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
 	if ping.Value == "panic" {
 		panic("very bad thing happened")
+	}
+	if ping.Value == "nilpanic" {
+		panic(nil)
 	}
 	return s.TestServiceServer.PingList(ping, stream)
 }
@@ -73,6 +80,13 @@ func (s *RecoverySuite) TestUnary_PanickingRequest() {
 	assert.Equal(s.T(), "very bad thing happened", status.Convert(err).Message(), "must error with message")
 }
 
+func (s *RecoverySuite) TestUnary_NilPanickingRequest() {
+	_, err := s.Client.Ping(s.SimpleCtx(), nilPanicPing)
+	require.Error(s.T(), err, "there must be an error")
+	assert.Equal(s.T(), codes.Internal, status.Code(err), "must error with internal")
+	assert.Equal(s.T(), "<nil>", status.Convert(err).Message(), "must error with <nil>")
+}
+
 func (s *RecoverySuite) TestStream_SuccessfulReceive() {
 	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
@@ -88,6 +102,15 @@ func (s *RecoverySuite) TestStream_PanickingReceive() {
 	require.Error(s.T(), err, "there must be an error")
 	assert.Equal(s.T(), codes.Internal, status.Code(err), "must error with internal")
 	assert.Equal(s.T(), "very bad thing happened", status.Convert(err).Message(), "must error with message")
+}
+
+func (s *RecoverySuite) TestStream_NilPanickingReceive() {
+	stream, err := s.Client.PingList(s.SimpleCtx(), nilPanicPing)
+	require.NoError(s.T(), err, "should not fail on establishing the stream")
+	_, err = stream.Recv()
+	require.Error(s.T(), err, "there must be an error")
+	assert.Equal(s.T(), codes.Internal, status.Code(err), "must error with internal")
+	assert.Equal(s.T(), "<nil>", status.Convert(err).Message(), "must error with <nil>")
 }
 
 func TestRecoveryOverrideSuite(t *testing.T) {
