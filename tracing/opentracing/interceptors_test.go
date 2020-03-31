@@ -29,10 +29,12 @@ import (
 )
 
 var (
-	goodPing           = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
-	fakeInboundTraceId = 1337
-	fakeInboundSpanId  = 999
-	traceHeaderName    = "uber-trace-id"
+	goodPing                = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
+	fakeInboundTraceId      = 1337
+	fakeInboundSpanId       = 999
+	traceHeaderName         = "uber-trace-id"
+	filterFunc              = func(ctx context.Context, fullMethodName string) bool { return true }
+	unaryRequestHandlerFunc = func(span opentracing.Span, req interface{}) {}
 )
 
 type tracingAssertService struct {
@@ -79,7 +81,9 @@ func TestTaggingSuite(t *testing.T) {
 	mockTracer := mocktracer.New()
 	opts := []grpc_opentracing.Option{
 		grpc_opentracing.WithTracer(mockTracer),
+		grpc_opentracing.WithFilterFunc(filterFunc),
 		grpc_opentracing.WithTraceHeaderName(traceHeaderName),
+		grpc_opentracing.WithUnaryRequestHandlerFunc(unaryRequestHandlerFunc),
 	}
 	s := &OpentracingSuite{
 		mockTracer:           mockTracer,

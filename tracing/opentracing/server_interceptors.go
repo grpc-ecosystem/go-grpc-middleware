@@ -28,6 +28,9 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 			return handler(ctx, req)
 		}
 		newCtx, serverSpan := newServerSpanFromInbound(ctx, o.tracer, o.traceHeaderName, info.FullMethod)
+		if o.unaryRequestHandlerFunc != nil {
+			o.unaryRequestHandlerFunc(serverSpan, req)
+		}
 		resp, err := handler(newCtx, req)
 		finishServerSpan(ctx, serverSpan, err)
 		return resp, err
