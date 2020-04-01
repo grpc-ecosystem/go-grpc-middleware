@@ -25,6 +25,9 @@ func UnaryClientInterceptor(opts ...Option) grpc.UnaryClientInterceptor {
 			return invoker(parentCtx, method, req, reply, cc, opts...)
 		}
 		newCtx, clientSpan := newClientSpanFromContext(parentCtx, o.tracer, method)
+		if o.unaryRequestHandlerFunc != nil {
+			o.unaryRequestHandlerFunc(clientSpan, req)
+		}
 		err := invoker(newCtx, method, req, reply, cc, opts...)
 		finishClientSpan(clientSpan, err)
 		return err

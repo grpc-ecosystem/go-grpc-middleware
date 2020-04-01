@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/opentracing/opentracing-go/mocktracer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,10 +30,14 @@ import (
 )
 
 var (
-	goodPing           = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
-	fakeInboundTraceId = 1337
-	fakeInboundSpanId  = 999
-	traceHeaderName    = "uber-trace-id"
+	goodPing                = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
+	fakeInboundTraceId      = 1337
+	fakeInboundSpanId       = 999
+	traceHeaderName         = "uber-trace-id"
+	filterFunc              = func(ctx context.Context, fullMethodName string) bool { return true }
+	unaryRequestHandlerFunc = func(span opentracing.Span, req interface{}) {
+		span.LogFields(log.Bool("unary-request-handler", true))
+	}
 )
 
 type tracingAssertService struct {
@@ -79,7 +84,9 @@ func TestTaggingSuite(t *testing.T) {
 	mockTracer := mocktracer.New()
 	opts := []grpc_opentracing.Option{
 		grpc_opentracing.WithTracer(mockTracer),
+		grpc_opentracing.WithFilterFunc(filterFunc),
 		grpc_opentracing.WithTraceHeaderName(traceHeaderName),
+		grpc_opentracing.WithUnaryRequestHandlerFunc(unaryRequestHandlerFunc),
 	}
 	s := &OpentracingSuite{
 		mockTracer:           mockTracer,
@@ -94,6 +101,7 @@ func TestTaggingSuiteJaeger(t *testing.T) {
 	mockTracer.RegisterExtractor(opentracing.HTTPHeaders, jaegerFormatExtractor{})
 	opts := []grpc_opentracing.Option{
 		grpc_opentracing.WithTracer(mockTracer),
+		grpc_opentracing.WithUnaryRequestHandlerFunc(unaryRequestHandlerFunc),
 	}
 	s := &OpentracingSuite{
 		mockTracer:           mockTracer,
@@ -182,6 +190,26 @@ func (s *OpentracingSuite) TestPing_PropagatesTraces() {
 	_, err := s.Client.Ping(ctx, goodPing)
 	require.NoError(s.T(), err, "there must be not be an on a successful call")
 	s.assertTracesCreated("/mwitkow.testproto.TestService/Ping")
+}
+
+func (s *OpentracingSuite) TestPing_WithUnaryRequestHandlerFunc() {
+	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true)
+	_, err := s.Client.Ping(ctx, goodPing)
+	require.NoError(s.T(), err, "there must be not be an on a successful call")
+
+	var hasLogKey bool
+Loop:
+	for _, span := range s.mockTracer.FinishedSpans() {
+		for _, record := range span.Logs() {
+			for _, field := range record.Fields {
+				if field.Key == "unary-request-handler" {
+					hasLogKey = true
+					break Loop
+				}
+			}
+		}
+	}
+	require.True(s.T(), hasLogKey, "span field 'unary-request-handler' not found")
 }
 
 func (s *OpentracingSuite) TestPing_ClientContextTags() {

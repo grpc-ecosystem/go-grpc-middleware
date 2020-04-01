@@ -5,7 +5,6 @@ package grpc_opentracing
 
 import (
 	"context"
-
 	"github.com/opentracing/opentracing-go"
 )
 
@@ -21,10 +20,14 @@ var (
 // If it returns false, the given request will not be traced.
 type FilterFunc func(ctx context.Context, fullMethodName string) bool
 
+// UnaryRequestHandlerFunc is a custom request handler
+type UnaryRequestHandlerFunc func(span opentracing.Span, req interface{})
+
 type options struct {
-	filterOutFunc   FilterFunc
-	tracer          opentracing.Tracer
-	traceHeaderName string
+	filterOutFunc           FilterFunc
+	tracer                  opentracing.Tracer
+	traceHeaderName         string
+	unaryRequestHandlerFunc UnaryRequestHandlerFunc
 }
 
 func evaluateOptions(opts []Option) *options {
@@ -63,5 +66,12 @@ func WithTraceHeaderName(name string) Option {
 func WithTracer(tracer opentracing.Tracer) Option {
 	return func(o *options) {
 		o.tracer = tracer
+	}
+}
+
+// WithUnaryRequestHandlerFunc sets a custom handler for the request
+func WithUnaryRequestHandlerFunc(f UnaryRequestHandlerFunc) Option {
+	return func(o *options) {
+		o.unaryRequestHandlerFunc = f
 	}
 }
