@@ -23,7 +23,7 @@ server chaining:
 
 	myServer := grpc.NewServer(
 	    grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(loggingStream, monitoringStream, authStream)),
-	    grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(loggingUnary, monitoringUnary, authUnary),
+	    grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(loggingUnary, monitoringUnary, authUnary)),
 	)
 
 These interceptors will be executed from left to right: logging, monitoring and auth.
