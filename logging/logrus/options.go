@@ -87,6 +87,13 @@ func WithDurationField(f DurationToField) Option {
 	}
 }
 
+// WithMessageProducer customizes the function for message formation.
+func WithMessageProducer(f MessageProducer) Option {
+	return func(o *options) {
+		o.messageFunc = f
+	}
+}
+
 // DefaultCodeToLevel is the default implementation of gRPC return codes to log levels for server side.
 func DefaultCodeToLevel(code codes.Code) logrus.Level {
 	switch code {

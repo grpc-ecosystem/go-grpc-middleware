@@ -85,6 +85,13 @@ func WithDurationField(f DurationToField) Option {
 	}
 }
 
+// WithMessageProducer customizes the function for message formation.
+func WithMessageProducer(f MessageProducer) Option {
+	return func(o *options) {
+		o.messageFunc = f
+	}
+}
+
 // DefaultCodeToLevel is the default implementation of gRPC return codes and interceptor log level for server side.
 func DefaultCodeToLevel(code codes.Code) zapcore.Level {
 	switch code {
