@@ -326,7 +326,7 @@ func TestZapLoggingServerMessageProducerSuite(t *testing.T) {
 		return
 	}
 	opts := []grpc_zap.Option{
-		grpc_zap.WithMessageProducer(StubtMessageProducer),
+		grpc_zap.WithMessageProducer(StubMessageProducer),
 	}
 	b := newBaseZapSuite(t)
 	b.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{

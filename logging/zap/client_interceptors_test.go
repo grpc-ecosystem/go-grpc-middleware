@@ -2,8 +2,6 @@ package grpc_zap_test
 
 import (
 	"io"
-	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,10 +25,6 @@ func customClientCodeToLevel(c codes.Code) zapcore.Level {
 }
 
 func TestZapClientSuite(t *testing.T) {
-	if strings.HasPrefix(runtime.Version(), "go1.7") {
-		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
-		return
-	}
 	opts := []grpc_zap.Option{
 		grpc_zap.WithLevels(customClientCodeToLevel),
 	}
@@ -126,10 +120,6 @@ func (s *zapClientSuite) TestPingError_WithCustomLevels() {
 }
 
 func TestZapClientOverrideSuite(t *testing.T) {
-	if strings.HasPrefix(runtime.Version(), "go1.7") {
-		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
-		return
-	}
 	opts := []grpc_zap.Option{
 		grpc_zap.WithDurationField(grpc_zap.DurationToDurationField),
 	}
@@ -184,12 +174,8 @@ func (s *zapClientOverrideSuite) TestPingList_HasOverrides() {
 }
 
 func TestZapLoggingClientMessageProducerSuite(t *testing.T) {
-	if strings.HasPrefix(runtime.Version(), "go1.7") {
-		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
-		return
-	}
 	opts := []grpc_zap.Option{
-		grpc_zap.WithMessageProducer(StubtMessageProducer),
+		grpc_zap.WithMessageProducer(StubMessageProducer),
 	}
 	b := newBaseZapSuite(t)
 	b.InterceptorTestSuite.ClientOpts = []grpc.DialOption{

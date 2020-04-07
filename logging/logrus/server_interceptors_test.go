@@ -2,8 +2,6 @@ package grpc_logrus_test
 
 import (
 	"io"
-	"runtime"
-	"strings"
 	"testing"
 	"time"
 
@@ -20,10 +18,6 @@ import (
 )
 
 func TestLogrusServerSuite(t *testing.T) {
-	if strings.HasPrefix(runtime.Version(), "go1.7") {
-		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
-		return
-	}
 	opts := []grpc_logrus.Option{
 		grpc_logrus.WithLevels(customCodeToLevel),
 	}
@@ -167,10 +161,6 @@ func (s *logrusServerSuite) TestPingList_WithCustomTags() {
 }
 
 func TestLogrusServerOverrideSuite(t *testing.T) {
-	if strings.HasPrefix(runtime.Version(), "go1.7") {
-		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
-		return
-	}
 	opts := []grpc_logrus.Option{
 		grpc_logrus.WithDurationField(grpc_logrus.DurationToDurationField),
 	}
@@ -240,10 +230,6 @@ func (s *logrusServerOverrideSuite) TestPingList_HasOverriddenDuration() {
 }
 
 func TestLogrusServerOverrideDeciderSuite(t *testing.T) {
-	if strings.HasPrefix(runtime.Version(), "go1.7") {
-		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
-		return
-	}
 	opts := []grpc_logrus.Option{
 		grpc_logrus.WithDecider(func(method string, err error) bool {
 			if err != nil && method == "/mwitkow.testproto.TestService/PingError" {
@@ -322,10 +308,6 @@ func (s *logrusServerOverrideDeciderSuite) TestPingList_HasOverriddenDecider() {
 }
 
 func TestLogrusServerMessageProducerSuite(t *testing.T) {
-	if strings.HasPrefix(runtime.Version(), "go1.7") {
-		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
-		return
-	}
 	opts := []grpc_logrus.Option{
 		grpc_logrus.WithMessageProducer(StubMessageProducer),
 	}

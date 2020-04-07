@@ -106,7 +106,7 @@ func (s *zapBaseSuite) getOutputJSONs() []map[string]interface{} {
 	return ret
 }
 
-func StubtMessageProducer(ctx context.Context, msg string, level zapcore.Level, code codes.Code, err error, duration zapcore.Field) {
+func StubMessageProducer(ctx context.Context, msg string, level zapcore.Level, code codes.Code, err error, duration zapcore.Field) {
 	// re-extract logger from newCtx, as it may have extra fields that changed in the holder.
 	ctxzap.Extract(ctx).Check(level, "custom message").Write(
 		zap.Error(err),

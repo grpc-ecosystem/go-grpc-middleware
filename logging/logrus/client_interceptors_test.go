@@ -2,8 +2,6 @@ package grpc_logrus_test
 
 import (
 	"io"
-	"runtime"
-	"strings"
 	"testing"
 
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -27,10 +25,6 @@ func customClientCodeToLevel(c codes.Code) logrus.Level {
 }
 
 func TestLogrusClientSuite(t *testing.T) {
-	if strings.HasPrefix(runtime.Version(), "go1.7") {
-		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
-		return
-	}
 	opts := []grpc_logrus.Option{
 		grpc_logrus.WithLevels(customClientCodeToLevel),
 	}
@@ -130,10 +124,6 @@ func (s *logrusClientSuite) TestPingError_WithCustomLevels() {
 }
 
 func TestLogrusClientOverrideSuite(t *testing.T) {
-	if strings.HasPrefix(runtime.Version(), "go1.7") {
-		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
-		return
-	}
 	opts := []grpc_logrus.Option{
 		grpc_logrus.WithDurationField(grpc_logrus.DurationToDurationField),
 	}
@@ -189,10 +179,6 @@ func (s *logrusClientOverrideSuite) TestPingList_HasOverrides() {
 }
 
 func TestZapLoggingClientMessageProducerSuite(t *testing.T) {
-	if strings.HasPrefix(runtime.Version(), "go1.7") {
-		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
-		return
-	}
 	opts := []grpc_logrus.Option{
 		grpc_logrus.WithMessageProducer(StubMessageProducer),
 	}
