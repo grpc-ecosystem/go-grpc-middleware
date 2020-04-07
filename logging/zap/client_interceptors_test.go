@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"go.uber.org/zap/zapcore"
 )
@@ -181,4 +181,36 @@ func (s *zapClientOverrideSuite) TestPingList_HasOverrides() {
 
 	assert.NotContains(s.T(), msgs[0], "grpc.time_ms", "handler's message must not contain default duration")
 	assert.Contains(s.T(), msgs[0], "grpc.duration", "handler's message must contain overridden duration")
+}
+
+func TestZapLoggingClientMessageProducerSuite(t *testing.T) {
+	if strings.HasPrefix(runtime.Version(), "go1.7") {
+		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
+		return
+	}
+	opts := []grpc_zap.Option{
+		grpc_zap.WithMessageProducer(StubtMessageProducer),
+	}
+	b := newBaseZapSuite(t)
+	b.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
+		grpc.WithUnaryInterceptor(grpc_zap.UnaryClientInterceptor(b.log, opts...)),
+		grpc.WithStreamInterceptor(grpc_zap.StreamClientInterceptor(b.log, opts...)),
+	}
+	suite.Run(t, &zapClientMessageProducerSuite{b})
+}
+
+type zapClientMessageProducerSuite struct {
+	*zapBaseSuite
+}
+
+func (s *zapClientMessageProducerSuite) TestPing_HasOverriddenMessageProducer() {
+	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	require.NoError(s.T(), err, "there must be not be an error on a successful call")
+
+	msgs := s.getOutputJSONs()
+	require.Len(s.T(), msgs, 1, "one log statement should be logged")
+
+	assert.Equal(s.T(), msgs[0]["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
+	assert.Equal(s.T(), msgs[0]["grpc.method"], "Ping", "all lines must contain method name")
+	assert.Equal(s.T(), msgs[0]["msg"], "custom message", "handler's message must contain user message")
 }

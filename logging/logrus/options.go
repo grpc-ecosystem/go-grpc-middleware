@@ -196,26 +196,26 @@ func durationToMilliseconds(duration time.Duration) float32 {
 }
 
 // MessageProducer produces a user defined log message
-type MessageProducer func(ctx context.Context, format string, level logrus.Level, code codes.Code, err error, fields logrus.Fields, args ...interface{})
+type MessageProducer func(ctx context.Context, format string, level logrus.Level, code codes.Code, err error, fields logrus.Fields)
 
 // DefaultMessageProducer writes the default message
-func DefaultMessageProducer(ctx context.Context, format string, level logrus.Level, code codes.Code, err error, fields logrus.Fields, args ...interface{}) {
+func DefaultMessageProducer(ctx context.Context, format string, level logrus.Level, code codes.Code, err error, fields logrus.Fields) {
 	if err != nil {
 		fields[logrus.ErrorKey] = err
 	}
 	entry := ctxlogrus.Extract(ctx).WithContext(ctx).WithFields(fields)
 	switch level {
 	case logrus.DebugLevel:
-		entry.Debugf(format, args...)
+		entry.Debugf(format)
 	case logrus.InfoLevel:
-		entry.Infof(format, args...)
+		entry.Infof(format)
 	case logrus.WarnLevel:
-		entry.Warningf(format, args...)
+		entry.Warningf(format)
 	case logrus.ErrorLevel:
-		entry.Errorf(format, args...)
+		entry.Errorf(format)
 	case logrus.FatalLevel:
-		entry.Fatalf(format, args...)
+		entry.Fatalf(format)
 	case logrus.PanicLevel:
-		entry.Panicf(format, args...)
+		entry.Panicf(format)
 	}
 }

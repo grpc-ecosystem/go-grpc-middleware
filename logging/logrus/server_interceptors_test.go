@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -319,4 +319,41 @@ func (s *logrusServerOverrideDeciderSuite) TestPingList_HasOverriddenDecider() {
 
 	assert.NotContains(s.T(), msgs[0], "grpc.time_ms", "handler's message must not contain default duration")
 	assert.NotContains(s.T(), msgs[0], "grpc.duration", "handler's message must not contain overridden duration")
+}
+
+func TestLogrusServerMessageProducerSuite(t *testing.T) {
+	if strings.HasPrefix(runtime.Version(), "go1.7") {
+		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
+		return
+	}
+	opts := []grpc_logrus.Option{
+		grpc_logrus.WithMessageProducer(StubMessageProducer),
+	}
+	b := newLogrusBaseSuite(t)
+	b.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
+		grpc_middleware.WithStreamServerChain(
+			grpc_ctxtags.StreamServerInterceptor(),
+			grpc_logrus.StreamServerInterceptor(logrus.NewEntry(b.logger), opts...)),
+		grpc_middleware.WithUnaryServerChain(
+			grpc_ctxtags.UnaryServerInterceptor(),
+			grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(b.logger), opts...)),
+	}
+	suite.Run(t, &logrusServerMessageProducerSuite{b})
+}
+
+type logrusServerMessageProducerSuite struct {
+	*logrusBaseSuite
+}
+
+func (s *logrusServerMessageProducerSuite) TestPing_HasMessageProducer() {
+	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	require.NoError(s.T(), err, "there must be not be an error on a successful call")
+
+	msgs := s.getOutputJSONs()
+	require.Len(s.T(), msgs, 2, "single log statements should be logged")
+	assert.Equal(s.T(), msgs[0]["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain service name")
+	assert.Equal(s.T(), msgs[0]["grpc.method"], "Ping", "all lines must contain method name")
+	assert.Equal(s.T(), msgs[1]["msg"], "custom message", "user defined message producer must be used")
+
+	assert.Equal(s.T(), msgs[0]["msg"], "some ping", "handler's message must contain user message")
 }
