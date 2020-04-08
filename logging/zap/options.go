@@ -1,9 +1,11 @@
 package grpc_zap
 
 import (
+	"context"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging"
+	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc/codes"
@@ -15,6 +17,7 @@ var (
 		shouldLog:    grpc_logging.DefaultDeciderMethod,
 		codeFunc:     grpc_logging.DefaultErrorToCode,
 		durationFunc: DefaultDurationToField,
+		messageFunc:  DefaultMessageProducer,
 	}
 )
 
@@ -23,6 +26,7 @@ type options struct {
 	shouldLog    grpc_logging.Decider
 	codeFunc     grpc_logging.ErrorToCode
 	durationFunc DurationToField
+	messageFunc  MessageProducer
 }
 
 func evaluateServerOpt(opts []Option) *options {
@@ -78,6 +82,13 @@ func WithCodes(f grpc_logging.ErrorToCode) Option {
 func WithDurationField(f DurationToField) Option {
 	return func(o *options) {
 		o.durationFunc = f
+	}
+}
+
+// WithMessageProducer customizes the function for message formation.
+func WithMessageProducer(f MessageProducer) Option {
+	return func(o *options) {
+		o.messageFunc = f
 	}
 }
 
@@ -181,4 +192,17 @@ func DurationToDurationField(duration time.Duration) zapcore.Field {
 
 func durationToMilliseconds(duration time.Duration) float32 {
 	return float32(duration.Nanoseconds()/1000) / 1000
+}
+
+// MessageProducer produces a user defined log message
+type MessageProducer func(ctx context.Context, msg string, level zapcore.Level, code codes.Code, err error, duration zapcore.Field)
+
+// DefaultMessageProducer writes the default message
+func DefaultMessageProducer(ctx context.Context, msg string, level zapcore.Level, code codes.Code, err error, duration zapcore.Field) {
+	// re-extract logger from newCtx, as it may have extra fields that changed in the holder.
+	ctxzap.Extract(ctx).Check(level, msg).Write(
+		zap.Error(err),
+		zap.String("grpc.code", code.String()),
+		duration,
+	)
 }

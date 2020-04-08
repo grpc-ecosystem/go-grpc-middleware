@@ -8,11 +8,12 @@ import (
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	grpc_testing "github.com/grpc-ecosystem/go-grpc-middleware/testing"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc/codes"
 )
 
 var (
@@ -103,4 +104,13 @@ func (s *zapBaseSuite) getOutputJSONs() []map[string]interface{} {
 	}
 
 	return ret
+}
+
+func StubMessageProducer(ctx context.Context, msg string, level zapcore.Level, code codes.Code, err error, duration zapcore.Field) {
+	// re-extract logger from newCtx, as it may have extra fields that changed in the holder.
+	ctxzap.Extract(ctx).Check(level, "custom message").Write(
+		zap.Error(err),
+		zap.String("grpc.code", code.String()),
+		duration,
+	)
 }

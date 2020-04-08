@@ -2,11 +2,9 @@ package grpc_logrus_test
 
 import (
 	"io"
-	"runtime"
-	"strings"
 	"testing"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,10 +25,6 @@ func customClientCodeToLevel(c codes.Code) logrus.Level {
 }
 
 func TestLogrusClientSuite(t *testing.T) {
-	if strings.HasPrefix(runtime.Version(), "go1.7") {
-		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
-		return
-	}
 	opts := []grpc_logrus.Option{
 		grpc_logrus.WithLevels(customClientCodeToLevel),
 	}
@@ -130,10 +124,6 @@ func (s *logrusClientSuite) TestPingError_WithCustomLevels() {
 }
 
 func TestLogrusClientOverrideSuite(t *testing.T) {
-	if strings.HasPrefix(runtime.Version(), "go1.7") {
-		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
-		return
-	}
 	opts := []grpc_logrus.Option{
 		grpc_logrus.WithDurationField(grpc_logrus.DurationToDurationField),
 	}
@@ -186,4 +176,37 @@ func (s *logrusClientOverrideSuite) TestPingList_HasOverrides() {
 
 	assert.NotContains(s.T(), msgs[0], "grpc.time_ms", "message must not contain default duration")
 	assert.Contains(s.T(), msgs[0], "grpc.duration", "message must contain overridden duration")
+}
+
+func TestZapLoggingClientMessageProducerSuite(t *testing.T) {
+	opts := []grpc_logrus.Option{
+		grpc_logrus.WithMessageProducer(StubMessageProducer),
+	}
+	b := newLogrusBaseSuite(t)
+	b.logger.Level = logrus.DebugLevel // a lot of our stuff is on debug level by default
+	b.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
+		grpc.WithUnaryInterceptor(grpc_logrus.UnaryClientInterceptor(logrus.NewEntry(b.logger), opts...)),
+		grpc.WithStreamInterceptor(grpc_logrus.StreamClientInterceptor(logrus.NewEntry(b.logger), opts...)),
+	}
+	suite.Run(t, &logrusClientMessageProducerSuite{b})
+}
+
+type logrusClientMessageProducerSuite struct {
+	*logrusBaseSuite
+}
+
+func (s *logrusClientMessageProducerSuite) TestPing_HasOverriddenMessageProducer() {
+	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	assert.NoError(s.T(), err, "there must be not be an on a successful call")
+
+	msgs := s.getOutputJSONs()
+	require.Len(s.T(), msgs, 1, "one log statement should be logged")
+
+	assert.Equal(s.T(), msgs[0]["grpc.service"], "mwitkow.testproto.TestService", "all lines must contain the correct service name")
+	assert.Equal(s.T(), msgs[0]["grpc.method"], "Ping", "all lines must contain the correct method name")
+	assert.Equal(s.T(), msgs[0]["msg"], "custom message", "handler's message must contain the correct message")
+	assert.Equal(s.T(), msgs[0]["span.kind"], "client", "all lines must contain the kind of call (client)")
+	assert.Equal(s.T(), msgs[0]["level"], "debug", "OK codes must be logged on debug level.")
+
+	assert.Contains(s.T(), msgs[0], "grpc.time_ms", "interceptor log statement should contain execution time (duration in ms)")
 }

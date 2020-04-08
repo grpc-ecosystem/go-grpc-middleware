@@ -8,6 +8,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
@@ -25,7 +26,8 @@ func UnaryClientInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryClient
 		fields := newClientLoggerFields(ctx, method)
 		startTime := time.Now()
 		err := invoker(ctx, method, req, reply, cc, opts...)
-		logFinalClientLine(o, logger.With(fields...), startTime, err, "finished client unary call")
+		newCtx := ctxzap.ToContext(ctx, logger.With(fields...))
+		logFinalClientLine(newCtx, o, startTime, err, "finished client unary call")
 		return err
 	}
 }
@@ -37,19 +39,17 @@ func StreamClientInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamClie
 		fields := newClientLoggerFields(ctx, method)
 		startTime := time.Now()
 		clientStream, err := streamer(ctx, desc, cc, method, opts...)
-		logFinalClientLine(o, logger.With(fields...), startTime, err, "finished client streaming call")
+		newCtx := ctxzap.ToContext(ctx, logger.With(fields...))
+		logFinalClientLine(newCtx, o, startTime, err, "finished client streaming call")
 		return clientStream, err
 	}
 }
 
-func logFinalClientLine(o *options, logger *zap.Logger, startTime time.Time, err error, msg string) {
+func logFinalClientLine(ctx context.Context, o *options, startTime time.Time, err error, msg string) {
 	code := o.codeFunc(err)
 	level := o.levelFunc(code)
-	logger.Check(level, msg).Write(
-		zap.Error(err),
-		zap.String("grpc.code", code.String()),
-		o.durationFunc(time.Now().Sub(startTime)),
-	)
+	duration := o.durationFunc(time.Now().Sub(startTime))
+	o.messageFunc(ctx, msg, level, code, err, duration)
 }
 
 func newClientLoggerFields(ctx context.Context, fullMethodString string) []zapcore.Field {
