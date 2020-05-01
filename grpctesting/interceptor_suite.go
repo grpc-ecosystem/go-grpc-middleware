@@ -11,11 +11,12 @@ import (
 	"runtime"
 	"time"
 
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testproto"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 )
 
 var (
@@ -31,7 +32,7 @@ func getTestingCertsPath() string {
 type InterceptorTestSuite struct {
 	suite.Suite
 
-	TestService pb_testproto.TestServiceServer
+	TestService testpb.TestServiceServer
 	ServerOpts  []grpc.ServerOption
 	ClientOpts  []grpc.DialOption
 
@@ -39,7 +40,7 @@ type InterceptorTestSuite struct {
 	ServerListener net.Listener
 	Server         *grpc.Server
 	clientConn     *grpc.ClientConn
-	Client         pb_testproto.TestServiceClient
+	Client         testpb.TestServiceClient
 
 	restartServerWithDelayedStart chan time.Duration
 	serverRunning                 chan bool
@@ -71,7 +72,7 @@ func (s *InterceptorTestSuite) SetupSuite() {
 			if s.TestService == nil {
 				s.TestService = &TestPingService{T: s.T()}
 			}
-			pb_testproto.RegisterTestServiceServer(s.Server, s.TestService)
+			testpb.RegisterTestServiceServer(s.Server, s.TestService)
 
 			go func() {
 				s.Server.Serve(s.ServerListener)
@@ -97,7 +98,7 @@ func (s *InterceptorTestSuite) RestartServer(delayedStart time.Duration) <-chan 
 	return s.serverRunning
 }
 
-func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) pb_testproto.TestServiceClient {
+func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) testpb.TestServiceClient {
 	newDialOpts := append(dialOpts, grpc.WithBlock())
 	if *flagTls {
 		creds, err := credentials.NewClientTLSFromFile(
@@ -111,7 +112,7 @@ func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) pb_testpro
 	defer cancel()
 	clientConn, err := grpc.DialContext(ctx, s.ServerAddr(), newDialOpts...)
 	require.NoError(s.T(), err, "must not error on client Dial")
-	return pb_testproto.NewTestServiceClient(clientConn)
+	return testpb.NewTestServiceClient(clientConn)
 }
 
 func (s *InterceptorTestSuite) ServerAddr() string {

@@ -7,21 +7,22 @@ import (
 	"io"
 	"testing"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testproto"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/validator"
 )
 
 var (
 	// See test.manual_validator.pb.go for the validator check of SleepTimeMs.
-	goodPing = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
-	badPing  = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 10001}
+	goodPing = &testpb.PingRequest{Value: "something", SleepTimeMs: 9999}
+	badPing  = &testpb.PingRequest{Value: "something", SleepTimeMs: 10001}
 )
 
 func TestValidatorTestSuite(t *testing.T) {

@@ -7,18 +7,19 @@ import (
 	"testing"
 	"time"
 
-	grpctesting "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testproto"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 )
 
 var (
-	goodPing    = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
-	anotherPing = &pb_testproto.PingRequest{Value: "else", SleepTimeMs: 9999}
+	goodPing    = &testpb.PingRequest{Value: "something", SleepTimeMs: 9999}
+	anotherPing = &testpb.PingRequest{Value: "else", SleepTimeMs: 9999}
 )
 
 func tagsToJson(value map[string]string) string {
@@ -36,27 +37,27 @@ func tagsFromJson(t *testing.T, jstring string) map[string]string {
 }
 
 type tagPingBack struct {
-	pb_testproto.TestServiceServer
+	testpb.TestServiceServer
 }
 
-func (s *tagPingBack) Ping(ctx context.Context, _ *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
-	return &pb_testproto.PingResponse{Value: tagsToJson(tags.Extract(ctx).Values())}, nil
+func (s *tagPingBack) Ping(ctx context.Context, _ *testpb.PingRequest) (*testpb.PingResponse, error) {
+	return &testpb.PingResponse{Value: tagsToJson(tags.Extract(ctx).Values())}, nil
 }
 
-func (s *tagPingBack) PingError(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.Empty, error) {
+func (s *tagPingBack) PingError(ctx context.Context, ping *testpb.PingRequest) (*testpb.Empty, error) {
 	return s.TestServiceServer.PingError(ctx, ping)
 }
 
-func (s *tagPingBack) PingList(_ *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
-	out := &pb_testproto.PingResponse{Value: tagsToJson(tags.Extract(stream.Context()).Values())}
+func (s *tagPingBack) PingList(_ *testpb.PingRequest, stream testpb.TestService_PingListServer) error {
+	out := &testpb.PingResponse{Value: tagsToJson(tags.Extract(stream.Context()).Values())}
 	return stream.Send(out)
 }
 
-func (s *tagPingBack) PingEmpty(ctx context.Context, empty *pb_testproto.Empty) (*pb_testproto.PingResponse, error) {
+func (s *tagPingBack) PingEmpty(ctx context.Context, empty *testpb.Empty) (*testpb.PingResponse, error) {
 	return s.TestServiceServer.PingEmpty(ctx, empty)
 }
 
-func (s *tagPingBack) PingStream(stream pb_testproto.TestService_PingStreamServer) error {
+func (s *tagPingBack) PingStream(stream testpb.TestService_PingStreamServer) error {
 	for {
 		_, err := stream.Recv()
 		if err == io.EOF {
@@ -65,7 +66,7 @@ func (s *tagPingBack) PingStream(stream pb_testproto.TestService_PingStreamServe
 		if err != nil {
 			return err
 		}
-		out := &pb_testproto.PingResponse{Value: tagsToJson(tags.Extract(stream.Context()).Values())}
+		out := &testpb.PingResponse{Value: tagsToJson(tags.Extract(stream.Context()).Values())}
 		err = stream.Send(out)
 		if err != nil {
 			return err

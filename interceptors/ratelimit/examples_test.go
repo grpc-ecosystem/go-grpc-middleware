@@ -1,9 +1,10 @@
 package ratelimit_test
 
 import (
+	"google.golang.org/grpc"
+
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/ratelimit"
-	"google.golang.org/grpc"
 )
 
 // alwaysPassLimiter is an example limiter which implements Limiter interface.

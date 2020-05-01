@@ -10,27 +10,28 @@ import (
 	"testing"
 	"time"
 
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testproto"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 )
 
 var (
 	retriableErrors = []codes.Code{codes.Unavailable, codes.DataLoss}
-	goodPing        = &pb_testproto.PingRequest{Value: "something"}
+	goodPing        = &testpb.PingRequest{Value: "something"}
 	noSleep         = 0 * time.Second
 	retryTimeout    = 50 * time.Millisecond
 )
 
 type failingService struct {
-	pb_testproto.TestServiceServer
+	testpb.TestServiceServer
 	mu sync.Mutex
 
 	reqCounter uint
@@ -70,21 +71,21 @@ func (s *failingService) maybeFailRequest() error {
 	return status.Errorf(reqError, "maybeFailRequest: failing it")
 }
 
-func (s *failingService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
+func (s *failingService) Ping(ctx context.Context, ping *testpb.PingRequest) (*testpb.PingResponse, error) {
 	if err := s.maybeFailRequest(); err != nil {
 		return nil, err
 	}
 	return s.TestServiceServer.Ping(ctx, ping)
 }
 
-func (s *failingService) PingList(ping *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
+func (s *failingService) PingList(ping *testpb.PingRequest, stream testpb.TestService_PingListServer) error {
 	if err := s.maybeFailRequest(); err != nil {
 		return err
 	}
 	return s.TestServiceServer.PingList(ping, stream)
 }
 
-func (s *failingService) PingStream(stream pb_testproto.TestService_PingStreamServer) error {
+func (s *failingService) PingStream(stream testpb.TestService_PingStreamServer) error {
 	if err := s.maybeFailRequest(); err != nil {
 		return err
 	}
@@ -289,7 +290,7 @@ func (s *RetrySuite) TestServerStream_CallRetrySucceeds() {
 	<-restarted
 }
 
-func (s *RetrySuite) assertPingListWasCorrect(stream pb_testproto.TestService_PingListClient) {
+func (s *RetrySuite) assertPingListWasCorrect(stream testpb.TestService_PingListClient) {
 	count := 0
 	for {
 		pong, err := stream.Recv()

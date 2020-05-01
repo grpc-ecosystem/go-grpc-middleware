@@ -9,22 +9,22 @@ import (
 	"sync"
 	"testing"
 
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testproto"
+	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 )
 
 var (
-	goodPing = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
+	goodPing = &testpb.PingRequest{Value: "something", SleepTimeMs: 9999}
 )
 
 type testDisposableFields map[string]string
@@ -71,8 +71,8 @@ func (l LogLines) Less(i, j int) bool {
 	//if
 
 	// We want to sort by counter which in string, so we need to parse it.
-	a := pb_testproto.PingResponse{}
-	b := pb_testproto.PingResponse{}
+	a := testpb.PingResponse{}
+	b := testpb.PingResponse{}
 	_ = json.Unmarshal([]byte(l[i].fields["grpc.response.content"]), &a)
 	_ = json.Unmarshal([]byte(l[j].fields["grpc.response.content"]), &b)
 	if a.Counter != b.Counter {
@@ -185,7 +185,7 @@ func TestSuite(t *testing.T) {
 func assertStandardFields(t *testing.T, kind string, f testDisposableFields, method string, typ interceptors.GRPCType) testDisposableFields {
 	return f.AssertNextField(t, logging.SystemTag[0], logging.SystemTag[1]).
 		AssertNextField(t, logging.KindFieldKey, kind).
-		AssertNextField(t, logging.ServiceFieldKey, "grpc_middleware.testproto.TestService").
+		AssertNextField(t, logging.ServiceFieldKey, "grpc_middleware.testpb.TestService").
 		AssertNextField(t, logging.MethodFieldKey, method).
 		AssertNextField(t, logging.MethodTypeFieldKey, string(typ))
 }
@@ -282,7 +282,7 @@ func (s *loggingClientServerSuite) TestPingError_WithCustomLevels() {
 		s.T().Run(tcase.msg, func(t *testing.T) {
 			_, err := s.Client.PingError(
 				s.SimpleCtx(),
-				&pb_testproto.PingRequest{Value: "something", ErrorCodeReturned: uint32(tcase.code)})
+				&testpb.PingRequest{Value: "something", ErrorCodeReturned: uint32(tcase.code)})
 			require.Error(t, err, "each call here must return an error")
 			lines := s.logger.Lines()
 			require.Len(t, lines, 2)
@@ -418,7 +418,7 @@ func TestCustomDeciderSuite(t *testing.T) {
 		return
 	}
 	opts := logging.WithDecider(func(method string, err error) bool {
-		if err != nil && method == "/grpc_middleware.testproto.TestService/PingError" {
+		if err != nil && method == "/grpc_middleware.testpb.TestService/PingError" {
 			return true
 		}
 		return false
@@ -459,7 +459,7 @@ func (s *loggingCustomDeciderSuite) TestPingError_HasCustomDecider() {
 
 	_, err := s.Client.PingError(
 		s.SimpleCtx(),
-		&pb_testproto.PingRequest{Value: "something", ErrorCodeReturned: uint32(code)})
+		&testpb.PingRequest{Value: "something", ErrorCodeReturned: uint32(code)})
 	require.Error(s.T(), err, "each call here must return an error")
 
 	lines := s.logger.Lines()

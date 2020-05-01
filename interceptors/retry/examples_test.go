@@ -9,10 +9,11 @@ import (
 	"io"
 	"time"
 
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testproto"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 )
 
 var cc *grpc.ClientConn
@@ -57,8 +58,8 @@ func Example_initializationWithExponentialBackoff() {
 
 // Simple example of an idempotent `ServerStream` call, that will be retried automatically 3 times.
 func Example_simpleCall() {
-	client := pb_testproto.NewTestServiceClient(cc)
-	stream, _ := client.PingList(newCtx(1*time.Second), &pb_testproto.PingRequest{}, retry.WithMax(3))
+	client := testpb.NewTestServiceClient(cc)
+	stream, _ := client.PingList(newCtx(1*time.Second), &testpb.PingRequest{}, retry.WithMax(3))
 
 	for {
 		pong, err := stream.Recv() // retries happen here
@@ -81,10 +82,10 @@ func Example_simpleCall() {
 // `WithPerRetryTimeout` allows you to shorten the deadline of each retry call, allowing you to fit
 // multiple retries in the single parent deadline.
 func ExampleWithPerRetryTimeout() {
-	client := pb_testproto.NewTestServiceClient(cc)
+	client := testpb.NewTestServiceClient(cc)
 	pong, _ := client.Ping(
 		newCtx(5*time.Second),
-		&pb_testproto.PingRequest{},
+		&testpb.PingRequest{},
 		retry.WithMax(3),
 		retry.WithPerRetryTimeout(1*time.Second))
 
