@@ -4,11 +4,12 @@ import (
 	"context"
 
 	"github.com/go-kit/kit/log"
+	"google.golang.org/grpc"
+
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/providers/kit"
-	"google.golang.org/grpc"
 )
 
 var (

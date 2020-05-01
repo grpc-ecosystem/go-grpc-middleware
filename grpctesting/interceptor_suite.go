@@ -11,11 +11,12 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 )
 
 var (

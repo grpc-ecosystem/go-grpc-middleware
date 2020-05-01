@@ -7,10 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/gogotestpb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 )
 
 func TestCodeGenRequestLogFieldExtractor_ManualIsDeclared(t *testing.T) {
@@ -21,14 +23,14 @@ func TestCodeGenRequestLogFieldExtractor_ManualIsDeclared(t *testing.T) {
 }
 
 func TestTaggedRequestFiledExtractor_PingRequest(t *testing.T) {
-	req := &pb_gogotestpb.PingRequest{
-		Ping: &pb_gogotestpb.Ping{
-			Id: &pb_gogotestpb.PingId{
+	req := &gogotestpb.PingRequest{
+		Ping: &gogotestpb.Ping{
+			Id: &gogotestpb.PingId{
 				Id: 1337, // logfield is ping_id
 			},
 			Value: "something",
 		},
-		Meta: &pb_gogotestpb.Metadata{
+		Meta: &gogotestpb.Metadata{
 			Tags: []string{"tagone", "tagtwo"}, // logfield is meta_tags
 		},
 	}
@@ -38,11 +40,11 @@ func TestTaggedRequestFiledExtractor_PingRequest(t *testing.T) {
 }
 
 func TestTaggedRequestFiledExtractor_PongRequest(t *testing.T) {
-	req := &pb_gogotestpb.PongRequest{
-		Pong: &pb_gogotestpb.Pong{
+	req := &gogotestpb.PongRequest{
+		Pong: &gogotestpb.Pong{
 			Id: "some_id",
 		},
-		Meta: &pb_gogotestpb.Metadata{
+		Meta: &gogotestpb.Metadata{
 			Tags: []string{"tagone", "tagtwo"}, // logfield is meta_tags
 		},
 	}
@@ -55,7 +57,7 @@ func TestTaggedRequestFiledExtractor_PongRequest(t *testing.T) {
 // when using gogoproto.stdtime which results in a time.Time that has private struct members
 func TestTaggedRequestFiledExtractor_GogoTime(t *testing.T) {
 	ts := time.Date(2010, 01, 01, 0, 0, 0, 0, time.UTC)
-	req := &pb_gogotestpb.GoGoProtoStdTime{
+	req := &gogotestpb.GoGoProtoStdTime{
 		Timestamp: &ts,
 	}
 	assert.NotPanics(t, func() {

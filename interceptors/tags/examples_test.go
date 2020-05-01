@@ -1,8 +1,9 @@
 package tags_test
 
 import (
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 	"google.golang.org/grpc"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 )
 
 // Simple example of server initialization code, with data automatically populated from `log_fields` Golang tags.

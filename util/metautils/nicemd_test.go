@@ -7,9 +7,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/util/metautils"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/util/metautils"
 )
 
 var (

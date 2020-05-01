@@ -9,10 +9,11 @@ import (
 	"io"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 )
 
 var cc *grpc.ClientConn

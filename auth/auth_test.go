@@ -9,10 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/auth"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/util/metautils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -22,6 +18,11 @@ import (
 	"google.golang.org/grpc/credentials/oauth"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/auth"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/util/metautils"
 )
 
 var (

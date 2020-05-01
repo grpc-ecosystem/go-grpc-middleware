@@ -6,9 +6,10 @@ import (
 	"io"
 	"time"
 
+	"google.golang.org/grpc"
+
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
-	"google.golang.org/grpc"
 )
 
 // extractFields returns all fields from tags.
