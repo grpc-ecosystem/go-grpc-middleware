@@ -1,8 +1,8 @@
 // Manual code for logging field extraction tests.
 
-package testproto
+package testpb
 
-const TestServiceFullName = "grpc_middleware.testproto.TestService"
+const TestServiceFullName = "grpc_middleware.testpb.TestService"
 
 // This is implementing tags.requestFieldsExtractor
 func (m *PingRequest) ExtractRequestFields(appendToMap map[string]string) {

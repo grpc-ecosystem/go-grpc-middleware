@@ -9,7 +9,7 @@ import (
 
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testproto"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,22 +20,22 @@ import (
 )
 
 var (
-	goodPing  = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
-	panicPing = &pb_testproto.PingRequest{Value: "panic", SleepTimeMs: 9999}
+	goodPing  = &testpb.PingRequest{Value: "something", SleepTimeMs: 9999}
+	panicPing = &testpb.PingRequest{Value: "panic", SleepTimeMs: 9999}
 )
 
 type recoveryAssertService struct {
-	pb_testproto.TestServiceServer
+	testpb.TestServiceServer
 }
 
-func (s *recoveryAssertService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
+func (s *recoveryAssertService) Ping(ctx context.Context, ping *testpb.PingRequest) (*testpb.PingResponse, error) {
 	if ping.Value == "panic" {
 		panic("very bad thing happened")
 	}
 	return s.TestServiceServer.Ping(ctx, ping)
 }
 
-func (s *recoveryAssertService) PingList(ping *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
+func (s *recoveryAssertService) PingList(ping *testpb.PingRequest, stream testpb.TestService_PingListServer) error {
 	if ping.Value == "panic" {
 		panic("very bad thing happened")
 	}

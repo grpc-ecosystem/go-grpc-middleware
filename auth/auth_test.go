@@ -11,7 +11,7 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testproto"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/util/metautils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,7 +29,7 @@ var (
 	overrideAuthToken = "override_token"
 
 	authedMarker = "some_context_marker"
-	goodPing     = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
+	goodPing     = &testpb.PingRequest{Value: "something", SleepTimeMs: 9999}
 )
 
 // TODO(mwitkow): Add auth from metadata client dialer, which requires TLS.
@@ -52,16 +52,16 @@ func assertAuthMarkerExists(t *testing.T, ctx context.Context) {
 }
 
 type assertingPingService struct {
-	pb_testproto.TestServiceServer
+	testpb.TestServiceServer
 	T *testing.T
 }
 
-func (s *assertingPingService) PingError(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.Empty, error) {
+func (s *assertingPingService) PingError(ctx context.Context, ping *testpb.PingRequest) (*testpb.Empty, error) {
 	assertAuthMarkerExists(s.T, ctx)
 	return s.TestServiceServer.PingError(ctx, ping)
 }
 
-func (s *assertingPingService) PingList(ping *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
+func (s *assertingPingService) PingList(ping *testpb.PingRequest, stream testpb.TestService_PingListServer) error {
 	assertAuthMarkerExists(s.T, stream.Context())
 	return s.TestServiceServer.PingList(ping, stream)
 }
@@ -149,7 +149,7 @@ func (s *AuthTestSuite) TestStream_PassesWithPerRpcCredentials() {
 }
 
 type authOverrideTestService struct {
-	pb_testproto.TestServiceServer
+	testpb.TestServiceServer
 	T *testing.T
 }
 

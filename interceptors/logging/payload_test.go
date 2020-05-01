@@ -10,7 +10,7 @@ import (
 
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testproto"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
@@ -131,7 +131,7 @@ func (s *loggingPayloadSuite) assertPayloadLogLinesForMessage(lines LogLines, me
 }
 
 func (s *loggingPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
-	_, err := s.Client.PingError(s.SimpleCtx(), &pb_testproto.PingRequest{Value: "something", ErrorCodeReturned: uint32(4)})
+	_, err := s.Client.PingError(s.SimpleCtx(), &testpb.PingRequest{Value: "something", ErrorCodeReturned: uint32(4)})
 	require.Error(s.T(), err, "there must be an error on an unsuccessful call")
 
 	lines := s.logger.Lines()
@@ -155,7 +155,7 @@ func (s *loggingPayloadSuite) TestPingStream_LogsAllRequestsAndResponses() {
 	for i := 0; i < messagesExpected; i++ {
 		require.NoError(s.T(), stream.Send(goodPing), "sending must succeed")
 
-		pong := &pb_testproto.PingResponse{}
+		pong := &testpb.PingResponse{}
 		err := stream.RecvMsg(pong)
 		require.NoError(s.T(), err, "no error on receive")
 	}

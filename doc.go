@@ -35,7 +35,7 @@ Here's an example for client side chaining:
 	        grpc.WithUnaryInterceptor(middleware.ChainUnaryClient(monitoringClientUnary, retryUnary)),
 	        grpc.WithStreamInterceptor(middleware.ChainStreamClient(monitoringClientStream, retryStream)),
 	)
-	client = pb_testproto.NewTestServiceClient(clientConn)
+	client = testpb.NewTestServiceClient(clientConn)
 	resp, err := client.PingEmpty(s.ctx, &myservice.Request{Msg: "hello"})
 
 These interceptors will be executed from left to right: monitoring and then retry logic.

@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testproto"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -68,7 +68,7 @@ type ClientInterceptorTestSuite struct {
 	serverListener net.Listener
 	server         *grpc.Server
 	clientConn     *grpc.ClientConn
-	testClient     pb_testproto.TestServiceClient
+	testClient     testpb.TestServiceClient
 	ctx            context.Context
 	cancel         context.CancelFunc
 
@@ -85,7 +85,7 @@ func (s *ClientInterceptorTestSuite) SetupSuite() {
 
 	// This is the point where we hook up the interceptor
 	s.server = grpc.NewServer()
-	pb_testproto.RegisterTestServiceServer(s.server, &grpctesting.TestPingService{T: s.T()})
+	testpb.RegisterTestServiceServer(s.server, &grpctesting.TestPingService{T: s.T()})
 
 	go func() {
 		s.server.Serve(s.serverListener)
@@ -99,7 +99,7 @@ func (s *ClientInterceptorTestSuite) SetupSuite() {
 		grpc.WithStreamInterceptor(StreamClientInterceptor(s.mock)),
 		grpc.WithTimeout(2*time.Second))
 	require.NoError(s.T(), err, "must not error on client Dial")
-	s.testClient = pb_testproto.NewTestServiceClient(s.clientConn)
+	s.testClient = testpb.NewTestServiceClient(s.clientConn)
 }
 
 func (s *ClientInterceptorTestSuite) SetupTest() {
@@ -126,12 +126,12 @@ func (s *ClientInterceptorTestSuite) TearDownTest() {
 }
 
 func (s *ClientInterceptorTestSuite) TestUnaryReporting() {
-	_, err := s.testClient.PingEmpty(s.ctx, &pb_testproto.Empty{}) // should return with code=OK
+	_, err := s.testClient.PingEmpty(s.ctx, &testpb.Empty{}) // should return with code=OK
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), []*mockedReporter{{
 		m:               &sync.Mutex{},
 		typ:             Unary,
-		svcName:         pb_testproto.TestServiceFullName,
+		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingEmpty",
 		postCalls:       []error{nil},
 		postMsgReceives: []error{nil},
@@ -139,12 +139,12 @@ func (s *ClientInterceptorTestSuite) TestUnaryReporting() {
 	}}, s.mock.reports)
 	s.mock.reports = s.mock.reports[:0] // Reset.
 
-	_, err = s.testClient.PingError(s.ctx, &pb_testproto.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
+	_, err = s.testClient.PingError(s.ctx, &testpb.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
 	require.Error(s.T(), err)
 	require.Equal(s.T(), []*mockedReporter{{
 		m:               &sync.Mutex{},
 		typ:             Unary,
-		svcName:         pb_testproto.TestServiceFullName,
+		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingError",
 		postCalls:       []error{status.Errorf(codes.FailedPrecondition, "Userspace error.")},
 		postMsgReceives: []error{status.Errorf(codes.FailedPrecondition, "Userspace error.")},
@@ -153,37 +153,37 @@ func (s *ClientInterceptorTestSuite) TestUnaryReporting() {
 }
 
 func (s *ClientInterceptorTestSuite) TestStartedStreamingReporting() {
-	_, err := s.testClient.PingList(s.ctx, &pb_testproto.PingRequest{})
+	_, err := s.testClient.PingList(s.ctx, &testpb.PingRequest{})
 	require.NoError(s.T(), err)
 	// Even without reading, we should get initial report.
 	require.Equal(s.T(), []*mockedReporter{{
 		m:            &sync.Mutex{},
 		typ:          ServerStream,
-		svcName:      pb_testproto.TestServiceFullName,
+		svcName:      testpb.TestServiceFullName,
 		methodName:   "PingList",
 		postMsgSends: []error{nil},
 	}}, s.mock.reports)
 
-	_, err = s.testClient.PingList(s.ctx, &pb_testproto.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
+	_, err = s.testClient.PingList(s.ctx, &testpb.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
 	require.NoError(s.T(), err, "PingList must not fail immediately")
 	// Even without reading, we should get initial report.
 	require.Equal(s.T(), []*mockedReporter{{
 		m:            &sync.Mutex{},
 		typ:          ServerStream,
-		svcName:      pb_testproto.TestServiceFullName,
+		svcName:      testpb.TestServiceFullName,
 		methodName:   "PingList",
 		postMsgSends: []error{nil},
 	}, {
 		m:            &sync.Mutex{},
 		typ:          ServerStream,
-		svcName:      pb_testproto.TestServiceFullName,
+		svcName:      testpb.TestServiceFullName,
 		methodName:   "PingList",
 		postMsgSends: []error{nil},
 	}}, s.mock.reports)
 }
 
 func (s *ClientInterceptorTestSuite) TestStreamingReporting() {
-	ss, _ := s.testClient.PingList(s.ctx, &pb_testproto.PingRequest{}) // should return with code=OK
+	ss, _ := s.testClient.PingList(s.ctx, &testpb.PingRequest{}) // should return with code=OK
 	// Do a read, just for kicks.
 	count := 0
 	for {
@@ -199,7 +199,7 @@ func (s *ClientInterceptorTestSuite) TestStreamingReporting() {
 	require.Equal(s.T(), []*mockedReporter{{
 		m:               &sync.Mutex{},
 		typ:             ServerStream,
-		svcName:         pb_testproto.TestServiceFullName,
+		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingList",
 		postCalls:       []error{io.EOF},
 		postMsgReceives: append(make([]error, grpctesting.ListResponseCount), io.EOF),
@@ -207,7 +207,7 @@ func (s *ClientInterceptorTestSuite) TestStreamingReporting() {
 	}}, s.mock.reports)
 	s.mock.reports = s.mock.reports[:0] // Reset.
 
-	ss, err := s.testClient.PingList(s.ctx, &pb_testproto.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
+	ss, err := s.testClient.PingList(s.ctx, &testpb.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
 	require.NoError(s.T(), err, "PingList must not fail immediately")
 
 	// Do a read, just to propagate errors.
@@ -218,7 +218,7 @@ func (s *ClientInterceptorTestSuite) TestStreamingReporting() {
 	require.Equal(s.T(), []*mockedReporter{{
 		m:               &sync.Mutex{},
 		typ:             ServerStream,
-		svcName:         pb_testproto.TestServiceFullName,
+		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingList",
 		postCalls:       []error{status.Errorf(codes.FailedPrecondition, "foobar")},
 		postMsgReceives: []error{status.Errorf(codes.FailedPrecondition, "foobar")},
@@ -253,7 +253,7 @@ func (s *ClientInterceptorTestSuite) TestBiStreamingReporting() {
 		}
 	}()
 	for i := 0; i < 100; i++ {
-		require.NoError(s.T(), ss.Send(&pb_testproto.PingRequest{}), "sending shouldn't fail")
+		require.NoError(s.T(), ss.Send(&testpb.PingRequest{}), "sending shouldn't fail")
 	}
 
 	require.NoError(s.T(), ss.CloseSend())
@@ -264,7 +264,7 @@ func (s *ClientInterceptorTestSuite) TestBiStreamingReporting() {
 	require.Equal(s.T(), []*mockedReporter{{
 		m:               &sync.Mutex{},
 		typ:             BidiStream,
-		svcName:         pb_testproto.TestServiceFullName,
+		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingStream",
 		postCalls:       []error{io.EOF},
 		postMsgReceives: append(make([]error, 100), io.EOF),

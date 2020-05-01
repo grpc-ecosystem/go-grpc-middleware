@@ -3,7 +3,7 @@
 
 //  This file is used for testing discovery of log fields from requests using reflection and gogo proto more tags.
 
-package gogotestproto
+package gogotestpb
 
 import (
 	fmt "fmt"
@@ -318,13 +318,13 @@ func (m *GoGoProtoStdTime) GetTimestamp() *time.Time {
 }
 
 func init() {
-	proto.RegisterType((*Metadata)(nil), "mwitkow.testproto.Metadata")
-	proto.RegisterType((*PingId)(nil), "mwitkow.testproto.PingId")
-	proto.RegisterType((*Ping)(nil), "mwitkow.testproto.Ping")
-	proto.RegisterType((*PingRequest)(nil), "mwitkow.testproto.PingRequest")
-	proto.RegisterType((*Pong)(nil), "mwitkow.testproto.Pong")
-	proto.RegisterType((*PongRequest)(nil), "mwitkow.testproto.PongRequest")
-	proto.RegisterType((*GoGoProtoStdTime)(nil), "mwitkow.testproto.GoGoProtoStdTime")
+	proto.RegisterType((*Metadata)(nil), "mwitkow.testpb.Metadata")
+	proto.RegisterType((*PingId)(nil), "mwitkow.testpb.PingId")
+	proto.RegisterType((*Ping)(nil), "mwitkow.testpb.Ping")
+	proto.RegisterType((*PingRequest)(nil), "mwitkow.testpb.PingRequest")
+	proto.RegisterType((*Pong)(nil), "mwitkow.testpb.Pong")
+	proto.RegisterType((*PongRequest)(nil), "mwitkow.testpb.PongRequest")
+	proto.RegisterType((*GoGoProtoStdTime)(nil), "mwitkow.testpb.GoGoProtoStdTime")
 }
 
 func init() { proto.RegisterFile("fields.proto", fileDescriptor_d39ad626ec0e575e) }

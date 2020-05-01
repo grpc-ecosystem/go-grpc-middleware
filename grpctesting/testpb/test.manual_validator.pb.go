@@ -1,6 +1,6 @@
 // Manual code for validation tests.
 
-package testproto
+package testpb
 
 import "errors"
 
