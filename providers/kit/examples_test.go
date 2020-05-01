@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/go-kit/kit/log"
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/logging"
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
-	"github.com/grpc-ecosystem/go-grpc-middleware/providers/kit"
+	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/providers/kit"
 	"google.golang.org/grpc"
 )
 

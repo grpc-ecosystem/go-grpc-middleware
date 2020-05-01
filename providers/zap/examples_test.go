@@ -3,10 +3,10 @@ package zap_test
 import (
 	"context"
 
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/logging"
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
-	grpczap "github.com/grpc-ecosystem/go-grpc-middleware/providers/zap"
+	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
+	grpczap "github.com/grpc-ecosystem/go-grpc-middleware/v2/providers/zap"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )

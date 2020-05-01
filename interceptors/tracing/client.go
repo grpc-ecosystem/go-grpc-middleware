@@ -8,8 +8,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors"
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/util/metautils"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"

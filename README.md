@@ -27,7 +27,7 @@ some of them itself, but also will link to useful external repos.
 `middleware` itself provides support for chaining interceptors, here's an example:
 
 ```go
-import "github.com/grpc-ecosystem/go-grpc-middleware"
+import "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 
 myServer := grpc.NewServer(
     grpc.StreamInterceptor(middleware.ChainStreamServer(

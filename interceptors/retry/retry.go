@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/util/metautils"
 	"golang.org/x/net/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

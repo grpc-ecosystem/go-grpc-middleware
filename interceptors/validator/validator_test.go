@@ -7,9 +7,9 @@ import (
 	"io"
 	"testing"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/grpctesting"
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/grpctesting/testproto"
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/validator"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testproto"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

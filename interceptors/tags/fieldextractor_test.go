@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	pb_gogotestproto "github.com/grpc-ecosystem/go-grpc-middleware/grpctesting/gogotestproto"
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/grpctesting/testproto"
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
+	pb_gogotestproto "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/gogotestproto"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testproto"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

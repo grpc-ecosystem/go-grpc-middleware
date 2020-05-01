@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/mocktracer"
 	"github.com/stretchr/testify/assert"
@@ -22,10 +22,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/grpctesting"
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/grpctesting/testproto"
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tracing"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testproto"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tracing"
 )
 
 var (

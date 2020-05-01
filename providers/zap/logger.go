@@ -3,7 +3,7 @@ package zap
 import (
 	"fmt"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"go.uber.org/zap"
 )
 

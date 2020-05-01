@@ -1,7 +1,7 @@
 package tags_test
 
 import (
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 	"google.golang.org/grpc"
 )
 
