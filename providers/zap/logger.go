@@ -8,14 +8,20 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
+// Compatibility check.
+var _ logging.Logger = &Logger{}
+
+// Logger is an zap logging adapter compatible with logging middlewares.
 type Logger struct {
 	*zap.Logger
 }
 
+// InterceptorLogger converts zap logger to Logger adapter.
 func InterceptorLogger(logger *zap.Logger) *Logger {
 	return &Logger{logger}
 }
 
+// Log implements logging.Logger interface.
 func (l *Logger) Log(lvl logging.Level, msg string) {
 	switch lvl {
 	case logging.DEBUG:
@@ -31,6 +37,7 @@ func (l *Logger) Log(lvl logging.Level, msg string) {
 	}
 }
 
+// With implements logging.Logger interface.
 func (l *Logger) With(fields ...string) logging.Logger {
 	vals := make([]zap.Field, 0, len(fields)/2)
 	for i := 0; i < len(fields); i += 2 {

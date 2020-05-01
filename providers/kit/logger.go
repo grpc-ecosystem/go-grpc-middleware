@@ -9,14 +9,20 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
+// Compatibility check.
+var _ logging.Logger = &Logger{}
+
+// Logger is an go-kit/log logging adapter compatible with logging middlewares.
 type Logger struct {
 	log.Logger
 }
 
+// InterceptorLogger converts go-kit/log logger to Logger adapter.
 func InterceptorLogger(logger log.Logger) *Logger {
 	return &Logger{logger}
 }
 
+// Log implements logging.Logger interface.
 func (l *Logger) Log(lvl logging.Level, msg string) {
 	switch lvl {
 	case logging.DEBUG:
@@ -32,6 +38,7 @@ func (l *Logger) Log(lvl logging.Level, msg string) {
 	}
 }
 
+// Log implements logging.Logger interface.
 func (l *Logger) With(fields ...string) logging.Logger {
 	vals := make([]interface{}, 0, len(fields))
 	for _, v := range fields {

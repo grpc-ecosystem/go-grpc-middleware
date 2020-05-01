@@ -2,6 +2,7 @@ package zap_test
 
 import (
 	"context"
+	"testing"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -17,8 +18,7 @@ var (
 	customDurationToFields logging.DurationToFields
 )
 
-// Initialization shows a relatively complex initialization sequence.
-func Example_initialization() {
+func Example_initializationWithCustomLevels() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
 	logger := zap.NewNop()
 	// Shared options for the logger, with a custom gRPC code to log level function.
@@ -28,11 +28,11 @@ func Example_initialization() {
 	// Create a server, make sure we put the tags context before everything else.
 	_ = grpc.NewServer(
 		middleware.WithUnaryServerChain(
-			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
+			tags.UnaryServerInterceptor(),
 			logging.UnaryServerInterceptor(grpczap.InterceptorLogger(logger), opts...),
 		),
 		middleware.WithStreamServerChain(
-			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
+			tags.StreamServerInterceptor(),
 			logging.StreamServerInterceptor(grpczap.InterceptorLogger(logger), opts...),
 		),
 	)
@@ -40,7 +40,7 @@ func Example_initialization() {
 
 func Example_initializationWithDurationFieldOverride() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
-	logger := zap.NewNop()
+	logger := zap.NewNopLogger()
 	// Shared options for the logger, with a custom duration to log field function.
 	opts := []logging.Option{
 		logging.WithDurationField(customDurationToFields),
@@ -58,9 +58,25 @@ func Example_initializationWithDurationFieldOverride() {
 	)
 }
 
+func Example_initializationWithCodeGenRequestFieldExtractor() {
+	// Logger is used, allowing pre-definition of certain fields by the user.
+	logger := zap.NewNopLogger()
+	// Create a server, make sure we put the tags context before everything else.
+	_ = grpc.NewServer(
+		middleware.WithUnaryServerChain(
+			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
+			logging.UnaryServerInterceptor(grpczap.InterceptorLogger(logger)),
+		),
+		middleware.WithStreamServerChain(
+			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
+			logging.StreamServerInterceptor(grpczap.InterceptorLogger(logger)),
+		),
+	)
+}
+
 func ExampleWithDecider() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
-	logger := zap.NewNop()
+	logger := zap.NewNopLogger()
 	// Shared options for the logger, with a custom decider that log everything except successful calls from "/blah.foo.healthcheck/Check" method.
 	opts := []logging.Option{
 		logging.WithDecider(func(methodFullName string, err error) bool {
@@ -88,7 +104,7 @@ func ExampleWithDecider() {
 
 func ExampleWithPayloadLogging() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
-	logger := zap.NewNop()
+	logger := zap.NewNopLogger()
 	// Expect payload from  "/blah.foo.healthcheck/Check" call to be logged.
 	payloadDecider := func(ctx context.Context, fullMethodName string, servingObject interface{}) bool {
 		return fullMethodName == "/blah.foo.healthcheck/Check"
@@ -107,4 +123,12 @@ func ExampleWithPayloadLogging() {
 			logging.PayloadStreamServerInterceptor(grpczap.InterceptorLogger(logger), payloadDecider),
 		),
 	}
+}
+
+func TestExamplesBuildable(t *testing.T) {
+	Example_initializationWithCustomLevels()
+	Example_initializationWithDurationFieldOverride()
+	Example_initializationWithCodeGenRequestFieldExtractor()
+	ExampleWithDecider()
+	ExampleWithPayloadLogging()
 }
