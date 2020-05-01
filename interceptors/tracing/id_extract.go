@@ -3,7 +3,7 @@ package tracing
 import (
 	"strings"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc/grpclog"
 )

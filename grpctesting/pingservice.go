@@ -12,7 +12,7 @@ import (
 	"io"
 	"testing"
 
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/grpctesting/testproto"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testproto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

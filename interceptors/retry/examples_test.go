@@ -9,8 +9,8 @@ import (
 	"io"
 	"time"
 
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/grpctesting/testproto"
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/retry"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testproto"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )

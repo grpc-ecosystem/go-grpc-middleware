@@ -7,7 +7,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/util/metautils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

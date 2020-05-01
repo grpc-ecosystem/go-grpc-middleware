@@ -6,7 +6,7 @@ package retry
 import (
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/backoffutils"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/util/backoffutils"
 )
 
 // BackoffLinear is very simple: it waits for a fixed period of time between calls.

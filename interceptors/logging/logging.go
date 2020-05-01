@@ -8,7 +8,7 @@ import (
 	"io"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

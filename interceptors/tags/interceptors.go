@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 )

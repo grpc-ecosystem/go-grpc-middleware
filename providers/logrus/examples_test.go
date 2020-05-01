@@ -3,10 +3,10 @@ package logrus_test
 import (
 	"context"
 
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/logging"
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
-	grpclogrus "github.com/grpc-ecosystem/go-grpc-middleware/providers/logrus"
+	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
+	grpclogrus "github.com/grpc-ecosystem/go-grpc-middleware/v2/providers/logrus"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )

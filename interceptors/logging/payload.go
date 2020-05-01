@@ -8,8 +8,8 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors"
-	"github.com/grpc-ecosystem/go-grpc-middleware/interceptors/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 	"google.golang.org/grpc"
 )
 
