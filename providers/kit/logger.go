@@ -12,7 +12,7 @@ import (
 // Compatibility check.
 var _ logging.Logger = &Logger{}
 
-// Logger is an go-kit/log logging adapter compatible with logging middlewares.
+// Logger is a go-kit/log logging adapter compatible with logging middlewares.
 type Logger struct {
 	log.Logger
 }

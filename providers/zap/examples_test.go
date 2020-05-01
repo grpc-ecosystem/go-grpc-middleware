@@ -40,7 +40,7 @@ func Example_initializationWithCustomLevels() {
 
 func Example_initializationWithDurationFieldOverride() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
-	logger := zap.NewNopLogger()
+	logger := zap.NewNop()
 	// Shared options for the logger, with a custom duration to log field function.
 	opts := []logging.Option{
 		logging.WithDurationField(customDurationToFields),
@@ -60,7 +60,7 @@ func Example_initializationWithDurationFieldOverride() {
 
 func Example_initializationWithCodeGenRequestFieldExtractor() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
-	logger := zap.NewNopLogger()
+	logger := zap.NewNop()
 	// Create a server, make sure we put the tags context before everything else.
 	_ = grpc.NewServer(
 		middleware.WithUnaryServerChain(
@@ -76,7 +76,7 @@ func Example_initializationWithCodeGenRequestFieldExtractor() {
 
 func ExampleWithDecider() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
-	logger := zap.NewNopLogger()
+	logger := zap.NewNop()
 	// Shared options for the logger, with a custom decider that log everything except successful calls from "/blah.foo.healthcheck/Check" method.
 	opts := []logging.Option{
 		logging.WithDecider(func(methodFullName string, err error) bool {
@@ -104,7 +104,7 @@ func ExampleWithDecider() {
 
 func ExampleWithPayloadLogging() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
-	logger := zap.NewNopLogger()
+	logger := zap.NewNop()
 	// Expect payload from  "/blah.foo.healthcheck/Check" call to be logged.
 	payloadDecider := func(ctx context.Context, fullMethodName string, servingObject interface{}) bool {
 		return fullMethodName == "/blah.foo.healthcheck/Check"

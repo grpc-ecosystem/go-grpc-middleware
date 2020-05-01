@@ -11,7 +11,7 @@ import (
 // Compatibility check.
 var _ logging.Logger = &Logger{}
 
-// Logger is an zap logging adapter compatible with logging middlewares.
+// Logger is a zap logging adapter compatible with logging middlewares.
 type Logger struct {
 	*zap.Logger
 }

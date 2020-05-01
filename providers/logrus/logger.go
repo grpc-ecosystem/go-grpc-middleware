@@ -11,7 +11,7 @@ import (
 // Compatibility check.
 var _ logging.Logger = &Logger{}
 
-// Logger is an logrus logging adapter compatible with logging middlewares.
+// Logger is a logrus logging adapter compatible with logging middlewares.
 type Logger struct {
 	logrus.FieldLogger
 }
