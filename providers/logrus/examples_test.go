@@ -2,6 +2,7 @@ package logrus_test
 
 import (
 	"context"
+	"testing"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -17,8 +18,7 @@ var (
 	customDurationToFields logging.DurationToFields
 )
 
-// Initialization shows a relatively complex initialization sequence.
-func Example_initialization() {
+func Example_initializationWithCustomLevels() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
 	logger := logrus.New()
 	// Shared options for the logger, with a custom gRPC code to log level function.
@@ -28,11 +28,11 @@ func Example_initialization() {
 	// Create a server, make sure we put the tags context before everything else.
 	_ = grpc.NewServer(
 		middleware.WithUnaryServerChain(
-			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
+			tags.UnaryServerInterceptor(),
 			logging.UnaryServerInterceptor(grpclogrus.InterceptorLogger(logger), opts...),
 		),
 		middleware.WithStreamServerChain(
-			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
+			tags.StreamServerInterceptor(),
 			logging.StreamServerInterceptor(grpclogrus.InterceptorLogger(logger), opts...),
 		),
 	)
@@ -54,6 +54,22 @@ func Example_initializationWithDurationFieldOverride() {
 		middleware.WithStreamServerChain(
 			tags.StreamServerInterceptor(),
 			logging.StreamServerInterceptor(grpclogrus.InterceptorLogger(logger), opts...),
+		),
+	)
+}
+
+func Example_initializationWithCodeGenRequestFieldExtractor() {
+	// Logger is used, allowing pre-definition of certain fields by the user.
+	logger := logrus.New()
+	// Create a server, make sure we put the tags context before everything else.
+	_ = grpc.NewServer(
+		middleware.WithUnaryServerChain(
+			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
+			logging.UnaryServerInterceptor(grpclogrus.InterceptorLogger(logger)),
+		),
+		middleware.WithStreamServerChain(
+			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
+			logging.StreamServerInterceptor(grpclogrus.InterceptorLogger(logger)),
 		),
 	)
 }
@@ -107,4 +123,12 @@ func ExampleWithPayloadLogging() {
 			logging.PayloadStreamServerInterceptor(grpclogrus.InterceptorLogger(logger), payloadDecider),
 		),
 	}
+}
+
+func TestExamplesBuildable(t *testing.T) {
+	Example_initializationWithCustomLevels()
+	Example_initializationWithDurationFieldOverride()
+	Example_initializationWithCodeGenRequestFieldExtractor()
+	ExampleWithDecider()
+	ExampleWithPayloadLogging()
 }

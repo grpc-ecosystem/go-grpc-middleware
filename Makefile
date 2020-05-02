@@ -29,6 +29,9 @@ proto: ./grpctesting/testpb/test.proto
 
 # TODO(bwplotka): This depends on test_proto, but CI does not have it, so let's skip it for now.
 test: vet
+	cd ./providers/kit/ && go test -v -race ./...
+	cd ./providers/logrus/ && go test -v -race ./...
+	cd ./providers/zap/ && go test -v -race ./...
 	./scripts/test_all.sh
 
 .PHONY: all test
