@@ -29,6 +29,7 @@ Implementations:
 * providers/logrus
 * providers/zap
 * providers/kit
+* providers/zerolog
 
 See relevant packages below.
 */
