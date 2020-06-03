@@ -16,9 +16,6 @@ type ctxLogger struct {
 var (
 	ctxLoggerKey = &ctxLoggerMarker{}
 	nullContext  = zerolog.Nop().With()
-
-	// NullContext is the NOP zerolog.Context we return when none has been stored before.
-	NullContext = &nullContext
 )
 
 // AddFields adds zerolog fields to the Context.
@@ -36,11 +33,11 @@ func AddFields(ctx context.Context, fields map[string]interface{}) {
 // safe to use regardless.
 func Extract(ctx context.Context) *zerolog.Context {
 	if ctx == nil {
-		return NullContext
+		return &nullContext
 	}
 	l, ok := ctx.Value(ctxLoggerKey).(*ctxLogger)
 	if !ok || l == nil {
-		return NullContext
+		return &nullContext
 	}
 
 	// Add grpc_ctxtags tags metadata until now.

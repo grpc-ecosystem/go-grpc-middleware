@@ -77,12 +77,7 @@ func newLoggerForCall(ctx context.Context, logger *zerolog.Logger, fullMethodStr
 	service := path.Dir(fullMethodString)[1:]
 	method := path.Base(fullMethodString)
 
-	ctxContextPtr := ctxzerolog.Extract(ctx)
-	ctxContext := *ctxContextPtr
-	if ctxContextPtr == ctxzerolog.NullContext {
-		// If we haven't stored a zerolog.Context before, inherit the Context from the passed-in logger.
-		ctxContext = logger.With()
-	}
+	ctxContext := *ctxzerolog.Extract(ctx)
 	ctxContext = ctxContext.Fields(
 		map[string]interface{}{
 			SystemField:       "grpc",
