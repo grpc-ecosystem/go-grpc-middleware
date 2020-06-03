@@ -1,5 +1,5 @@
 /*
-Package zerolog is a gRPC logging middleware backed by zerolog loggers
+Package grpc_zerolog is a gRPC logging middleware backed by zerolog loggers
 
 It accepts a user-configured `zerolog.Logger` that will be used for logging completed gRPC calls. The same
 Logger will be used for logging completed gRPC calls, and be populated into the `context.Context` passed into gRPC handler code.
@@ -63,4 +63,4 @@ Below is a JSON formatted example of a log that would be logged by the payload i
 
 Please see examples and tests for examples of use.
 */
-package zerolog
+package grpc_zerolog

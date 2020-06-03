@@ -1,4 +1,4 @@
-package zerolog
+package grpc_zerolog
 
 import (
 	"bytes"

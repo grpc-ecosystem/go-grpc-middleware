@@ -1,4 +1,4 @@
-package zerolog_test
+package grpc_zerolog_test
 
 import (
 	"testing"

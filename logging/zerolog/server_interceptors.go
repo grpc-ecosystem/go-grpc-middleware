@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-package zerolog
+package grpc_zerolog
 
 import (
 	"context"
