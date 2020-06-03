@@ -3,8 +3,8 @@ package ctxzerolog_test
 import (
 	"context"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog/ctxzerolog"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/irridia/go-grpc-middleware/logging/zerolog/ctxzerolog"
 )
 
 // Simple unary handler that adds custom fields to the requests's context. These will be used for all log statements.

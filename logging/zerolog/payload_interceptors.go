@@ -10,7 +10,7 @@ import (
 	//nolint:staticcheck  // Proto v1 is deprecated; v2 doesn't work yet.
 	"github.com/golang/protobuf/proto"
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/logging"
-	"github.com/irridia/go-grpc-middleware/logging/zerolog/ctxzerolog"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog/ctxzerolog"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 )

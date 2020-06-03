@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	grpc_zerolog "github.com/irridia/go-grpc-middleware/logging/zerolog"
+	grpc_zerolog "github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog"
 	"github.com/stretchr/testify/assert"
 )
 

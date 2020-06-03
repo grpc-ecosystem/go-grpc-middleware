@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_zerolog "github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
-	grpc_zerolog "github.com/irridia/go-grpc-middleware/logging/zerolog"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

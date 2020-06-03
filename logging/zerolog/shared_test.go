@@ -7,11 +7,11 @@ import (
 	"io"
 	"testing"
 
+	grpc_zerolog "github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog/ctxzerolog"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpc_testing "github.com/grpc-ecosystem/go-grpc-middleware/testing"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
-	grpc_zerolog "github.com/irridia/go-grpc-middleware/logging/zerolog"
-	"github.com/irridia/go-grpc-middleware/logging/zerolog/ctxzerolog"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc/codes"
 )

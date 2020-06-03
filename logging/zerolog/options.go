@@ -8,7 +8,7 @@ import (
 	"time"
 
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/logging"
-	"github.com/irridia/go-grpc-middleware/logging/zerolog/ctxzerolog"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zerolog/ctxzerolog"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc/codes"
 )
