@@ -16,7 +16,7 @@
 ## Middleware
 
 [gRPC Go](https://github.com/grpc/grpc-go) recently acquired support for
-Interceptors, i.e. [middleware](https://medium.com/@matryer/writing-middleware-in-golang-and-how-go-makes-it-so-much-fun-4375c1246e81#.gv7tdlghs) 
+Interceptors, i.e. [middleware](https://medium.com/@matryer/writing-middleware-in-golang-and-how-go-makes-it-so-much-fun-4375c1246e81#.gv7tdlghs)
 that is executed either on the gRPC Server before the request is passed onto the user's application logic, or on the gRPC client either around the user call. It is a perfect way to implement
 common patterns: auth, logging, message, validation, retries or monitoring.
 
@@ -54,13 +54,14 @@ myServer := grpc.NewServer(
 *Please send a PR to add new interceptors or middleware to this list*
 
 #### Auth
-   * [`auth`](auth) - a customizable (via `AuthFunc`) piece of auth middleware 
+   * [`auth`](auth) - a customizable (via `AuthFunc`) piece of auth middleware
 
 #### Logging
    * [`tags`](interceptors/tags) - a library that adds a `Tag` map to context, with data populated from request body
    * [`zap`](providers/zap) - integration of [zap](https://github.com/uber-go/zap) logging library into gRPC handlers.
    * [`logrus`](providers/logrus) - integration of [logrus](https://github.com/sirupsen/logrus) logging library into gRPC handlers.
    * [`kit`](providers/kit) - integration of [go-kit](https://github.com/go-kit/kit/tree/master/log) logging library into gRPC handlers.
+   * [`zerolog`](providers/zerolog) - integration of [zerolog](https://github.com/rs/zerolog) logging Library into gRPC handlers.
 
 #### Monitoring
    * [`grpc_prometheus`⚡](https://github.com/grpc-ecosystem/go-grpc-prometheus) - Prometheus client-side and server-side monitoring middleware
