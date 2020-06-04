@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"github.com/go-kit/kit/log"
+	"github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2"
 	"google.golang.org/grpc"
 
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/providers/kit"
 )
 
 var (

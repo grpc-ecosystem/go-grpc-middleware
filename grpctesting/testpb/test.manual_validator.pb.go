@@ -2,7 +2,7 @@
 
 package testpb
 
-import "errors"
+import "github.com/pkg/errors"
 
 func (m *PingRequest) Validate() error {
 	if m.SleepTimeMs > 10000 {

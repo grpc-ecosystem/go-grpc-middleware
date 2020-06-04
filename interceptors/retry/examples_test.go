@@ -5,7 +5,6 @@ package retry_test
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"time"
 
@@ -17,11 +16,6 @@ import (
 )
 
 var cc *grpc.ClientConn
-
-func newCtx(timeout time.Duration) context.Context {
-	ctx, _ := context.WithTimeout(context.TODO(), timeout)
-	return ctx
-}
 
 // Simple example of using the default interceptor configuration.
 func Example_initialization() {
@@ -58,17 +52,19 @@ func Example_initializationWithExponentialBackoff() {
 
 // Simple example of an idempotent `ServerStream` call, that will be retried automatically 3 times.
 func Example_simpleCall() {
+	ctx, cancel := context.WithTimeout(context.TODO(), 1*time.Second)
+	defer cancel()
+
 	client := testpb.NewTestServiceClient(cc)
-	stream, _ := client.PingList(newCtx(1*time.Second), &testpb.PingRequest{}, retry.WithMax(3))
+	stream, _ := client.PingList(ctx, &testpb.PingRequest{}, retry.WithMax(3))
 
 	for {
-		pong, err := stream.Recv() // retries happen here
+		_, err := stream.Recv() // retries happen here
 		if err == io.EOF {
 			break
 		} else if err != nil {
 			return
 		}
-		fmt.Printf("got pong: %v", pong)
 	}
 }
 
@@ -82,12 +78,13 @@ func Example_simpleCall() {
 // `WithPerRetryTimeout` allows you to shorten the deadline of each retry call, allowing you to fit
 // multiple retries in the single parent deadline.
 func ExampleWithPerRetryTimeout() {
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
+	defer cancel()
+
 	client := testpb.NewTestServiceClient(cc)
-	pong, _ := client.Ping(
-		newCtx(5*time.Second),
+	_, _ = client.Ping(
+		ctx,
 		&testpb.PingRequest{},
 		retry.WithMax(3),
 		retry.WithPerRetryTimeout(1*time.Second))
-
-	fmt.Printf("got pong: %v", pong)
 }

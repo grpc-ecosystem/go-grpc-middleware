@@ -6,8 +6,8 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	pb "google.golang.org/grpc/examples/helloworld/helloworld"
+	"google.golang.org/grpc/status"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"

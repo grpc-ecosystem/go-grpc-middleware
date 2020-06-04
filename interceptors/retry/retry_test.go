@@ -205,7 +205,8 @@ func (s *RetrySuite) TestUnary_PerCallDeadline_FailsOnParent() {
 	deadlinePerCall := 50 * time.Millisecond
 	// All 0-4 requests should have 10 millisecond sleeps and deadline, while the last one works.
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
-	ctx, _ := context.WithTimeout(context.TODO(), parentDeadline)
+	ctx, cancel := context.WithTimeout(context.TODO(), parentDeadline)
+	defer cancel()
 	_, err := s.Client.Ping(ctx, goodPing, retry.WithPerRetryTimeout(deadlinePerCall),
 		retry.WithMax(5))
 	require.Error(s.T(), err, "the retries must fail due to context deadline exceeded")
@@ -250,7 +251,8 @@ func (s *RetrySuite) TestServerStream_PerCallDeadline_FailsOnParent() {
 	deadlinePerCall := 50 * time.Millisecond
 	// All 0-4 requests should have 10 millisecond sleeps and deadline, while the last one works.
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
-	parentCtx, _ := context.WithTimeout(context.TODO(), parentDeadline)
+	parentCtx, cancel := context.WithTimeout(context.TODO(), parentDeadline)
+	defer cancel()
 	stream, err := s.Client.PingList(parentCtx, goodPing, retry.WithPerRetryTimeout(deadlinePerCall),
 		retry.WithMax(5))
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
@@ -270,7 +272,8 @@ func (s *RetrySuite) TestServerStream_CallFailsOnOutOfRetries() {
 
 func (s *RetrySuite) TestServerStream_CallFailsOnDeadlineExceeded() {
 	restarted := s.RestartServer(3 * retryTimeout)
-	ctx, _ := context.WithTimeout(context.TODO(), retryTimeout)
+	ctx, cancel := context.WithTimeout(context.TODO(), retryTimeout)
+	defer cancel()
 	_, err := s.Client.PingList(ctx, goodPing)
 
 	require.Error(s.T(), err, "establishing the connection should not succeed")

@@ -1,4 +1,4 @@
-module github.com/grpc-ecosystem/go-grpc-middleware/v2/providers/zerolog
+module github.com/grpc-ecosystem/go-grpc-middleware/providers/zerolog/v2
 
 go 1.14
 

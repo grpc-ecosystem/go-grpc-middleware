@@ -1,0 +1,57 @@
+name: go
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: Linters (Static Analysis) for Go
+    steps:
+      - name: Checkout code into the Go module directory.
+        uses: actions/checkout@v2
+
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.14.x
+
+      - uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+      - name: Linting & vetting.
+        run: make lint
+
+  tests:
+    runs-on: ${{ matrix.platform }}
+    name: Unit tests on Go ${{ matrix.go }}
+    strategy:
+      fail-fast: false
+      matrix:
+        go: [ '1.12.x', '1.13.x', '1.14.x' ]
+        platform: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Checkout code into the Go module directory.
+        uses: actions/checkout@v2
+
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+
+      - uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+      - name: Run unit tests.
+        run: make test
+
+      - name: Calculating code coverage.
+        run: bash <(curl -s https://codecov.io/bash)

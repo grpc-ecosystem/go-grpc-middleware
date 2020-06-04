@@ -41,7 +41,8 @@ func UnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterceptor 
 			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 				return err
 			}
-			callCtx := perCallContext(parentCtx, callOpts, attempt)
+			callCtx, cancel := perCallContext(parentCtx, callOpts, attempt)
+			defer cancel() // Clean up potential resources.
 			lastErr = invoker(callCtx, method, req, reply, cc, grpcOpts...)
 			// TODO(mwitkow): Maybe dial and transport errors should be retriable?
 			if lastErr == nil {
@@ -94,8 +95,8 @@ func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientIntercepto
 			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 				return nil, err
 			}
-			callCtx := perCallContext(parentCtx, callOpts, 0)
-
+			callCtx, cancel := perCallContext(parentCtx, callOpts, 0)
+			defer cancel() // Clean up potential resources.
 			var newStreamer grpc.ClientStream
 			newStreamer, lastErr = streamer(callCtx, desc, cc, method, grpcOpts...)
 			if lastErr == nil {
@@ -184,12 +185,13 @@ func (s *serverStreamingRetryingStream) RecvMsg(m interface{}) error {
 	if !attemptRetry {
 		return lastErr // success or hard failure
 	}
+	oldCancel := context.CancelFunc(func() {})
 	// We start off from attempt 1, because zeroth was already made on normal SendMsg().
 	for attempt := uint(1); attempt < s.callOpts.max; attempt++ {
 		if err := waitRetryBackoff(attempt, s.parentCtx, s.callOpts); err != nil {
 			return err
 		}
-		callCtx := perCallContext(s.parentCtx, s.callOpts, attempt)
+		callCtx, cancel := perCallContext(s.parentCtx, s.callOpts, attempt)
 		newStream, err := s.reestablishStreamAndResendBuffer(callCtx)
 		if err != nil {
 			// TODO(mwitkow): Maybe dial and transport errors should be retriable?
@@ -197,7 +199,9 @@ func (s *serverStreamingRetryingStream) RecvMsg(m interface{}) error {
 		}
 		s.setStream(newStream)
 		attemptRetry, lastErr = s.receiveMsgAndIndicateRetry(m)
-		//fmt.Printf("Received message and indicate: %v  %v\n", attemptRetry, lastErr)
+
+		oldCancel() // Clean potential resources. NOTE: Last cancel won't be cleaned as there is no close method for stream.
+		oldCancel = cancel
 		if !attemptRetry {
 			return lastErr
 		}
@@ -292,16 +296,18 @@ func isContextError(err error) bool {
 	return code == codes.DeadlineExceeded || code == codes.Canceled
 }
 
-func perCallContext(parentCtx context.Context, callOpts *options, attempt uint) context.Context {
+func perCallContext(parentCtx context.Context, callOpts *options, attempt uint) (context.Context, context.CancelFunc) {
+	cancel := context.CancelFunc(func() {})
+
 	ctx := parentCtx
 	if callOpts.perCallTimeout != 0 {
-		ctx, _ = context.WithTimeout(ctx, callOpts.perCallTimeout)
+		ctx, cancel = context.WithTimeout(ctx, callOpts.perCallTimeout)
 	}
 	if attempt > 0 && callOpts.includeHeader {
 		mdClone := metautils.ExtractOutgoing(ctx).Clone().Set(AttemptMetadataKey, fmt.Sprintf("%d", attempt))
 		ctx = mdClone.ToOutgoing(ctx)
 	}
-	return ctx
+	return ctx, cancel
 }
 
 func contextErrToGrpcErr(err error) error {

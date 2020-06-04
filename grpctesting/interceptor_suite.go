@@ -44,6 +44,8 @@ type InterceptorTestSuite struct {
 
 	restartServerWithDelayedStart chan time.Duration
 	serverRunning                 chan bool
+
+	cancels []context.CancelFunc
 }
 
 func (s *InterceptorTestSuite) SetupSuite() {
@@ -120,12 +122,14 @@ func (s *InterceptorTestSuite) ServerAddr() string {
 }
 
 func (s *InterceptorTestSuite) SimpleCtx() context.Context {
-	ctx, _ := context.WithTimeout(context.TODO(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), 2*time.Second)
+	s.cancels = append(s.cancels, cancel)
 	return ctx
 }
 
 func (s *InterceptorTestSuite) DeadlineCtx(deadline time.Time) context.Context {
-	ctx, _ := context.WithDeadline(context.TODO(), deadline)
+	ctx, cancel := context.WithDeadline(context.TODO(), deadline)
+	s.cancels = append(s.cancels, cancel)
 	return ctx
 }
 
@@ -138,5 +142,8 @@ func (s *InterceptorTestSuite) TearDownSuite() {
 	}
 	if s.clientConn != nil {
 		s.clientConn.Close()
+	}
+	for _, c := range s.cancels {
+		c()
 	}
 }

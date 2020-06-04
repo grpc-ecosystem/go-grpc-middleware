@@ -107,7 +107,8 @@ func (s *TaggingSuite) TestPing_WithCustomTags() {
 }
 
 func (s *TaggingSuite) TestPing_WithDeadline() {
-	ctx, _ := context.WithDeadline(context.TODO(), time.Now().AddDate(0, 0, 5))
+	ctx, cancel := context.WithDeadline(context.TODO(), time.Now().AddDate(0, 0, 5))
+	defer cancel()
 	resp, err := s.Client.Ping(ctx, goodPing)
 	require.NoError(s.T(), err, "must not be an error on a successful call")
 
