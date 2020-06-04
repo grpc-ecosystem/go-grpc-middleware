@@ -13,11 +13,6 @@ if ! [[ "$0" =~ "scripts/genproto.sh" ]]; then
 	exit 255
 fi
 
-if ! [[ $(${PROTOC_BIN} --version) =~ "3.4.0" ]]; then
-	echo "could not find protoc 3.4.0, is it installed + in PATH?"
-	exit 255
-fi
-
 echo "installing gogofast"
 GO111MODULE=on go install "github.com/gogo/protobuf/protoc-gen-gogofast"
 
