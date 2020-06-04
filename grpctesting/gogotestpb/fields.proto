@@ -3,7 +3,7 @@ syntax = "proto3";
 //  This file is used for grpctesting discovery of log fields from requests using reflection and gogo proto more tags.
 package grpc_middleware.gogotestpb;
 
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
 option (gogoproto.gogoproto_import) = false;
