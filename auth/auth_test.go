@@ -25,12 +25,13 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/util/metautils"
 )
 
+var authedMarker struct{}
+
 var (
 	commonAuthToken   = "some_good_token"
 	overrideAuthToken = "override_token"
 
-	authedMarker = "some_context_marker"
-	goodPing     = &testpb.PingRequest{Value: "something", SleepTimeMs: 9999}
+	goodPing = &testpb.PingRequest{Value: "something", SleepTimeMs: 9999}
 )
 
 // TODO(mwitkow): Add auth from metadata client dialer, which requires TLS.

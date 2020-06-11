@@ -185,13 +185,13 @@ func (s *serverStreamingRetryingStream) RecvMsg(m interface{}) error {
 	if !attemptRetry {
 		return lastErr // success or hard failure
 	}
-	oldCancel := context.CancelFunc(func() {})
 	// We start off from attempt 1, because zeroth was already made on normal SendMsg().
 	for attempt := uint(1); attempt < s.callOpts.max; attempt++ {
 		if err := waitRetryBackoff(attempt, s.parentCtx, s.callOpts); err != nil {
 			return err
 		}
-		callCtx, cancel := perCallContext(s.parentCtx, s.callOpts, attempt)
+		// TODO(bwplotka): Close cancel as it might leak some resources.
+		callCtx, _ := perCallContext(s.parentCtx, s.callOpts, attempt) //nolint
 		newStream, err := s.reestablishStreamAndResendBuffer(callCtx)
 		if err != nil {
 			// TODO(mwitkow): Maybe dial and transport errors should be retriable?
@@ -200,8 +200,6 @@ func (s *serverStreamingRetryingStream) RecvMsg(m interface{}) error {
 		s.setStream(newStream)
 		attemptRetry, lastErr = s.receiveMsgAndIndicateRetry(m)
 
-		oldCancel() // Clean potential resources. NOTE: Last cancel won't be cleaned as there is no close method for stream.
-		oldCancel = cancel
 		if !attemptRetry {
 			return lastErr
 		}

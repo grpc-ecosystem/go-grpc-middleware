@@ -11,6 +11,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+// TODO(bwplotka): Remove and replace with updated gRPC default chaining WithChainUnaryInterceptor etc.
+
 // ChainUnaryServer creates a single interceptor out of a chain of many interceptors.
 //
 // Execution is done in left-to-right order, including passing of context.

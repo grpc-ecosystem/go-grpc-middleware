@@ -300,8 +300,8 @@ func (s *RetrySuite) assertPingListWasCorrect(stream testpb.TestService_PingList
 		if err == io.EOF {
 			break
 		}
-		require.NotNil(s.T(), pong, "received values must not be nil")
 		require.NoError(s.T(), err, "no errors during receive on client side")
+		require.NotNil(s.T(), pong, "received values must not be nil")
 		require.Equal(s.T(), goodPing.Value, pong.Value, "the returned pong contained the outgoing ping")
 		count += 1
 	}

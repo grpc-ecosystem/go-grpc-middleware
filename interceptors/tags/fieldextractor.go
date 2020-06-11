@@ -82,5 +82,4 @@ func reflectMessageTags(msg interface{}, existingMap map[string]string, tagName 
 			}
 		}
 	}
-	return
 }

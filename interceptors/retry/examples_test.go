@@ -19,7 +19,7 @@ var cc *grpc.ClientConn
 
 // Simple example of using the default interceptor configuration.
 func Example_initialization() {
-	grpc.Dial("myservice.example.com",
+	_, _ = grpc.Dial("myservice.example.com",
 		grpc.WithStreamInterceptor(retry.StreamClientInterceptor()),
 		grpc.WithUnaryInterceptor(retry.UnaryClientInterceptor()),
 	)
@@ -31,7 +31,7 @@ func Example_initializationWithOptions() {
 		retry.WithBackoff(retry.BackoffLinear(100 * time.Millisecond)),
 		retry.WithCodes(codes.NotFound, codes.Aborted),
 	}
-	grpc.Dial("myservice.example.com",
+	_, _ = grpc.Dial("myservice.example.com",
 		grpc.WithStreamInterceptor(retry.StreamClientInterceptor(opts...)),
 		grpc.WithUnaryInterceptor(retry.UnaryClientInterceptor(opts...)),
 	)
@@ -44,7 +44,7 @@ func Example_initializationWithExponentialBackoff() {
 	opts := []retry.CallOption{
 		retry.WithBackoff(retry.BackoffExponential(100 * time.Millisecond)),
 	}
-	grpc.Dial("myservice.example.com",
+	_, _ = grpc.Dial("myservice.example.com",
 		grpc.WithStreamInterceptor(retry.StreamClientInterceptor(opts...)),
 		grpc.WithUnaryInterceptor(retry.UnaryClientInterceptor(opts...)),
 	)
