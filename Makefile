@@ -1,4 +1,5 @@
 include .bingo/Variables.mk
+
 SHELL=/bin/bash
 
 PROVIDER_MODULES ?= $(shell ls -d $(PWD)/providers/*)
@@ -6,15 +7,39 @@ MODULES          ?= $(PROVIDER_MODULES) $(PWD)/
 
 GOBIN             ?= $(firstword $(subst :, ,${GOPATH}))/bin
 
+PROTOC_VERSION    ?= 3.12.3
+PROTOC            ?= $(GOBIN)/protoc-$(PROTOC_VERSION)
+TMP_GOPATH        ?= /tmp/gopath
+
+
 GO111MODULE       ?= on
 export GO111MODULE
 GOPROXY           ?= https://proxy.golang.org
 export GOPROXY
 
+define require_clean_work_tree
+	@git update-index -q --ignore-submodules --refresh
+
+    @if ! git diff-files --quiet --ignore-submodules --; then \
+        echo >&2 "cannot $1: you have unstaged changes."; \
+        git diff-files --name-status -r --ignore-submodules -- >&2; \
+        echo >&2 "Please commit or stash them."; \
+        exit 1; \
+    fi
+
+    @if ! git diff-index --cached --quiet HEAD --ignore-submodules --; then \
+        echo >&2 "cannot $1: your index contains uncommitted changes."; \
+        git diff-index --cached --name-status -r --ignore-submodules HEAD -- >&2; \
+        echo >&2 "Please commit or stash them."; \
+        exit 1; \
+    fi
+
+endef
+
 .PHONY: fmt
-fmt:
-	@echo "Running fmt for all modules: ${MODULES}"
-	@$(GOIMPORTS) -local github.com/grpc-ecosystem/go-grpc-middleware/v2 -w ${MODULES}
+fmt: $(GOIMPORTS)
+	@echo "Running fmt for all modules: $(MODULES)"
+	@$(GOIMPORTS) -local github.com/grpc-ecosystem/go-grpc-middleware/v2 -w $(MODULES)
 
 .PHONY: proto
 proto: ## Generates Go files from Thanos proto files.
@@ -23,27 +48,26 @@ proto: $(GOIMPORTS) $(PROTOC) $(PROTOC_GEN_GOGOFAST) ./grpctesting/testpb/test.p
 
 .PHONY: test
 test:
-	@echo "Running tests for all modules: ${MODULES}"
-	@$(foreach dir,$(PROVIDER_MODULES),$(MAKE) test_module DIR=$(dir))
+	@echo "Running tests for all modules: $(MODULES)"
+	for dir in $(MODULES) ; do \
+		$(MAKE) test_module DIR=$${dir} ; \
+	done
 	./scripts/test_all.sh
 
 .PHONY: test_module
 test_module:
+	@echo "Running tests for dir: $(DIR)"
 	cd $(DIR) && go test -v -race ./...
 
 .PHONY: lint
-lint: fmt
-	@echo "Running lint for all modules: ${MODULES}"
-	@$(foreach dir,$(MODULES),$(MAKE) lint_module DIR=$(dir))
-
-.PHONY: lint_module
 # PROTIP:
 # Add
 #      --cpu-profile-path string   Path to CPU profile output file
 #      --mem-profile-path string   Path to memory profile output file
 # to debug big allocations during linting.
 lint: ## Runs various static analysis against our code.
-lint_module: $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL)
+lint: fmt $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL)
+	@echo "Running lint for all modules: $(MODULES)"
 	$(call require_clean_work_tree,"detected not clean master before running lint")
 	@echo ">> verifying modules being imported"
 	@$(FAILLINT) -paths "errors=github.com/pkg/errors,fmt.{Print,Printf,Println}" ./...
@@ -53,11 +77,9 @@ lint_module: $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL)
 	@$(GOLANGCI_LINT) run
 	@echo ">> detecting misspells"
 	@find . -type f | grep -v vendor/ | grep -vE '\./\..*' | xargs $(MISSPELL) -error
-	@echo ">> detecting white noise"
-	@find . -type f \( -name "*.md" -o -name "*.go" \) | SED_BIN="$(SED)" xargs scripts/cleanup-white-noise.sh
 	@echo ">> ensuring generated proto files are up to date"
 	@$(MAKE) proto
-	$(call require_clean_work_tree,"detected white noise or/and files without copyright; run 'make lint' file and commit changes.")
+	$(call require_clean_work_tree,"detected proto changes or other not formatted files; run 'make lint' file and commit changes.")
 
 $(PROTOC):
 	@mkdir -p $(TMP_GOPATH)

@@ -77,7 +77,7 @@ func (s *InterceptorTestSuite) SetupSuite() {
 			testpb.RegisterTestServiceServer(s.Server, s.TestService)
 
 			go func() {
-				s.Server.Serve(s.ServerListener)
+				_ = s.Server.Serve(s.ServerListener)
 			}()
 			if s.Client == nil {
 				s.Client = s.NewClient(s.ClientOpts...)
@@ -138,10 +138,10 @@ func (s *InterceptorTestSuite) TearDownSuite() {
 	if s.ServerListener != nil {
 		s.Server.GracefulStop()
 		s.T().Logf("stopped grpc.Server at: %v", s.ServerAddr())
-		s.ServerListener.Close()
+		_ = s.ServerListener.Close()
 	}
 	if s.clientConn != nil {
-		s.clientConn.Close()
+		_ = s.clientConn.Close()
 	}
 	for _, c := range s.cancels {
 		c()

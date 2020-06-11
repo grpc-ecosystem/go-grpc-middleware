@@ -132,9 +132,9 @@ func logProtoMessageAsJson(logger Logger, pbMsg interface{}, key string, msg str
 		payload, err := (&jsonpbObjectMarshaler{pb: p}).marshalJSON()
 		if err != nil {
 			logger = logger.With(key, err.Error())
-			return
+		} else {
+			logger = logger.With(key, string(payload))
 		}
-		logger = logger.With(key, string(payload))
 		logger.Log(INFO, msg)
 	}
 }

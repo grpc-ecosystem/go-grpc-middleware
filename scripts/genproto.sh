@@ -24,8 +24,17 @@ DIRS="grpctesting/testpb grpctesting/gogotestpb"
 echo "generating code"
 for dir in ${DIRS}; do
 	pushd ${dir}
-		${PROTOC_BIN} --gogofast_out=plugins=grpc:. -I=. \
+		${PROTOC_BIN} --gogofast_out=\
+Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,\
+plugins=grpc:. \
+      -I=. \
 			-I="${GOGOPROTO_PATH}" \
 			*.proto
+
+			${GOIMPORTS_BIN} -w *.pb.go
 	popd
 done

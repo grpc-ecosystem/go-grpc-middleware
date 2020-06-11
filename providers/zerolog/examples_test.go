@@ -5,13 +5,13 @@ import (
 	"os"
 	"testing"
 
+	grpczerolog "github.com/grpc-ecosystem/go-grpc-middleware/providers/zerolog/v2"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
-	grpczerolog "github.com/grpc-ecosystem/go-grpc-middleware/v2/providers/zerolog"
 )
 
 var (

@@ -183,12 +183,12 @@ func (s *ClientStreamedTaggingSuite) TestPingStream_WithCustomTagsFirstRequest()
 		default:
 			err = stream.CloseSend()
 		}
+		require.NoError(s.T(), err, "sending stream should not fail")
 
 		resp, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
-
 		require.NoError(s.T(), err, "reading stream should not fail")
 
 		tags := tagsFromJson(s.T(), resp.Value)

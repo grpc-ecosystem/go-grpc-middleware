@@ -64,12 +64,12 @@ func (s *ValidatorTestSuite) TestInvalidErrors_Unary() {
 func (s *ValidatorTestSuite) TestValidPasses_ServerStream() {
 	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "no error on stream establishment expected")
-	for true {
+	for {
 		_, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
-		assert.NoError(s.T(), err, "no error on messages sent occured")
+		assert.NoError(s.T(), err, "no error on messages sent occurred")
 	}
 }
 
@@ -85,14 +85,14 @@ func (s *ValidatorTestSuite) TestInvalidErrors_BidiStream() {
 	stream, err := s.Client.PingStream(s.SimpleCtx())
 	require.NoError(s.T(), err, "no error on stream establishment expected")
 
-	stream.Send(goodPing)
+	require.NoError(s.T(), stream.Send(goodPing))
 	_, err = stream.Recv()
 	assert.NoError(s.T(), err, "receiving a good ping should return a good pong")
-	stream.Send(goodPing)
+	require.NoError(s.T(), stream.Send(goodPing))
 	_, err = stream.Recv()
 	assert.NoError(s.T(), err, "receiving a good ping should return a good pong")
 
-	stream.Send(badPing)
+	require.NoError(s.T(), stream.Send(badPing))
 	_, err = stream.Recv()
 	assert.Error(s.T(), err, "receiving a good ping should return a good pong")
 	assert.Equal(s.T(), codes.InvalidArgument, status.Code(err), "gRPC status must be InvalidArgument")
