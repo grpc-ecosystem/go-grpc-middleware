@@ -191,9 +191,13 @@ func (s *serverStreamingRetryingStream) RecvMsg(m interface{}) error {
 		callCtx := perCallContext(s.parentCtx, s.callOpts, attempt)
 		newStream, err := s.reestablishStreamAndResendBuffer(callCtx)
 		if err != nil {
-			// TODO(mwitkow): Maybe dial and transport errors should be retriable?
+			// Retry dial and transport errors of establishing stream as grpc doesn't retry.
+			if isRetriable(err, s.callOpts) {
+				continue
+			}
 			return err
 		}
+
 		s.setStream(newStream)
 		attemptRetry, lastErr = s.receiveMsgAndIndicateRetry(m)
 		//fmt.Printf("Received message and indicate: %v  %v\n", attemptRetry, lastErr)
