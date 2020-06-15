@@ -68,7 +68,7 @@ test_module:
 lint: ## Runs various static analysis against our code.
 lint: fmt $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL)
 	@echo "Running lint for all modules: $(MODULES)"
-	$(call require_clean_work_tree,"detected not clean master before running lint")
+	./scripts/git-tree.sh
 	@echo ">> verifying modules being imported"
 	@$(FAILLINT) -paths "errors=github.com/pkg/errors,fmt.{Print,Printf,Println}" ./...
 	@echo ">> examining all of the Go files"
@@ -79,7 +79,7 @@ lint: fmt $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL)
 	@find . -type f | grep -v vendor/ | grep -vE '\./\..*' | xargs $(MISSPELL) -error
 	@echo ">> ensuring generated proto files are up to date"
 	@$(MAKE) proto
-	$(call require_clean_work_tree,"detected proto changes or other not formatted files; run 'make lint' file and commit changes.")
+	./scripts/git-tree.sh
 
 $(PROTOC):
 	@mkdir -p $(TMP_GOPATH)
