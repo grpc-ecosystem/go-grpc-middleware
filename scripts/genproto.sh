@@ -35,6 +35,6 @@ plugins=grpc:. \
 			-I="${GOGOPROTO_PATH}" \
 			*.proto
 
-			${GOIMPORTS_BIN} -w *.pb.go
+			${GOIMPORTS_BIN} -format-only -w *.pb.go
 	popd
 done
