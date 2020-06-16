@@ -232,7 +232,7 @@ func (s *RetrySuite) TestServerStream_OverrideFromContext() {
 func (s *RetrySuite) TestServerStream_PerCallDeadline_Succeeds() {
 	// This tests 5 requests, with first 4 sleeping for 100 millisecond, and the retry logic firing
 	// a retry call with a 50 millisecond deadline. The 5th one doesn't sleep and succeeds.
-	deadlinePerCall := 50 * time.Millisecond
+	deadlinePerCall := 100 * time.Millisecond
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
 	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing, retry.WithPerRetryTimeout(deadlinePerCall),
 		retry.WithMax(5))
