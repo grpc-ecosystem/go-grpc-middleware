@@ -9,6 +9,7 @@ import (
 	"net"
 	"path"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -76,8 +77,11 @@ func (s *InterceptorTestSuite) SetupSuite() {
 			}
 			testpb.RegisterTestServiceServer(s.Server, s.TestService)
 
+			w := sync.WaitGroup{}
+			w.Add(1)
 			go func() {
 				_ = s.Server.Serve(s.ServerListener)
+				w.Done()
 			}()
 			if s.Client == nil {
 				s.Client = s.NewClient(s.ClientOpts...)
@@ -88,6 +92,7 @@ func (s *InterceptorTestSuite) SetupSuite() {
 			d := <-s.restartServerWithDelayedStart
 			s.Server.Stop()
 			time.Sleep(d)
+			w.Wait()
 		}
 	}()
 
