@@ -230,6 +230,8 @@ func (s *RetrySuite) TestServerStream_OverrideFromContext() {
 }
 
 func (s *RetrySuite) TestServerStream_PerCallDeadline_Succeeds() {
+	s.T().Skip("TODO(bwplotka): Mock time & unskip, this is too flaky on GH Actions.")
+
 	// This tests 5 requests, with first 4 sleeping for 100 millisecond, and the retry logic firing
 	// a retry call with a 50 millisecond deadline. The 5th one doesn't sleep and succeeds.
 	deadlinePerCall := 100 * time.Millisecond

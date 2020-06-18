@@ -80,7 +80,6 @@ lint: fmt $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL)
 	@echo ">> ensuring generated proto files are up to date"
 	@$(MAKE) proto
 	./scripts/git-tree.sh
-
 $(PROTOC):
 	@mkdir -p $(TMP_GOPATH)
 	@echo ">> fetching protoc@${PROTOC_VERSION}"
