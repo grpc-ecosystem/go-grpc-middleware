@@ -9,6 +9,7 @@ import (
 	"net"
 	"path"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -44,6 +45,8 @@ type InterceptorTestSuite struct {
 
 	restartServerWithDelayedStart chan time.Duration
 	serverRunning                 chan bool
+
+	cancels []context.CancelFunc
 }
 
 func (s *InterceptorTestSuite) SetupSuite() {
@@ -74,8 +77,11 @@ func (s *InterceptorTestSuite) SetupSuite() {
 			}
 			testpb.RegisterTestServiceServer(s.Server, s.TestService)
 
+			w := sync.WaitGroup{}
+			w.Add(1)
 			go func() {
-				s.Server.Serve(s.ServerListener)
+				_ = s.Server.Serve(s.ServerListener)
+				w.Done()
 			}()
 			if s.Client == nil {
 				s.Client = s.NewClient(s.ClientOpts...)
@@ -86,6 +92,7 @@ func (s *InterceptorTestSuite) SetupSuite() {
 			d := <-s.restartServerWithDelayedStart
 			s.Server.Stop()
 			time.Sleep(d)
+			w.Wait()
 		}
 	}()
 
@@ -120,12 +127,14 @@ func (s *InterceptorTestSuite) ServerAddr() string {
 }
 
 func (s *InterceptorTestSuite) SimpleCtx() context.Context {
-	ctx, _ := context.WithTimeout(context.TODO(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), 2*time.Second)
+	s.cancels = append(s.cancels, cancel)
 	return ctx
 }
 
 func (s *InterceptorTestSuite) DeadlineCtx(deadline time.Time) context.Context {
-	ctx, _ := context.WithDeadline(context.TODO(), deadline)
+	ctx, cancel := context.WithDeadline(context.TODO(), deadline)
+	s.cancels = append(s.cancels, cancel)
 	return ctx
 }
 
@@ -134,9 +143,12 @@ func (s *InterceptorTestSuite) TearDownSuite() {
 	if s.ServerListener != nil {
 		s.Server.GracefulStop()
 		s.T().Logf("stopped grpc.Server at: %v", s.ServerAddr())
-		s.ServerListener.Close()
+		_ = s.ServerListener.Close()
 	}
 	if s.clientConn != nil {
-		s.clientConn.Close()
+		_ = s.clientConn.Close()
+	}
+	for _, c := range s.cancels {
+		c()
 	}
 }

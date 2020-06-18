@@ -29,7 +29,6 @@ func (c *serverPayloadReporter) PostCall(error, time.Duration) {}
 
 func (c *serverPayloadReporter) PostMsgSend(req interface{}, err error, duration time.Duration) {
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
 	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
@@ -39,11 +38,10 @@ func (c *serverPayloadReporter) PostMsgSend(req interface{}, err error, duration
 
 func (c *serverPayloadReporter) PostMsgReceive(reply interface{}, err error, duration time.Duration) {
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
 	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
-	// For server recv message is the request..
+	// For server recv message is the request.
 	logProtoMessageAsJson(logger.With("grpc.recv.duration", duration.String()), reply, "grpc.request.content", "request payload logged as grpc.request.content field")
 }
 
@@ -56,7 +54,6 @@ func (c *clientPayloadReporter) PostCall(error, time.Duration) {}
 
 func (c *clientPayloadReporter) PostMsgSend(req interface{}, err error, duration time.Duration) {
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
 	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
@@ -65,7 +62,6 @@ func (c *clientPayloadReporter) PostMsgSend(req interface{}, err error, duration
 
 func (c *clientPayloadReporter) PostMsgReceive(reply interface{}, err error, duration time.Duration) {
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
 	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
@@ -136,9 +132,9 @@ func logProtoMessageAsJson(logger Logger, pbMsg interface{}, key string, msg str
 		payload, err := (&jsonpbObjectMarshaler{pb: p}).marshalJSON()
 		if err != nil {
 			logger = logger.With(key, err.Error())
-			return
+		} else {
+			logger = logger.With(key, string(payload))
 		}
-		logger = logger.With(key, string(payload))
 		logger.Log(INFO, msg)
 	}
 }

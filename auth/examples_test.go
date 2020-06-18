@@ -6,12 +6,14 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	pb "google.golang.org/grpc/examples/helloworld/helloworld"
+	"google.golang.org/grpc/status"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 )
+
+var tokenInfoKey struct{}
 
 func parseToken(token string) (struct{}, error) {
 	return struct{}{}, nil
@@ -36,7 +38,7 @@ func exampleAuthFunc(ctx context.Context) (context.Context, error) {
 	tags.Extract(ctx).Set("auth.sub", userClaimFromToken(tokenInfo))
 
 	// WARNING: in production define your own type to avoid context collisions
-	newCtx := context.WithValue(ctx, "tokenInfo", tokenInfo)
+	newCtx := context.WithValue(ctx, tokenInfoKey, tokenInfo)
 
 	return newCtx, nil
 }

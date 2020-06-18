@@ -184,6 +184,8 @@ func (s *RetrySuite) TestUnary_OverrideFromDialOpts() {
 }
 
 func (s *RetrySuite) TestUnary_PerCallDeadline_Succeeds() {
+	s.T().Skip("TODO(bwplotka): Mock time & unskip, this is too flaky on GH Actions.")
+
 	// This tests 5 requests, with first 4 sleeping for 10 millisecond, and the retry logic firing
 	// a retry call with a 5 millisecond deadline. The 5th one doesn't sleep and succeeds.
 	deadlinePerCall := 5 * time.Millisecond
@@ -196,6 +198,8 @@ func (s *RetrySuite) TestUnary_PerCallDeadline_Succeeds() {
 }
 
 func (s *RetrySuite) TestUnary_PerCallDeadline_FailsOnParent() {
+	s.T().Skip("TODO(bwplotka): Mock time & unskip, this is too flaky on GH Actions.")
+
 	// This tests that the parent context (passed to the invocation) takes precedence over retries.
 	// The parent context has 150 milliseconds of deadline.
 	// Each failed call sleeps for 100milliseconds, and there is 5 milliseconds between each one.
@@ -205,7 +209,8 @@ func (s *RetrySuite) TestUnary_PerCallDeadline_FailsOnParent() {
 	deadlinePerCall := 50 * time.Millisecond
 	// All 0-4 requests should have 10 millisecond sleeps and deadline, while the last one works.
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
-	ctx, _ := context.WithTimeout(context.TODO(), parentDeadline)
+	ctx, cancel := context.WithTimeout(context.TODO(), parentDeadline)
+	defer cancel()
 	_, err := s.Client.Ping(ctx, goodPing, retry.WithPerRetryTimeout(deadlinePerCall),
 		retry.WithMax(5))
 	require.Error(s.T(), err, "the retries must fail due to context deadline exceeded")
@@ -229,9 +234,11 @@ func (s *RetrySuite) TestServerStream_OverrideFromContext() {
 }
 
 func (s *RetrySuite) TestServerStream_PerCallDeadline_Succeeds() {
+	s.T().Skip("TODO(bwplotka): Mock time & unskip, this is too flaky on GH Actions.")
+
 	// This tests 5 requests, with first 4 sleeping for 100 millisecond, and the retry logic firing
 	// a retry call with a 50 millisecond deadline. The 5th one doesn't sleep and succeeds.
-	deadlinePerCall := 50 * time.Millisecond
+	deadlinePerCall := 100 * time.Millisecond
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
 	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing, retry.WithPerRetryTimeout(deadlinePerCall),
 		retry.WithMax(5))
@@ -241,6 +248,8 @@ func (s *RetrySuite) TestServerStream_PerCallDeadline_Succeeds() {
 }
 
 func (s *RetrySuite) TestServerStream_PerCallDeadline_FailsOnParent() {
+	s.T().Skip("TODO(bwplotka): Mock time & unskip, this is too flaky on GH Actions.")
+
 	// This tests that the parent context (passed to the invocation) takes precedence over retries.
 	// The parent context has 150 milliseconds of deadline.
 	// Each failed call sleeps for 50milliseconds, and there is 25 milliseconds between each one.
@@ -250,7 +259,8 @@ func (s *RetrySuite) TestServerStream_PerCallDeadline_FailsOnParent() {
 	deadlinePerCall := 50 * time.Millisecond
 	// All 0-4 requests should have 10 millisecond sleeps and deadline, while the last one works.
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
-	parentCtx, _ := context.WithTimeout(context.TODO(), parentDeadline)
+	parentCtx, cancel := context.WithTimeout(context.TODO(), parentDeadline)
+	defer cancel()
 	stream, err := s.Client.PingList(parentCtx, goodPing, retry.WithPerRetryTimeout(deadlinePerCall),
 		retry.WithMax(5))
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
@@ -270,7 +280,8 @@ func (s *RetrySuite) TestServerStream_CallFailsOnOutOfRetries() {
 
 func (s *RetrySuite) TestServerStream_CallFailsOnDeadlineExceeded() {
 	restarted := s.RestartServer(3 * retryTimeout)
-	ctx, _ := context.WithTimeout(context.TODO(), retryTimeout)
+	ctx, cancel := context.WithTimeout(context.TODO(), retryTimeout)
+	defer cancel()
 	_, err := s.Client.PingList(ctx, goodPing)
 
 	require.Error(s.T(), err, "establishing the connection should not succeed")
@@ -297,8 +308,8 @@ func (s *RetrySuite) assertPingListWasCorrect(stream testpb.TestService_PingList
 		if err == io.EOF {
 			break
 		}
-		require.NotNil(s.T(), pong, "received values must not be nil")
 		require.NoError(s.T(), err, "no errors during receive on client side")
+		require.NotNil(s.T(), pong, "received values must not be nil")
 		require.Equal(s.T(), goodPing.Value, pong.Value, "the returned pong contained the outgoing ping")
 		count += 1
 	}

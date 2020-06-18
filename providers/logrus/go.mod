@@ -1,4 +1,4 @@
-module github.com/grpc-ecosystem/go-grpc-middleware/v2/providers/logrus
+module github.com/grpc-ecosystem/go-grpc-middleware/providers/logrus/v2
 
 go 1.14
 

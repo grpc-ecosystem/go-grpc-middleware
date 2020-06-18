@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
+	grpczap "github.com/grpc-ecosystem/go-grpc-middleware/providers/zap/v2"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
-	grpczap "github.com/grpc-ecosystem/go-grpc-middleware/v2/providers/zap"
 )
 
 var (

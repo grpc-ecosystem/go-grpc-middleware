@@ -2,9 +2,9 @@ package ratelimit
 
 import (
 	"context"
-	"errors"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 )

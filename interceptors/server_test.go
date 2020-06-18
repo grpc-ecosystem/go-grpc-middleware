@@ -68,10 +68,13 @@ func (s *ServerInterceptorTestSuite) SetupSuite() {
 	testpb.RegisterTestServiceServer(s.server, &grpctesting.TestPingService{T: s.T()})
 
 	go func() {
-		s.server.Serve(s.serverListener)
+		_ = s.server.Serve(s.serverListener)
 	}()
 
-	s.clientConn, err = grpc.Dial(s.serverListener.Addr().String(), grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(2*time.Second))
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	s.clientConn, err = grpc.DialContext(ctx, s.serverListener.Addr().String(), grpc.WithInsecure(), grpc.WithBlock())
 	require.NoError(s.T(), err, "must not error on client Dial")
 	s.testClient = testpb.NewTestServiceClient(s.clientConn)
 }
@@ -87,11 +90,11 @@ func (s *ServerInterceptorTestSuite) TearDownSuite() {
 	if s.serverListener != nil {
 		s.server.Stop()
 		s.T().Logf("stopped grpc.Server at: %v", s.serverListener.Addr().String())
-		s.serverListener.Close()
+		_ = s.serverListener.Close()
 
 	}
 	if s.clientConn != nil {
-		s.clientConn.Close()
+		_ = s.clientConn.Close()
 	}
 }
 
@@ -146,7 +149,7 @@ func (s *ServerInterceptorTestSuite) TestStreamingReports() {
 		methodName:      "PingList",
 		postCalls:       []error{nil},
 		postMsgReceives: []error{nil},
-		postMsgSends:    append(make([]error, grpctesting.ListResponseCount)),
+		postMsgSends:    make([]error, grpctesting.ListResponseCount),
 	}}, s.mock.reports)
 	s.mock.reports = s.mock.reports[:0] // Reset.
 
@@ -189,7 +192,7 @@ func (s *ServerInterceptorTestSuite) TestBiStreamingReporting() {
 	wg := sync.WaitGroup{}
 
 	defer func() {
-		ss.CloseSend()
+		_ = ss.CloseSend()
 		wg.Wait()
 	}()
 
@@ -225,6 +228,6 @@ func (s *ServerInterceptorTestSuite) TestBiStreamingReporting() {
 		methodName:      "PingStream",
 		postCalls:       []error{nil},
 		postMsgReceives: append(make([]error, 100), io.EOF),
-		postMsgSends:    append(make([]error, 100)),
+		postMsgSends:    make([]error, 100),
 	}}, s.mock.reports)
 }

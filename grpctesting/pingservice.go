@@ -49,14 +49,16 @@ func (s *TestPingService) PingList(ping *testpb.PingRequest, stream testpb.TestS
 	}
 	// Send user trailers and headers.
 	for i := 0; i < ListResponseCount; i++ {
-		stream.Send(&testpb.PingResponse{Value: ping.Value, Counter: int32(i)})
+		if err := stream.Send(&testpb.PingResponse{Value: ping.Value, Counter: int32(i)}); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func (s *TestPingService) PingStream(stream testpb.TestService_PingStreamServer) error {
 	count := 0
-	for true {
+	for {
 		ping, err := stream.Recv()
 		if err == io.EOF {
 			break
@@ -64,7 +66,10 @@ func (s *TestPingService) PingStream(stream testpb.TestService_PingStreamServer)
 		if err != nil {
 			return err
 		}
-		stream.Send(&testpb.PingResponse{Value: ping.Value, Counter: int32(count)})
+		if err := stream.Send(&testpb.PingResponse{Value: ping.Value, Counter: int32(count)}); err != nil {
+			return err
+		}
+
 		count += 1
 	}
 	return nil
