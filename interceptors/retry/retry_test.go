@@ -184,6 +184,8 @@ func (s *RetrySuite) TestUnary_OverrideFromDialOpts() {
 }
 
 func (s *RetrySuite) TestUnary_PerCallDeadline_Succeeds() {
+	s.T().Skip("TODO(bwplotka): Mock time & unskip, this is too flaky on GH Actions.")
+
 	// This tests 5 requests, with first 4 sleeping for 10 millisecond, and the retry logic firing
 	// a retry call with a 5 millisecond deadline. The 5th one doesn't sleep and succeeds.
 	deadlinePerCall := 5 * time.Millisecond
@@ -196,6 +198,8 @@ func (s *RetrySuite) TestUnary_PerCallDeadline_Succeeds() {
 }
 
 func (s *RetrySuite) TestUnary_PerCallDeadline_FailsOnParent() {
+	s.T().Skip("TODO(bwplotka): Mock time & unskip, this is too flaky on GH Actions.")
+
 	// This tests that the parent context (passed to the invocation) takes precedence over retries.
 	// The parent context has 150 milliseconds of deadline.
 	// Each failed call sleeps for 100milliseconds, and there is 5 milliseconds between each one.
@@ -244,6 +248,8 @@ func (s *RetrySuite) TestServerStream_PerCallDeadline_Succeeds() {
 }
 
 func (s *RetrySuite) TestServerStream_PerCallDeadline_FailsOnParent() {
+	s.T().Skip("TODO(bwplotka): Mock time & unskip, this is too flaky on GH Actions.")
+
 	// This tests that the parent context (passed to the invocation) takes precedence over retries.
 	// The parent context has 150 milliseconds of deadline.
 	// Each failed call sleeps for 50milliseconds, and there is 25 milliseconds between each one.
