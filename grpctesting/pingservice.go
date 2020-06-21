@@ -25,7 +25,12 @@ const (
 	ListResponseCount = 100
 )
 
+// Interface implementation assert.
+var _ testpb.TestServiceServer = &TestPingService{}
+
 type TestPingService struct {
+	testpb.UnimplementedTestServiceServer
+
 	T *testing.T
 }
 
@@ -47,6 +52,7 @@ func (s *TestPingService) PingList(ping *testpb.PingRequest, stream testpb.TestS
 	if ping.ErrorCodeReturned != 0 {
 		return status.Errorf(codes.Code(ping.ErrorCodeReturned), "foobar")
 	}
+
 	// Send user trailers and headers.
 	for i := 0; i < ListResponseCount; i++ {
 		if err := stream.Send(&testpb.PingResponse{Value: ping.Value, Counter: int32(i)}); err != nil {

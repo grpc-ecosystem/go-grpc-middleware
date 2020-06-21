@@ -85,34 +85,45 @@ func (l LogLines) Swap(i, j int) {
 	l[i], l[j] = l[j], l[i]
 }
 
-type mockStdOutput struct {
-	// All the output of the mockLogger is shared in a single
-	// shared slice. Behaves like a stdout which contains all
-	// the log lines.
-	lines LogLines
+type output struct {
 	m     sync.Mutex
+	lines LogLines
 }
 
-func (l *mockStdOutput) Lines() LogLines {
-	l.m.Lock()
-	defer l.m.Unlock()
+func (o *output) Lines() LogLines {
+	o.m.Lock()
+	defer o.m.Unlock()
 
-	retLines := make(LogLines, len(l.lines))
-	copy(retLines, l.lines)
+	retLines := make(LogLines, len(o.lines))
+	copy(retLines, o.lines)
 
 	return retLines
 }
 
+func (o *output) Append(lines ...LogLine) {
+	o.m.Lock()
+	defer o.m.Unlock()
+
+	o.lines = append(o.lines, lines...)
+}
+func (o *output) Reset() {
+	o.m.Lock()
+	defer o.m.Unlock()
+
+	o.lines = o.lines[:0]
+}
+
 type mockLogger struct {
-	*mockStdOutput
+	o *output
 
 	fields logging.Fields
 }
 
-func (l *mockLogger) Log(lvl logging.Level, msg string) {
-	l.m.Lock()
-	defer l.m.Unlock()
+func newMockLogger() *mockLogger {
+	return &mockLogger{o: &output{}}
+}
 
+func (l *mockLogger) Log(lvl logging.Level, msg string) {
 	line := LogLine{
 		lvl:    lvl,
 		msg:    msg,
@@ -122,14 +133,11 @@ func (l *mockLogger) Log(lvl logging.Level, msg string) {
 	for i := 0; i < len(l.fields); i += 2 {
 		line.fields[l.fields[i]] = l.fields[i+1]
 	}
-	l.lines = append(l.lines, line)
+	l.o.Append(line)
 }
 
 func (l *mockLogger) With(fields ...string) logging.Logger {
-	l.m.Lock()
-	defer l.m.Unlock()
-
-	return &mockLogger{mockStdOutput: l.mockStdOutput, fields: append(append(logging.Fields{}, l.fields...), fields...)}
+	return &mockLogger{o: l.o, fields: append(append(logging.Fields{}, l.fields...), fields...)}
 }
 
 type baseLoggingSuite struct {
@@ -139,7 +147,7 @@ type baseLoggingSuite struct {
 
 func (s *baseLoggingSuite) SetupTest() {
 	s.logger.fields = s.logger.fields[:0]
-	s.logger.lines = s.logger.lines[:0]
+	s.logger.o.Reset()
 }
 
 func customClientCodeToLevel(c codes.Code) logging.Level {
@@ -162,7 +170,7 @@ func TestSuite(t *testing.T) {
 
 	s := &loggingClientServerSuite{
 		&baseLoggingSuite{
-			logger: &mockLogger{mockStdOutput: &mockStdOutput{}},
+			logger: newMockLogger(),
 			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 				TestService: &grpctesting.TestPingService{T: t},
 			},
@@ -195,7 +203,7 @@ func (s *loggingClientServerSuite) TestPing() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
 
-	lines := s.logger.Lines()
+	lines := s.logger.o.Lines()
 	sort.Sort(lines)
 	require.Len(s.T(), lines, 4)
 
@@ -240,7 +248,7 @@ func (s *loggingClientServerSuite) TestPingList() {
 		}
 		require.NoError(s.T(), err, "reading stream should not fail")
 	}
-	lines := s.logger.Lines()
+	lines := s.logger.o.Lines()
 	sort.Sort(lines)
 	require.Len(s.T(), lines, 4)
 
@@ -308,7 +316,7 @@ func (s *loggingClientServerSuite) TestPingError_WithCustomLevels() {
 				s.SimpleCtx(),
 				&testpb.PingRequest{Value: "something", ErrorCodeReturned: uint32(tcase.code)})
 			require.Error(t, err, "each call here must return an error")
-			lines := s.logger.Lines()
+			lines := s.logger.o.Lines()
 			sort.Sort(lines)
 			require.Len(t, lines, 4)
 
@@ -349,7 +357,7 @@ func TestCustomDurationSuite(t *testing.T) {
 
 	s := &loggingCustomDurationSuite{
 		baseLoggingSuite: &baseLoggingSuite{
-			logger: &mockLogger{mockStdOutput: &mockStdOutput{}},
+			logger: newMockLogger(),
 			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 				TestService: &grpctesting.TestPingService{T: t},
 			},
@@ -374,7 +382,7 @@ func (s *loggingCustomDurationSuite) TestPing_HasOverriddenDuration() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
 
-	lines := s.logger.Lines()
+	lines := s.logger.o.Lines()
 	sort.Sort(lines)
 	require.Len(s.T(), lines, 4)
 
@@ -420,7 +428,7 @@ func (s *loggingCustomDurationSuite) TestPingList_HasOverriddenDuration() {
 		require.NoError(s.T(), err, "reading stream should not fail")
 	}
 
-	lines := s.logger.Lines()
+	lines := s.logger.o.Lines()
 	sort.Sort(lines)
 	require.Len(s.T(), lines, 4)
 
@@ -473,7 +481,7 @@ func TestCustomDeciderSuite(t *testing.T) {
 
 	s := &loggingCustomDeciderSuite{
 		baseLoggingSuite: &baseLoggingSuite{
-			logger: &mockLogger{mockStdOutput: &mockStdOutput{}},
+			logger: newMockLogger(),
 			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 				TestService: &grpctesting.TestPingService{T: t},
 			},
@@ -498,7 +506,7 @@ func (s *loggingCustomDeciderSuite) TestPing_HasCustomDecider() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "there must be not be an error on a successful call")
 
-	require.Len(s.T(), s.logger.Lines(), 0) // Decider should suppress.
+	require.Len(s.T(), s.logger.o.Lines(), 0) // Decider should suppress.
 }
 
 func (s *loggingCustomDeciderSuite) TestPingError_HasCustomDecider() {
@@ -509,7 +517,7 @@ func (s *loggingCustomDeciderSuite) TestPingError_HasCustomDecider() {
 		&testpb.PingRequest{Value: "something", ErrorCodeReturned: uint32(code)})
 	require.Error(s.T(), err, "each call here must return an error")
 
-	lines := s.logger.Lines()
+	lines := s.logger.o.Lines()
 	sort.Sort(lines)
 	require.Len(s.T(), lines, 4)
 
@@ -557,5 +565,5 @@ func (s *loggingCustomDeciderSuite) TestPingList_HasCustomDecider() {
 		require.NoError(s.T(), err, "reading stream should not fail")
 	}
 
-	require.Len(s.T(), s.logger.Lines(), 0) // Decider should suppress.
+	require.Len(s.T(), s.logger.o.Lines(), 0) // Decider should suppress.
 }

@@ -2,15 +2,15 @@ include .bingo/Variables.mk
 
 SHELL=/bin/bash
 
-PROVIDER_MODULES ?= $(shell ls -d $(PWD)/providers/*)
+PROVIDER_MODULES ?= $(shell find $(PWD)/providers/  -name "go.mod" | grep -v ".bingo" | xargs dirname)
 MODULES          ?= $(PROVIDER_MODULES) $(PWD)/
 
 GOBIN             ?= $(firstword $(subst :, ,${GOPATH}))/bin
 
+// TODO(bwplotka): Move to buf.
 PROTOC_VERSION    ?= 3.12.3
 PROTOC            ?= $(GOBIN)/protoc-$(PROTOC_VERSION)
 TMP_GOPATH        ?= /tmp/gopath
-
 
 GO111MODULE       ?= on
 export GO111MODULE
@@ -45,8 +45,8 @@ fmt: $(GOIMPORTS)
 
 .PHONY: proto
 proto: ## Generates Go files from Thanos proto files.
-proto: $(GOIMPORTS) $(PROTOC) $(PROTOC_GEN_GOGOFAST) ./grpctesting/testpb/test.proto
-	@GOIMPORTS_BIN="$(GOIMPORTS)" PROTOC_BIN="$(PROTOC)" PROTOC_GEN_GOGOFAST_BIN="$(PROTOC_GEN_GOGOFAST)" scripts/genproto.sh
+proto: $(GOIMPORTS) $(PROTOC) $(PROTOC_GEN_GOGOFAST) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) ./grpctesting/testpb/test.proto
+	@GOIMPORTS_BIN="$(GOIMPORTS)" PROTOC_BIN="$(PROTOC)" PROTOC_GEN_GO_BIN="$(PROTOC_GEN_GO)" PROTOC_GEN_GO_GRPC_BIN="$(PROTOC_GEN_GO_GRPC)" PROTOC_GEN_GOGOFAST_BIN="$(PROTOC_GEN_GOGOFAST)" scripts/genproto.sh
 
 .PHONY: test
 test:
@@ -61,6 +61,13 @@ test_module:
 	@echo "Running tests for dir: $(DIR)"
 	cd $(DIR) && go test -v -race ./...
 
+.PHONY: deps
+deps:
+	@echo "Running deps tidy for all modules: $(MODULES)"
+	for dir in $(MODULES) ; do \
+		cd $${dir} && go mod tidy; \
+	done
+
 .PHONY: lint
 # PROTIP:
 # Add
@@ -68,20 +75,30 @@ test_module:
 #      --mem-profile-path string   Path to memory profile output file
 # to debug big allocations during linting.
 lint: ## Runs various static analysis tools against our code.
-lint: fmt $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL)
+lint: fmt proto
 	@echo "Running lint for all modules: $(MODULES)"
 	./scripts/git-tree.sh
+	for dir in $(MODULES) ; do \
+		$(MAKE) lint_module DIR=$${dir} ; \
+	done
+
+.PHONY: lint_module
+# PROTIP:
+# Add
+#      --cpu-profile-path string   Path to CPU profile output file
+#      --mem-profile-path string   Path to memory profile output file
+# to debug big allocations during linting.
+lint_module: ## Runs various static analysis against our code.
+lint_module: $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL)
 	@echo ">> verifying modules being imported"
-	@$(FAILLINT) -paths "errors=github.com/pkg/errors,fmt.{Print,Printf,Println}" ./...
+	@cd $(DIR) && $(FAILLINT) -paths "errors=github.com/pkg/errors,fmt.{Print,Printf,Println}" ./...
 	@echo ">> examining all of the Go files"
-	@go vet -stdmethods=false ./...
+	@cd $(DIR) && go vet -stdmethods=false ./...
 	@echo ">> linting all of the Go files GOGC=${GOGC}"
-	@$(GOLANGCI_LINT) run
-	@echo ">> detecting misspells"
-	@find . -type f | grep -v vendor/ | grep -vE '\./\..*' | xargs $(MISSPELL) -error
-	@echo ">> ensuring generated proto files are up to date"
-	@$(MAKE) proto
-	./scripts/git-tree.sh
+	@cd $(DIR) && $(GOLANGCI_LINT) run
+	@./scripts/git-tree.sh
+
+# TODO(bwplotka): Move to buf.
 $(PROTOC):
 	@mkdir -p $(TMP_GOPATH)
 	@echo ">> fetching protoc@${PROTOC_VERSION}"

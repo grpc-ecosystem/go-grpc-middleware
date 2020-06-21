@@ -3,9 +3,7 @@ package logging_test
 import (
 	"context"
 	"fmt"
-	"runtime"
 	"sort"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,17 +23,12 @@ type loggingPayloadSuite struct {
 }
 
 func TestPayloadSuite(t *testing.T) {
-	if strings.HasPrefix(runtime.Version(), "go1.7") {
-		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
-		return
-	}
-
 	alwaysLoggingDeciderServer := func(ctx context.Context, fullMethodName string, servingObject interface{}) bool { return true }
 	alwaysLoggingDeciderClient := func(ctx context.Context, fullMethodName string) bool { return true }
 
 	s := &loggingPayloadSuite{
 		baseLoggingSuite: &baseLoggingSuite{
-			logger: &mockLogger{mockStdOutput: &mockStdOutput{}},
+			logger: newMockLogger(),
 			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 				TestService: &grpctesting.TestPingService{T: t},
 			},
@@ -60,7 +53,7 @@ func (s *loggingPayloadSuite) TestPing_LogsBothRequestAndResponse() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	require.NoError(s.T(), err, "there must be not be an error on a successful call")
 
-	lines := s.logger.Lines()
+	lines := s.logger.o.Lines()
 	require.Len(s.T(), lines, 4)
 	s.assertPayloadLogLinesForMessage(lines, "Ping", interceptors.Unary)
 }
@@ -134,14 +127,14 @@ func (s *loggingPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
 	_, err := s.Client.PingError(s.SimpleCtx(), &testpb.PingRequest{Value: "something", ErrorCodeReturned: uint32(4)})
 	require.Error(s.T(), err, "there must be an error on an unsuccessful call")
 
-	lines := s.logger.Lines()
+	lines := s.logger.o.Lines()
 	sort.Sort(lines)
 	require.Len(s.T(), lines, 2) // Only client & server requests.
-
 	clientRequestLogLine := lines[0]
 	assert.Equal(s.T(), logging.INFO, clientRequestLogLine.lvl)
 	assert.Equal(s.T(), "request payload logged as grpc.request.content field", clientRequestLogLine.msg)
 	clientRequestFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientRequestLogLine.fields, "PingError", interceptors.Unary)
+
 	clientRequestFields.AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.send.duration").
 		AssertNextField(s.T(), "grpc.request.content", `{"value":"something","errorCodeReturned":4}`).
@@ -162,7 +155,7 @@ func (s *loggingPayloadSuite) TestPingStream_LogsAllRequestsAndResponses() {
 	}
 	require.NoError(s.T(), stream.CloseSend(), "no error on send stream")
 
-	lines := s.logger.Lines()
+	lines := s.logger.o.Lines()
 	require.Len(s.T(), lines, 4*messagesExpected)
 	s.assertPayloadLogLinesForMessage(lines, "PingStream", interceptors.BidiStream)
 }
