@@ -1,24 +1,22 @@
 package logging
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 )
 
-var (
-	// JsonPbMarshaller is the marshaller used for serializing protobuf messages.
-	// If needed, this variable can be reassigned with a different marshaller with the same Marshal() signature.
-	JsonPbMarshaller JsonPbMarshaler = &jsonpb.Marshaler{}
-)
+// var (
+// 	// JsonPbMarshaller is the marshaller used for serializing protobuf messages.
+// 	// If needed, this variable can be reassigned with a different marshaller with the same Marshal() signature.
+// 	JsonPbMarshaller JsonPbMarshaler = jsonpb.MarshalOptions{}
+// )
 
 type serverPayloadReporter struct {
 	ctx    context.Context
@@ -56,6 +54,7 @@ func (c *clientPayloadReporter) PostMsgSend(req interface{}, err error, duration
 	if err != nil {
 		return
 	}
+	fmt.Printf("PPPPPPP %v",req)
 	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	logProtoMessageAsJson(logger.With("grpc.send.duration", duration.String()), req, "grpc.request.content", "request payload logged as grpc.request.content field")
 }
@@ -64,6 +63,7 @@ func (c *clientPayloadReporter) PostMsgReceive(reply interface{}, err error, dur
 	if err != nil {
 		return
 	}
+	fmt.Printf("YYYYY %v",reply)
 	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	logProtoMessageAsJson(logger.With("grpc.recv.duration", duration.String()), reply, "grpc.response.content", "response payload logged as grpc.response.content field")
 }
@@ -128,8 +128,10 @@ func PayloadStreamClientInterceptor(logger Logger, decider ClientPayloadLoggingD
 }
 
 func logProtoMessageAsJson(logger Logger, pbMsg interface{}, key string, msg string) {
-	if p, ok := pbMsg.(proto.Message); ok {
-		payload, err := (&jsonpbObjectMarshaler{pb: p}).marshalJSON()
+	if _, ok := pbMsg.(proto.Message); ok {
+		pp := pbMsg.(proto.Message)
+		fmt.Printf("VV - %v",pp)
+		payload, err := proto.Marshal(pp)
 		if err != nil {
 			logger = logger.With(key, err.Error())
 		} else {
@@ -144,9 +146,12 @@ type jsonpbObjectMarshaler struct {
 }
 
 func (j *jsonpbObjectMarshaler) marshalJSON() ([]byte, error) {
-	b := &bytes.Buffer{}
-	if err := JsonPbMarshaller.Marshal(b, j.pb); err != nil {
+
+	
+	b, err := proto.Marshal(j.pb)
+	
+	if err != nil {
 		return nil, fmt.Errorf("jsonpb serializer failed: %v", err)
 	}
-	return b.Bytes(), nil
+	return b, nil
 }
