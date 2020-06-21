@@ -5,11 +5,10 @@ package logging
 
 import (
 	"context"
-	"io"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
@@ -78,7 +77,7 @@ type ClientPayloadLoggingDecider func(ctx context.Context, fullMethodName string
 
 // JsonPbMarshaller is a marshaller that serializes protobuf messages.
 type JsonPbMarshaler interface {
-	Marshal(out io.Writer, pb proto.Message) error
+	Marshal(pb proto.Message) ([]byte, error)
 }
 
 // Logger is unified interface that we used for all our interceptors. Official implementations are available under

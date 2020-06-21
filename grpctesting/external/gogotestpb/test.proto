@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package grpc_middleware.testpb;
+package grpc_middleware.gogotestpb;
 
-option go_package = "../testpb";
+option go_package = "gogotestpb";
 
 message Empty {
 }

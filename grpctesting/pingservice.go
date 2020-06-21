@@ -26,6 +26,8 @@ const (
 )
 
 type TestPingService struct {
+	testpb.UnimplementedTestServiceServer
+
 	T *testing.T
 }
 

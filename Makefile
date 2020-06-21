@@ -2,15 +2,14 @@ include .bingo/Variables.mk
 
 SHELL=/bin/bash
 
-PROVIDER_MODULES ?= $(shell ls -d $(PWD)/providers/*)
-MODULES          ?= $(PROVIDER_MODULES) $(PWD)/
+PROVIDER_MODULES ?= $(shell find $(PWD)/providers/  -name "go.mod" | grep -v ".bingo" | xargs dirname)
+MODULES          ?= $(PROVIDER_MODULES) $(PWD)/ $(PWD)/grpctesting/external
 
 GOBIN             ?= $(firstword $(subst :, ,${GOPATH}))/bin
 
 PROTOC_VERSION    ?= 3.12.3
 PROTOC            ?= $(GOBIN)/protoc-$(PROTOC_VERSION)
 TMP_GOPATH        ?= /tmp/gopath
-
 
 GO111MODULE       ?= on
 export GO111MODULE
@@ -45,8 +44,8 @@ fmt: $(GOIMPORTS)
 
 .PHONY: proto
 proto: ## Generates Go files from Thanos proto files.
-proto: $(GOIMPORTS) $(PROTOC) $(PROTOC_GEN_GOGOFAST) ./grpctesting/testpb/test.proto
-	@GOIMPORTS_BIN="$(GOIMPORTS)" PROTOC_BIN="$(PROTOC)" PROTOC_GEN_GOGOFAST_BIN="$(PROTOC_GEN_GOGOFAST)" scripts/genproto.sh
+proto: $(GOIMPORTS) $(PROTOC) $(PROTOC_GEN_GOGOFAST) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) ./grpctesting/testpb/test.proto
+	@GOIMPORTS_BIN="$(GOIMPORTS)" PROTOC_BIN="$(PROTOC)" PROTOC_GEN_GO_BIN="$(PROTOC_GEN_GO)" PROTOC_GEN_GO_GRPC_BIN="$(PROTOC_GEN_GO_GRPC)" PROTOC_GEN_GOGOFAST_BIN="$(PROTOC_GEN_GOGOFAST)" scripts/genproto.sh
 
 .PHONY: test
 test:
@@ -60,6 +59,13 @@ test:
 test_module:
 	@echo "Running tests for dir: $(DIR)"
 	cd $(DIR) && go test -v -race ./...
+
+.PHONY: deps
+deps:
+	@echo "Running deps tidy for all modules: $(MODULES)"
+	for dir in $(MODULES) ; do \
+		cd $${dir} && go mod tidy; \
+	done
 
 .PHONY: lint
 # PROTIP:

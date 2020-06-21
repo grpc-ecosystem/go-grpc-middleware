@@ -16,11 +16,11 @@ GO     ?= $(shell which go)
 #	@echo "Running bingo"
 #	@$(BINGO) <flags/args..>
 #
-BINGO := $(GOBIN)/bingo-v0.2.2
+BINGO := $(GOBIN)/bingo-v0.2.3
 $(BINGO): .bingo/bingo.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/bingo-v0.2.2"
-	@cd .bingo && $(GO) build -modfile=bingo.mod -o=$(GOBIN)/bingo-v0.2.2 "github.com/bwplotka/bingo"
+	@echo "(re)installing $(GOBIN)/bingo-v0.2.3"
+	@cd .bingo && $(GO) build -modfile=bingo.mod -o=$(GOBIN)/bingo-v0.2.3 "github.com/bwplotka/bingo"
 
 FAILLINT := $(GOBIN)/faillint-v1.5.0
 $(FAILLINT): .bingo/faillint.mod
@@ -45,6 +45,18 @@ $(MISSPELL): .bingo/misspell.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
 	@echo "(re)installing $(GOBIN)/misspell-v0.3.4"
 	@cd .bingo && $(GO) build -modfile=misspell.mod -o=$(GOBIN)/misspell-v0.3.4 "github.com/client9/misspell/cmd/misspell"
+
+PROTOC_GEN_GO_GRPC := $(GOBIN)/protoc-gen-go-grpc-v0.0.0-20200723182653-9106c3fff523
+$(PROTOC_GEN_GO_GRPC): .bingo/protoc-gen-go-grpc.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/protoc-gen-go-grpc-v0.0.0-20200723182653-9106c3fff523"
+	@cd .bingo && $(GO) build -modfile=protoc-gen-go-grpc.mod -o=$(GOBIN)/protoc-gen-go-grpc-v0.0.0-20200723182653-9106c3fff523 "google.golang.org/grpc/cmd/protoc-gen-go-grpc"
+
+PROTOC_GEN_GO := $(GOBIN)/protoc-gen-go-v1.25.0
+$(PROTOC_GEN_GO): .bingo/protoc-gen-go.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/protoc-gen-go-v1.25.0"
+	@cd .bingo && $(GO) build -modfile=protoc-gen-go.mod -o=$(GOBIN)/protoc-gen-go-v1.25.0 "google.golang.org/protobuf/cmd/protoc-gen-go"
 
 PROTOC_GEN_GOGOFAST := $(GOBIN)/protoc-gen-gogofast-v1.3.1
 $(PROTOC_GEN_GOGOFAST): .bingo/protoc-gen-gogofast.mod
