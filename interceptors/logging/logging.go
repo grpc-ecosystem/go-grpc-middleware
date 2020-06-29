@@ -55,6 +55,14 @@ func DefaultDeciderMethod(_ string, _ error) bool {
 	return true
 }
 
+// ClientRequestLoggingDecider is a user provided function for deciding whether to log the client-side
+// request/response metadata
+type ClientRequestLoggingDecider func(ctx context.Context, fullMethodName string, servingObject interface{}) bool
+
+// ServerRequestLoggingDecider is a user provided function for deciding whether to log the server-side
+// request/response metadata
+type ServerRequestLoggingDecider func(ctx context.Context, fullMethodName string, servingObject interface{}) bool
+
 // ServerPayloadLoggingDecider is a user-provided function for deciding whether to log the server-side
 // request/response payloads
 type ServerPayloadLoggingDecider func(ctx context.Context, fullMethodName string, servingObject interface{}) bool
