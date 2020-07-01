@@ -1,6 +1,7 @@
 package logging_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -153,6 +154,12 @@ type loggingClientServerSuite struct {
 	*baseLoggingSuite
 }
 
+// customRequestLoggingDecider is a function which configures if request logging should be enabled.
+// For the tests, it is switched off, unless we want to test request logging.
+func customRequestLoggingDecider(_ context.Context, _ string, _ interface{}) bool {
+	return false
+}
+
 func TestSuite(t *testing.T) {
 	if strings.HasPrefix(runtime.Version(), "go1.7") {
 		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
@@ -168,16 +175,16 @@ func TestSuite(t *testing.T) {
 		},
 	}
 	s.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
-		grpc.WithUnaryInterceptor(logging.UnaryClientInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel))),
-		grpc.WithStreamInterceptor(logging.StreamClientInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel))),
+		grpc.WithUnaryInterceptor(logging.UnaryClientInterceptor(s.logger, customRequestLoggingDecider, logging.WithLevels(customClientCodeToLevel))),
+		grpc.WithStreamInterceptor(logging.StreamClientInterceptor(s.logger, customRequestLoggingDecider, logging.WithLevels(customClientCodeToLevel))),
 	}
 	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
 		middleware.WithStreamServerChain(
 			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
-			logging.StreamServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel))),
+			logging.StreamServerInterceptor(s.logger, customRequestLoggingDecider, logging.WithLevels(customClientCodeToLevel))),
 		middleware.WithUnaryServerChain(
 			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
-			logging.UnaryServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel))),
+			logging.UnaryServerInterceptor(s.logger, customRequestLoggingDecider, logging.WithLevels(customClientCodeToLevel))),
 	}
 	suite.Run(t, s)
 }
@@ -331,16 +338,16 @@ func TestCustomDurationSuite(t *testing.T) {
 		},
 	}
 	s.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
-		grpc.WithUnaryInterceptor(logging.UnaryClientInterceptor(s.logger, logging.WithDurationField(logging.DurationToDurationField))),
-		grpc.WithStreamInterceptor(logging.StreamClientInterceptor(s.logger, logging.WithDurationField(logging.DurationToDurationField))),
+		grpc.WithUnaryInterceptor(logging.UnaryClientInterceptor(s.logger, customRequestLoggingDecider, logging.WithDurationField(logging.DurationToDurationField))),
+		grpc.WithStreamInterceptor(logging.StreamClientInterceptor(s.logger, customRequestLoggingDecider, logging.WithDurationField(logging.DurationToDurationField))),
 	}
 	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
 		middleware.WithStreamServerChain(
 			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
-			logging.StreamServerInterceptor(s.logger, logging.WithDurationField(logging.DurationToDurationField))),
+			logging.StreamServerInterceptor(s.logger, customRequestLoggingDecider, logging.WithDurationField(logging.DurationToDurationField))),
 		middleware.WithUnaryServerChain(
 			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
-			logging.UnaryServerInterceptor(s.logger, logging.WithDurationField(logging.DurationToDurationField))),
+			logging.UnaryServerInterceptor(s.logger, customRequestLoggingDecider, logging.WithDurationField(logging.DurationToDurationField))),
 	}
 	suite.Run(t, s)
 }
@@ -433,16 +440,16 @@ func TestCustomDeciderSuite(t *testing.T) {
 		},
 	}
 	s.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
-		grpc.WithUnaryInterceptor(logging.UnaryClientInterceptor(s.logger, opts)),
-		grpc.WithStreamInterceptor(logging.StreamClientInterceptor(s.logger, opts)),
+		grpc.WithUnaryInterceptor(logging.UnaryClientInterceptor(s.logger, customRequestLoggingDecider, opts)),
+		grpc.WithStreamInterceptor(logging.StreamClientInterceptor(s.logger, customRequestLoggingDecider, opts)),
 	}
 	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
 		middleware.WithStreamServerChain(
 			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
-			logging.StreamServerInterceptor(s.logger, opts)),
+			logging.StreamServerInterceptor(s.logger, customRequestLoggingDecider, opts)),
 		middleware.WithUnaryServerChain(
 			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
-			logging.UnaryServerInterceptor(s.logger, opts)),
+			logging.UnaryServerInterceptor(s.logger, customRequestLoggingDecider, opts)),
 	}
 	suite.Run(t, s)
 }
