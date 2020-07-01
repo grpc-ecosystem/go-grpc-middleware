@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
@@ -60,14 +61,9 @@ func (c *reporter) PostMsgSend(req interface{}, err error, duration time.Duratio
 	if !c.requestLoggerDecider {
 		return
 	}
-
-	// The error if any would be handled by the PostCall
-	if err != nil {
-		return
-	}
-
+	code := c.opts.codeFunc(err)
 	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
-	logRequestResponse(logger)
+	logRequestResponse(c.ctx, logger.With("grpc.recv.duration", duration.String()), req, c.opts.levelFunc(code))
 
 }
 
@@ -78,14 +74,9 @@ func (c *reporter) PostMsgReceive(reply interface{}, err error, duration time.Du
 	if !c.requestLoggerDecider {
 		return
 	}
-
-	// The error if any would be handled by the PostCall
-	if err != nil {
-		return
-	}
-
+	code := c.opts.codeFunc(err)
 	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
-	logRequestResponse(logger)
+	logRequestResponse(c.ctx, logger.With("grpc.recv.duration", duration.String()), reply, c.opts.levelFunc(code))
 
 }
 
@@ -96,16 +87,12 @@ type reportable struct {
 }
 
 func (r *reportable) ServerReporter(ctx context.Context, req interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
-
 	reqLoggerDecider := r.requestLoggerDecider(ctx, interceptors.FullMethod(service, method), req)
-
 	return r.reporter(ctx, typ, service, method, KindServerFieldValue, reqLoggerDecider)
 }
 
 func (r *reportable) ClientReporter(ctx context.Context, resp interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
-
 	reqLoggerDecider := r.requestLoggerDecider(ctx, interceptors.FullMethod(service, method), resp)
-
 	return r.reporter(ctx, typ, service, method, KindClientFieldValue, reqLoggerDecider)
 }
 
@@ -158,4 +145,21 @@ func StreamServerInterceptor(logger Logger, decider PostRequestLoggingDecider, o
 
 // TODO: yashrsharma44
 // What are the things that we want to log?
-func logRequestResponse(Logger) {}
+func logRequestResponse(ctx context.Context, logger Logger, servObj interface{}, level Level) {
+
+	reqId, ok := RequestIDFromContext(ctx)
+	if ok {
+		logger = logger.With("request-id", reqId)
+	} else {
+		logger = logger.With("request-id", "NONE")
+	}
+
+	logger.Log(level, "logged details of the request")
+}
+
+// RequestIDFromContext returns the request id from context.
+func RequestIDFromContext(ctx context.Context) (string, bool) {
+	headers, ok := metadata.FromIncomingContext(ctx)
+	rid := headers["X-Request-ID"][0]
+	return rid, ok
+}
