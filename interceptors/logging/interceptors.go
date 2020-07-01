@@ -26,6 +26,8 @@ type reporter struct {
 	typ             interceptors.GRPCType
 	service, method string
 
+	requestLoggerDecider bool
+
 	opts   *options
 	logger Logger
 
@@ -54,6 +56,11 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 // PostMsgSend logs the details of the servingObject(req/resp) that is flowing out of the rpc.
 func (c *reporter) PostMsgSend(req interface{}, err error, duration time.Duration) {
 
+	// If the Request Logging is configured to be skipped.
+	if !c.requestLoggerDecider {
+		return
+	}
+
 	// The error if any would be handled by the PostCall
 	if err != nil {
 		return
@@ -67,6 +74,11 @@ func (c *reporter) PostMsgSend(req interface{}, err error, duration time.Duratio
 // PostMsgReceive logs the details of the servingObject that is flowing into the rpc.
 func (c *reporter) PostMsgReceive(reply interface{}, err error, duration time.Duration) {
 
+	// If the Request Logging is configured to be skipped.
+	if !c.requestLoggerDecider {
+		return
+	}
+
 	// The error if any would be handled by the PostCall
 	if err != nil {
 		return
@@ -78,72 +90,70 @@ func (c *reporter) PostMsgReceive(reply interface{}, err error, duration time.Du
 }
 
 type reportable struct {
-	clientDecider ClientRequestLoggingDecider
-	serverDecider ServerRequestLoggingDecider
-	opts          *options
-	logger        Logger
+	opts                 *options
+	logger               Logger
+	requestLoggerDecider PostRequestLoggingDecider
 }
 
 func (r *reportable) ServerReporter(ctx context.Context, req interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
 
-	if !r.serverDecider(ctx, interceptors.FullMethod(service, method), req) {
-		return interceptors.NoopReporter{}, ctx
-	}
+	reqLoggerDecider := r.requestLoggerDecider(ctx, interceptors.FullMethod(service, method), req)
 
-	return r.reporter(ctx, typ, service, method, KindServerFieldValue)
+	return r.reporter(ctx, typ, service, method, KindServerFieldValue, reqLoggerDecider)
 }
 
 func (r *reportable) ClientReporter(ctx context.Context, resp interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
-	if !r.clientDecider(ctx, interceptors.FullMethod(service, method), resp) {
-		return interceptors.NoopReporter{}, ctx
-	}
 
-	return r.reporter(ctx, typ, service, method, KindClientFieldValue)
+	reqLoggerDecider := r.requestLoggerDecider(ctx, interceptors.FullMethod(service, method), resp)
+
+	return r.reporter(ctx, typ, service, method, KindClientFieldValue, reqLoggerDecider)
 }
 
-func (r *reportable) reporter(ctx context.Context, typ interceptors.GRPCType, service string, method string, kind string) (interceptors.Reporter, context.Context) {
+func (r *reportable) reporter(ctx context.Context, typ interceptors.GRPCType, service string, method string, kind string, requestLoggerDecider bool) (interceptors.Reporter, context.Context) {
+
 	fields := commonFields(kind, typ, service, method)
 	fields = append(fields, "grpc.start_time", time.Now().Format(time.RFC3339))
 	if d, ok := ctx.Deadline(); ok {
 		fields = append(fields, "grpc.request.deadline", d.Format(time.RFC3339))
 	}
 	return &reporter{
-		ctx:     ctx,
-		typ:     typ,
-		service: service,
-		method:  method,
-		opts:    r.opts,
-		logger:  r.logger.With(fields...),
-		kind:    kind,
+		ctx:                  ctx,
+		typ:                  typ,
+		service:              service,
+		method:               method,
+		requestLoggerDecider: requestLoggerDecider,
+		opts:                 r.opts,
+		logger:               r.logger.With(fields...),
+		kind:                 kind,
 	}, ctx
 }
 
 // UnaryClientInterceptor returns a new unary client interceptor that optionally logs the execution of external gRPC calls.
 // Logger will use all tags (from tags package) available in current context as fields.
-func UnaryClientInterceptor(logger Logger, decider ClientRequestLoggingDecider, opts ...Option) grpc.UnaryClientInterceptor {
+func UnaryClientInterceptor(logger Logger, decider PostRequestLoggingDecider, opts ...Option) grpc.UnaryClientInterceptor {
 	o := evaluateClientOpt(opts)
-	return interceptors.UnaryClientInterceptor(&reportable{logger: logger, clientDecider: decider, opts: o})
+	return interceptors.UnaryClientInterceptor(&reportable{logger: logger, requestLoggerDecider: decider, opts: o})
 }
 
 // StreamClientInterceptor returns a new streaming client interceptor that optionally logs the execution of external gRPC calls.
 // Logger will use all tags (from tags package) available in current context as fields.
-func StreamClientInterceptor(logger Logger, decider ClientRequestLoggingDecider, opts ...Option) grpc.StreamClientInterceptor {
+func StreamClientInterceptor(logger Logger, decider PostRequestLoggingDecider, opts ...Option) grpc.StreamClientInterceptor {
 	o := evaluateClientOpt(opts)
-	return interceptors.StreamClientInterceptor(&reportable{logger: logger, clientDecider: decider, opts: o})
+	return interceptors.StreamClientInterceptor(&reportable{logger: logger, requestLoggerDecider: decider, opts: o})
 }
 
 // UnaryServerInterceptor returns a new unary server interceptors that optionally logs endpoint handling.
 // Logger will use all tags (from tags package) available in current context as fields.
-func UnaryServerInterceptor(logger Logger, decider ServerRequestLoggingDecider, opts ...Option) grpc.UnaryServerInterceptor {
+func UnaryServerInterceptor(logger Logger, decider PostRequestLoggingDecider, opts ...Option) grpc.UnaryServerInterceptor {
 	o := evaluateServerOpt(opts)
-	return interceptors.UnaryServerInterceptor(&reportable{logger: logger, serverDecider: decider, opts: o})
+	return interceptors.UnaryServerInterceptor(&reportable{logger: logger, requestLoggerDecider: decider, opts: o})
 }
 
 // StreamServerInterceptor returns a new stream server interceptors that optionally logs endpoint handling.
 // Logger will use all tags (from tags package) available in current context as fields.
-func StreamServerInterceptor(logger Logger, decider ServerRequestLoggingDecider, opts ...Option) grpc.StreamServerInterceptor {
+func StreamServerInterceptor(logger Logger, decider PostRequestLoggingDecider, opts ...Option) grpc.StreamServerInterceptor {
 	o := evaluateServerOpt(opts)
-	return interceptors.StreamServerInterceptor(&reportable{logger: logger, serverDecider: decider, opts: o})
+	return interceptors.StreamServerInterceptor(&reportable{logger: logger, requestLoggerDecider: decider, opts: o})
 }
 
 // TODO: yashrsharma44
