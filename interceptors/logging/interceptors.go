@@ -32,6 +32,7 @@ type reporter struct {
 	kind string
 }
 
+// PostCall logs the server/method name details and error if any.
 func (c *reporter) PostCall(err error, duration time.Duration) {
 	if !c.opts.shouldLog(interceptors.FullMethod(c.service, c.method), err) {
 		return
@@ -50,20 +51,53 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("finished %s %s call", c.kind, c.typ))
 }
 
-func (c *reporter) PostMsgSend(interface{}, error, time.Duration) {}
+// PostMsgSend logs the details of the servingObject(req/resp) that is flowing out of the rpc.
+func (c *reporter) PostMsgSend(req interface{}, err error, duration time.Duration) {
 
-func (c *reporter) PostMsgReceive(interface{}, error, time.Duration) {}
+	// The error if any would be handled by the PostCall
+	if err != nil {
+		return
+	}
 
-type reportable struct {
-	opts   *options
-	logger Logger
+	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
+	logRequestResponse(logger)
+
 }
 
-func (r *reportable) ServerReporter(ctx context.Context, _ interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
+// PostMsgReceive logs the details of the servingObject that is flowing into the rpc.
+func (c *reporter) PostMsgReceive(reply interface{}, err error, duration time.Duration) {
+
+	// The error if any would be handled by the PostCall
+	if err != nil {
+		return
+	}
+
+	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
+	logRequestResponse(logger)
+
+}
+
+type reportable struct {
+	clientDecider ClientRequestLoggingDecider
+	serverDecider ServerRequestLoggingDecider
+	opts          *options
+	logger        Logger
+}
+
+func (r *reportable) ServerReporter(ctx context.Context, req interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
+
+	if !r.serverDecider(ctx, interceptors.FullMethod(service, method), req) {
+		return interceptors.NoopReporter{}, ctx
+	}
+
 	return r.reporter(ctx, typ, service, method, KindServerFieldValue)
 }
 
-func (r *reportable) ClientReporter(ctx context.Context, _ interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
+func (r *reportable) ClientReporter(ctx context.Context, resp interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
+	if !r.clientDecider(ctx, interceptors.FullMethod(service, method), resp) {
+		return interceptors.NoopReporter{}, ctx
+	}
+
 	return r.reporter(ctx, typ, service, method, KindClientFieldValue)
 }
 
@@ -86,28 +120,32 @@ func (r *reportable) reporter(ctx context.Context, typ interceptors.GRPCType, se
 
 // UnaryClientInterceptor returns a new unary client interceptor that optionally logs the execution of external gRPC calls.
 // Logger will use all tags (from tags package) available in current context as fields.
-func UnaryClientInterceptor(logger Logger, opts ...Option) grpc.UnaryClientInterceptor {
+func UnaryClientInterceptor(logger Logger, decider ClientRequestLoggingDecider, opts ...Option) grpc.UnaryClientInterceptor {
 	o := evaluateClientOpt(opts)
-	return interceptors.UnaryClientInterceptor(&reportable{logger: logger, opts: o})
+	return interceptors.UnaryClientInterceptor(&reportable{logger: logger, clientDecider: decider, opts: o})
 }
 
 // StreamClientInterceptor returns a new streaming client interceptor that optionally logs the execution of external gRPC calls.
 // Logger will use all tags (from tags package) available in current context as fields.
-func StreamClientInterceptor(logger Logger, opts ...Option) grpc.StreamClientInterceptor {
+func StreamClientInterceptor(logger Logger, decider ClientRequestLoggingDecider, opts ...Option) grpc.StreamClientInterceptor {
 	o := evaluateClientOpt(opts)
-	return interceptors.StreamClientInterceptor(&reportable{logger: logger, opts: o})
+	return interceptors.StreamClientInterceptor(&reportable{logger: logger, clientDecider: decider, opts: o})
 }
 
 // UnaryServerInterceptor returns a new unary server interceptors that optionally logs endpoint handling.
 // Logger will use all tags (from tags package) available in current context as fields.
-func UnaryServerInterceptor(logger Logger, opts ...Option) grpc.UnaryServerInterceptor {
+func UnaryServerInterceptor(logger Logger, decider ServerRequestLoggingDecider, opts ...Option) grpc.UnaryServerInterceptor {
 	o := evaluateServerOpt(opts)
-	return interceptors.UnaryServerInterceptor(&reportable{logger: logger, opts: o})
+	return interceptors.UnaryServerInterceptor(&reportable{logger: logger, serverDecider: decider, opts: o})
 }
 
 // StreamServerInterceptor returns a new stream server interceptors that optionally logs endpoint handling.
 // Logger will use all tags (from tags package) available in current context as fields.
-func StreamServerInterceptor(logger Logger, opts ...Option) grpc.StreamServerInterceptor {
+func StreamServerInterceptor(logger Logger, decider ServerRequestLoggingDecider, opts ...Option) grpc.StreamServerInterceptor {
 	o := evaluateServerOpt(opts)
-	return interceptors.StreamServerInterceptor(&reportable{logger: logger, opts: o})
+	return interceptors.StreamServerInterceptor(&reportable{logger: logger, serverDecider: decider, opts: o})
 }
+
+// TODO: yashrsharma44
+// What are the things that we want to log?
+func logRequestResponse(Logger) {}
