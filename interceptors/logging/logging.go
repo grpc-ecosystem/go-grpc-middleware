@@ -55,9 +55,9 @@ func DefaultDeciderMethod(_ string, _ error) bool {
 	return true
 }
 
-// PostRequestLoggingDecider is a user provided function for deciding whether the Request Logging should be configured.
+// PreRequestLoggingDecider is a user provided function for deciding whether the Request Logging should be configured.
 // Request Logging is enabled if the value of the function evaluates to true.
-type PostRequestLoggingDecider func(ctx context.Context, fullMethodName string, servingObject interface{}) bool
+type PreRequestLoggingDecider func(ctx context.Context, fullMethodName string, servingObject interface{}) bool
 
 // ServerPayloadLoggingDecider is a user-provided function for deciding whether to log the server-side
 // request/response payloads
