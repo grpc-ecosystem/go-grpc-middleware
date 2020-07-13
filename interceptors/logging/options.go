@@ -57,6 +57,13 @@ func WithDecider(f Decider) Option {
 	}
 }
 
+// WithRequestLoggingDecider customizes the function for deciding if the gRPC interceptor logs should log the request details.
+func WithRequestLoggingDecider(f RequestDecider) Option {
+	return func(o *options) {
+		o.shouldLogRequest = f
+	}
+}
+
 // WithLevels customizes the function for mapping gRPC return codes and interceptor log level statements.
 func WithLevels(f CodeToLevel) Option {
 	return func(o *options) {
