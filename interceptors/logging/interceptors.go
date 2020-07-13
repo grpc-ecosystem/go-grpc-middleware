@@ -50,16 +50,18 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 	if err != nil {
 		logger = logger.With("error", fmt.Sprintf("%v", err))
 	}
-
+	logger = logger.With(c.opts.durationFieldFunc(duration)...)
 	if !c.opts.shouldLogRequest(interceptors.FullMethod(c.service, c.method), err) {
-		logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("finished %s %s call", c.kind, c.typ))
-	} else {
-		if c.isServer {
-			logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request finished - response handled %s %s", c.kind, c.typ))
-		} else {
-			logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response finished %s %s", c.kind, c.typ))
-		}
+		logger.Log(c.opts.levelFunc(code), fmt.Sprintf("finished %s %s call", c.kind, c.typ))
+		return
 	}
+
+	if c.isServer {
+		logger.Log(c.opts.levelFunc(code), fmt.Sprintf("request finished - response handled %s %s", c.kind, c.typ))
+		return
+	}
+
+	logger.Log(c.opts.levelFunc(code), fmt.Sprintf("response finished %s %s", c.kind, c.typ))
 
 }
 
