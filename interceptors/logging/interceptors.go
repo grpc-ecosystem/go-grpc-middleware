@@ -50,6 +50,7 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 	if err != nil {
 		logger = logger.With("error", fmt.Sprintf("%v", err))
 	}
+
 	if !c.opts.shouldLogRequest(interceptors.FullMethod(c.service, c.method), err) {
 		logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("finished %s %s call", c.kind, c.typ))
 	} else {
@@ -69,6 +70,7 @@ func (c *reporter) PostMsgSend(resp interface{}, err error, duration time.Durati
 	if !c.opts.shouldLogRequest(interceptors.FullMethod(c.service, c.method), err) {
 		return
 	}
+
 	// If the first message is logged skip the rest of the logging.
 	// If the serving object is response, skip the logging.
 	if c.firstResponseMessageLogged || !c.isServer {
@@ -85,10 +87,6 @@ func (c *reporter) PostMsgSend(resp interface{}, err error, duration time.Durati
 	}
 
 	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response started. response_object: %v", resp))
-	// } else {
-	// 	logger = logger.With("msg", "response finished")
-	// 	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response object: %v", resp))
-	// }
 }
 
 // PostMsgReceive logs the details of the servingObject that is flowing into the rpc.
@@ -98,6 +96,7 @@ func (c *reporter) PostMsgReceive(req interface{}, err error, duration time.Dura
 	if !c.opts.shouldLogRequest(interceptors.FullMethod(c.service, c.method), err) {
 		return
 	}
+
 	// If the first message for request is logged, skip the rest of the logging.
 	// If the serving object is a response, skip the logging.
 	if c.firstRequestMessageLogged || !c.isServer {
@@ -114,10 +113,7 @@ func (c *reporter) PostMsgReceive(req interface{}, err error, duration time.Dura
 	}
 
 	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request started. request_object: %v", req))
-	// } else {
-	// 	logger = logger.With("msg", "request finished")
-	// 	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request object: %v", req))
-	// }
+
 }
 
 type reportable struct {
