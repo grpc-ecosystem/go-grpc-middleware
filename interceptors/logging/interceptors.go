@@ -84,8 +84,7 @@ func (c *reporter) PostMsgSend(resp interface{}, err error, duration time.Durati
 		logger = logger.With("error", fmt.Sprintf("%v", err))
 	}
 
-	logger = logger.With("msg", "response started")
-	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response object: %v", resp))
+	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response started. response_object: %v", resp))
 	// } else {
 	// 	logger = logger.With("msg", "response finished")
 	// 	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response object: %v", resp))
@@ -114,9 +113,7 @@ func (c *reporter) PostMsgReceive(req interface{}, err error, duration time.Dura
 		logger = logger.With("error", fmt.Sprintf("%v", err))
 	}
 
-	// if err != io.EOF {
-	logger = logger.With("msg", "request started")
-	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request object: %v", req))
+	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request started. request_object: %v", req))
 	// } else {
 	// 	logger = logger.With("msg", "request finished")
 	// 	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request object: %v", req))
