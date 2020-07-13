@@ -50,7 +50,16 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 	if err != nil {
 		logger = logger.With("error", fmt.Sprintf("%v", err))
 	}
-	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("finished %s %s call", c.kind, c.typ))
+	if !c.opts.shouldLogRequest(interceptors.FullMethod(c.service, c.method), err) {
+		logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("finished %s %s call", c.kind, c.typ))
+	} else {
+		if c.isServer {
+			logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request finished - response handled %s %s", c.kind, c.typ))
+		} else {
+			logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response finished %s %s", c.kind, c.typ))
+		}
+	}
+
 }
 
 // PostMsgSend logs the details of the servingObject that is flowing out of the rpc.
@@ -62,9 +71,7 @@ func (c *reporter) PostMsgSend(resp interface{}, err error, duration time.Durati
 	}
 	// If the first message is logged skip the rest of the logging.
 	// If the serving object is response, skip the logging.
-	// Since we want to log the last message of the response,
-	// we ensure that the error is not EOF for logging the last response message.
-	if err != io.EOF && c.firstResponseMessageLogged || !c.isServer {
+	if c.firstResponseMessageLogged || !c.isServer {
 		return
 	}
 	c.firstResponseMessageLogged = true
@@ -73,17 +80,16 @@ func (c *reporter) PostMsgSend(resp interface{}, err error, duration time.Durati
 	logger = logger.With("grpc.recv.duration", duration.String())
 	code := c.opts.codeFunc(err)
 
-	if err != nil && err != io.EOF {
+	if err != nil {
 		logger = logger.With("error", fmt.Sprintf("%v", err))
 	}
 
-	if err != io.EOF {
-		logger = logger.With("msg", "response started")
-		logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response object: %v", resp))
-	} else {
-		logger = logger.With("msg", "response finished")
-		logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response object: %v", resp))
-	}
+	logger = logger.With("msg", "response started")
+	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response object: %v", resp))
+	// } else {
+	// 	logger = logger.With("msg", "response finished")
+	// 	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response object: %v", resp))
+	// }
 }
 
 // PostMsgReceive logs the details of the servingObject that is flowing into the rpc.
@@ -93,12 +99,9 @@ func (c *reporter) PostMsgReceive(req interface{}, err error, duration time.Dura
 	if !c.opts.shouldLogRequest(interceptors.FullMethod(c.service, c.method), err) {
 		return
 	}
-
 	// If the first message for request is logged, skip the rest of the logging.
 	// If the serving object is a response, skip the logging.
-	// Since we want to log the last message of the request,
-	// we ensure that the error is not EOF for logging the last request message.
-	if err != io.EOF && c.firstRequestMessageLogged || !c.isServer {
+	if c.firstRequestMessageLogged || !c.isServer {
 		return
 	}
 	c.firstRequestMessageLogged = true
@@ -107,17 +110,17 @@ func (c *reporter) PostMsgReceive(req interface{}, err error, duration time.Dura
 	logger = logger.With("grpc.recv.duration", duration.String())
 	code := c.opts.codeFunc(err)
 
-	if err != nil && err != io.EOF {
+	if err != nil {
 		logger = logger.With("error", fmt.Sprintf("%v", err))
 	}
 
-	if err != io.EOF {
-		logger = logger.With("msg", "request started")
-		logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request object: %v", req))
-	} else {
-		logger = logger.With("msg", "request started")
-		logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request object: %v", req))
-	}
+	// if err != io.EOF {
+	logger = logger.With("msg", "request started")
+	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request object: %v", req))
+	// } else {
+	// 	logger = logger.With("msg", "request finished")
+	// 	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request object: %v", req))
+	// }
 }
 
 type reportable struct {
