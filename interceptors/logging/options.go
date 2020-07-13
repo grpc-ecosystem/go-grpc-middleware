@@ -12,6 +12,8 @@ var (
 		durationFieldFunc: DefaultDurationToFields,
 		// levelFunc depends if it's client or server.
 		levelFunc: nil,
+		// request logging is switched off by default.
+		shouldLogRequest: DefaultRequestDecider,
 	}
 )
 
@@ -20,6 +22,7 @@ type options struct {
 	shouldLog         Decider
 	codeFunc          ErrorToCode
 	durationFieldFunc DurationToFields
+	shouldLogRequest  RequestDecider
 }
 
 type Option func(*options)
@@ -91,4 +94,8 @@ func DurationToDurationField(duration time.Duration) Fields {
 
 func durationToMilliseconds(duration time.Duration) float32 {
 	return float32(duration.Nanoseconds()/1000) / 1000
+}
+
+func DefaultRequestDecider(_ string, _ error) bool {
+	return false
 }
