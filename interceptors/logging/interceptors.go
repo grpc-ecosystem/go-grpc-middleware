@@ -22,13 +22,14 @@ func extractFields(tags tags.Tags) Fields {
 }
 
 type reporter struct {
-	ctx                context.Context
-	typ                interceptors.GRPCType
-	service, method    string
-	firstMessageLogged bool
-	isServer           bool
-	opts               *options
-	logger             Logger
+	ctx                        context.Context
+	typ                        interceptors.GRPCType
+	service, method            string
+	firstRequestMessageLogged  bool
+	firstResponseMessageLogged bool
+	isServer                   bool
+	opts                       *options
+	logger                     Logger
 
 	kind string
 }
@@ -61,19 +62,24 @@ func (c *reporter) PostMsgSend(resp interface{}, err error, duration time.Durati
 	}
 	// If the first message is logged skip the rest of the logging.
 	// If the serving object is response, skip the logging.
-	if c.firstMessageLogged || c.isServer {
+	// Since we want to log the last message of the response,
+	// we ensure that the error is not EOF for logging the last response message.
+	if err != io.EOF && c.firstResponseMessageLogged || !c.isServer {
 		return
 	}
-	c.firstMessageLogged = true
+	c.firstResponseMessageLogged = true
 
 	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	logger = logger.With("grpc.recv.duration", duration.String())
-	if err != nil {
+	if err != nil && err != io.EOF {
 		logger = logger.With("error", fmt.Sprintf("%v", err))
 	}
 
-	logger.Log("requested started.", fmt.Sprintf("request object: %v", resp))
-
+	if err != io.EOF {
+		logger.Log("response started", fmt.Sprintf("response object: %v", resp))
+	} else {
+		logger.Log("response finished", fmt.Sprintf("response object: %v", resp))
+	}
 }
 
 // PostMsgReceive logs the details of the servingObject that is flowing into the rpc.
@@ -83,21 +89,27 @@ func (c *reporter) PostMsgReceive(req interface{}, err error, duration time.Dura
 	if !c.opts.shouldLogRequest(interceptors.FullMethod(c.service, c.method), err) {
 		return
 	}
-	// If the first message is logged skip the rest of the logging.
+
+	// If the first message for request is logged, skip the rest of the logging.
 	// If the serving object is a response, skip the logging.
-	if c.firstMessageLogged || !c.isServer {
+	// Since we want to log the last message of the request,
+	// we ensure that the error is not EOF for logging the last request message.
+	if err != io.EOF && c.firstRequestMessageLogged || !c.isServer {
 		return
 	}
-	c.firstMessageLogged = true
+	c.firstRequestMessageLogged = true
 
 	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	logger = logger.With("grpc.recv.duration", duration.String())
-	if err != nil {
+	if err != nil && err != io.EOF {
 		logger = logger.With("error", fmt.Sprintf("%v", err))
 	}
 
-	logger.Log("logged the start of the request.", fmt.Sprintf("request object: %v", req))
-
+	if err != io.EOF {
+		logger.Log("request started", fmt.Sprintf("request object: %v", req))
+	} else {
+		logger.Log("request finished", fmt.Sprintf("request object: %v", req))
+	}
 }
 
 type reportable struct {
@@ -120,15 +132,16 @@ func (r *reportable) reporter(ctx context.Context, typ interceptors.GRPCType, se
 		fields = append(fields, "grpc.request.deadline", d.Format(time.RFC3339))
 	}
 	return &reporter{
-		ctx:                ctx,
-		typ:                typ,
-		service:            service,
-		method:             method,
-		firstMessageLogged: false,
-		isServer:           isServer,
-		opts:               r.opts,
-		logger:             r.logger.With(fields...),
-		kind:               kind,
+		ctx:                        ctx,
+		typ:                        typ,
+		service:                    service,
+		method:                     method,
+		firstRequestMessageLogged:  false,
+		firstResponseMessageLogged: false,
+		isServer:                   isServer,
+		opts:                       r.opts,
+		logger:                     r.logger.With(fields...),
+		kind:                       kind,
 	}, ctx
 }
 
