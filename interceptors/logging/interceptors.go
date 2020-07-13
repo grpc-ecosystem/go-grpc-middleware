@@ -71,14 +71,18 @@ func (c *reporter) PostMsgSend(resp interface{}, err error, duration time.Durati
 
 	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	logger = logger.With("grpc.recv.duration", duration.String())
+	code := c.opts.codeFunc(err)
+
 	if err != nil && err != io.EOF {
 		logger = logger.With("error", fmt.Sprintf("%v", err))
 	}
 
 	if err != io.EOF {
-		logger.Log("response started", fmt.Sprintf("response object: %v", resp))
+		logger = logger.With("msg", "response started")
+		logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response object: %v", resp))
 	} else {
-		logger.Log("response finished", fmt.Sprintf("response object: %v", resp))
+		logger = logger.With("msg", "response finished")
+		logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response object: %v", resp))
 	}
 }
 
@@ -101,14 +105,18 @@ func (c *reporter) PostMsgReceive(req interface{}, err error, duration time.Dura
 
 	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	logger = logger.With("grpc.recv.duration", duration.String())
+	code := c.opts.codeFunc(err)
+
 	if err != nil && err != io.EOF {
 		logger = logger.With("error", fmt.Sprintf("%v", err))
 	}
 
 	if err != io.EOF {
-		logger.Log("request started", fmt.Sprintf("request object: %v", req))
+		logger = logger.With("msg", "request started")
+		logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request object: %v", req))
 	} else {
-		logger.Log("request finished", fmt.Sprintf("request object: %v", req))
+		logger = logger.With("msg", "request started")
+		logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request object: %v", req))
 	}
 }
 
