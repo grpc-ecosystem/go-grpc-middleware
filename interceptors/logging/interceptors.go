@@ -54,7 +54,7 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 
 // PostMsgSend logs the details of the servingObject that is flowing out of the rpc.
 // resp object wrt server.
-// Log the details of the request, skip if the object is response.
+// Log the details of the first request, skip if the object is response.
 func (c *reporter) PostMsgSend(resp interface{}, err error, duration time.Duration) {
 	if !c.opts.shouldLogRequest(interceptors.FullMethod(c.service, c.method), err) {
 		return
@@ -72,7 +72,7 @@ func (c *reporter) PostMsgSend(resp interface{}, err error, duration time.Durati
 		logger = logger.With("error", fmt.Sprintf("%v", err))
 	}
 
-	logger.Log("logged the start of the request.", fmt.Sprintf("request object: %v", resp))
+	logger.Log("requested started.", fmt.Sprintf("request object: %v", resp))
 
 }
 
