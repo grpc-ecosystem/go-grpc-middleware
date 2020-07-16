@@ -5,12 +5,14 @@ package grpc_testing
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"net"
 	"path"
 	"runtime"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/testing/certs"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -58,11 +60,9 @@ func (s *InterceptorTestSuite) SetupSuite() {
 			s.serverAddr = s.ServerListener.Addr().String()
 			require.NoError(s.T(), err, "must be able to allocate a port for serverListener")
 			if *flagTls {
-				creds, err := credentials.NewServerTLSFromFile(
-					path.Join(getTestingCertsPath(), "localhost.crt"),
-					path.Join(getTestingCertsPath(), "localhost.key"),
-				)
-				require.NoError(s.T(), err, "failed reading server credentials for localhost.crt")
+				localhostCert, err := tls.X509KeyPair(certs.LocalhostCert, certs.LocalhostKey)
+				require.NoError(s.T(), err, "failed loading server credentials for localhostCert")
+				creds := credentials.NewServerTLSFromCert(&localhostCert)
 				s.ServerOpts = append(s.ServerOpts, grpc.Creds(creds))
 			}
 			// This is the point where we hook up the interceptor
@@ -88,7 +88,11 @@ func (s *InterceptorTestSuite) SetupSuite() {
 		}
 	}()
 
-	<-s.serverRunning
+	select {
+	case <-s.serverRunning:
+	case <-time.After(2 * time.Second):
+		s.T().Fatal("server failed to start before deadline")
+	}
 }
 
 func (s *InterceptorTestSuite) RestartServer(delayedStart time.Duration) <-chan bool {
