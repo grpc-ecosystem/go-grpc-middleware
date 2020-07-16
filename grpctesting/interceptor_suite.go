@@ -96,7 +96,11 @@ func (s *InterceptorTestSuite) SetupSuite() {
 		}
 	}()
 
-	<-s.serverRunning
+	select {
+	case <-s.serverRunning:
+	case <-time.After(2 * time.Second):
+		s.T().Fatal("server failed to start before deadline")
+	}
 }
 
 func (s *InterceptorTestSuite) RestartServer(delayedStart time.Duration) <-chan bool {
