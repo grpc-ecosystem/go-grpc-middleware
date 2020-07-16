@@ -5,6 +5,7 @@ package grpctesting
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"net"
 	"path"
@@ -17,6 +18,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/certs"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 )
 
@@ -62,11 +64,9 @@ func (s *InterceptorTestSuite) SetupSuite() {
 			s.serverAddr = s.ServerListener.Addr().String()
 			require.NoError(s.T(), err, "must be able to allocate a port for serverListener")
 			if *flagTls {
-				creds, err := credentials.NewServerTLSFromFile(
-					path.Join(getTestingCertsPath(), "localhost.crt"),
-					path.Join(getTestingCertsPath(), "localhost.key"),
-				)
-				require.NoError(s.T(), err, "failed reading server credentials for localhost.crt")
+				localhostCert, err := tls.X509KeyPair(certs.LocalhostCert, certs.LocalhostKey)
+				require.NoError(s.T(), err, "failed loading server credentials for localhostCert")
+				creds := credentials.NewServerTLSFromCert(&localhostCert)
 				s.ServerOpts = append(s.ServerOpts, grpc.Creds(creds))
 			}
 			// This is the point where we hook up the interceptor
