@@ -12,8 +12,6 @@ var (
 		durationFieldFunc: DefaultDurationToFields,
 		// levelFunc depends if it's client or server.
 		levelFunc: nil,
-		// request logging is switched off by default.
-		shouldLogRequest: DefaultRequestDecider,
 	}
 )
 
@@ -22,7 +20,6 @@ type options struct {
 	shouldLog         Decider
 	codeFunc          ErrorToCode
 	durationFieldFunc DurationToFields
-	shouldLogRequest  RequestDecider
 }
 
 type Option func(*options)
@@ -54,13 +51,6 @@ func evaluateClientOpt(opts []Option) *options {
 func WithDecider(f Decider) Option {
 	return func(o *options) {
 		o.shouldLog = f
-	}
-}
-
-// WithRequestLoggingDecider customizes the function for deciding if the gRPC interceptor logs should log the request details.
-func WithRequestLoggingDecider(f RequestDecider) Option {
-	return func(o *options) {
-		o.shouldLogRequest = f
 	}
 }
 

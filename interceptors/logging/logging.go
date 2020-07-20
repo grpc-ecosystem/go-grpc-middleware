@@ -49,9 +49,6 @@ func DefaultErrorToCode(err error) codes.Code {
 // Decider function defines rules for suppressing any interceptor logs
 type Decider func(fullMethodName string, err error) bool
 
-// Request Decider function defines rules for suppressing any logging of request details.
-type RequestDecider func(fullMethodName string, err error) bool
-
 // DefaultDeciderMethod is the default implementation of decider to see if you should log the call
 // by default this if always true so all calls are logged
 func DefaultDeciderMethod(_ string, _ error) bool {

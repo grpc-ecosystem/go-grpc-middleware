@@ -50,26 +50,16 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 	if err != nil {
 		logger = logger.With("error", fmt.Sprintf("%v", err))
 	}
+
 	logger = logger.With(c.opts.durationFieldFunc(duration)...)
-	if !c.opts.shouldLogRequest(interceptors.FullMethod(c.service, c.method), err) {
-		logger.Log(c.opts.levelFunc(code), fmt.Sprintf("finished %s %s call", c.kind, c.typ))
-		return
-	}
-
-	if c.isServer {
-		logger.Log(c.opts.levelFunc(code), fmt.Sprintf("request finished - response handled %s %s", c.kind, c.typ))
-		return
-	}
-
-	logger.Log(c.opts.levelFunc(code), fmt.Sprintf("response finished %s %s", c.kind, c.typ))
-
+	logger.Log(c.opts.levelFunc(code), fmt.Sprintf("finished %s %s call", c.kind, c.typ))
 }
 
 // PostMsgSend logs the details of the servingObject that is flowing out of the rpc.
 // resp object wrt server.
 // Log the details of the first request, skip if the object is response.
 func (c *reporter) PostMsgSend(resp interface{}, err error, duration time.Duration) {
-	if !c.opts.shouldLogRequest(interceptors.FullMethod(c.service, c.method), err) {
+	if !c.opts.shouldLog(interceptors.FullMethod(c.service, c.method), err) {
 		return
 	}
 
@@ -88,14 +78,14 @@ func (c *reporter) PostMsgSend(resp interface{}, err error, duration time.Durati
 		logger = logger.With("error", fmt.Sprintf("%v", err))
 	}
 
-	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response started. response_object: %v", resp))
+	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response_started. grpc.response_object: %v", resp))
 }
 
 // PostMsgReceive logs the details of the servingObject that is flowing into the rpc.
 // req object wrt server.
 // Log the details of the request, skip if the object is response.
 func (c *reporter) PostMsgReceive(req interface{}, err error, duration time.Duration) {
-	if !c.opts.shouldLogRequest(interceptors.FullMethod(c.service, c.method), err) {
+	if !c.opts.shouldLog(interceptors.FullMethod(c.service, c.method), err) {
 		return
 	}
 
@@ -114,8 +104,7 @@ func (c *reporter) PostMsgReceive(req interface{}, err error, duration time.Dura
 		logger = logger.With("error", fmt.Sprintf("%v", err))
 	}
 
-	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request started. request_object: %v", req))
-
+	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request_started. grpc.request_object: %v", req))
 }
 
 type reportable struct {
