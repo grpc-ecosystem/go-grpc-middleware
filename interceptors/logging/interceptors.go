@@ -48,11 +48,12 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 	code := c.opts.codeFunc(err)
 	logger = logger.With("grpc.code", code.String())
 	if err != nil {
-		logger = logger.With("error", fmt.Sprintf("%v", err))
+		logger = logger.With("grpc.error", fmt.Sprintf("%v", err))
 	}
 
 	logger = logger.With(c.opts.durationFieldFunc(duration)...)
-	logger.Log(c.opts.levelFunc(code), fmt.Sprintf("finished %s %s call", c.kind, c.typ))
+	logger = logger.With("protocol", "grpc")
+	logger.Log(c.opts.levelFunc(code), fmt.Sprintf("finished_%s_%s_call", c.kind, c.typ))
 }
 
 // PostMsgSend logs the details of the servingObject that is flowing out of the rpc.
@@ -75,9 +76,8 @@ func (c *reporter) PostMsgSend(resp interface{}, err error, duration time.Durati
 	code := c.opts.codeFunc(err)
 
 	if err != nil {
-		logger = logger.With("error", fmt.Sprintf("%v", err))
+		logger = logger.With("grpc.error", fmt.Sprintf("%v", err))
 	}
-
 	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response_started. grpc.response_object: %v", resp))
 }
 
@@ -101,9 +101,8 @@ func (c *reporter) PostMsgReceive(req interface{}, err error, duration time.Dura
 	code := c.opts.codeFunc(err)
 
 	if err != nil {
-		logger = logger.With("error", fmt.Sprintf("%v", err))
+		logger = logger.With("grpc.error", fmt.Sprintf("%v", err))
 	}
-
 	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request_started. grpc.request_object: %v", req))
 }
 

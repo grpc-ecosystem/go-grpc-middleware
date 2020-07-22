@@ -198,10 +198,11 @@ func (s *loggingClientServerSuite) TestPing() {
 
 	serverLogLine := lines[2]
 	assert.Equal(s.T(), logging.DEBUG, serverLogLine.lvl)
-	assert.Equal(s.T(), "finished server unary call", serverLogLine.msg)
+	assert.Equal(s.T(), "finished_server_unary_call", serverLogLine.msg)
 	serverFields := assertStandardFields(s.T(), logging.KindServerFieldValue, serverLogLine.fields, "Ping", interceptors.Unary)
 	serverFields.AssertNextField(s.T(), "grpc.request.value", "something").
 		AssertNextFieldNotEmpty(s.T(), "peer.address").
+		AssertNextField(s.T(), "protocol", "grpc").
 		AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "OK").
@@ -209,11 +210,12 @@ func (s *loggingClientServerSuite) TestPing() {
 
 	clientLogLine := lines[3]
 	assert.Equal(s.T(), logging.DEBUG, clientLogLine.lvl)
-	assert.Equal(s.T(), "finished client unary call", clientLogLine.msg)
+	assert.Equal(s.T(), "finished_client_unary_call", clientLogLine.msg)
 	clientFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientLogLine.fields, "Ping", interceptors.Unary)
 	clientFields.AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "OK").
+		AssertNextField(s.T(), "protocol", "grpc").
 		AssertNextFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
 }
 
@@ -232,10 +234,11 @@ func (s *loggingClientServerSuite) TestPingList() {
 
 	serverLogLine := lines[2]
 	assert.Equal(s.T(), logging.DEBUG, serverLogLine.lvl)
-	assert.Equal(s.T(), "finished server server_stream call", serverLogLine.msg)
+	assert.Equal(s.T(), "finished_server_server_stream_call", serverLogLine.msg)
 	serverFields := assertStandardFields(s.T(), logging.KindServerFieldValue, serverLogLine.fields, "PingList", interceptors.ServerStream)
 	serverFields.AssertNextField(s.T(), "grpc.request.value", "something").
 		AssertNextFieldNotEmpty(s.T(), "peer.address").
+		AssertNextField(s.T(), "protocol", "grpc").
 		AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "OK").
@@ -243,11 +246,12 @@ func (s *loggingClientServerSuite) TestPingList() {
 
 	clientLogLine := lines[3]
 	assert.Equal(s.T(), logging.DEBUG, clientLogLine.lvl)
-	assert.Equal(s.T(), "finished client server_stream call", clientLogLine.msg)
+	assert.Equal(s.T(), "finished_client_server_stream_call", clientLogLine.msg)
 	clientFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientLogLine.fields, "PingList", interceptors.ServerStream)
 	clientFields.AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "OK").
+		AssertNextField(s.T(), "protocol", "grpc").
 		AssertNextFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
 }
 
@@ -289,24 +293,26 @@ func (s *loggingClientServerSuite) TestPingError_WithCustomLevels() {
 
 			serverLogLine := lines[2]
 			assert.Equal(t, tcase.level, serverLogLine.lvl)
-			assert.Equal(t, "finished server unary call", serverLogLine.msg)
+			assert.Equal(t, "finished_server_unary_call", serverLogLine.msg)
 			serverFields := assertStandardFields(t, logging.KindServerFieldValue, serverLogLine.fields, "PingError", interceptors.Unary)
 			serverFields.AssertNextField(t, "grpc.request.value", "something").
 				AssertNextFieldNotEmpty(t, "peer.address").
 				AssertNextFieldNotEmpty(t, "grpc.start_time").
 				AssertNextFieldNotEmpty(t, "grpc.request.deadline").
 				AssertNextField(t, "grpc.code", tcase.code.String()).
-				AssertNextField(t, "error", fmt.Sprintf("rpc error: code = %s desc = Userspace error.", tcase.code.String())).
+				AssertNextField(s.T(), "protocol", "grpc").
+				AssertNextField(t, "grpc.error", fmt.Sprintf("rpc error: code = %s desc = Userspace error.", tcase.code.String())).
 				AssertNextFieldNotEmpty(t, "grpc.time_ms").AssertNoMoreTags(t)
 
 			clientLogLine := lines[3]
 			assert.Equal(t, tcase.level, clientLogLine.lvl)
-			assert.Equal(t, "finished client unary call", clientLogLine.msg)
+			assert.Equal(t, "finished_client_unary_call", clientLogLine.msg)
 			clientFields := assertStandardFields(t, logging.KindClientFieldValue, clientLogLine.fields, "PingError", interceptors.Unary)
 			clientFields.AssertNextFieldNotEmpty(t, "grpc.start_time").
 				AssertNextFieldNotEmpty(t, "grpc.request.deadline").
 				AssertNextField(t, "grpc.code", tcase.code.String()).
-				AssertNextField(t, "error", fmt.Sprintf("rpc error: code = %s desc = Userspace error.", tcase.code.String())).
+				AssertNextField(s.T(), "protocol", "grpc").
+				AssertNextField(t, "grpc.error", fmt.Sprintf("rpc error: code = %s desc = Userspace error.", tcase.code.String())).
 				AssertNextFieldNotEmpty(t, "grpc.time_ms").AssertNoMoreTags(t)
 		})
 	}
@@ -354,10 +360,11 @@ func (s *loggingCustomDurationSuite) TestPing_HasOverriddenDuration() {
 
 	serverLogLine := lines[2]
 	assert.Equal(s.T(), logging.INFO, serverLogLine.lvl)
-	assert.Equal(s.T(), "finished server unary call", serverLogLine.msg)
+	assert.Equal(s.T(), "finished_server_unary_call", serverLogLine.msg)
 	serverFields := assertStandardFields(s.T(), logging.KindServerFieldValue, serverLogLine.fields, "Ping", interceptors.Unary)
 	serverFields.AssertNextField(s.T(), "grpc.request.value", "something").
 		AssertNextFieldNotEmpty(s.T(), "peer.address").
+		AssertNextField(s.T(), "protocol", "grpc").
 		AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "OK").
@@ -365,11 +372,12 @@ func (s *loggingCustomDurationSuite) TestPing_HasOverriddenDuration() {
 
 	clientLogLine := lines[3]
 	assert.Equal(s.T(), logging.DEBUG, clientLogLine.lvl)
-	assert.Equal(s.T(), "finished client unary call", clientLogLine.msg)
+	assert.Equal(s.T(), "finished_client_unary_call", clientLogLine.msg)
 	clientFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientLogLine.fields, "Ping", interceptors.Unary)
 	clientFields.AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "OK").
+		AssertNextField(s.T(), "protocol", "grpc").
 		AssertNextFieldNotEmpty(s.T(), "grpc.duration").AssertNoMoreTags(s.T())
 }
 
@@ -389,10 +397,11 @@ func (s *loggingCustomDurationSuite) TestPingList_HasOverriddenDuration() {
 
 	serverLogLine := lines[2]
 	assert.Equal(s.T(), logging.INFO, serverLogLine.lvl)
-	assert.Equal(s.T(), "finished server server_stream call", serverLogLine.msg)
+	assert.Equal(s.T(), "finished_server_server_stream_call", serverLogLine.msg)
 	serverFields := assertStandardFields(s.T(), logging.KindServerFieldValue, serverLogLine.fields, "PingList", interceptors.ServerStream)
 	serverFields.AssertNextField(s.T(), "grpc.request.value", "something").
 		AssertNextFieldNotEmpty(s.T(), "peer.address").
+		AssertNextField(s.T(), "protocol", "grpc").
 		AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "OK").
@@ -400,11 +409,12 @@ func (s *loggingCustomDurationSuite) TestPingList_HasOverriddenDuration() {
 
 	clientLogLine := lines[3]
 	assert.Equal(s.T(), logging.DEBUG, clientLogLine.lvl)
-	assert.Equal(s.T(), "finished client server_stream call", clientLogLine.msg)
+	assert.Equal(s.T(), "finished_client_server_stream_call", clientLogLine.msg)
 	clientFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientLogLine.fields, "PingList", interceptors.ServerStream)
 	clientFields.AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "OK").
+		AssertNextField(s.T(), "protocol", "grpc").
 		AssertNextFieldNotEmpty(s.T(), "grpc.duration").AssertNoMoreTags(s.T())
 }
 
@@ -467,24 +477,26 @@ func (s *loggingCustomDeciderSuite) TestPingError_HasCustomDecider() {
 
 	serverLogLine := lines[1]
 	assert.Equal(s.T(), logging.INFO, serverLogLine.lvl)
-	assert.Equal(s.T(), "finished server unary call", serverLogLine.msg)
+	assert.Equal(s.T(), "finished_server_unary_call", serverLogLine.msg)
 	serverFields := assertStandardFields(s.T(), logging.KindServerFieldValue, serverLogLine.fields, "PingError", interceptors.Unary)
 	serverFields.AssertNextField(s.T(), "grpc.request.value", "something").
 		AssertNextFieldNotEmpty(s.T(), "peer.address").
 		AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "NotFound").
-		AssertNextField(s.T(), "error", "rpc error: code = NotFound desc = Userspace error.").
+		AssertNextField(s.T(), "grpc.error", "rpc error: code = NotFound desc = Userspace error.").
+		AssertNextField(s.T(), "protocol", "grpc").
 		AssertNextFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
 
 	clientLogLine := lines[2]
 	assert.Equal(s.T(), logging.DEBUG, clientLogLine.lvl)
-	assert.Equal(s.T(), "finished client unary call", clientLogLine.msg)
+	assert.Equal(s.T(), "finished_client_unary_call", clientLogLine.msg)
 	clientFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientLogLine.fields, "PingError", interceptors.Unary)
 	clientFields.AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "NotFound").
-		AssertNextField(s.T(), "error", "rpc error: code = NotFound desc = Userspace error.").
+		AssertNextField(s.T(), "grpc.error", "rpc error: code = NotFound desc = Userspace error.").
+		AssertNextField(s.T(), "protocol", "grpc").
 		AssertNextFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
 }
 
@@ -578,11 +590,12 @@ func (s *requestLoggingSuite) TestPing_RequestLogging() {
 	serverResponseFinish := lines[2]
 
 	assert.Equal(s.T(), logging.INFO, serverResponseFinish.lvl)
-	assert.Equal(s.T(), "finished server unary call", serverResponseFinish.msg)
+	assert.Equal(s.T(), "finished_server_unary_call", serverResponseFinish.msg)
 
 	serverResponseFinishFields := assertStandardFields(s.T(), logging.KindServerFieldValue, serverResponseFinish.fields, "Ping", interceptors.Unary)
 	serverResponseFinishFields.AssertNextField(s.T(), "grpc.request.value", "something").
 		AssertNextFieldNotEmpty(s.T(), "peer.address").
+		AssertNextField(s.T(), "protocol", "grpc").
 		AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextFieldNotEmpty(s.T(), "grpc.time_ms").
@@ -591,12 +604,13 @@ func (s *requestLoggingSuite) TestPing_RequestLogging() {
 	clientResponseFinish := lines[3]
 
 	assert.Equal(s.T(), logging.DEBUG, clientResponseFinish.lvl)
-	assert.Equal(s.T(), "finished client unary call", clientResponseFinish.msg)
+	assert.Equal(s.T(), "finished_client_unary_call", clientResponseFinish.msg)
 
 	clientResponseFinishFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientResponseFinish.fields, "Ping", interceptors.Unary)
 	clientResponseFinishFields.AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "OK").
+		AssertNextField(s.T(), "protocol", "grpc").
 		AssertNextFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
 
 }
@@ -646,11 +660,12 @@ func (s *requestLoggingSuite) TestPingList_RequestLogging() {
 	serverResponseFinish := lines[2]
 
 	assert.Equal(s.T(), logging.INFO, serverResponseFinish.lvl)
-	assert.Equal(s.T(), "finished server server_stream call", serverResponseFinish.msg)
+	assert.Equal(s.T(), "finished_server_server_stream_call", serverResponseFinish.msg)
 
 	serverResponseFinishFields := assertStandardFields(s.T(), logging.KindServerFieldValue, serverResponseFinish.fields, "PingList", interceptors.ServerStream)
 	serverResponseFinishFields.AssertNextField(s.T(), "grpc.request.value", "something").
 		AssertNextFieldNotEmpty(s.T(), "peer.address").
+		AssertNextField(s.T(), "protocol", "grpc").
 		AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextFieldNotEmpty(s.T(), "grpc.time_ms").
@@ -659,12 +674,13 @@ func (s *requestLoggingSuite) TestPingList_RequestLogging() {
 	clientResponseFinish := lines[3]
 
 	assert.Equal(s.T(), logging.DEBUG, clientResponseFinish.lvl)
-	assert.Equal(s.T(), "finished client server_stream call", clientResponseFinish.msg)
+	assert.Equal(s.T(), "finished_client_server_stream_call", clientResponseFinish.msg)
 
 	clientResponseFinishFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientResponseFinish.fields, "PingList", interceptors.ServerStream)
 	clientResponseFinishFields.AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "OK").
+		AssertNextField(s.T(), "protocol", "grpc").
 		AssertNextFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
 }
 
@@ -705,32 +721,34 @@ func (s *requestLoggingSuite) TestPingError_RequestLogging() {
 		AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextFieldNotEmpty(s.T(), "grpc.time_ms").
-		AssertNextField(s.T(), "error", "rpc error: code = NotFound desc = Userspace error.").
+		AssertNextField(s.T(), "grpc.error", "rpc error: code = NotFound desc = Userspace error.").
 		AssertNextFieldNotEmpty(s.T(), "grpc.recv.duration").AssertNoMoreTags(s.T())
 
 	serverResponseFinish := lines[2]
 
 	assert.Equal(s.T(), logging.INFO, serverResponseFinish.lvl)
-	assert.Equal(s.T(), "finished server unary call", serverResponseFinish.msg)
+	assert.Equal(s.T(), "finished_server_unary_call", serverResponseFinish.msg)
 
 	serverResponseFinishFields := assertStandardFields(s.T(), logging.KindServerFieldValue, serverResponseFinish.fields, "PingError", interceptors.Unary)
 	serverResponseFinishFields.AssertNextField(s.T(), "grpc.request.value", "something").
 		AssertNextFieldNotEmpty(s.T(), "peer.address").
+		AssertNextField(s.T(), "protocol", "grpc").
 		AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextFieldNotEmpty(s.T(), "grpc.time_ms").
-		AssertNextField(s.T(), "error", "rpc error: code = NotFound desc = Userspace error.").
+		AssertNextField(s.T(), "grpc.error", "rpc error: code = NotFound desc = Userspace error.").
 		AssertNextFieldNotEmpty(s.T(), "grpc.code").AssertNoMoreTags(s.T())
 
 	clientResponseFinish := lines[3]
 
 	assert.Equal(s.T(), logging.DEBUG, clientResponseFinish.lvl)
-	assert.Equal(s.T(), "finished client unary call", clientResponseFinish.msg)
+	assert.Equal(s.T(), "finished_client_unary_call", clientResponseFinish.msg)
 
 	clientResponseFinishFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientResponseFinish.fields, "PingError", interceptors.Unary)
 	clientResponseFinishFields.AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "NotFound").
-		AssertNextField(s.T(), "error", "rpc error: code = NotFound desc = Userspace error.").
+		AssertNextField(s.T(), "grpc.error", "rpc error: code = NotFound desc = Userspace error.").
+		AssertNextField(s.T(), "protocol", "grpc").
 		AssertNextFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
 }
