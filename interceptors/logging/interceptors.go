@@ -90,7 +90,6 @@ func (c *reporter) PostMsgSend(resp interface{}, err error, duration time.Durati
 	if err != nil {
 		logger = logger.With("grpc.error", fmt.Sprintf("%v", err))
 	}
-
 	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), "started call")
 }
 
@@ -116,7 +115,6 @@ func (c *reporter) PostMsgReceive(req interface{}, err error, duration time.Dura
 	if err != nil {
 		logger = logger.With("grpc.error", fmt.Sprintf("%v", err))
 	}
-
 	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), "started call")
 }
 
