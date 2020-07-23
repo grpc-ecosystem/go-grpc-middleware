@@ -92,7 +92,3 @@ func DurationToDurationField(duration time.Duration) Fields {
 func durationToMilliseconds(duration time.Duration) float32 {
 	return float32(duration.Nanoseconds()/1000) / 1000
 }
-
-func DefaultRequestDecider(_ string, _ error) bool {
-	return false
-}

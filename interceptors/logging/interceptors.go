@@ -34,6 +34,16 @@ type reporter struct {
 	kind string
 }
 
+func (c *reporter) addComponent(logger Logger) Logger {
+	if c.isServer {
+		logger = logger.With("component", "server")
+	}
+	if !c.isServer {
+		logger = logger.With("component", "client")
+	}
+	return logger
+}
+
 // PostCall logs the server/method name details and error if any.
 func (c *reporter) PostCall(err error, duration time.Duration) {
 	if !c.opts.shouldLog(interceptors.FullMethod(c.service, c.method), err) {
@@ -44,16 +54,14 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 	}
 	// Get optional, fresh tags.
 	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
-
 	code := c.opts.codeFunc(err)
 	logger = logger.With("grpc.code", code.String())
 	if err != nil {
 		logger = logger.With("grpc.error", fmt.Sprintf("%v", err))
 	}
-
+	logger = c.addComponent(logger)
 	logger = logger.With(c.opts.durationFieldFunc(duration)...)
-	logger = logger.With("protocol", "grpc")
-	logger.Log(c.opts.levelFunc(code), fmt.Sprintf("finished_%s_%s_call", c.kind, c.typ))
+	logger.Log(c.opts.levelFunc(code), "finished call")
 }
 
 // PostMsgSend logs the details of the servingObject that is flowing out of the rpc.
@@ -70,15 +78,14 @@ func (c *reporter) PostMsgSend(resp interface{}, err error, duration time.Durati
 		return
 	}
 	c.firstResponseMessageLogged = true
-
 	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	logger = logger.With("grpc.recv.duration", duration.String())
 	code := c.opts.codeFunc(err)
-
 	if err != nil {
 		logger = logger.With("grpc.error", fmt.Sprintf("%v", err))
 	}
-	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("response_started. grpc.response_object: %v", resp))
+	logger = c.addComponent(logger)
+	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), "started call")
 }
 
 // PostMsgReceive logs the details of the servingObject that is flowing into the rpc.
@@ -103,7 +110,8 @@ func (c *reporter) PostMsgReceive(req interface{}, err error, duration time.Dura
 	if err != nil {
 		logger = logger.With("grpc.error", fmt.Sprintf("%v", err))
 	}
-	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("request_started. grpc.request_object: %v", req))
+	logger = c.addComponent(logger)
+	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), "started call")
 }
 
 type reportable struct {
@@ -121,10 +129,11 @@ func (r *reportable) ClientReporter(ctx context.Context, resp interface{}, typ i
 
 func (r *reportable) reporter(ctx context.Context, typ interceptors.GRPCType, service string, method string, kind string, isServer bool) (interceptors.Reporter, context.Context) {
 	fields := commonFields(kind, typ, service, method)
-	fields = append(fields, "grpc.start_time", time.Now().Format(time.RFC3339))
+	fields = append(fields, "grpc.start time", time.Now().Format(time.RFC3339))
 	if d, ok := ctx.Deadline(); ok {
 		fields = append(fields, "grpc.request.deadline", d.Format(time.RFC3339))
 	}
+	r.logger = r.logger.With("protocol", "grpc", "kind", kind, "type", fmt.Sprintf("%s", typ))
 	return &reporter{
 		ctx:                        ctx,
 		typ:                        typ,
