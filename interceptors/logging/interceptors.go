@@ -48,7 +48,7 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 		if err == io.EOF {
 			err = nil
 		}
-		// Log the finish call
+		// Log the finish call.
 		c.logMessage(c.logger, err, "finished call", duration)
 	default:
 		return
@@ -65,7 +65,7 @@ func (c *reporter) PostMsgSend(_ interface{}, err error, duration time.Duration)
 	switch c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) {
 	case LogAllCall:
 		c.startCallLogged = true
-		// Log the start call
+		// Log the start call.
 		c.logMessage(c.logger, err, "started call", duration)
 	}
 }

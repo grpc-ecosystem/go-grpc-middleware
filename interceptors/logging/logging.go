@@ -14,12 +14,15 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
 
-// ENUM values for enabling one of the three decisions for logging.
+// Decision defines rules for enabling start and end of logging.
 type Decision int
 
 const (
+	// NoLogCall - Logging is disabled.
 	NoLogCall Decision = iota
+	// LogFinishCall - Only finish logs of request is enabled.
 	LogFinishCall
+	// LogAllCall - Logging of start and end of request is enabled.
 	LogAllCall
 )
 
