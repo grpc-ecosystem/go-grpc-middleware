@@ -44,7 +44,7 @@ func (c *reporter) logMessage(logger Logger, err error, msg string, duration tim
 // PostCall logs the server/method name details and error if any.
 func (c *reporter) PostCall(err error, duration time.Duration) {
 	switch c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) {
-	case LogFinishCall, LogAllCall:
+	case LogFinishCall, LogStartAndFinishCall:
 		if err == io.EOF {
 			err = nil
 		}
@@ -63,7 +63,7 @@ func (c *reporter) PostMsgSend(_ interface{}, err error, duration time.Duration)
 		return
 	}
 	switch c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) {
-	case LogAllCall:
+	case LogStartAndFinishCall:
 		c.startCallLogged = true
 		// Log the start call.
 		c.logMessage(c.logger, err, "started call", duration)
@@ -78,7 +78,7 @@ func (c *reporter) PostMsgReceive(_ interface{}, err error, duration time.Durati
 		return
 	}
 	switch c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) {
-	case LogAllCall:
+	case LogStartAndFinishCall:
 		c.startCallLogged = true
 		// Log the start call
 		c.logMessage(c.logger, err, "started call", duration)

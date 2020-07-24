@@ -22,8 +22,8 @@ const (
 	NoLogCall Decision = iota
 	// LogFinishCall - Only finish logs of request is enabled.
 	LogFinishCall
-	// LogAllCall - Logging of start and end of request is enabled.
-	LogAllCall
+	// LogStartAndFinishCall - Logging of start and end of request is enabled.
+	LogStartAndFinishCall
 )
 
 var (
@@ -65,7 +65,7 @@ type Decider func(fullMethodName string) Decision
 // DefaultDeciderMethod is the default implementation of decider to see if you should log the call
 // by default this if always true so all calls are logged
 func DefaultDeciderMethod(_ string) Decision {
-	return LogAllCall
+	return LogStartAndFinishCall
 }
 
 // ServerPayloadLoggingDecider is a user-provided function for deciding whether to log the server-side

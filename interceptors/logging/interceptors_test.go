@@ -459,7 +459,7 @@ func TestCustomDeciderSuite(t *testing.T) {
 	}
 	opts := logging.WithDecider(func(method string) logging.Decision {
 		if method == "/grpc_middleware.testpb.TestService/PingError" {
-			return logging.LogAllCall
+			return logging.LogStartAndFinishCall
 		}
 		return logging.NoLogCall
 	})
