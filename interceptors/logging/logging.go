@@ -16,8 +16,9 @@ import (
 
 var (
 	// SystemTag is tag representing an event inside gRPC call.
-	SystemTag            = []string{"system", "grpc"}
-	KindFieldKey         = "kind"
+	SystemTag = []string{"protocol", "grpc"}
+	// ComponentFieldKey is a tag representing the client/server that is calling.
+	ComponentFieldKey    = "grpc.component"
 	KindServerFieldValue = "server"
 	KindClientFieldValue = "client"
 	ServiceFieldKey      = "grpc.service"
@@ -28,7 +29,7 @@ var (
 func commonFields(kind string, typ interceptors.GRPCType, service string, method string) Fields {
 	return Fields{
 		SystemTag[0], SystemTag[1],
-		KindFieldKey, kind,
+		ComponentFieldKey, kind,
 		ServiceFieldKey, service,
 		MethodFieldKey, method,
 		MethodTypeFieldKey, string(typ),
