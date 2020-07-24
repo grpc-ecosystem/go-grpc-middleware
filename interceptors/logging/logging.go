@@ -14,6 +14,15 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
 
+// ENUM values for enabling one of the three decisions for logging.
+type Decision int
+
+const (
+	NoLogCall Decision = iota
+	LogFinishCall
+	LogAllCall
+)
+
 var (
 	// SystemTag is tag representing an event inside gRPC call.
 	SystemTag = []string{"protocol", "grpc"}
@@ -48,12 +57,12 @@ func DefaultErrorToCode(err error) codes.Code {
 }
 
 // Decider function defines rules for suppressing any interceptor logs
-type Decider func(fullMethodName string) bool
+type Decider func(fullMethodName string) Decision
 
 // DefaultDeciderMethod is the default implementation of decider to see if you should log the call
 // by default this if always true so all calls are logged
-func DefaultDeciderMethod(_ string) bool {
-	return true
+func DefaultDeciderMethod(_ string) Decision {
+	return LogAllCall
 }
 
 // ServerPayloadLoggingDecider is a user-provided function for deciding whether to log the server-side

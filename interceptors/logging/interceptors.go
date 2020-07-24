@@ -43,38 +43,46 @@ func (c *reporter) logMessage(logger Logger, err error, msg string, duration tim
 
 // PostCall logs the server/method name details and error if any.
 func (c *reporter) PostCall(err error, duration time.Duration) {
-	if !c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) {
+	switch c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) {
+	case LogFinishCall, LogAllCall:
+		if err == io.EOF {
+			err = nil
+		}
+		// Log the finish call
+		c.logMessage(c.logger, err, "finished call", duration)
+	default:
 		return
 	}
-	if err == io.EOF {
-		err = nil
-	}
-	// Log the finish call
-	c.logMessage(c.logger, err, "finished call", duration)
 }
 
 // PostMsgSend logs the details of the servingObject that is flowing out of the rpc.
 // resp object wrt server.
 // Log the details of the first request, skip if the object is response.
 func (c *reporter) PostMsgSend(_ interface{}, err error, duration time.Duration) {
-	if !c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) || c.startCallLogged {
+	if c.startCallLogged {
 		return
 	}
-	c.startCallLogged = true
-	// Log the start call
-	c.logMessage(c.logger, err, "started call", duration)
+	switch c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) {
+	case LogAllCall:
+		c.startCallLogged = true
+		// Log the start call
+		c.logMessage(c.logger, err, "started call", duration)
+	}
 }
 
 // PostMsgReceive logs the details of the servingObject that is flowing into the rpc.
 // req object wrt server.
 // Log the details of the request, skip if the object is response.
 func (c *reporter) PostMsgReceive(_ interface{}, err error, duration time.Duration) {
-	if !c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) || c.startCallLogged {
+	if c.startCallLogged {
 		return
 	}
-	c.startCallLogged = true
-	// Log the start call
-	c.logMessage(c.logger, err, "started call", duration)
+	switch c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) {
+	case LogAllCall:
+		c.startCallLogged = true
+		// Log the start call
+		c.logMessage(c.logger, err, "started call", duration)
+	}
 }
 
 type reportable struct {
