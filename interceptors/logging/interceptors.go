@@ -41,23 +41,18 @@ func (c *reporter) logMessage(logger Logger, err error, msg string, duration tim
 	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), msg)
 }
 
-// PostCall logs the server/method name details and error if any.
 func (c *reporter) PostCall(err error, duration time.Duration) {
 	switch c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) {
 	case LogFinishCall, LogStartAndFinishCall:
 		if err == io.EOF {
 			err = nil
 		}
-		// Log the finish call.
 		c.logMessage(c.logger, err, "finished call", duration)
 	default:
 		return
 	}
 }
 
-// PostMsgSend logs the details of the servingObject that is flowing out of the rpc.
-// resp object wrt server.
-// Log the details of the first request, skip if the object is response.
 func (c *reporter) PostMsgSend(_ interface{}, err error, duration time.Duration) {
 	if c.startCallLogged {
 		return
@@ -65,14 +60,10 @@ func (c *reporter) PostMsgSend(_ interface{}, err error, duration time.Duration)
 	switch c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) {
 	case LogStartAndFinishCall:
 		c.startCallLogged = true
-		// Log the start call.
 		c.logMessage(c.logger, err, "started call", duration)
 	}
 }
 
-// PostMsgReceive logs the details of the servingObject that is flowing into the rpc.
-// req object wrt server.
-// Log the details of the request, skip if the object is response.
 func (c *reporter) PostMsgReceive(_ interface{}, err error, duration time.Duration) {
 	if c.startCallLogged {
 		return
@@ -80,7 +71,6 @@ func (c *reporter) PostMsgReceive(_ interface{}, err error, duration time.Durati
 	switch c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) {
 	case LogStartAndFinishCall:
 		c.startCallLogged = true
-		// Log the start call
 		c.logMessage(c.logger, err, "started call", duration)
 	}
 }
