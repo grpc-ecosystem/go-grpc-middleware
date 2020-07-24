@@ -43,7 +43,7 @@ func (c *reporter) logMessage(logger Logger, err error, msg string, duration tim
 
 // PostCall logs the server/method name details and error if any.
 func (c *reporter) PostCall(err error, duration time.Duration) {
-	if !c.opts.shouldLog(interceptors.FullMethod(c.service, c.method), err) {
+	if !c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) {
 		return
 	}
 	if err == io.EOF {
@@ -57,7 +57,7 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 // resp object wrt server.
 // Log the details of the first request, skip if the object is response.
 func (c *reporter) PostMsgSend(_ interface{}, err error, duration time.Duration) {
-	if !c.opts.shouldLog(interceptors.FullMethod(c.service, c.method), err) || c.startCallLogged {
+	if !c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) || c.startCallLogged {
 		return
 	}
 	c.startCallLogged = true
@@ -69,7 +69,7 @@ func (c *reporter) PostMsgSend(_ interface{}, err error, duration time.Duration)
 // req object wrt server.
 // Log the details of the request, skip if the object is response.
 func (c *reporter) PostMsgReceive(_ interface{}, err error, duration time.Duration) {
-	if !c.opts.shouldLog(interceptors.FullMethod(c.service, c.method), err) || c.startCallLogged {
+	if !c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) || c.startCallLogged {
 		return
 	}
 	c.startCallLogged = true

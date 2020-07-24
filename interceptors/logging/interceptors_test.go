@@ -457,11 +457,8 @@ func TestCustomDeciderSuite(t *testing.T) {
 		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
 		return
 	}
-	opts := logging.WithDecider(func(method string, err error) bool {
-		if err != nil && method == "/grpc_middleware.testpb.TestService/PingError" {
-			return true
-		}
-		return false
+	opts := logging.WithDecider(func(method string) bool {
+		return method == "/grpc_middleware.testpb.TestService/PingError"
 	})
 
 	s := &loggingCustomDeciderSuite{
@@ -505,17 +502,17 @@ func (s *loggingCustomDeciderSuite) TestPingError_HasCustomDecider() {
 	lines := s.logger.Lines()
 	require.Len(s.T(), lines, 4)
 
-	serverStartedCallLogLine := lines[0]
+	serverStartedCallLogLine := lines[1]
 	assert.Equal(s.T(), logging.INFO, serverStartedCallLogLine.lvl)
 	assert.Equal(s.T(), "started call", serverStartedCallLogLine.msg)
 	_ = assertStandardFields(s.T(), logging.KindServerFieldValue, serverStartedCallLogLine.fields, "PingError", interceptors.Unary)
 
-	clientStartedCallLogLine := lines[2]
+	clientStartedCallLogLine := lines[0]
 	assert.Equal(s.T(), logging.DEBUG, clientStartedCallLogLine.lvl)
 	assert.Equal(s.T(), "started call", clientStartedCallLogLine.msg)
 	_ = assertStandardFields(s.T(), logging.KindClientFieldValue, clientStartedCallLogLine.fields, "PingError", interceptors.Unary)
 
-	serverFinishCallLogLine := lines[1]
+	serverFinishCallLogLine := lines[2]
 	assert.Equal(s.T(), logging.INFO, serverFinishCallLogLine.lvl)
 	assert.Equal(s.T(), "finished call", serverFinishCallLogLine.msg)
 	serverFinishCallFields := assertStandardFields(s.T(), logging.KindServerFieldValue, serverFinishCallLogLine.fields, "PingError", interceptors.Unary)
