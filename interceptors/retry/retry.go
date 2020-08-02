@@ -138,7 +138,6 @@ func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientIntercepto
 type serverStreamingRetryingStream struct {
 	grpc.ClientStream
 	bufferedSends []interface{} // single message that the client can sen
-	receivedGood  bool          // indicates whether any prior receives were successful
 	wasClosedSend bool          // indicates that CloseSend was closed
 	parentCtx     context.Context
 	callOpts      *options
@@ -212,17 +211,8 @@ func (s *serverStreamingRetryingStream) RecvMsg(m interface{}) error {
 }
 
 func (s *serverStreamingRetryingStream) receiveMsgAndIndicateRetry(m interface{}) (bool, error) {
-	s.mu.RLock()
-	wasGood := s.receivedGood
-	s.mu.RUnlock()
 	err := s.getStream().RecvMsg(m)
 	if err == nil || err == io.EOF {
-		s.mu.Lock()
-		s.receivedGood = true
-		s.mu.Unlock()
-		return false, err
-	} else if wasGood {
-		// previous RecvMsg in the stream succeeded, no retry logic should interfere
 		return false, err
 	}
 	if isContextError(err) {
