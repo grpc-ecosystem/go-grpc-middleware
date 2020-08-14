@@ -6,13 +6,14 @@ package grpc_testing
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"net"
 	"path"
 	"runtime"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/testing/certs"
+	"github.com/grpc-ecosystem/go-grpc-middleware/testing/testcert"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -52,22 +53,26 @@ func (s *InterceptorTestSuite) SetupSuite() {
 	s.serverRunning = make(chan bool)
 
 	s.serverAddr = "127.0.0.1:0"
-
 	go func() {
 		for {
 			var err error
 			s.ServerListener, err = net.Listen("tcp", s.serverAddr)
+			if err != nil {
+				s.T().Fatalf("unable to listen on address %s: %v", s.serverAddr, err)
+			}
 			s.serverAddr = s.ServerListener.Addr().String()
 			require.NoError(s.T(), err, "must be able to allocate a port for serverListener")
 			if *flagTls {
-				localhostCert, err := tls.X509KeyPair(certs.LocalhostCert, certs.LocalhostKey)
-				require.NoError(s.T(), err, "failed loading server credentials for localhostCert")
-				creds := credentials.NewServerTLSFromCert(&localhostCert)
+				cert, err := tls.X509KeyPair(testcert.KeyPairPEM())
+				if err != nil {
+					s.T().Fatalf("unable to load test TLS certificate: %v", err)
+				}
+				creds := credentials.NewServerTLSFromCert(&cert)
 				s.ServerOpts = append(s.ServerOpts, grpc.Creds(creds))
 			}
 			// This is the point where we hook up the interceptor
 			s.Server = grpc.NewServer(s.ServerOpts...)
-			// Crete a service of the instantiator hasn't provided one.
+			// Create a service of the instantiator hasn't provided one.
 			if s.TestService == nil {
 				s.TestService = &TestPingService{T: s.T()}
 			}
@@ -104,9 +109,11 @@ func (s *InterceptorTestSuite) RestartServer(delayedStart time.Duration) <-chan 
 func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) pb_testproto.TestServiceClient {
 	newDialOpts := append(dialOpts, grpc.WithBlock())
 	if *flagTls {
-		creds, err := credentials.NewClientTLSFromFile(
-			path.Join(getTestingCertsPath(), "localhost.crt"), "localhost")
-		require.NoError(s.T(), err, "failed reading client credentials for localhost.crt")
+		cp := x509.NewCertPool()
+		if !cp.AppendCertsFromPEM(testcert.CertPEM()) {
+			s.T().Fatal("failed to append certificate")
+		}
+		creds := credentials.NewTLS(&tls.Config{ServerName: "localhost", RootCAs: cp})
 		newDialOpts = append(newDialOpts, grpc.WithTransportCredentials(creds))
 	} else {
 		newDialOpts = append(newDialOpts, grpc.WithInsecure())
