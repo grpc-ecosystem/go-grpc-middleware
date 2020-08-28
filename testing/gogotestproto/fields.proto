@@ -30,6 +30,13 @@ message Pong {
     string id = 1 [(gogoproto.moretags) = "log_field:\"pong_id\""];
 }
 
+message OneOfLogField {
+    oneof identifier {
+        string bar_id = 1 [(gogoproto.moretags) = "log_field:\"bar_id\""];
+        string baz_id = 2 [(gogoproto.moretags) = "log_field:\"baz_id\""];
+    }
+}
+
 message PongRequest {
     Pong pong = 1;
     Metadata meta = 2;
