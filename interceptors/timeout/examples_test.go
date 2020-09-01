@@ -11,7 +11,7 @@ import (
 )
 
 // Initialization shows an initialization sequence with a custom client request timeout.
-func Example_initialization() {
+func Example_initialization() error {
 	clientConn, err := grpc.Dial(
 		"ServerAddr",
 		grpc.WithUnaryInterceptor(
@@ -19,19 +19,15 @@ func Example_initialization() {
 			timeout.TimeoutUnaryClientInterceptor(20*time.Millisecond),
 		),
 	)
-
-	// Handle connection error
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// Initialize your grpc service with connection
 	testServiceClient := testpb.NewTestServiceClient(clientConn)
 	resp, err := testServiceClient.PingEmpty(context.TODO(), &testpb.Empty{})
-
-	// Handle request error
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// Use grpc response value
