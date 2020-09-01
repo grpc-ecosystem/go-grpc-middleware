@@ -19,7 +19,7 @@ type TimeoutTestServiceServer struct {
 
 func (t *TimeoutTestServiceServer) PingEmpty(ctx context.Context, req *testpb.Empty) (*testpb.PingResponse, error) {
 	time.Sleep(t.sleepTime)
-	return &testpb.PingResponse{Value: "my_fake_value"}, nil
+	return t.TestPingService.PingEmpty(ctx, req)
 }
 
 func TestTimeoutUnaryClientInterceptor(t *testing.T) {
@@ -27,7 +27,7 @@ func TestTimeoutUnaryClientInterceptor(t *testing.T) {
 
 	its := &grpctesting.InterceptorTestSuite{
 		ClientOpts: []grpc.DialOption{
-			grpc.WithUnaryInterceptor(timeout.TimeoutUnaryClientInterceptor(20 * time.Millisecond)),
+			grpc.WithUnaryInterceptor(timeout.TimeoutUnaryClientInterceptor(10 * time.Millisecond)),
 		},
 		TestService: server,
 	}
@@ -38,7 +38,7 @@ func TestTimeoutUnaryClientInterceptor(t *testing.T) {
 	resp, err := its.Client.PingEmpty(its.SimpleCtx(), &testpb.Empty{})
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
-	assert.Equal(t, "my_fake_value", resp.Value)
+	assert.Equal(t, "default_response_value", resp.Value)
 
 	server.sleepTime = 30 * time.Millisecond
 	resp2, err2 := its.Client.PingEmpty(its.SimpleCtx(), &testpb.Empty{})
