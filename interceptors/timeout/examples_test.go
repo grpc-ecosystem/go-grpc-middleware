@@ -2,7 +2,7 @@ package timeout_test
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
@@ -35,5 +35,5 @@ func Example_initialization() {
 	}
 
 	// Use grpc response value
-	fmt.Println(resp.Value)
+	log.Println(resp.Value)
 }
