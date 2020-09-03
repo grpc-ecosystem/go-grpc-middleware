@@ -35,7 +35,7 @@ func TestTimeoutUnaryClientInterceptor(t *testing.T) {
 	its.SetupSuite()
 	defer its.TearDownSuite()
 
-	// This call will take 1/10ms for respond, so the client timeout NOT exceed
+	// This call will take 1/10ms for respond, so the client timeout NOT exceed.
 	resp, err := its.Client.PingEmpty(context.TODO(), &testpb.Empty{})
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
@@ -44,17 +44,16 @@ func TestTimeoutUnaryClientInterceptor(t *testing.T) {
 	// server will sleep 30ms before respond
 	server.sleepTime = 30 * time.Millisecond
 
-	// This call will take 30/10ms for respond, so the client timeout exceed
+	// This call will take 30/10ms for respond, so the client timeout exceed.
 	resp2, err2 := its.Client.PingEmpty(context.TODO(), &testpb.Empty{})
 	assert.Nil(t, resp2)
 	assert.EqualError(t, err2, "rpc error: code = DeadlineExceeded desc = context deadline exceeded")
 
-	// This call will take 30/40ms for respond, so the client timeout NOT exceed
+	// This call will take 30/40ms for respond, so the client timeout NOT exceed.
 	longerValidityContext, cancel := context.WithTimeout(context.TODO(), 40*time.Millisecond)
 	defer cancel()
 	resp3, err3 := its.Client.PingEmpty(longerValidityContext, &testpb.Empty{})
 	assert.NoError(t, err3)
 	assert.NotNil(t, resp3)
 	assert.Equal(t, "default_response_value", resp.Value)
-
 }
