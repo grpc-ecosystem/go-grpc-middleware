@@ -15,7 +15,7 @@ func Example_initialization() {
 	clientConn, err := grpc.Dial(
 		"ServerAddr",
 		grpc.WithUnaryInterceptor(
-			// Set your client request timeout
+			// Set your client request timeout.
 			timeout.TimeoutUnaryClientInterceptor(20*time.Millisecond),
 		),
 	)
@@ -23,13 +23,13 @@ func Example_initialization() {
 		log.Fatal(err)
 	}
 
-	// Initialize your grpc service with connection
+	// Initialize your grpc service with connection.
 	testServiceClient := testpb.NewTestServiceClient(clientConn)
 	resp, err := testServiceClient.PingEmpty(context.TODO(), &testpb.Empty{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Use grpc response value
+	// Use grpc response value.
 	log.Println(resp.Value)
 }
