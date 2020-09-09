@@ -180,7 +180,7 @@ func generateCertAndKey(san []string) ([]byte, []byte, error) {
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			CommonName: "Certify Test Cert",
+			CommonName: "example.com",
 		},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
