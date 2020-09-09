@@ -36,6 +36,8 @@ define require_clean_work_tree
 
 endef
 
+all: fmt proto lint test
+
 .PHONY: fmt
 fmt: $(GOIMPORTS)
 	@echo "Running fmt for all modules: $(MODULES)"
@@ -65,7 +67,7 @@ test_module:
 #      --cpu-profile-path string   Path to CPU profile output file
 #      --mem-profile-path string   Path to memory profile output file
 # to debug big allocations during linting.
-lint: ## Runs various static analysis against our code.
+lint: ## Runs various static analysis tools against our code.
 lint: fmt $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL)
 	@echo "Running lint for all modules: $(MODULES)"
 	./scripts/git-tree.sh
