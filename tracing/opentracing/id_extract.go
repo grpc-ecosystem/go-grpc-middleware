@@ -40,20 +40,6 @@ type tagsCarrier struct {
 
 func (t *tagsCarrier) Set(key, val string) {
 	key = strings.ToLower(key)
-	if strings.Contains(key, "traceid") {
-		t.Tags.Set(TagTraceId, val) // this will most likely be base-16 (hex) encoded
-	}
-
-	if strings.Contains(key, "spanid") && !strings.Contains(strings.ToLower(key), "parent") {
-		t.Tags.Set(TagSpanId, val) // this will most likely be base-16 (hex) encoded
-	}
-
-	if strings.Contains(key, "sampled") {
-		switch val {
-		case "true", "false":
-			t.Tags.Set(TagSampled, val)
-		}
-	}
 
 	if key == t.traceHeaderName {
 		parts := strings.Split(val, ":")
@@ -66,6 +52,23 @@ func (t *tagsCarrier) Set(key, val string) {
 			} else {
 				t.Tags.Set(TagSampled, "false")
 			}
+
+			return
+		}
+	}
+
+	if strings.Contains(key, "traceid") {
+		t.Tags.Set(TagTraceId, val) // this will most likely be base-16 (hex) encoded
+	}
+
+	if strings.Contains(key, "spanid") && !strings.Contains(strings.ToLower(key), "parent") {
+		t.Tags.Set(TagSpanId, val) // this will most likely be base-16 (hex) encoded
+	}
+
+	if strings.Contains(key, "sampled") {
+		switch val {
+		case "true", "false":
+			t.Tags.Set(TagSampled, val)
 		}
 	}
 
