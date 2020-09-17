@@ -64,8 +64,8 @@ func reflectMessageTags(msg interface{}, existingMap map[string]string, tagName 
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 		kind := field.Kind()
-		// Only recurse down direct pointers, which should only be to nested structs.
-		if kind == reflect.Ptr && field.CanInterface() {
+		// Only recurse down direct pointers or interfaces, which should only be to nested structs.
+		if (kind == reflect.Ptr || kind == reflect.Interface) && field.CanInterface() {
 			reflectMessageTags(field.Interface(), existingMap, tagName)
 		}
 		// In case of arrays/slices (repeated fields) go down to the concrete type.
