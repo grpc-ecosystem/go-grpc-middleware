@@ -53,6 +53,16 @@ func TestTaggedRequestFiledExtractor_PongRequest(t *testing.T) {
 	assert.EqualValues(t, "[tagone tagtwo]", valMap["meta_tags"])
 }
 
+func TestTaggedRequestFiledExtractor_OneOfLogField(t *testing.T) {
+	req := &gogotestpb.OneOfLogField{
+		Identifier: &gogotestpb.OneOfLogField_BarId{
+			BarId: "bar-log-field",
+		},
+	}
+	valMap := tags.TagBasedRequestFieldExtractor("log_field")("", req)
+	assert.EqualValues(t, "bar-log-field", valMap["bar_id"])
+}
+
 // Test to ensure TagBasedRequestFieldExtractor does not panic when encountering private struct members such as
 // when using gogoproto.stdtime which results in a time.Time that has private struct members
 func TestTaggedRequestFiledExtractor_GogoTime(t *testing.T) {

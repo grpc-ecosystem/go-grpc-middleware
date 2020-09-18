@@ -37,6 +37,13 @@ message PongRequest {
     Metadata meta = 2;
 }
 
+message OneOfLogField {
+    oneof identifier {
+        string bar_id = 1 [(gogoproto.moretags) = "log_field:\"bar_id\""];
+        string baz_id = 2 [(gogoproto.moretags) = "log_field:\"baz_id\""];
+    }
+}
+
 message GoGoProtoStdTime {
     google.protobuf.Timestamp timestamp = 1 [(gogoproto.stdtime) = true];
 }
