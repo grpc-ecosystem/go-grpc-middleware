@@ -25,34 +25,55 @@ type reporter struct {
 	ctx             context.Context
 	typ             interceptors.GRPCType
 	service, method string
-
-	opts   *options
-	logger Logger
-
-	kind string
+	startCallLogged bool
+	opts            *options
+	logger          Logger
+	kind            string
 }
 
-func (c *reporter) PostCall(err error, duration time.Duration) {
-	if !c.opts.shouldLog(interceptors.FullMethod(c.service, c.method), err) {
-		return
-	}
-	if err == io.EOF {
-		err = nil
-	}
-	// Get optional, fresh tags.
-	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
-
+func (c *reporter) logMessage(logger Logger, err error, msg string, duration time.Duration) {
 	code := c.opts.codeFunc(err)
 	logger = logger.With("grpc.code", code.String())
 	if err != nil {
-		logger = logger.With("error", fmt.Sprintf("%v", err))
+		logger = logger.With("grpc.error", fmt.Sprintf("%v", err))
 	}
-	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), fmt.Sprintf("finished %s %s call", c.kind, c.typ))
+	logger = logger.With(extractFields(tags.Extract(c.ctx))...)
+	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), msg)
 }
 
-func (c *reporter) PostMsgSend(interface{}, error, time.Duration) {}
+func (c *reporter) PostCall(err error, duration time.Duration) {
+	switch c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) {
+	case LogFinishCall, LogStartAndFinishCall:
+		if err == io.EOF {
+			err = nil
+		}
+		c.logMessage(c.logger, err, "finished call", duration)
+	default:
+		return
+	}
+}
 
-func (c *reporter) PostMsgReceive(interface{}, error, time.Duration) {}
+func (c *reporter) PostMsgSend(_ interface{}, err error, duration time.Duration) {
+	if c.startCallLogged {
+		return
+	}
+	switch c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) {
+	case LogStartAndFinishCall:
+		c.startCallLogged = true
+		c.logMessage(c.logger, err, "started call", duration)
+	}
+}
+
+func (c *reporter) PostMsgReceive(_ interface{}, err error, duration time.Duration) {
+	if c.startCallLogged {
+		return
+	}
+	switch c.opts.shouldLog(interceptors.FullMethod(c.service, c.method)) {
+	case LogStartAndFinishCall:
+		c.startCallLogged = true
+		c.logMessage(c.logger, err, "started call", duration)
+	}
+}
 
 type reportable struct {
 	opts   *options
@@ -74,13 +95,14 @@ func (r *reportable) reporter(ctx context.Context, typ interceptors.GRPCType, se
 		fields = append(fields, "grpc.request.deadline", d.Format(time.RFC3339))
 	}
 	return &reporter{
-		ctx:     ctx,
-		typ:     typ,
-		service: service,
-		method:  method,
-		opts:    r.opts,
-		logger:  r.logger.With(fields...),
-		kind:    kind,
+		ctx:             ctx,
+		typ:             typ,
+		service:         service,
+		method:          method,
+		startCallLogged: false,
+		opts:            r.opts,
+		logger:          r.logger.With(fields...),
+		kind:            kind,
 	}, ctx
 }
 

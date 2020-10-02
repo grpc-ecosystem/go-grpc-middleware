@@ -14,10 +14,23 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
 
+// Decision defines rules for enabling start and end of logging.
+type Decision int
+
+const (
+	// NoLogCall - Logging is disabled.
+	NoLogCall Decision = iota
+	// LogFinishCall - Only finish logs of request is enabled.
+	LogFinishCall
+	// LogStartAndFinishCall - Logging of start and end of request is enabled.
+	LogStartAndFinishCall
+)
+
 var (
 	// SystemTag is tag representing an event inside gRPC call.
-	SystemTag            = []string{"system", "grpc"}
-	KindFieldKey         = "kind"
+	SystemTag = []string{"protocol", "grpc"}
+	// ComponentFieldKey is a tag representing the client/server that is calling.
+	ComponentFieldKey    = "grpc.component"
 	KindServerFieldValue = "server"
 	KindClientFieldValue = "client"
 	ServiceFieldKey      = "grpc.service"
@@ -28,7 +41,7 @@ var (
 func commonFields(kind string, typ interceptors.GRPCType, service string, method string) Fields {
 	return Fields{
 		SystemTag[0], SystemTag[1],
-		KindFieldKey, kind,
+		ComponentFieldKey, kind,
 		ServiceFieldKey, service,
 		MethodFieldKey, method,
 		MethodTypeFieldKey, string(typ),
@@ -47,12 +60,12 @@ func DefaultErrorToCode(err error) codes.Code {
 }
 
 // Decider function defines rules for suppressing any interceptor logs
-type Decider func(fullMethodName string, err error) bool
+type Decider func(fullMethodName string) Decision
 
 // DefaultDeciderMethod is the default implementation of decider to see if you should log the call
 // by default this if always true so all calls are logged
-func DefaultDeciderMethod(_ string, _ error) bool {
-	return true
+func DefaultDeciderMethod(_ string) Decision {
+	return LogStartAndFinishCall
 }
 
 // ServerPayloadLoggingDecider is a user-provided function for deciding whether to log the server-side

@@ -81,14 +81,14 @@ func ExampleWithDecider() {
 	// Shared options for the logger, with a custom decider that log everything except successful
 	// calls from "/blah.foo.healthcheck/Check" method.
 	opts := []logging.Option{
-		logging.WithDecider(func(methodFullName string, err error) bool {
+		logging.WithDecider(func(methodFullName string) logging.Decision {
 			// will not log gRPC calls if it was a call to healthcheck and no error was raised
-			if err == nil && methodFullName == "/blah.foo.healthcheck/Check" {
-				return false
+			if methodFullName == "/blah.foo.healthcheck/Check" {
+				return logging.NoLogCall
 			}
 
 			// by default you will log all calls
-			return true
+			return logging.LogStartAndFinishCall
 		}),
 	}
 	// Create a server, make sure we put the tags context before everything else.
