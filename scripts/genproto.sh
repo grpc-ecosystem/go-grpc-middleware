@@ -35,27 +35,27 @@ for dir in ${DIRS}; do
 	popd
 done
 
-mkdir -p /tmp/protobin/
-cp ${PROTOC_GEN_GOGOFAST_BIN} /tmp/protobin/protoc-gen-gogofast
-PATH=${OLDPATH}:/tmp/protobin
-GOGOPROTO_ROOT="$(GO111MODULE=on go list -modfile=.bingo/protoc-gen-gogofast.mod -f '{{ .Dir }}' -m github.com/gogo/protobuf)"
-GOGOPROTO_PATH="${GOGOPROTO_ROOT}:${GOGOPROTO_ROOT}/protobuf"
+# mkdir -p /tmp/protobin/
+# cp ${PROTOC_GEN_GOGOFAST_BIN} /tmp/protobin/protoc-gen-gogofast
+# PATH=${OLDPATH}:/tmp/protobin
+# GOGOPROTO_ROOT="$(GO111MODULE=on go list -modfile=.bingo/protoc-gen-gogofast.mod -f '{{ .Dir }}' -m github.com/gogo/protobuf)"
+# GOGOPROTO_PATH="${GOGOPROTO_ROOT}:${GOGOPROTO_ROOT}/protobuf"
 
-DIRS="grpctesting/external/gogotestpb grpctesting/external/gogofieldstestpb"
-echo "generating gogo protobuf code"
-for dir in ${DIRS}; do
-	pushd ${dir}
-		${PROTOC_BIN} --gogofast_out=\
-Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,\
-Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,\
-Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,\
-Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,\
-Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,\
-plugins=grpc:. \
-      -I=. \
-			-I="${GOGOPROTO_PATH}" \
-			*.proto
+# DIRS="grpctesting/external/gogotestpb grpctesting/external/gogofieldstestpb"
+# echo "generating gogo protobuf code"
+# for dir in ${DIRS}; do
+# 	pushd ${dir}
+# 		${PROTOC_BIN} --gogofast_out=\
+# Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,\
+# Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,\
+# Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,\
+# Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,\
+# Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,\
+# plugins=grpc:. \
+#       -I=. \
+# 			-I="${GOGOPROTO_PATH}" \
+# 			*.proto
 
-			${GOIMPORTS_BIN} -w *.pb.go
-	popd
-done
+# 			${GOIMPORTS_BIN} -w *.pb.go
+# 	popd
+# done
