@@ -115,6 +115,8 @@ type mockLogger struct {
 }
 
 func (l *mockLogger) Log(lvl logging.Level, msg string) {
+
+	// since map isn't safe for concurrency, we use a lock
 	l.m.Lock()
 	defer l.m.Unlock()
 
