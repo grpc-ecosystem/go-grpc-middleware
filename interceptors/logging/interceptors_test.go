@@ -110,11 +110,14 @@ func (l *baseMockLogger) Lines() []LogLine {
 
 type mockLogger struct {
 	*baseMockLogger
-
+	m      sync.Mutex
 	fields logging.Fields
 }
 
 func (l *mockLogger) Log(lvl logging.Level, msg string) {
+	l.m.Lock()
+	defer l.m.Unlock()
+
 	line := LogLine{
 		lvl:    lvl,
 		msg:    msg,
