@@ -24,8 +24,8 @@ type FilterFunc func(ctx context.Context, fullMethodName string) bool
 // UnaryRequestHandlerFunc is a custom request handler
 type UnaryRequestHandlerFunc func(span opentracing.Span, req interface{})
 
-//OpNameFunc is a func that allows custom operation names instead of the gRPC method.
-type OpNameFunc func(string) string
+// OpNameFunc is a func that allows custom operation names instead of the gRPC method.
+type OpNameFunc func(method string) string
 
 type options struct {
 	filterOutFunc           FilterFunc
@@ -81,7 +81,7 @@ func WithUnaryRequestHandlerFunc(f UnaryRequestHandlerFunc) Option {
 	}
 }
 
-//WithOpName customizes the trace Operation name
+// WithOpName customizes the trace Operation name
 func WithOpName(f OpNameFunc) Option {
 	return func(o *options) {
 		o.opNameFunc = f
