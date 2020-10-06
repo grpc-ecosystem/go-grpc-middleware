@@ -110,12 +110,10 @@ func (l *baseMockLogger) Lines() []LogLine {
 
 type mockLogger struct {
 	*baseMockLogger
-	m      sync.Mutex
 	fields logging.Fields
 }
 
 func (l *mockLogger) Log(lvl logging.Level, msg string) {
-
 	// since map isn't safe for concurrency, we use a lock
 	l.m.Lock()
 	defer l.m.Unlock()
@@ -133,6 +131,9 @@ func (l *mockLogger) Log(lvl logging.Level, msg string) {
 
 func (l *mockLogger) With(fields ...string) logging.Logger {
 	// Append twice to copy slice, so we don't reuse array.
+	l.m.Lock()
+	defer l.m.Unlock()
+
 	return &mockLogger{baseMockLogger: l.baseMockLogger, fields: append(append(logging.Fields{}, l.fields...), fields...)}
 }
 
@@ -142,6 +143,9 @@ type baseLoggingSuite struct {
 }
 
 func (s *baseLoggingSuite) SetupTest() {
+	s.logger.m.Lock()
+	defer s.logger.m.Unlock()
+
 	s.logger.fields = s.logger.fields[:0]
 	s.logger.lines = s.logger.lines[:0]
 }

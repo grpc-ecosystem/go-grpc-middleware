@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
-	logging "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 )
 
