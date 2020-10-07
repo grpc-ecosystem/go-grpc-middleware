@@ -198,30 +198,19 @@ func (s *OpentracingSuite) TestPing_PropagatesTraces() {
 
 func (s *OpentracingSuite) TestPing_CustomOpName() {
 
-	const grpcMethod = "/CustomSvc/Name"
+	customOpName := "customOpName"
 
-	t := func(method string) string {
-		switch method {
-		case grpcMethod:
-			return "myopname"
-		default:
-			return "NO_OP_NAME"
-		}
-	}
-
-	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true, t(grpcMethod))
+	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true, customOpName)
 	_, err := s.Client.Ping(ctx, goodPing)
 	require.NoError(s.T(), err, "there must be not be an error on a successful call")
 
-	for _, v := range s.mockTracer.FinishedSpans() {
-		switch v.OperationName {
-		case t(grpcMethod):
-			break
-		case "NO_OP_NAME":
-			err = errors.New("invalid operation name")
-		}
+	spans := s.mockTracer.FinishedSpans()
+	spanOpNames := make([]string, len(spans))
+	
+	for _, span := range spans {
+		spanOpNames = append(spanOpNames, span.OperationName)
 	}
-	require.NoError(s.T(), err, "operation name should not be default")
+	require.Contains(s.T(), spanOpNames, customOpName, "finished spans must contain the custom operation name")
 }
 
 func (s *OpentracingSuite) TestPing_WithUnaryRequestHandlerFunc() {
