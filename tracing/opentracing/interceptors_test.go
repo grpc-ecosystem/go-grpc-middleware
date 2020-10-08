@@ -22,11 +22,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	grpc_testing "github.com/grpc-ecosystem/go-grpc-middleware/testing"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
+	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 )
 
 var (
@@ -197,7 +197,6 @@ func (s *OpentracingSuite) TestPing_PropagatesTraces() {
 }
 
 func (s *OpentracingSuite) TestPing_CustomOpName() {
-
 	customOpName := "customOpName"
 
 	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true, customOpName)
@@ -206,7 +205,7 @@ func (s *OpentracingSuite) TestPing_CustomOpName() {
 
 	spans := s.mockTracer.FinishedSpans()
 	spanOpNames := make([]string, len(spans))
-	
+
 	for _, span := range spans {
 		spanOpNames = append(spanOpNames, span.OperationName)
 	}
