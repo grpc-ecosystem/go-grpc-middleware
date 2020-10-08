@@ -22,11 +22,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	grpc_testing "github.com/grpc-ecosystem/go-grpc-middleware/testing"
+	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
-	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 )
 
 var (
@@ -205,11 +205,12 @@ func (s *OpentracingSuite) TestPing_CustomOpName() {
 
 	spans := s.mockTracer.FinishedSpans()
 	spanOpNames := make([]string, len(spans))
-
 	for _, span := range spans {
 		spanOpNames = append(spanOpNames, span.OperationName)
 	}
+
 	require.Contains(s.T(), spanOpNames, customOpName, "finished spans must contain the custom operation name")
+
 }
 
 func (s *OpentracingSuite) TestPing_WithUnaryRequestHandlerFunc() {
