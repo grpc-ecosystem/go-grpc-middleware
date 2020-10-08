@@ -66,9 +66,6 @@ func (l LogLines) Less(i, j int) bool {
 	if l[i].msg != l[j].msg {
 		return l[i].msg < l[j].msg
 	}
-	//_ , aok = l[i].fields["grpc.response.content"]
-	//_ ,baok = l[i].fields["grpc.response.content"]
-	//if
 
 	// We want to sort by counter which in string, so we need to parse it.
 	a := testpb.PingResponse{}
@@ -92,13 +89,6 @@ type baseMockLogger struct {
 	// Shared. It's slice on purpose to find potential duplicates.
 	lines []LogLine
 	m     sync.Mutex
-}
-
-func (l *baseMockLogger) Add(line LogLine) {
-	l.m.Lock()
-	defer l.m.Unlock()
-
-	l.lines = append(l.lines, line)
 }
 
 func (l *baseMockLogger) Lines() []LogLine {
@@ -126,14 +116,12 @@ func (l *mockLogger) Log(lvl logging.Level, msg string) {
 	for i := 0; i < len(l.fields); i += 2 {
 		line.fields[l.fields[i]] = l.fields[i+1]
 	}
-	l.Add(line)
+
+	l.lines = append(l.lines, line)
 }
 
 func (l *mockLogger) With(fields ...string) logging.Logger {
 	// Append twice to copy slice, so we don't reuse array.
-	l.m.Lock()
-	defer l.m.Unlock()
-
 	return &mockLogger{baseMockLogger: l.baseMockLogger, fields: append(append(logging.Fields{}, l.fields...), fields...)}
 }
 
