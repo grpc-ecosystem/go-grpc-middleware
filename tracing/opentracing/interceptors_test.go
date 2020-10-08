@@ -137,10 +137,14 @@ func (s *OpentracingSuite) SetupTest() {
 	s.mockTracer.Reset()
 }
 
-func (s *OpentracingSuite) createContextFromFakeHttpRequestParent(ctx context.Context, sampled bool) context.Context {
+func (s *OpentracingSuite) createContextFromFakeHttpRequestParent(ctx context.Context, sampled bool, opName string) context.Context {
 	jFlag := 0
 	if sampled {
 		jFlag = 1
+	}
+
+	if len(opName) == 0 {
+		opName = "/fake/parent/http/request"
 	}
 
 	hdr := http.Header{}
@@ -152,7 +156,7 @@ func (s *OpentracingSuite) createContextFromFakeHttpRequestParent(ctx context.Co
 	parentSpanContext, err := s.mockTracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(hdr))
 	require.NoError(s.T(), err, "parsing a fake HTTP request headers shouldn't fail, ever")
 	fakeSpan := s.mockTracer.StartSpan(
-		"/fake/parent/http/request",
+		opName,
 		// this is magical, it attaches the new span to the parent parentSpanContext, and creates an unparented one if empty.
 		opentracing.ChildOf(parentSpanContext),
 	)
@@ -186,14 +190,31 @@ func (s *OpentracingSuite) assertTracesCreated(methodName string) (clientSpan *m
 }
 
 func (s *OpentracingSuite) TestPing_PropagatesTraces() {
-	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true)
+	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true, "")
 	_, err := s.Client.Ping(ctx, goodPing)
 	require.NoError(s.T(), err, "there must be not be an on a successful call")
 	s.assertTracesCreated("/mwitkow.testproto.TestService/Ping")
 }
 
+func (s *OpentracingSuite) TestPing_CustomOpName() {
+	customOpName := "customOpName"
+
+	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true, customOpName)
+	_, err := s.Client.Ping(ctx, goodPing)
+	require.NoError(s.T(), err, "there must be not be an error on a successful call")
+
+	spans := s.mockTracer.FinishedSpans()
+	spanOpNames := make([]string, len(spans))
+	for _, span := range spans {
+		spanOpNames = append(spanOpNames, span.OperationName)
+	}
+
+	require.Contains(s.T(), spanOpNames, customOpName, "finished spans must contain the custom operation name")
+
+}
+
 func (s *OpentracingSuite) TestPing_WithUnaryRequestHandlerFunc() {
-	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true)
+	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true, "")
 	_, err := s.Client.Ping(ctx, goodPing)
 	require.NoError(s.T(), err, "there must be not be an on a successful call")
 
@@ -215,7 +236,7 @@ Loop:
 func (s *OpentracingSuite) TestPing_ClientContextTags() {
 	const name = "opentracing.custom"
 	ctx := grpc_opentracing.ClientAddContextTags(
-		s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true),
+		s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true, ""),
 		opentracing.Tags{name: ""},
 	)
 
@@ -233,7 +254,7 @@ func (s *OpentracingSuite) TestPing_ClientContextTags() {
 }
 
 func (s *OpentracingSuite) TestPingList_PropagatesTraces() {
-	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true)
+	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true, "")
 	stream, err := s.Client.PingList(ctx, goodPing)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	for {
@@ -247,7 +268,7 @@ func (s *OpentracingSuite) TestPingList_PropagatesTraces() {
 }
 
 func (s *OpentracingSuite) TestPingError_PropagatesTraces() {
-	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true)
+	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true, "")
 	erroringPing := &pb_testproto.PingRequest{Value: "something", ErrorCodeReturned: uint32(codes.OutOfRange)}
 	_, err := s.Client.PingError(ctx, erroringPing)
 	require.Error(s.T(), err, "there must be an error returned here")
@@ -257,7 +278,7 @@ func (s *OpentracingSuite) TestPingError_PropagatesTraces() {
 }
 
 func (s *OpentracingSuite) TestPingEmpty_NotSampleTraces() {
-	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), false)
+	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), false, "")
 	_, err := s.Client.PingEmpty(ctx, &pb_testproto.Empty{})
 	require.NoError(s.T(), err, "there must be not be an on a successful call")
 }

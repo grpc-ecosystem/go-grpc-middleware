@@ -5,6 +5,7 @@ package grpc_opentracing
 
 import (
 	"context"
+
 	"github.com/opentracing/opentracing-go"
 )
 
@@ -23,11 +24,15 @@ type FilterFunc func(ctx context.Context, fullMethodName string) bool
 // UnaryRequestHandlerFunc is a custom request handler
 type UnaryRequestHandlerFunc func(span opentracing.Span, req interface{})
 
+// OpNameFunc is a func that allows custom operation names instead of the gRPC method.
+type OpNameFunc func(method string) string
+
 type options struct {
 	filterOutFunc           FilterFunc
 	tracer                  opentracing.Tracer
 	traceHeaderName         string
 	unaryRequestHandlerFunc UnaryRequestHandlerFunc
+	opNameFunc              OpNameFunc
 }
 
 func evaluateOptions(opts []Option) *options {
@@ -73,5 +78,12 @@ func WithTracer(tracer opentracing.Tracer) Option {
 func WithUnaryRequestHandlerFunc(f UnaryRequestHandlerFunc) Option {
 	return func(o *options) {
 		o.unaryRequestHandlerFunc = f
+	}
+}
+
+// WithOpName customizes the trace Operation name
+func WithOpName(f OpNameFunc) Option {
+	return func(o *options) {
+		o.opNameFunc = f
 	}
 }

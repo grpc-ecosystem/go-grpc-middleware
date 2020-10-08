@@ -27,7 +27,11 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 		if o.filterOutFunc != nil && !o.filterOutFunc(ctx, info.FullMethod) {
 			return handler(ctx, req)
 		}
-		newCtx, serverSpan := newServerSpanFromInbound(ctx, o.tracer, o.traceHeaderName, info.FullMethod)
+		opName := info.FullMethod
+		if o.opNameFunc != nil {
+			opName = o.opNameFunc(info.FullMethod)
+		}
+		newCtx, serverSpan := newServerSpanFromInbound(ctx, o.tracer, o.traceHeaderName, opName)
 		if o.unaryRequestHandlerFunc != nil {
 			o.unaryRequestHandlerFunc(serverSpan, req)
 		}
@@ -44,7 +48,11 @@ func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 		if o.filterOutFunc != nil && !o.filterOutFunc(stream.Context(), info.FullMethod) {
 			return handler(srv, stream)
 		}
-		newCtx, serverSpan := newServerSpanFromInbound(stream.Context(), o.tracer, o.traceHeaderName, info.FullMethod)
+		opName := info.FullMethod
+		if o.opNameFunc != nil {
+			opName = o.opNameFunc(info.FullMethod)
+		}
+		newCtx, serverSpan := newServerSpanFromInbound(stream.Context(), o.tracer, o.traceHeaderName, opName)
 		wrappedStream := grpc_middleware.WrapServerStream(stream)
 		wrappedStream.WrappedContext = newCtx
 		err := handler(srv, wrappedStream)
@@ -53,7 +61,7 @@ func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 	}
 }
 
-func newServerSpanFromInbound(ctx context.Context, tracer opentracing.Tracer, traceHeaderName, fullMethodName string) (context.Context, opentracing.Span) {
+func newServerSpanFromInbound(ctx context.Context, tracer opentracing.Tracer, traceHeaderName, opName string) (context.Context, opentracing.Span) {
 	md := metautils.ExtractIncoming(ctx)
 	parentSpanContext, err := tracer.Extract(opentracing.HTTPHeaders, metadataTextMap(md))
 	if err != nil && err != opentracing.ErrSpanContextNotFound {
@@ -61,7 +69,7 @@ func newServerSpanFromInbound(ctx context.Context, tracer opentracing.Tracer, tr
 	}
 
 	serverSpan := tracer.StartSpan(
-		fullMethodName,
+		opName,
 		// this is magical, it attaches the new span to the parent parentSpanContext, and creates an unparented one if empty.
 		ext.RPCServerOption(parentSpanContext),
 		grpcTag,
