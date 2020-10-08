@@ -88,29 +88,17 @@ func (l LogLines) Swap(i, j int) {
 	l[i], l[j] = l[j], l[i]
 }
 
-type baseMockLogger struct {
-	// Shared. It's slice on purpose to find potential duplicates.
-	lines []LogLine
-	m     sync.Mutex
+type mockLogger struct {
+	fields logging.Fields
+	m      sync.Mutex
+	lines  []LogLine
 }
 
-func (l *baseMockLogger) Add(line LogLine) {
-	l.m.Lock()
-	defer l.m.Unlock()
-
-	l.lines = append(l.lines, line)
-}
-
-func (l *baseMockLogger) Lines() []LogLine {
+func (l *mockLogger) Lines() []LogLine {
 	l.m.Lock()
 	defer l.m.Unlock()
 
 	return l.lines
-}
-
-type mockLogger struct {
-	*baseMockLogger
-	fields logging.Fields
 }
 
 func (l *mockLogger) Log(lvl logging.Level, msg string) {
@@ -123,10 +111,12 @@ func (l *mockLogger) Log(lvl logging.Level, msg string) {
 		msg:    msg,
 		fields: map[string]string{},
 	}
+
 	for i := 0; i < len(l.fields); i += 2 {
 		line.fields[l.fields[i]] = l.fields[i+1]
 	}
-	l.Add(line)
+
+	l.lines = append(l.lines, line)
 }
 
 func (l *mockLogger) With(fields ...string) logging.Logger {
@@ -134,7 +124,7 @@ func (l *mockLogger) With(fields ...string) logging.Logger {
 	l.m.Lock()
 	defer l.m.Unlock()
 
-	return &mockLogger{baseMockLogger: l.baseMockLogger, fields: append(append(logging.Fields{}, l.fields...), fields...)}
+	return &mockLogger{lines: l.lines, fields: append(append(logging.Fields{}, l.fields...), fields...)}
 }
 
 type baseLoggingSuite struct {
@@ -143,8 +133,6 @@ type baseLoggingSuite struct {
 }
 
 func (s *baseLoggingSuite) SetupTest() {
-	s.logger.m.Lock()
-	defer s.logger.m.Unlock()
 
 	s.logger.fields = s.logger.fields[:0]
 	s.logger.lines = s.logger.lines[:0]
@@ -170,7 +158,7 @@ func TestSuite(t *testing.T) {
 
 	s := &loggingClientServerSuite{
 		&baseLoggingSuite{
-			logger: &mockLogger{baseMockLogger: &baseMockLogger{}},
+			logger: &mockLogger{},
 			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 				TestService: &grpctesting.TestPingService{T: t},
 			},
@@ -353,7 +341,7 @@ func TestCustomDurationSuite(t *testing.T) {
 
 	s := &loggingCustomDurationSuite{
 		baseLoggingSuite: &baseLoggingSuite{
-			logger: &mockLogger{baseMockLogger: &baseMockLogger{}},
+			logger: &mockLogger{},
 			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 				TestService: &grpctesting.TestPingService{T: t},
 			},
@@ -475,7 +463,7 @@ func TestCustomDeciderSuite(t *testing.T) {
 
 	s := &loggingCustomDeciderSuite{
 		baseLoggingSuite: &baseLoggingSuite{
-			logger: &mockLogger{baseMockLogger: &baseMockLogger{}},
+			logger: &mockLogger{},
 			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 				TestService: &grpctesting.TestPingService{T: t},
 			},
