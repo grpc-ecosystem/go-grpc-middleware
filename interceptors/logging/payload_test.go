@@ -36,7 +36,7 @@ func TestPayloadSuite(t *testing.T) {
 
 	s := &loggingPayloadSuite{
 		baseLoggingSuite: &baseLoggingSuite{
-			logger: &mockLogger{baseMockLogger: &baseMockLogger{}},
+			logger: &mockLogger{sharedResults: &sharedResults{}},
 			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 				TestService: &grpctesting.TestPingService{T: t},
 			},
