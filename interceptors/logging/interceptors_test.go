@@ -95,15 +95,16 @@ func (l *mockLogger) Lines() []LogLine {
 	l.m.Lock()
 	defer l.m.Unlock()
 
-	retLines := make([]LogLine, 0, len(l.lines))
+	retLines := make([]LogLine, len(l.lines))
 	copy(retLines, l.lines)
+
 	return retLines
 }
 
 func (l *mockLogger) Log(lvl logging.Level, msg string) {
 	l.m.Lock()
 	defer l.m.Unlock()
-
+	// fmt.Printf("The fields in the Log function ---------- %v\n", l.fields)
 	line := LogLine{
 		lvl:    lvl,
 		msg:    msg,
@@ -113,20 +114,44 @@ func (l *mockLogger) Log(lvl logging.Level, msg string) {
 	for i := 0; i < len(l.fields); i += 2 {
 		line.fields[l.fields[i]] = l.fields[i+1]
 	}
+	l.lines = append(append([]LogLine{}, l.lines...), line)
 
-	l.lines = append(l.lines, line)
+	// fmt.Printf("\nAddress -- %v ", &l)
+	// fmt.Printf("Time Stamp --- %v ", time.Now().UTC())
+	// fmt.Printf(" During Logging --- MSG : %v %v\n", msg, line.fields)
+	// fmt.Printf("During Logging ----------- %v\n", l.lines)
+	// fmt.Printf("During Logging ----------- %v", l.fields)
 }
 
 func (l *mockLogger) With(fields ...string) logging.Logger {
-	logger := &mockLogger{
-		lines: l.Lines(),
-	}
-
 	l.m.Lock()
 	defer l.m.Unlock()
 
-	copy(logger.fields, l.fields)
-	logger.fields = append(logger.fields, fields...)
+	// logger := &mockLogger{}
+	logger := l
+	// logger.lines = l.lines
+	// fmt.Printf("FIELDS -------------- %v\n", fields)
+	// logger.lines = []LogLine{}
+	// logger.lines = append(logger.lines, l.lines...)
+	// logger.lines = make([]LogLine, len(l.lines))
+	// copy(logger.lines, l.lines)
+	// logger.lines = l.lines
+
+	// logger.fields = make(logging.Fields, len(l.fields))
+	// copy(logger.fields, l.fields)
+
+	// fmt.Printf("Address -- %v ", &l)
+	// fmt.Printf("Time Stamp --- %v ", time.Now())
+	// fmt.Printf("Old Lines ---------- %v\n", l.lines)
+	// fmt.Printf("Before adding --------   %v\n", logger.lines)
+	logger.fields = append(append(logging.Fields{}, l.fields...), fields...)
+	// fmt.Printf("LINES ------------- %v\n", fields)
+	// for _, elem := range logger.fields {
+	// 	fmt.Printf("New Value ----------- %v", elem)
+	// }
+	// fmt.Printf("After Adding --------- %v \n", logger.lines)
+	// fmt.Printf("New Line-----------%v============%v", logger.lines, logger.fields)
+
 	return logger
 }
 
@@ -136,8 +161,8 @@ type baseLoggingSuite struct {
 }
 
 func (s *baseLoggingSuite) SetupTest() {
-	s.logger.fields = s.logger.fields[:0]
-	s.logger.lines = s.logger.lines[:0]
+	s.logger.fields = logging.Fields{}
+	s.logger.lines = []LogLine{}
 }
 
 func customClientCodeToLevel(c codes.Code) logging.Level {
@@ -220,7 +245,9 @@ func (s *loggingClientServerSuite) TestPing() {
 	assert.Equal(s.T(), logging.DEBUG, clientFinishCallLogLine.lvl)
 	assert.Equal(s.T(), "finished call", clientFinishCallLogLine.msg)
 	clientFinishCallFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientFinishCallLogLine.fields, "Ping", interceptors.Unary)
-	clientFinishCallFields.AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
+	clientFinishCallFields.AssertNextField(s.T(), "grpc.request.value", "something").
+		AssertNextFieldNotEmpty(s.T(), "peer.address").
+		AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "OK").
 		AssertNextFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
@@ -264,7 +291,9 @@ func (s *loggingClientServerSuite) TestPingList() {
 	assert.Equal(s.T(), logging.DEBUG, clientFinishCallLogLine.lvl)
 	assert.Equal(s.T(), "finished call", clientFinishCallLogLine.msg)
 	clientFinishCallFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientFinishCallLogLine.fields, "PingList", interceptors.ServerStream)
-	clientFinishCallFields.AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
+	clientFinishCallFields.AssertNextField(s.T(), "grpc.request.value", "something").
+		AssertNextFieldNotEmpty(s.T(), "peer.address").
+		AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "OK").
 		AssertNextFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
@@ -322,7 +351,9 @@ func (s *loggingClientServerSuite) TestPingError_WithCustomLevels() {
 			assert.Equal(t, tcase.level, clientFinishCallLogLine.lvl)
 			assert.Equal(t, "finished call", clientFinishCallLogLine.msg)
 			clientFinishCallFields := assertStandardFields(t, logging.KindClientFieldValue, clientFinishCallLogLine.fields, "PingError", interceptors.Unary)
-			clientFinishCallFields.AssertNextFieldNotEmpty(t, "grpc.start_time").
+			clientFinishCallFields.AssertNextField(s.T(), "grpc.request.value", "something").
+				AssertNextFieldNotEmpty(s.T(), "peer.address").
+				AssertNextFieldNotEmpty(t, "grpc.start_time").
 				AssertNextFieldNotEmpty(t, "grpc.request.deadline").
 				AssertNextField(t, "grpc.code", tcase.code.String()).
 				AssertNextField(t, "grpc.error", fmt.Sprintf("rpc error: code = %s desc = Userspace error.", tcase.code.String())).
@@ -396,7 +427,9 @@ func (s *loggingCustomDurationSuite) TestPing_HasOverriddenDuration() {
 	assert.Equal(s.T(), logging.DEBUG, clientFinishCallLogLine.lvl)
 	assert.Equal(s.T(), "finished call", clientFinishCallLogLine.msg)
 	clientFinishCallFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientFinishCallLogLine.fields, "Ping", interceptors.Unary)
-	clientFinishCallFields.AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
+	clientFinishCallFields.AssertNextField(s.T(), "grpc.request.value", "something").
+		AssertNextFieldNotEmpty(s.T(), "peer.address").
+		AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "OK").
 		AssertNextFieldNotEmpty(s.T(), "grpc.duration").AssertNoMoreTags(s.T())
@@ -441,7 +474,9 @@ func (s *loggingCustomDurationSuite) TestPingList_HasOverriddenDuration() {
 	assert.Equal(s.T(), logging.DEBUG, clientFinishCallLogLine.lvl)
 	assert.Equal(s.T(), "finished call", clientFinishCallLogLine.msg)
 	clientFinishCallFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientFinishCallLogLine.fields, "PingList", interceptors.ServerStream)
-	clientFinishCallFields.AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
+	clientFinishCallFields.AssertNextField(s.T(), "grpc.request.value", "something").
+		AssertNextFieldNotEmpty(s.T(), "peer.address").
+		AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "OK").
 		AssertNextFieldNotEmpty(s.T(), "grpc.duration").AssertNoMoreTags(s.T())
@@ -530,7 +565,9 @@ func (s *loggingCustomDeciderSuite) TestPingError_HasCustomDecider() {
 	assert.Equal(s.T(), logging.DEBUG, clientFinishCallLogLine.lvl)
 	assert.Equal(s.T(), "finished call", clientFinishCallLogLine.msg)
 	clientFinishCallFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientFinishCallLogLine.fields, "PingError", interceptors.Unary)
-	clientFinishCallFields.AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
+	clientFinishCallFields.AssertNextField(s.T(), "grpc.request.value", "something").
+		AssertNextFieldNotEmpty(s.T(), "peer.address").
+		AssertNextFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertNextFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertNextField(s.T(), "grpc.code", "NotFound").
 		AssertNextField(s.T(), "grpc.error", "rpc error: code = NotFound desc = Userspace error.").
