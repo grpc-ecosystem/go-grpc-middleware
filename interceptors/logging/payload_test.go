@@ -36,7 +36,7 @@ func TestPayloadSuite(t *testing.T) {
 
 	s := &loggingPayloadSuite{
 		baseLoggingSuite: &baseLoggingSuite{
-			logger: &mockLogger{sharedResults: &sharedResults{}},
+			logger: &mockLogger{mockStdOutput: &mockStdOutput{}},
 			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 				TestService: &grpctesting.TestPingService{T: t},
 			},
@@ -136,6 +136,7 @@ func (s *loggingPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
 	require.Error(s.T(), err, "there must be an error on an unsuccessful call")
 
 	lines := s.logger.Lines()
+	sort.Sort(lines)
 	require.Len(s.T(), lines, 2) // Only client & server requests.
 
 	clientRequestLogLine := lines[0]

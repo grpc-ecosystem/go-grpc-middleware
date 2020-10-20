@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -66,7 +67,7 @@ func (l LogLines) Less(i, j int) bool {
 	if l[i].msg != l[j].msg {
 		return l[i].msg < l[j].msg
 	}
-	
+
 	// We want to sort by counter which in string, so we need to parse it.
 	a := testpb.PingResponse{}
 	b := testpb.PingResponse{}
@@ -85,25 +86,26 @@ func (l LogLines) Swap(i, j int) {
 	l[i], l[j] = l[j], l[i]
 }
 
-type sharedResults struct {
-	// Contains a shared slice among all mockLoggers,
-	// for appending the Log results
-	lines []LogLine
+type mockStdOutput struct {
+	// All the output of the mockLogger is shared in a single
+	// shared slice. Behaves like a stdout which contains all
+	// the log lines.
+	lines LogLines
 	m     sync.Mutex
 }
 
-func (l *sharedResults) Lines() []LogLine {
+func (l *mockStdOutput) Lines() LogLines {
 	l.m.Lock()
 	defer l.m.Unlock()
 
-	retLines := make([]LogLine, len(l.lines))
+	retLines := make(LogLines, len(l.lines))
 	copy(retLines, l.lines)
 
 	return retLines
 }
 
 type mockLogger struct {
-	*sharedResults
+	*mockStdOutput
 
 	fields logging.Fields
 }
@@ -128,7 +130,7 @@ func (l *mockLogger) With(fields ...string) logging.Logger {
 	l.m.Lock()
 	defer l.m.Unlock()
 
-	return &mockLogger{sharedResults: l.sharedResults, fields: append(append(logging.Fields{}, l.fields...), fields...)}
+	return &mockLogger{mockStdOutput: l.mockStdOutput, fields: append(append(logging.Fields{}, l.fields...), fields...)}
 }
 
 type baseLoggingSuite struct {
@@ -161,7 +163,7 @@ func TestSuite(t *testing.T) {
 
 	s := &loggingClientServerSuite{
 		&baseLoggingSuite{
-			logger: &mockLogger{sharedResults: &sharedResults{}},
+			logger: &mockLogger{mockStdOutput: &mockStdOutput{}},
 			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 				TestService: &grpctesting.TestPingService{T: t},
 			},
@@ -193,15 +195,17 @@ func assertStandardFields(t *testing.T, kind string, f testDisposableFields, met
 func (s *loggingClientServerSuite) TestPing() {
 	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
+
 	lines := s.logger.Lines()
+	sort.Sort(lines)
 	require.Len(s.T(), lines, 4)
 
-	clientStartCallLogLine := lines[0]
+	clientStartCallLogLine := lines[1]
 	assert.Equal(s.T(), logging.DEBUG, clientStartCallLogLine.lvl)
 	assert.Equal(s.T(), "started call", clientStartCallLogLine.msg)
 	_ = assertStandardFields(s.T(), logging.KindClientFieldValue, clientStartCallLogLine.fields, "Ping", interceptors.Unary)
 
-	serverStartCallLogLine := lines[1]
+	serverStartCallLogLine := lines[3]
 	assert.Equal(s.T(), logging.DEBUG, serverStartCallLogLine.lvl)
 	assert.Equal(s.T(), "started call", serverStartCallLogLine.msg)
 	_ = assertStandardFields(s.T(), logging.KindServerFieldValue, serverStartCallLogLine.fields, "Ping", interceptors.Unary)
@@ -217,7 +221,7 @@ func (s *loggingClientServerSuite) TestPing() {
 		AssertNextField(s.T(), "grpc.code", "OK").
 		AssertNextFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
 
-	clientFinishCallLogLine := lines[3]
+	clientFinishCallLogLine := lines[0]
 	assert.Equal(s.T(), logging.DEBUG, clientFinishCallLogLine.lvl)
 	assert.Equal(s.T(), "finished call", clientFinishCallLogLine.msg)
 	clientFinishCallFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientFinishCallLogLine.fields, "Ping", interceptors.Unary)
@@ -238,14 +242,15 @@ func (s *loggingClientServerSuite) TestPingList() {
 		require.NoError(s.T(), err, "reading stream should not fail")
 	}
 	lines := s.logger.Lines()
+	sort.Sort(lines)
 	require.Len(s.T(), lines, 4)
 
-	serverStartCallLogLine := lines[1]
+	serverStartCallLogLine := lines[3]
 	assert.Equal(s.T(), logging.DEBUG, serverStartCallLogLine.lvl)
 	assert.Equal(s.T(), "started call", serverStartCallLogLine.msg)
 	_ = assertStandardFields(s.T(), logging.KindServerFieldValue, serverStartCallLogLine.fields, "PingList", interceptors.ServerStream)
 
-	clientStartCallLogLine := lines[0]
+	clientStartCallLogLine := lines[1]
 	assert.Equal(s.T(), logging.DEBUG, clientStartCallLogLine.lvl)
 	assert.Equal(s.T(), "started call", clientStartCallLogLine.msg)
 	_ = assertStandardFields(s.T(), logging.KindClientFieldValue, clientStartCallLogLine.fields, "PingList", interceptors.ServerStream)
@@ -261,7 +266,7 @@ func (s *loggingClientServerSuite) TestPingList() {
 		AssertNextField(s.T(), "grpc.code", "OK").
 		AssertNextFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
 
-	clientFinishCallLogLine := lines[3]
+	clientFinishCallLogLine := lines[0]
 	assert.Equal(s.T(), logging.DEBUG, clientFinishCallLogLine.lvl)
 	assert.Equal(s.T(), "finished call", clientFinishCallLogLine.msg)
 	clientFinishCallFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientFinishCallLogLine.fields, "PingList", interceptors.ServerStream)
@@ -305,6 +310,7 @@ func (s *loggingClientServerSuite) TestPingError_WithCustomLevels() {
 				&testpb.PingRequest{Value: "something", ErrorCodeReturned: uint32(tcase.code)})
 			require.Error(t, err, "each call here must return an error")
 			lines := s.logger.Lines()
+			sort.Sort(lines)
 			require.Len(t, lines, 4)
 
 			serverFinishCallLogLine := lines[2]
@@ -319,7 +325,7 @@ func (s *loggingClientServerSuite) TestPingError_WithCustomLevels() {
 				AssertNextField(t, "grpc.error", fmt.Sprintf("rpc error: code = %s desc = Userspace error.", tcase.code.String())).
 				AssertNextFieldNotEmpty(t, "grpc.time_ms").AssertNoMoreTags(t)
 
-			clientFinishCallLogLine := lines[3]
+			clientFinishCallLogLine := lines[0]
 			assert.Equal(t, tcase.level, clientFinishCallLogLine.lvl)
 			assert.Equal(t, "finished call", clientFinishCallLogLine.msg)
 			clientFinishCallFields := assertStandardFields(t, logging.KindClientFieldValue, clientFinishCallLogLine.fields, "PingError", interceptors.Unary)
@@ -344,7 +350,7 @@ func TestCustomDurationSuite(t *testing.T) {
 
 	s := &loggingCustomDurationSuite{
 		baseLoggingSuite: &baseLoggingSuite{
-			logger: &mockLogger{sharedResults: &sharedResults{}},
+			logger: &mockLogger{mockStdOutput: &mockStdOutput{}},
 			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 				TestService: &grpctesting.TestPingService{T: t},
 			},
@@ -370,14 +376,15 @@ func (s *loggingCustomDurationSuite) TestPing_HasOverriddenDuration() {
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
 
 	lines := s.logger.Lines()
+	sort.Sort(lines)
 	require.Len(s.T(), lines, 4)
 
-	serverStartedCallLogLine := lines[1]
+	serverStartedCallLogLine := lines[3]
 	assert.Equal(s.T(), logging.INFO, serverStartedCallLogLine.lvl)
 	assert.Equal(s.T(), "started call", serverStartedCallLogLine.msg)
 	_ = assertStandardFields(s.T(), logging.KindServerFieldValue, serverStartedCallLogLine.fields, "Ping", interceptors.Unary)
 
-	clientStartedCallLogLine := lines[0]
+	clientStartedCallLogLine := lines[1]
 	assert.Equal(s.T(), logging.DEBUG, clientStartedCallLogLine.lvl)
 	assert.Equal(s.T(), "started call", clientStartedCallLogLine.msg)
 	_ = assertStandardFields(s.T(), logging.KindClientFieldValue, clientStartedCallLogLine.fields, "Ping", interceptors.Unary)
@@ -393,7 +400,7 @@ func (s *loggingCustomDurationSuite) TestPing_HasOverriddenDuration() {
 		AssertNextField(s.T(), "grpc.code", "OK").
 		AssertNextFieldNotEmpty(s.T(), "grpc.duration").AssertNoMoreTags(s.T())
 
-	clientFinishCallLogLine := lines[3]
+	clientFinishCallLogLine := lines[0]
 	assert.Equal(s.T(), logging.DEBUG, clientFinishCallLogLine.lvl)
 	assert.Equal(s.T(), "finished call", clientFinishCallLogLine.msg)
 	clientFinishCallFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientFinishCallLogLine.fields, "Ping", interceptors.Unary)
@@ -415,14 +422,15 @@ func (s *loggingCustomDurationSuite) TestPingList_HasOverriddenDuration() {
 	}
 
 	lines := s.logger.Lines()
+	sort.Sort(lines)
 	require.Len(s.T(), lines, 4)
 
-	serverStartedCallLogLine := lines[1]
+	serverStartedCallLogLine := lines[3]
 	assert.Equal(s.T(), logging.INFO, serverStartedCallLogLine.lvl)
 	assert.Equal(s.T(), "started call", serverStartedCallLogLine.msg)
 	_ = assertStandardFields(s.T(), logging.KindServerFieldValue, serverStartedCallLogLine.fields, "PingList", interceptors.ServerStream)
 
-	clientStartedCallLogLine := lines[0]
+	clientStartedCallLogLine := lines[1]
 	assert.Equal(s.T(), logging.DEBUG, clientStartedCallLogLine.lvl)
 	assert.Equal(s.T(), "started call", clientStartedCallLogLine.msg)
 	_ = assertStandardFields(s.T(), logging.KindClientFieldValue, clientStartedCallLogLine.fields, "PingList", interceptors.ServerStream)
@@ -438,7 +446,7 @@ func (s *loggingCustomDurationSuite) TestPingList_HasOverriddenDuration() {
 		AssertNextField(s.T(), "grpc.code", "OK").
 		AssertNextFieldNotEmpty(s.T(), "grpc.duration").AssertNoMoreTags(s.T())
 
-	clientFinishCallLogLine := lines[3]
+	clientFinishCallLogLine := lines[0]
 	assert.Equal(s.T(), logging.DEBUG, clientFinishCallLogLine.lvl)
 	assert.Equal(s.T(), "finished call", clientFinishCallLogLine.msg)
 	clientFinishCallFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientFinishCallLogLine.fields, "PingList", interceptors.ServerStream)
@@ -466,7 +474,7 @@ func TestCustomDeciderSuite(t *testing.T) {
 
 	s := &loggingCustomDeciderSuite{
 		baseLoggingSuite: &baseLoggingSuite{
-			logger: &mockLogger{sharedResults: &sharedResults{}},
+			logger: &mockLogger{mockStdOutput: &mockStdOutput{}},
 			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 				TestService: &grpctesting.TestPingService{T: t},
 			},
@@ -503,14 +511,15 @@ func (s *loggingCustomDeciderSuite) TestPingError_HasCustomDecider() {
 	require.Error(s.T(), err, "each call here must return an error")
 
 	lines := s.logger.Lines()
+	sort.Sort(lines)
 	require.Len(s.T(), lines, 4)
 
-	serverStartedCallLogLine := lines[1]
+	serverStartedCallLogLine := lines[3]
 	assert.Equal(s.T(), logging.INFO, serverStartedCallLogLine.lvl)
 	assert.Equal(s.T(), "started call", serverStartedCallLogLine.msg)
 	_ = assertStandardFields(s.T(), logging.KindServerFieldValue, serverStartedCallLogLine.fields, "PingError", interceptors.Unary)
 
-	clientStartedCallLogLine := lines[0]
+	clientStartedCallLogLine := lines[1]
 	assert.Equal(s.T(), logging.DEBUG, clientStartedCallLogLine.lvl)
 	assert.Equal(s.T(), "started call", clientStartedCallLogLine.msg)
 	_ = assertStandardFields(s.T(), logging.KindClientFieldValue, clientStartedCallLogLine.fields, "PingError", interceptors.Unary)
@@ -527,7 +536,7 @@ func (s *loggingCustomDeciderSuite) TestPingError_HasCustomDecider() {
 		AssertNextField(s.T(), "grpc.error", "rpc error: code = NotFound desc = Userspace error.").
 		AssertNextFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
 
-	clientFinishCallLogLine := lines[3]
+	clientFinishCallLogLine := lines[0]
 	assert.Equal(s.T(), logging.DEBUG, clientFinishCallLogLine.lvl)
 	assert.Equal(s.T(), "finished call", clientFinishCallLogLine.msg)
 	clientFinishCallFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientFinishCallLogLine.fields, "PingError", interceptors.Unary)
