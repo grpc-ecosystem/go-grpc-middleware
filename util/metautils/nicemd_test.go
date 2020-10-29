@@ -50,6 +50,14 @@ func TestNiceMD_Set(t *testing.T) {
 	assert.EqualValues(t, []string{"another"}, nmd["newkey"], "set should override new keys")
 }
 
+func TestNiceMD_SetGet(t *testing.T) {
+	nmd := metautils.NiceMD(metadata.Pairs(testPairs...))
+	nmd.Set("another-key", "onetwothree")
+	assert.EqualValues(t, "onetwothree", nmd.Get("another-key"))
+	nmd.Set("another-key-bin", "binarydata")
+	assert.EqualValues(t, "binarydata", nmd.Get("another-key-bin"))
+}
+
 func TestNiceMD_Clone(t *testing.T) {
 	nmd := metautils.NiceMD(metadata.Pairs(testPairs...))
 	fullCopied := nmd.Clone()
