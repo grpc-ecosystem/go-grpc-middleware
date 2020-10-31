@@ -70,7 +70,7 @@ func TestChainStreamServer(t *testing.T) {
 	}
 	second := func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		requireContextValue(t, stream.Context(), "parent", "second interceptor must know the parent context value")
-		requireContextValue(t, stream.Context(), "parent", "second interceptor must know the first context value")
+		requireContextValue(t, stream.Context(), "first", "second interceptor must know the first context value")
 		require.Equal(t, parentStreamInfo, info, "second interceptor must know the parentStreamInfo")
 		require.Equal(t, someService, srv, "second interceptor must know someService")
 		wrapped := WrapServerStream(stream)
@@ -109,6 +109,7 @@ func TestChainUnaryClient(t *testing.T) {
 	}
 	second := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		requireContextValue(t, ctx, "parent", "second must know the parent context value")
+		requireContextValue(t, ctx, "first", "second must know the first context value")
 		require.Equal(t, someServiceName, method, "second must know someService")
 		require.Len(t, opts, 1, "second should see parent CallOptions")
 		wrappedOpts := append(opts, grpc.WaitForReady(false))
@@ -143,6 +144,7 @@ func TestChainStreamClient(t *testing.T) {
 	}
 	second := func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		requireContextValue(t, ctx, "parent", "second must know the parent context value")
+		requireContextValue(t, ctx, "first", "second must know the first context value")
 		require.Equal(t, someServiceName, method, "second must know someService")
 		require.Len(t, opts, 1, "second should see parent CallOptions")
 		wrappedOpts := append(opts, grpc.WaitForReady(false))
