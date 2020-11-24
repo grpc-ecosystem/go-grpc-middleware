@@ -30,7 +30,7 @@ var (
 	}
 )
 
-func splitMethodName(fullMethod string) (string, string) {
+func SplitMethodName(fullMethod string) (string, string) {
 	fullMethod = strings.TrimPrefix(fullMethod, "/") // remove leading slash
 	if i := strings.Index(fullMethod, "/"); i >= 0 {
 		return fullMethod[:i], fullMethod[i+1:]
@@ -77,6 +77,6 @@ func newReport(typ GRPCType, fullMethod string) report {
 		startTime: time.Now(),
 		rpcType:   typ,
 	}
-	r.service, r.method = splitMethodName(fullMethod)
+	r.service, r.method = SplitMethodName(fullMethod)
 	return r
 }
