@@ -2,9 +2,11 @@ package tracing
 
 import (
 	"fmt"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 )
 
 func TestTagsCarrier_Set_JaegerTraceFormat(t *testing.T) {

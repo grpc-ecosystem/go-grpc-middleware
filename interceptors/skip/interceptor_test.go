@@ -32,10 +32,7 @@ const (
 )
 
 func skipped(ctx context.Context) bool {
-	if len(tags.Extract(ctx).Values()) > 0 {
-		return false
-	}
-	return true
+	return len(tags.Extract(ctx).Values()) <= 0
 }
 
 type skipPingService struct {
