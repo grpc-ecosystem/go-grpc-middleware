@@ -87,10 +87,9 @@ func filter(ctx context.Context, gRPCType interceptors.GRPCType, service string,
 	m.Set(keyMethod, method)
 
 	if v := m.Get("skip"); len(v) > 0 && v[0] == "true" {
-
-		return true
+		return false
 	}
-	return false
+	return true
 }
 
 func TestSkipSuite(t *testing.T) {

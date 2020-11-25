@@ -18,7 +18,7 @@ func UnaryServerInterceptor(in grpc.UnaryServerInterceptor, filter Filter) grpc.
 
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		service, method := interceptors.SplitMethodName(info.FullMethod)
-		if filter(ctx, interceptors.Unary, service, method) {
+		if !filter(ctx, interceptors.Unary, service, method) {
 			// Skip interceptor.
 			return handler(ctx, req)
 		}
@@ -34,7 +34,7 @@ func StreamServerInterceptor(in grpc.StreamServerInterceptor, filter Filter) grp
 
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		service, method := interceptors.SplitMethodName(info.FullMethod)
-		if filter(ss.Context(), interceptors.StreamRPCType(info), service, method) {
+		if !filter(ss.Context(), interceptors.StreamRPCType(info), service, method) {
 			// Skip interceptor.
 			return handler(srv, ss)
 		}
