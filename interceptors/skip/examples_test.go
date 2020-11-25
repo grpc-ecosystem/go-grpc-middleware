@@ -18,10 +18,10 @@ func Example_initialization() {
 	)
 }
 
-func exampleAuthFunc(ctx context.Context) (context.Context, error) {
+func dummyAuth(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func ReflectionFilter(ctx context.Context, gRPCType interceptors.GRPCType, service string, method string) bool {
+func SkilReflectionService(ctx context.Context, gRPCType interceptors.GRPCType, service string, method string) bool {
 	return service == "grpc.reflection.v1alpha.ServerReflection"
 }
