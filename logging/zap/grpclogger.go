@@ -114,5 +114,5 @@ func (l *zapGrpcLoggerV2) Fatalf(format string, args ...interface{}) {
 }
 
 func (l *zapGrpcLoggerV2) V(level int) bool {
-	return level <= l.verbosity
+	return l.verbosity <= level
 }
