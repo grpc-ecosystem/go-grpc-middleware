@@ -1,6 +1,8 @@
 package ratelimit_test
 
 import (
+	"context"
+
 	"google.golang.org/grpc"
 
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
@@ -11,7 +13,7 @@ import (
 // It does not limit any request because Limit function always returns false.
 type alwaysPassLimiter struct{}
 
-func (*alwaysPassLimiter) Limit() bool {
+func (*alwaysPassLimiter) Limit(_ context.Context) bool {
 	return false
 }
 

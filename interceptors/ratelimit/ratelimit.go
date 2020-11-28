@@ -12,13 +12,13 @@ import (
 // If Limit function return true, the request will be rejected.
 // Otherwise, the request will pass.
 type Limiter interface {
-	Limit() bool
+	Limit(ctx context.Context) bool
 }
 
 // UnaryServerInterceptor returns a new unary server interceptors that performs request rate limiting.
 func UnaryServerInterceptor(limiter Limiter) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		if limiter.Limit() {
+		if limiter.Limit(ctx) {
 			return nil, status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_ratelimit middleware, please retry later.", info.FullMethod)
 		}
 		return handler(ctx, req)
@@ -28,7 +28,7 @@ func UnaryServerInterceptor(limiter Limiter) grpc.UnaryServerInterceptor {
 // StreamServerInterceptor returns a new stream server interceptor that performs rate limiting on the request.
 func StreamServerInterceptor(limiter Limiter) grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		if limiter.Limit() {
+		if limiter.Limit(stream.Context()) {
 			return status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_ratelimit middleware, please retry later.", info.FullMethod)
 		}
 		return handler(srv, stream)
