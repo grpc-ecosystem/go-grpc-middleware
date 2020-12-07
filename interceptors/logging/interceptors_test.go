@@ -465,7 +465,7 @@ func TestCustomDeciderSuite(t *testing.T) {
 		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
 		return
 	}
-	opts := logging.WithDecider(func(method string) logging.Decision {
+	opts := logging.WithDecider(func(method string, _ error) logging.Decision {
 		if method == "/grpc_middleware.testpb.TestService/PingError" {
 			return logging.LogStartAndFinishCall
 		}
