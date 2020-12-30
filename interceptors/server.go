@@ -31,14 +31,14 @@ func UnaryServerInterceptor(reportable ServerReportable) grpc.UnaryServerInterce
 func StreamServerInterceptor(reportable ServerReportable) grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		r := newReport(ServerStream, info.FullMethod)
-		reporter, newCtx := reportable.ServerReporter(ss.Context(), nil, streamRPCType(info), r.service, r.method)
+		reporter, newCtx := reportable.ServerReporter(ss.Context(), nil, StreamRPCType(info), r.service, r.method)
 		err := handler(srv, &monitoredServerStream{ServerStream: ss, newCtx: newCtx, reporter: reporter})
 		reporter.PostCall(err, time.Since(r.startTime))
 		return err
 	}
 }
 
-func streamRPCType(info *grpc.StreamServerInfo) GRPCType {
+func StreamRPCType(info *grpc.StreamServerInfo) GRPCType {
 	if info.IsClientStream && !info.IsServerStream {
 		return ClientStream
 	} else if !info.IsClientStream && info.IsServerStream {

@@ -75,6 +75,9 @@ myServer := grpc.NewServer(
    * [`recovery`](interceptors/recovery) - turn panics into gRPC errors
    * [`ratelimit`](interceptors/ratelimit) - grpc rate limiting by your own limiter
 
+#### Utility
+   * [`skip`](interceptors/skip) - allow users to skip interceptors in certain condition.
+
 
 ## Status
 
