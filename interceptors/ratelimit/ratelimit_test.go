@@ -25,9 +25,9 @@ func (m *mockGRPCServerStream) Context() context.Context {
 
 type mockContextBasedLimiter struct{}
 
-func (*mockContextBasedLimiter) Limit(ctx context.Context) bool {
-	l, ok := ctx.Value(ctxLimitKey).(bool)
-	return ok && l
+func (*mockContextBasedLimiter) Limit(ctx context.Context) error {
+	l, _ := ctx.Value(ctxLimitKey).(error)
+	return l
 }
 
 func TestUnaryServerInterceptor_RateLimitPass(t *testing.T) {
@@ -74,7 +74,7 @@ func TestUnaryServerInterceptor_RateLimitFail(t *testing.T) {
 	}
 	resp, err := interceptor(ctx, nil, info, handler)
 	assert.Nil(t, resp)
-	assert.EqualError(t, err, "rpc error: code = ResourceExhausted desc = FakeMethod is rejected by grpc_ratelimit middleware, please retry later.")
+	assert.EqualError(t, err, errMsgFake)
 }
 
 func TestStreamServerInterceptor_RateLimitFail(t *testing.T) {
@@ -89,5 +89,5 @@ func TestStreamServerInterceptor_RateLimitFail(t *testing.T) {
 		FullMethod: "FakeMethod",
 	}
 	err := interceptor(nil, &mockGRPCServerStream{ctx: ctx}, info, handler)
-	assert.EqualError(t, err, "rpc error: code = ResourceExhausted desc = FakeMethod is rejected by grpc_ratelimit middleware, please retry later.")
+	assert.EqualError(t, err, errMsgFake)
 }
