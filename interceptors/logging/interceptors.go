@@ -41,6 +41,10 @@ func (c *reporter) logMessage(logger Logger, err error, msg string, duration tim
 	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), msg)
 }
 
+func (c *reporter) StartTimeCall(startTime time.Time, callType string) interceptors.Timer {
+	return interceptors.EmptyTimer
+}
+
 func (c *reporter) PostCall(err error, duration time.Duration) {
 	switch c.opts.shouldLog(interceptors.FullMethod(c.service, c.method), err) {
 	case LogFinishCall, LogStartAndFinishCall:

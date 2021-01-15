@@ -30,6 +30,10 @@ type opentracingServerReporter struct {
 	serverSpan opentracing.Span
 }
 
+func (o *opentracingServerReporter) StartTimeCall(_ time.Time, _ string) interceptors.Timer {
+	return interceptors.EmptyTimer
+}
+
 func (o *opentracingServerReporter) PostCall(err error, _ time.Duration) {
 	// Finish span and log context information.
 	tags := tags.Extract(o.ctx)

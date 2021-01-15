@@ -21,6 +21,10 @@ type reporter struct {
 	initial bool
 }
 
+func (c *reporter) StartTimeCall(_ time.Time, _ string) interceptors.Timer {
+	return interceptors.EmptyTimer
+}
+
 func (c *reporter) PostCall(error, time.Duration) {}
 
 func (c *reporter) PostMsgSend(interface{}, error, time.Duration) {}

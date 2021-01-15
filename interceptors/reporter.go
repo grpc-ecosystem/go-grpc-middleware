@@ -68,6 +68,7 @@ type ServerReportable interface {
 }
 
 type Reporter interface {
+	StartTimeCall(time.Time, string) Timer
 	PostCall(err error, rpcDuration time.Duration)
 
 	PostMsgSend(reqProto interface{}, err error, sendDuration time.Duration)
@@ -78,6 +79,7 @@ var _ Reporter = NoopReporter{}
 
 type NoopReporter struct{}
 
+func (NoopReporter) StartTimeCall(time.Time, string) Timer            { return EmptyTimer }
 func (NoopReporter) PostCall(error, time.Duration)                    {}
 func (NoopReporter) PostMsgSend(interface{}, error, time.Duration)    {}
 func (NoopReporter) PostMsgReceive(interface{}, error, time.Duration) {}

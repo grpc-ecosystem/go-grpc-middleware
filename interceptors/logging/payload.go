@@ -19,6 +19,10 @@ type serverPayloadReporter struct {
 	logger Logger
 }
 
+func (c *serverPayloadReporter) StartTimeCall(_ time.Time, _ string) interceptors.Timer {
+	return interceptors.EmptyTimer
+}
+
 func (c *serverPayloadReporter) PostCall(error, time.Duration) {}
 
 func (c *serverPayloadReporter) PostMsgSend(req interface{}, err error, duration time.Duration) {
@@ -56,6 +60,10 @@ func (c *serverPayloadReporter) PostMsgReceive(reply interface{}, err error, dur
 type clientPayloadReporter struct {
 	ctx    context.Context
 	logger Logger
+}
+
+func (c *clientPayloadReporter) StartTimeCall(_ time.Time, _ string) interceptors.Timer {
+	return interceptors.EmptyTimer
 }
 
 func (c *clientPayloadReporter) PostCall(error, time.Duration) {}
