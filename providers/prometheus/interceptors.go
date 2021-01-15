@@ -23,12 +23,12 @@ func (r *reporter) StartTimeCall(startTime time.Time, callType string) intercept
 	switch r.kind {
 	case KindClient:
 		switch callType {
-		case string(Send):
+		case string(interceptors.Send):
 			if r.clientMetrics.clientStreamSendHistogramEnabled {
 				hist := r.clientMetrics.clientStreamSendHistogram.WithLabelValues(string(r.typ), r.service, r.method)
 				return prometheus.NewTimer(hist)
 			}
-		case string(Receive):
+		case string(interceptors.Receive):
 			if r.clientMetrics.clientStreamRecvHistogramEnabled {
 				hist := r.clientMetrics.clientStreamRecvHistogram.WithLabelValues(string(r.typ), r.service, r.method)
 				return prometheus.NewTimer(hist)

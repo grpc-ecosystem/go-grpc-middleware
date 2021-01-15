@@ -60,14 +60,14 @@ type monitoredClientStream struct {
 }
 
 func (s *monitoredClientStream) SendMsg(m interface{}) error {
-	timer := s.reporter.StartTimeCall(time.Now(), "send")
+	timer := s.reporter.StartTimeCall(time.Now(), string(Send))
 	err := s.ClientStream.SendMsg(m)
 	s.reporter.PostMsgSend(m, err, timer.ObserveDuration())
 	return err
 }
 
 func (s *monitoredClientStream) RecvMsg(m interface{}) error {
-	timer := s.reporter.StartTimeCall(time.Now(), "recv")
+	timer := s.reporter.StartTimeCall(time.Now(), string(Receive))
 	err := s.ClientStream.RecvMsg(m)
 	s.reporter.PostMsgReceive(m, err, timer.ObserveDuration())
 

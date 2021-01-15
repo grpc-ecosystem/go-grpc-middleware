@@ -15,10 +15,3 @@ const (
 	KindClient Kind = "client"
 	KindServer Kind = "server"
 )
-
-type RPCMethod string
-
-const (
-	Send    RPCMethod = "send"
-	Receive RPCMethod = "recv"
-)

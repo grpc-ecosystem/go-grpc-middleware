@@ -9,7 +9,7 @@ import (
 func FromError(err error) (s *status.Status, ok bool) {
 	return status.FromError(err)
 
-	// TODO: @yashrsharma - discuss if we require more error handling from the previous package
+	// TODO: @yashrsharma44 - discuss if we require more error handling from the previous package
 }
 
 // A CounterOption lets you add options to Counter metrics using With* funcs.

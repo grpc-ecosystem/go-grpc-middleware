@@ -31,6 +31,13 @@ func (zeroTimer) ObserveDuration() time.Duration {
 
 var EmptyTimer = &zeroTimer{}
 
+type RPCMethod string
+
+const (
+	Send    RPCMethod = "send"
+	Receive RPCMethod = "recv"
+)
+
 const (
 	Unary        GRPCType = "unary"
 	ClientStream GRPCType = "client_stream"
