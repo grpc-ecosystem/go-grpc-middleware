@@ -6,11 +6,11 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	pb "google.golang.org/grpc/examples/helloworld/helloworld"
 	"google.golang.org/grpc/status"
 
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	pb "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 )
 
 func parseToken(token string) (struct{}, error) {
@@ -49,29 +49,25 @@ func Example_serverConfig() {
 	)
 }
 
-type gRPCserverAuthenticated struct{}
-
-// SayHello only can be called by client when authenticated by exampleAuthFunc
-func (g gRPCserverAuthenticated) SayHello(ctx context.Context, request *pb.HelloRequest) (*pb.HelloReply, error) {
-	return &pb.HelloReply{Message: "pong authenticated"}, nil
+type server struct {
+	pb.UnimplementedTestServiceServer
+	message string
 }
 
-type gRPCserverUnauthenticated struct{}
-
-// SayHello can be called by client without being authenticated by exampleAuthFunc as AuthFuncOverride is called instead
-func (g *gRPCserverUnauthenticated) SayHello(ctx context.Context, request *pb.HelloRequest) (*pb.HelloReply, error) {
-	return &pb.HelloReply{Message: "pong unauthenticated"}, nil
+// SayHello only can be called by client when authenticated by exampleAuthFunc
+func (g *server) Ping(ctx context.Context, request *pb.PingRequest) (*pb.PingResponse, error) {
+	return &pb.PingResponse{Value: g.message}, nil
 }
 
 // AuthFuncOverride is called instead of exampleAuthFunc
-func (g *gRPCserverUnauthenticated) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (g *server) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	log.Println("client is calling method:", fullMethodName)
 	return ctx, nil
 }
 
 // Simple example of server initialization code with AuthFuncOverride method.
 func Example_serverConfigWithAuthOverride() {
-	server := grpc.NewServer(
+	svr := grpc.NewServer(
 		grpc.StreamInterceptor(grpc_auth.StreamServerInterceptor(exampleAuthFunc)),
 		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(exampleAuthFunc)),
 	)
@@ -79,8 +75,8 @@ func Example_serverConfigWithAuthOverride() {
 	overrideActive := true
 
 	if overrideActive {
-		pb.RegisterGreeterServer(server, &gRPCserverUnauthenticated{})
+		pb.RegisterTestServiceServer(svr, &server{message: "pong unauthenticated"})
 	} else {
-		pb.RegisterGreeterServer(server, &gRPCserverAuthenticated{})
+		pb.RegisterTestServiceServer(svr, &server{message: "pong authenticated"})
 	}
 }
