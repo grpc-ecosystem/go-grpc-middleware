@@ -17,8 +17,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 func TestServerInterceptorSuite(t *testing.T) {
@@ -51,7 +50,7 @@ func (s *ServerInterceptorTestSuite) SetupSuite() {
 		grpc.StreamInterceptor(StreamServerInterceptor(s.mock)),
 		grpc.UnaryInterceptor(UnaryServerInterceptor(s.mock)),
 	)
-	testpb.RegisterTestServiceServer(s.server, &grpctesting.TestPingService{T: s.T()})
+	testpb.RegisterTestServiceServer(s.server, &testpb.TestPingService{T: s.T()})
 
 	go func() {
 		_ = s.server.Serve(s.serverListener)
@@ -89,7 +88,7 @@ func (s *ServerInterceptorTestSuite) TearDownTest() {
 }
 
 func (s *ServerInterceptorTestSuite) TestUnaryReporting() {
-	_, err := s.testClient.PingEmpty(s.ctx, &testpb.Empty{}) // should return with code=OK
+	_, err := s.testClient.PingEmpty(s.ctx, &testpb.PingEmptyRequest{}) // should return with code=OK
 	require.NoError(s.T(), err)
 	s.mock.Equal(s.T(), []*mockReport{{
 		typ:             Unary,
@@ -101,7 +100,7 @@ func (s *ServerInterceptorTestSuite) TestUnaryReporting() {
 	}})
 	s.mock.reports = s.mock.reports[:0] // Reset.
 
-	_, err = s.testClient.PingError(s.ctx, &testpb.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
+	_, err = s.testClient.PingError(s.ctx, &testpb.PingErrorRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
 	require.Error(s.T(), err)
 	s.mock.Equal(s.T(), []*mockReport{{
 		typ:             Unary,
@@ -114,7 +113,7 @@ func (s *ServerInterceptorTestSuite) TestUnaryReporting() {
 }
 
 func (s *ServerInterceptorTestSuite) TestStreamingReports() {
-	ss, _ := s.testClient.PingList(s.ctx, &testpb.PingRequest{}) // should return with code=OK
+	ss, _ := s.testClient.PingList(s.ctx, &testpb.PingListRequest{}) // should return with code=OK
 	// Do a read, just for kicks.
 	count := 0
 	for {
@@ -125,18 +124,18 @@ func (s *ServerInterceptorTestSuite) TestStreamingReports() {
 		require.NoError(s.T(), err, "reading pingList shouldn't fail")
 		count++
 	}
-	require.EqualValues(s.T(), grpctesting.ListResponseCount, count, "Number of received msg on the wire must match")
+	require.EqualValues(s.T(), testpb.ListResponseCount, count, "Number of received msg on the wire must match")
 	s.mock.Equal(s.T(), []*mockReport{{
 		typ:             ServerStream,
 		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingList",
 		postCalls:       []error{nil},
 		postMsgReceives: []error{nil},
-		postMsgSends:    make([]error, grpctesting.ListResponseCount),
+		postMsgSends:    make([]error, testpb.ListResponseCount),
 	}})
 	s.mock.reports = s.mock.reports[:0] // Reset.
 
-	_, err := s.testClient.PingList(s.ctx, &testpb.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
+	_, err := s.testClient.PingList(s.ctx, &testpb.PingListRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
 	require.NoError(s.T(), err, "PingList must not fail immediately")
 
 	s.mock.requireOneReportWithRetry(s.ctx, s.T(), &mockReport{
@@ -175,7 +174,7 @@ func (s *ServerInterceptorTestSuite) TestBiStreamingReporting() {
 		}
 	}()
 	for i := 0; i < 100; i++ {
-		require.NoError(s.T(), ss.Send(&testpb.PingRequest{}), "sending shouldn't fail")
+		require.NoError(s.T(), ss.Send(&testpb.PingStreamRequest{}), "sending shouldn't fail")
 	}
 
 	require.NoError(s.T(), ss.CloseSend())

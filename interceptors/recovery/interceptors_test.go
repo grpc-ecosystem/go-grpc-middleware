@@ -14,14 +14,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
-)
-
-var (
-	goodPing  = &testpb.PingRequest{Value: "something", SleepTimeMs: 9999}
-	panicPing = &testpb.PingRequest{Value: "panic", SleepTimeMs: 9999}
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 type recoveryAssertService struct {
@@ -35,7 +29,7 @@ func (s *recoveryAssertService) Ping(ctx context.Context, ping *testpb.PingReque
 	return s.TestServiceServer.Ping(ctx, ping)
 }
 
-func (s *recoveryAssertService) PingList(ping *testpb.PingRequest, stream testpb.TestService_PingListServer) error {
+func (s *recoveryAssertService) PingList(ping *testpb.PingListRequest, stream testpb.TestService_PingListServer) error {
 	if ping.Value == "panic" {
 		panic("very bad thing happened")
 	}
@@ -44,8 +38,8 @@ func (s *recoveryAssertService) PingList(ping *testpb.PingRequest, stream testpb
 
 func TestRecoverySuite(t *testing.T) {
 	s := &RecoverySuite{
-		InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
-			TestService: &recoveryAssertService{TestServiceServer: &grpctesting.TestPingService{T: t}},
+		InterceptorTestSuite: &testpb.InterceptorTestSuite{
+			TestService: &recoveryAssertService{TestServiceServer: &testpb.TestPingService{T: t}},
 			ServerOpts: []grpc.ServerOption{
 				grpc.StreamInterceptor(
 					recovery.StreamServerInterceptor()),
@@ -58,23 +52,23 @@ func TestRecoverySuite(t *testing.T) {
 }
 
 type RecoverySuite struct {
-	*grpctesting.InterceptorTestSuite
+	*testpb.InterceptorTestSuite
 }
 
 func (s *RecoverySuite) TestUnary_SuccessfulRequest() {
-	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	_, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing)
 	require.NoError(s.T(), err, "no error must occur")
 }
 
 func (s *RecoverySuite) TestUnary_PanickingRequest() {
-	_, err := s.Client.Ping(s.SimpleCtx(), panicPing)
+	_, err := s.Client.Ping(s.SimpleCtx(), &testpb.PingRequest{Value: "panic"})
 	require.Error(s.T(), err, "there must be an error")
 	assert.Equal(s.T(), codes.Internal, status.Code(err), "must error with internal")
 	assert.Equal(s.T(), "very bad thing happened", status.Convert(err).Message(), "must error with message")
 }
 
 func (s *RecoverySuite) TestStream_SuccessfulReceive() {
-	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	pong, err := stream.Recv()
 	require.NoError(s.T(), err, "no error must occur")
@@ -82,7 +76,7 @@ func (s *RecoverySuite) TestStream_SuccessfulReceive() {
 }
 
 func (s *RecoverySuite) TestStream_PanickingReceive() {
-	stream, err := s.Client.PingList(s.SimpleCtx(), panicPing)
+	stream, err := s.Client.PingList(s.SimpleCtx(), &testpb.PingListRequest{Value: "panic"})
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	_, err = stream.Recv()
 	require.Error(s.T(), err, "there must be an error")
@@ -97,8 +91,8 @@ func TestRecoveryOverrideSuite(t *testing.T) {
 		}),
 	}
 	s := &RecoveryOverrideSuite{
-		InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
-			TestService: &recoveryAssertService{TestServiceServer: &grpctesting.TestPingService{T: t}},
+		InterceptorTestSuite: &testpb.InterceptorTestSuite{
+			TestService: &recoveryAssertService{TestServiceServer: &testpb.TestPingService{T: t}},
 			ServerOpts: []grpc.ServerOption{
 				grpc.StreamInterceptor(
 					recovery.StreamServerInterceptor(opts...)),
@@ -111,23 +105,23 @@ func TestRecoveryOverrideSuite(t *testing.T) {
 }
 
 type RecoveryOverrideSuite struct {
-	*grpctesting.InterceptorTestSuite
+	*testpb.InterceptorTestSuite
 }
 
 func (s *RecoveryOverrideSuite) TestUnary_SuccessfulRequest() {
-	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	_, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing)
 	require.NoError(s.T(), err, "no error must occur")
 }
 
 func (s *RecoveryOverrideSuite) TestUnary_PanickingRequest() {
-	_, err := s.Client.Ping(s.SimpleCtx(), panicPing)
+	_, err := s.Client.Ping(s.SimpleCtx(), &testpb.PingRequest{Value: "panic"})
 	require.Error(s.T(), err, "there must be an error")
 	assert.Equal(s.T(), codes.Unknown, status.Code(err), "must error with unknown")
 	assert.Equal(s.T(), "panic triggered: very bad thing happened", status.Convert(err).Message(), "must error with message")
 }
 
 func (s *RecoveryOverrideSuite) TestStream_SuccessfulReceive() {
-	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	pong, err := stream.Recv()
 	require.NoError(s.T(), err, "no error must occur")
@@ -135,7 +129,7 @@ func (s *RecoveryOverrideSuite) TestStream_SuccessfulReceive() {
 }
 
 func (s *RecoveryOverrideSuite) TestStream_PanickingReceive() {
-	stream, err := s.Client.PingList(s.SimpleCtx(), panicPing)
+	stream, err := s.Client.PingList(s.SimpleCtx(), &testpb.PingListRequest{Value: "panic"})
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	_, err = stream.Recv()
 	require.Error(s.T(), err, "there must be an error")

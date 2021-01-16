@@ -1,4 +1,4 @@
-package grpctesting
+package testpb
 
 import (
 	"context"
@@ -9,8 +9,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 )
 
 func TestPingServiceOnWire(t *testing.T) {
@@ -19,7 +17,7 @@ func TestPingServiceOnWire(t *testing.T) {
 	require.NoError(t, err, "must be able to allocate a port for serverListener")
 
 	server := grpc.NewServer()
-	testpb.RegisterTestServiceServer(server, &TestPingService{T: t})
+	RegisterTestServiceServer(server, &TestPingService{T: t})
 
 	go func() {
 		defer close(stopped)
@@ -42,27 +40,26 @@ func TestPingServiceOnWire(t *testing.T) {
 	)
 	require.NoError(t, err, "must not error on client Dial")
 
-	testClient := testpb.NewTestServiceClient(clientConn)
+	testClient := NewTestServiceClient(clientConn)
 	select {
 	case err := <-stopped:
 		t.Fatal("gRPC server stopped prematurely", err)
 	default:
 	}
 
-	r, err := testClient.PingEmpty(context.Background(), &testpb.Empty{})
+	r, err := testClient.PingEmpty(context.Background(), &PingEmptyRequest{})
 	require.NoError(t, err)
-	require.Equal(t, "default_response_value", r.Value)
-	require.Equal(t, int32(0), r.Counter)
+	require.NotNil(t, r)
 
-	r2, err := testClient.Ping(context.Background(), &testpb.PingRequest{Value: "24"})
+	r2, err := testClient.Ping(context.Background(), &PingRequest{Value: "24"})
 	require.NoError(t, err)
 	require.Equal(t, "24", r2.Value)
 	require.Equal(t, int32(0), r2.Counter)
 
-	_, err = testClient.PingError(context.Background(), &testpb.PingRequest{Value: "24"})
+	_, err = testClient.PingError(context.Background(), &PingErrorRequest{Value: "24"})
 	require.Error(t, err)
 
-	l, err := testClient.PingList(context.Background(), &testpb.PingRequest{Value: "24"})
+	l, err := testClient.PingList(context.Background(), &PingListRequest{Value: "24"})
 	require.NoError(t, err)
 	for i := 0; i < ListResponseCount; i++ {
 		r, err := l.Recv()
@@ -74,7 +71,7 @@ func TestPingServiceOnWire(t *testing.T) {
 	s, err := testClient.PingStream(context.Background())
 	require.NoError(t, err)
 	for i := 0; i < ListResponseCount; i++ {
-		require.NoError(t, s.Send(&testpb.PingRequest{Value: fmt.Sprintf("%v", i)}))
+		require.NoError(t, s.Send(&PingStreamRequest{Value: fmt.Sprintf("%v", i)}))
 
 		r, err := s.Recv()
 		require.NoError(t, err)

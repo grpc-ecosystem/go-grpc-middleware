@@ -12,14 +12,8 @@ import (
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
-)
-
-var (
-	goodPing    = &testpb.PingRequest{Value: "something", SleepTimeMs: 9999}
-	anotherPing = &testpb.PingRequest{Value: "else", SleepTimeMs: 9999}
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 func tagsToJson(value map[string]string) string {
@@ -44,16 +38,15 @@ func (s *tagPingBack) Ping(ctx context.Context, _ *testpb.PingRequest) (*testpb.
 	return &testpb.PingResponse{Value: tagsToJson(tags.Extract(ctx).Values())}, nil
 }
 
-func (s *tagPingBack) PingError(ctx context.Context, ping *testpb.PingRequest) (*testpb.Empty, error) {
+func (s *tagPingBack) PingError(ctx context.Context, ping *testpb.PingErrorRequest) (*testpb.PingErrorResponse, error) {
 	return s.TestServiceServer.PingError(ctx, ping)
 }
 
-func (s *tagPingBack) PingList(_ *testpb.PingRequest, stream testpb.TestService_PingListServer) error {
-	out := &testpb.PingResponse{Value: tagsToJson(tags.Extract(stream.Context()).Values())}
-	return stream.Send(out)
+func (s *tagPingBack) PingList(_ *testpb.PingListRequest, stream testpb.TestService_PingListServer) error {
+	return stream.Send(&testpb.PingListResponse{Value: tagsToJson(tags.Extract(stream.Context()).Values())})
 }
 
-func (s *tagPingBack) PingEmpty(ctx context.Context, empty *testpb.Empty) (*testpb.PingResponse, error) {
+func (s *tagPingBack) PingEmpty(ctx context.Context, empty *testpb.PingEmptyRequest) (*testpb.PingEmptyResponse, error) {
 	return s.TestServiceServer.PingEmpty(ctx, empty)
 }
 
@@ -66,8 +59,7 @@ func (s *tagPingBack) PingStream(stream testpb.TestService_PingStreamServer) err
 		if err != nil {
 			return err
 		}
-		out := &testpb.PingResponse{Value: tagsToJson(tags.Extract(stream.Context()).Values())}
-		err = stream.Send(out)
+		err = stream.Send(&testpb.PingStreamResponse{Value: tagsToJson(tags.Extract(stream.Context()).Values())})
 		if err != nil {
 			return err
 		}
@@ -78,8 +70,8 @@ func TestTaggingSuite(t *testing.T) {
 		tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor),
 	}
 	s := &TaggingSuite{
-		InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
-			TestService: &tagPingBack{&grpctesting.TestPingService{T: t}},
+		InterceptorTestSuite: &testpb.InterceptorTestSuite{
+			TestService: &tagPingBack{&testpb.TestPingService{T: t}},
 			ServerOpts: []grpc.ServerOption{
 				grpc.StreamInterceptor(tags.StreamServerInterceptor(opts...)),
 				grpc.UnaryInterceptor(tags.UnaryServerInterceptor(opts...)),
@@ -90,14 +82,14 @@ func TestTaggingSuite(t *testing.T) {
 }
 
 type TaggingSuite struct {
-	*grpctesting.InterceptorTestSuite
+	*testpb.InterceptorTestSuite
 }
 
 func (s *TaggingSuite) SetupTest() {
 }
 
 func (s *TaggingSuite) TestPing_WithCustomTags() {
-	resp, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	resp, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing)
 	require.NoError(s.T(), err, "must not be an error on a successful call")
 
 	tags := tagsFromJson(s.T(), resp.Value)
@@ -109,7 +101,7 @@ func (s *TaggingSuite) TestPing_WithCustomTags() {
 func (s *TaggingSuite) TestPing_WithDeadline() {
 	ctx, cancel := context.WithDeadline(context.TODO(), time.Now().AddDate(0, 0, 5))
 	defer cancel()
-	resp, err := s.Client.Ping(ctx, goodPing)
+	resp, err := s.Client.Ping(ctx, testpb.GoodPing)
 	require.NoError(s.T(), err, "must not be an error on a successful call")
 
 	tags := tagsFromJson(s.T(), resp.Value)
@@ -120,7 +112,7 @@ func (s *TaggingSuite) TestPing_WithDeadline() {
 
 func (s *TaggingSuite) TestPing_WithNoDeadline() {
 	ctx := context.TODO()
-	resp, err := s.Client.Ping(ctx, goodPing)
+	resp, err := s.Client.Ping(ctx, testpb.GoodPing)
 	require.NoError(s.T(), err, "must not be an error on a successful call")
 
 	tags := tagsFromJson(s.T(), resp.Value)
@@ -130,7 +122,7 @@ func (s *TaggingSuite) TestPing_WithNoDeadline() {
 }
 
 func (s *TaggingSuite) TestPingList_WithCustomTags() {
-	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	for {
 		resp, err := stream.Recv()
@@ -153,8 +145,8 @@ func TestTaggingOnInitialRequestSuite(t *testing.T) {
 	// the case of unary and server-streamed calls
 	s := &ClientStreamedTaggingSuite{
 		TaggingSuite: &TaggingSuite{
-			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
-				TestService: &tagPingBack{&grpctesting.TestPingService{T: t}},
+			InterceptorTestSuite: &testpb.InterceptorTestSuite{
+				TestService: &tagPingBack{&testpb.TestPingService{T: t}},
 				ServerOpts: []grpc.ServerOption{
 					grpc.StreamInterceptor(tags.StreamServerInterceptor(opts...)),
 					grpc.UnaryInterceptor(tags.UnaryServerInterceptor(opts...)),
@@ -177,9 +169,9 @@ func (s *ClientStreamedTaggingSuite) TestPingStream_WithCustomTagsFirstRequest()
 	for {
 		switch {
 		case count == 0:
-			err = stream.Send(goodPing)
+			err = stream.Send(testpb.GoodPingStream)
 		case count < 3:
-			err = stream.Send(anotherPing)
+			err = stream.Send(&testpb.PingStreamRequest{Value: "another", SleepTimeMs: 9999})
 		default:
 			err = stream.CloseSend()
 		}

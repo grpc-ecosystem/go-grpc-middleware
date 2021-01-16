@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"path"
 	"runtime"
 	"sort"
 	"strings"
@@ -16,15 +17,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
-)
-
-var (
-	goodPing = &testpb.PingRequest{Value: "something", SleepTimeMs: 9999}
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 type testDisposableFields map[string]string
@@ -141,7 +137,7 @@ func (l *mockLogger) With(fields ...string) logging.Logger {
 }
 
 type baseLoggingSuite struct {
-	*grpctesting.InterceptorTestSuite
+	*testpb.InterceptorTestSuite
 	logger *mockLogger
 }
 
@@ -171,8 +167,8 @@ func TestSuite(t *testing.T) {
 	s := &loggingClientServerSuite{
 		&baseLoggingSuite{
 			logger: newMockLogger(),
-			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
-				TestService: &grpctesting.TestPingService{T: t},
+			InterceptorTestSuite: &testpb.InterceptorTestSuite{
+				TestService: &testpb.TestPingService{T: t},
 			},
 		},
 	}
@@ -194,13 +190,13 @@ func TestSuite(t *testing.T) {
 func assertStandardFields(t *testing.T, kind string, f testDisposableFields, method string, typ interceptors.GRPCType) testDisposableFields {
 	return f.AssertNextField(t, logging.SystemTag[0], logging.SystemTag[1]).
 		AssertNextField(t, logging.ComponentFieldKey, kind).
-		AssertNextField(t, logging.ServiceFieldKey, "grpc_middleware.testpb.TestService").
+		AssertNextField(t, logging.ServiceFieldKey, testpb.TestServiceFullName).
 		AssertNextField(t, logging.MethodFieldKey, method).
 		AssertNextField(t, logging.MethodTypeFieldKey, string(typ))
 }
 
 func (s *loggingClientServerSuite) TestPing() {
-	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	_, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing)
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
 
 	lines := s.logger.o.Lines()
@@ -239,7 +235,7 @@ func (s *loggingClientServerSuite) TestPing() {
 }
 
 func (s *loggingClientServerSuite) TestPingList() {
-	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	for {
 		_, err := stream.Recv()
@@ -314,7 +310,7 @@ func (s *loggingClientServerSuite) TestPingError_WithCustomLevels() {
 		s.T().Run(tcase.msg, func(t *testing.T) {
 			_, err := s.Client.PingError(
 				s.SimpleCtx(),
-				&testpb.PingRequest{Value: "something", ErrorCodeReturned: uint32(tcase.code)})
+				&testpb.PingErrorRequest{Value: "something", ErrorCodeReturned: uint32(tcase.code)})
 			require.Error(t, err, "each call here must return an error")
 			lines := s.logger.o.Lines()
 			sort.Sort(lines)
@@ -358,8 +354,8 @@ func TestCustomDurationSuite(t *testing.T) {
 	s := &loggingCustomDurationSuite{
 		baseLoggingSuite: &baseLoggingSuite{
 			logger: newMockLogger(),
-			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
-				TestService: &grpctesting.TestPingService{T: t},
+			InterceptorTestSuite: &testpb.InterceptorTestSuite{
+				TestService: &testpb.TestPingService{T: t},
 			},
 		},
 	}
@@ -379,7 +375,7 @@ func TestCustomDurationSuite(t *testing.T) {
 }
 
 func (s *loggingCustomDurationSuite) TestPing_HasOverriddenDuration() {
-	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	_, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing)
 	assert.NoError(s.T(), err, "there must be not be an on a successful call")
 
 	lines := s.logger.o.Lines()
@@ -418,7 +414,7 @@ func (s *loggingCustomDurationSuite) TestPing_HasOverriddenDuration() {
 }
 
 func (s *loggingCustomDurationSuite) TestPingList_HasOverriddenDuration() {
-	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	for {
 		_, err := stream.Recv()
@@ -473,7 +469,7 @@ func TestCustomDeciderSuite(t *testing.T) {
 		return
 	}
 	opts := logging.WithDecider(func(method string, _ error) logging.Decision {
-		if method == "/grpc_middleware.testpb.TestService/PingError" {
+		if method == path.Join("/", testpb.TestServiceFullName, "PingError") {
 			return logging.LogStartAndFinishCall
 		}
 		return logging.NoLogCall
@@ -482,8 +478,8 @@ func TestCustomDeciderSuite(t *testing.T) {
 	s := &loggingCustomDeciderSuite{
 		baseLoggingSuite: &baseLoggingSuite{
 			logger: newMockLogger(),
-			InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
-				TestService: &grpctesting.TestPingService{T: t},
+			InterceptorTestSuite: &testpb.InterceptorTestSuite{
+				TestService: &testpb.TestPingService{T: t},
 			},
 		},
 	}
@@ -503,7 +499,7 @@ func TestCustomDeciderSuite(t *testing.T) {
 }
 
 func (s *loggingCustomDeciderSuite) TestPing_HasCustomDecider() {
-	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	_, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing)
 	require.NoError(s.T(), err, "there must be not be an error on a successful call")
 
 	require.Len(s.T(), s.logger.o.Lines(), 0) // Decider should suppress.
@@ -514,7 +510,7 @@ func (s *loggingCustomDeciderSuite) TestPingError_HasCustomDecider() {
 
 	_, err := s.Client.PingError(
 		s.SimpleCtx(),
-		&testpb.PingRequest{Value: "something", ErrorCodeReturned: uint32(code)})
+		&testpb.PingErrorRequest{Value: "something", ErrorCodeReturned: uint32(code)})
 	require.Error(s.T(), err, "each call here must return an error")
 
 	lines := s.logger.o.Lines()
@@ -555,7 +551,7 @@ func (s *loggingCustomDeciderSuite) TestPingError_HasCustomDecider() {
 }
 
 func (s *loggingCustomDeciderSuite) TestPingList_HasCustomDecider() {
-	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	for {
 		_, err := stream.Recv()

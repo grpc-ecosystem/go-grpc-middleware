@@ -7,9 +7,6 @@ MODULES          ?= $(PROVIDER_MODULES) $(PWD)/
 
 GOBIN             ?= $(firstword $(subst :, ,${GOPATH}))/bin
 
-// TODO(bwplotka): Move to buf.
-PROTOC_VERSION    ?= 3.12.3
-PROTOC            ?= $(GOBIN)/protoc-$(PROTOC_VERSION)
 TMP_GOPATH        ?= /tmp/gopath
 
 GO111MODULE       ?= on
@@ -43,11 +40,6 @@ fmt: $(GOIMPORTS)
 	@echo "Running fmt for all modules: $(MODULES)"
 	@$(GOIMPORTS) -local github.com/grpc-ecosystem/go-grpc-middleware/v2 -w $(MODULES)
 
-.PHONY: proto
-proto: ## Generates Go files from Thanos proto files.
-proto: $(GOIMPORTS) $(PROTOC) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) ./grpctesting/testpb/test.proto
-	@GOIMPORTS_BIN="$(GOIMPORTS)" PROTOC_BIN="$(PROTOC)" PROTOC_GEN_GO_BIN="$(PROTOC_GEN_GO)" PROTOC_GEN_GO_GRPC_BIN="$(PROTOC_GEN_GO_GRPC)" scripts/genproto.sh
-
 .PHONY: test
 test:
 	@echo "Running tests for all modules: $(MODULES)"
@@ -76,7 +68,9 @@ deps:
 #      --mem-profile-path string   Path to memory profile output file
 # to debug big allocations during linting.
 lint: ## Runs various static analysis tools against our code.
-lint: fmt proto
+lint: $(BUF) fmt
+	@echo ">> lint proto files"
+	@$(BUF) lint
 	@echo "Running lint for all modules: $(MODULES)"
 	./scripts/git-tree.sh
 	for dir in $(MODULES) ; do \
@@ -99,11 +93,21 @@ lint_module: $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL)
 	@cd $(DIR) && $(GOLANGCI_LINT) run
 	@./scripts/git-tree.sh
 
-# TODO(bwplotka): Move to buf.
-$(PROTOC):
+
+# For protoc naming matters.
+PROTOC_GEN_GO_CURRENT := $(TMP_GOPATH)/protoc-gen-go
+PROTOC_GEN_GO_GRPC_CURRENT := $(TMP_GOPATH)/protoc-gen-go-grpc
+PROTO_TEST_DIR := testing/testpb/v1
+
+.PHONY: proto
+proto: ## Generate testing protobufs
+proto: $(BUF) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) $(PROTO_TEST_DIR)/test.proto
 	@mkdir -p $(TMP_GOPATH)
-	@echo ">> fetching protoc@${PROTOC_VERSION}"
-	@PROTOC_VERSION="$(PROTOC_VERSION)" TMP_GOPATH="$(TMP_GOPATH)" scripts/installprotoc.sh
-	@echo ">> installing protoc@${PROTOC_VERSION}"
-	@mv -- "$(TMP_GOPATH)/bin/protoc" "$(GOBIN)/protoc-$(PROTOC_VERSION)"
-	@echo ">> produced $(GOBIN)/protoc-$(PROTOC_VERSION)"
+	@cp $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_CURRENT)
+	@cp $(PROTOC_GEN_GO_GRPC) $(PROTOC_GEN_GO_GRPC_CURRENT)
+	@echo ">> generating $(PROTO_TEST_DIR)"
+	@PATH=$(GOBIN):$(TMP_GOPATH) $(BUF) protoc \
+		-I $(PROTO_TEST_DIR) \
+		--go_out=$(PROTO_TEST_DIR)/../ \
+		--go-grpc_out=$(PROTO_TEST_DIR)/../ \
+	    $(PROTO_TEST_DIR)/*.proto

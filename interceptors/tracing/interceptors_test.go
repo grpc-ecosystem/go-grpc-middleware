@@ -21,14 +21,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tracing"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 var (
-	goodPing           = &testpb.PingRequest{Value: "something", SleepTimeMs: 9999}
 	fakeInboundTraceId = 1337
 	fakeInboundSpanId  = 999
 	traceHeaderName    = "uber-trace-id"
@@ -49,12 +47,12 @@ func (s *tracingAssertService) Ping(ctx context.Context, ping *testpb.PingReques
 	return s.TestServiceServer.Ping(ctx, ping)
 }
 
-func (s *tracingAssertService) PingError(ctx context.Context, ping *testpb.PingRequest) (*testpb.Empty, error) {
+func (s *tracingAssertService) PingError(ctx context.Context, ping *testpb.PingErrorRequest) (*testpb.PingErrorResponse, error) {
 	assert.NotNil(s.T, opentracing.SpanFromContext(ctx), "handlers must have the spancontext in their context, otherwise propagation will fail")
 	return s.TestServiceServer.PingError(ctx, ping)
 }
 
-func (s *tracingAssertService) PingList(ping *testpb.PingRequest, stream testpb.TestService_PingListServer) error {
+func (s *tracingAssertService) PingList(ping *testpb.PingListRequest, stream testpb.TestService_PingListServer) error {
 	assert.NotNil(s.T, opentracing.SpanFromContext(stream.Context()), "handlers must have the spancontext in their context, otherwise propagation will fail")
 	tags := tags.Extract(stream.Context())
 	assert.True(s.T, tags.Has(tracing.TagTraceId), "tags must contain traceid")
@@ -64,7 +62,7 @@ func (s *tracingAssertService) PingList(ping *testpb.PingRequest, stream testpb.
 	return s.TestServiceServer.PingList(ping, stream)
 }
 
-func (s *tracingAssertService) PingEmpty(ctx context.Context, empty *testpb.Empty) (*testpb.PingResponse, error) {
+func (s *tracingAssertService) PingEmpty(ctx context.Context, empty *testpb.PingEmptyRequest) (*testpb.PingEmptyResponse, error) {
 	assert.NotNil(s.T, opentracing.SpanFromContext(ctx), "handlers must have the spancontext in their context, otherwise propagation will fail")
 	tags := tags.Extract(ctx)
 	assert.True(s.T, tags.Has(tracing.TagTraceId), "tags must contain traceid")
@@ -101,9 +99,9 @@ func TestTaggingSuiteJaeger(t *testing.T) {
 	suite.Run(t, s)
 }
 
-func makeInterceptorTestSuite(t *testing.T, opts []tracing.Option) *grpctesting.InterceptorTestSuite {
-	return &grpctesting.InterceptorTestSuite{
-		TestService: &tracingAssertService{TestServiceServer: &grpctesting.TestPingService{T: t}, T: t},
+func makeInterceptorTestSuite(t *testing.T, opts []tracing.Option) *testpb.InterceptorTestSuite {
+	return &testpb.InterceptorTestSuite{
+		TestService: &tracingAssertService{TestServiceServer: &testpb.TestPingService{T: t}, T: t},
 		ClientOpts: []grpc.DialOption{
 			grpc.WithUnaryInterceptor(tracing.UnaryClientInterceptor(opts...)),
 			grpc.WithStreamInterceptor(tracing.StreamClientInterceptor(opts...)),
@@ -120,7 +118,7 @@ func makeInterceptorTestSuite(t *testing.T, opts []tracing.Option) *grpctesting.
 }
 
 type OpentracingSuite struct {
-	*grpctesting.InterceptorTestSuite
+	*testpb.InterceptorTestSuite
 	mockTracer *mocktracer.MockTracer
 }
 
@@ -178,7 +176,7 @@ func (s *OpentracingSuite) assertTracesCreated(methodName string) (clientSpan *m
 
 func (s *OpentracingSuite) TestPing_PropagatesTraces() {
 	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true)
-	_, err := s.Client.Ping(ctx, goodPing)
+	_, err := s.Client.Ping(ctx, testpb.GoodPing)
 	require.NoError(s.T(), err, "there must be not be an on a successful call")
 	s.assertTracesCreated("/" + testpb.TestServiceFullName + "/Ping")
 }
@@ -190,7 +188,7 @@ func (s *OpentracingSuite) TestPing_ClientContextTags() {
 		opentracing.Tags{name: ""},
 	)
 
-	_, err := s.Client.Ping(ctx, goodPing)
+	_, err := s.Client.Ping(ctx, testpb.GoodPing)
 	require.NoError(s.T(), err, "there must be not be an on a successful call")
 
 	for _, span := range s.mockTracer.FinishedSpans() {
@@ -205,7 +203,7 @@ func (s *OpentracingSuite) TestPing_ClientContextTags() {
 
 func (s *OpentracingSuite) TestPingList_PropagatesTraces() {
 	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true)
-	stream, err := s.Client.PingList(ctx, goodPing)
+	stream, err := s.Client.PingList(ctx, testpb.GoodPingList)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	for {
 		_, err := stream.Recv()
@@ -219,8 +217,7 @@ func (s *OpentracingSuite) TestPingList_PropagatesTraces() {
 
 func (s *OpentracingSuite) TestPingError_PropagatesTraces() {
 	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), true)
-	erroringPing := &testpb.PingRequest{Value: "something", ErrorCodeReturned: uint32(codes.OutOfRange)}
-	_, err := s.Client.PingError(ctx, erroringPing)
+	_, err := s.Client.PingError(ctx, &testpb.PingErrorRequest{Value: "something", ErrorCodeReturned: uint32(codes.OutOfRange)})
 	require.Error(s.T(), err, "there must be an error returned here")
 	clientSpan, serverSpan := s.assertTracesCreated("/" + testpb.TestServiceFullName + "/PingError")
 	assert.Equal(s.T(), true, clientSpan.Tag("error"), "client span needs to be marked as an error")
@@ -229,7 +226,7 @@ func (s *OpentracingSuite) TestPingError_PropagatesTraces() {
 
 func (s *OpentracingSuite) TestPingEmpty_NotSampleTraces() {
 	ctx := s.createContextFromFakeHttpRequestParent(s.SimpleCtx(), false)
-	_, err := s.Client.PingEmpty(ctx, &testpb.Empty{})
+	_, err := s.Client.PingEmpty(ctx, &testpb.PingEmptyRequest{})
 	require.NoError(s.T(), err, "there must be not be an on a successful call")
 }
 

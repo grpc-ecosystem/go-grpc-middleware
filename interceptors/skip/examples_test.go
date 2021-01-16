@@ -5,8 +5,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/skip"
 )
 
@@ -22,6 +22,6 @@ func dummyAuth(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func SkipReflectionService(ctx context.Context, gRPCType interceptors.GRPCType, service string, method string) bool {
+func SkipReflectionService(_ context.Context, _ interceptors.GRPCType, service string, _ string) bool {
 	return service != "grpc.reflection.v1alpha.ServerReflection"
 }
