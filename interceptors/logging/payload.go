@@ -3,6 +3,7 @@ package logging
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/grpc"
@@ -25,12 +26,13 @@ func (c *serverPayloadReporter) PostMsgSend(req interface{}, err error, duration
 		return
 	}
 
+	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	p, ok := req.(proto.Message)
 	if !ok {
-		// TODO(bwplotka): Panic / log err?
+		logger.With("req.type", fmt.Sprintf("%T", req)).Log(ERROR, "req is not a google.golang.org/protobuf/proto.Message; programmatic error?")
+
 		return
 	}
-	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	// For server send message is the response.
 	logProtoMessageAsJson(logger.With("grpc.send.duration", duration.String()), p, "grpc.response.content", "response payload logged as grpc.response.content field")
 }
@@ -40,12 +42,13 @@ func (c *serverPayloadReporter) PostMsgReceive(reply interface{}, err error, dur
 		return
 	}
 
+	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
+
 	p, ok := reply.(proto.Message)
 	if !ok {
-		// TODO(bwplotka): Panic / log err?
+		logger.With("reply.type", fmt.Sprintf("%T", reply)).Log(ERROR, "reply is not a google.golang.org/protobuf/proto.Message; programmatic error?")
 		return
 	}
-	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	// For server recv message is the request.
 	logProtoMessageAsJson(logger.With("grpc.recv.duration", duration.String()), p, "grpc.request.content", "request payload logged as grpc.request.content field")
 }
@@ -62,12 +65,12 @@ func (c *clientPayloadReporter) PostMsgSend(req interface{}, err error, duration
 		return
 	}
 
+	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	p, ok := req.(proto.Message)
 	if !ok {
-		// TODO(bwplotka): Panic / log err?
+		logger.With("req.type", fmt.Sprintf("%T", req)).Log(ERROR, "req is not a google.golang.org/protobuf/proto.Message; programmatic error?")
 		return
 	}
-	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	logProtoMessageAsJson(logger.With("grpc.send.duration", duration.String()), p, "grpc.request.content", "request payload logged as grpc.request.content field")
 }
 
@@ -76,12 +79,12 @@ func (c *clientPayloadReporter) PostMsgReceive(reply interface{}, err error, dur
 		return
 	}
 
+	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	p, ok := reply.(proto.Message)
 	if !ok {
-		// TODO(bwplotka): Panic / log err?
+		logger.With("reply.type", fmt.Sprintf("%T", reply)).Log(ERROR, "reply is not a google.golang.org/protobuf/proto.Message; programmatic error?")
 		return
 	}
-	logger := c.logger.With(extractFields(tags.Extract(c.ctx))...)
 	logProtoMessageAsJson(logger.With("grpc.recv.duration", duration.String()), p, "grpc.response.content", "response payload logged as grpc.response.content field")
 }
 
