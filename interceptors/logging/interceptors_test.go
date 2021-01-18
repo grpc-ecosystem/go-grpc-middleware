@@ -16,7 +16,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
@@ -174,10 +173,10 @@ func TestSuite(t *testing.T) {
 		grpc.WithStreamInterceptor(logging.StreamClientInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel))),
 	}
 	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
-		middleware.WithStreamServerChain(
+		grpc.ChainStreamInterceptor(
 			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.StreamServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel))),
-		middleware.WithUnaryServerChain(
+		grpc.ChainUnaryInterceptor(
 			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.UnaryServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel))),
 	}
@@ -361,10 +360,10 @@ func TestCustomDurationSuite(t *testing.T) {
 		grpc.WithStreamInterceptor(logging.StreamClientInterceptor(s.logger, logging.WithDurationField(logging.DurationToDurationField))),
 	}
 	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
-		middleware.WithStreamServerChain(
+		grpc.ChainStreamInterceptor(
 			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.StreamServerInterceptor(s.logger, logging.WithDurationField(logging.DurationToDurationField))),
-		middleware.WithUnaryServerChain(
+		grpc.ChainUnaryInterceptor(
 			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.UnaryServerInterceptor(s.logger, logging.WithDurationField(logging.DurationToDurationField))),
 	}
@@ -485,10 +484,10 @@ func TestCustomDeciderSuite(t *testing.T) {
 		grpc.WithStreamInterceptor(logging.StreamClientInterceptor(s.logger, opts)),
 	}
 	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
-		middleware.WithStreamServerChain(
+		grpc.ChainStreamInterceptor(
 			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.StreamServerInterceptor(s.logger, opts)),
-		middleware.WithUnaryServerChain(
+		grpc.ChainUnaryInterceptor(
 			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.UnaryServerInterceptor(s.logger, opts)),
 	}

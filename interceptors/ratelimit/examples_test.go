@@ -5,7 +5,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/ratelimit"
 )
 
@@ -23,10 +22,10 @@ func Example() {
 	// You can implement your own ratelimiter for the interface.
 	limiter := &alwaysPassLimiter{}
 	_ = grpc.NewServer(
-		middleware.WithUnaryServerChain(
+		grpc.ChainUnaryInterceptor(
 			ratelimit.UnaryServerInterceptor(limiter),
 		),
-		middleware.WithStreamServerChain(
+		grpc.ChainStreamInterceptor(
 			ratelimit.StreamServerInterceptor(limiter),
 		),
 	)

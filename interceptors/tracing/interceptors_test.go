@@ -21,7 +21,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
@@ -110,10 +109,10 @@ func makeInterceptorTestSuite(t *testing.T, opts []tracing.Option) *grpctesting.
 			grpc.WithStreamInterceptor(tracing.StreamClientInterceptor(opts...)),
 		},
 		ServerOpts: []grpc.ServerOption{
-			middleware.WithStreamServerChain(
+			grpc.ChainStreamInterceptor(
 				tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 				tracing.StreamServerInterceptor(opts...)),
-			middleware.WithUnaryServerChain(
+			grpc.ChainUnaryInterceptor(
 				tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 				tracing.UnaryServerInterceptor(opts...)),
 		},
