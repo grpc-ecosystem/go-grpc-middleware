@@ -1,4 +1,4 @@
-module github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus
+module github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2
 
 go 1.15
 
