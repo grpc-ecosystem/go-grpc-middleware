@@ -11,31 +11,13 @@ import (
 )
 
 type reporter struct {
-	clientMetrics   *ClientMetrics
-	serverMetrics   *ServerMetrics
-	typ             interceptors.GRPCType
-	service, method string
-	startTime       time.Time
-	kind            Kind
-}
-
-func (r *reporter) StartTimeCall(startTime time.Time, callType string) interceptors.Timer {
-	switch r.kind {
-	case KindClient:
-		switch callType {
-		case string(interceptors.Send):
-			if r.clientMetrics.clientStreamSendHistogramEnabled {
-				hist := r.clientMetrics.clientStreamSendHistogram.WithLabelValues(string(r.typ), r.service, r.method)
-				return prometheus.NewTimer(hist)
-			}
-		case string(interceptors.Receive):
-			if r.clientMetrics.clientStreamRecvHistogramEnabled {
-				hist := r.clientMetrics.clientStreamRecvHistogram.WithLabelValues(string(r.typ), r.service, r.method)
-				return prometheus.NewTimer(hist)
-			}
-		}
-	}
-	return interceptors.EmptyTimer
+	clientMetrics           *ClientMetrics
+	serverMetrics           *ServerMetrics
+	typ                     interceptors.GRPCType
+	service, method         string
+	startTime               time.Time
+	kind                    Kind
+	sendTimer, receiveTimer interceptors.Timer
 }
 
 func (r *reporter) PostCall(err error, duration time.Duration) {
@@ -50,6 +32,7 @@ func (r *reporter) PostCall(err error, duration time.Duration) {
 		if r.serverMetrics.serverHandledHistogramEnabled {
 			r.serverMetrics.serverHandledHistogram.WithLabelValues(string(r.typ), r.service, r.method).Observe(time.Since(r.startTime).Seconds())
 		}
+
 	case KindClient:
 		r.clientMetrics.clientHandledCounter.WithLabelValues(string(r.typ), r.service, r.method, code.String()).Inc()
 		if r.clientMetrics.clientHandledHistogramEnabled {
@@ -64,6 +47,7 @@ func (r *reporter) PostMsgSend(_ interface{}, _ error, _ time.Duration) {
 		r.serverMetrics.serverStreamMsgSent.WithLabelValues(string(r.typ), r.service, r.method).Inc()
 	case KindClient:
 		r.clientMetrics.clientStreamMsgSent.WithLabelValues(string(r.typ), r.service, r.method).Inc()
+		r.sendTimer.ObserveDuration()
 	}
 }
 
@@ -73,6 +57,7 @@ func (r *reporter) PostMsgReceive(_ interface{}, _ error, _ time.Duration) {
 		r.serverMetrics.serverStreamMsgReceived.WithLabelValues(string(r.typ), r.service, r.method).Inc()
 	case KindClient:
 		r.clientMetrics.clientStreamMsgReceived.WithLabelValues(string(r.typ), r.service, r.method).Inc()
+		r.receiveTimer.ObserveDuration()
 	}
 }
 
@@ -97,6 +82,8 @@ func (rep *reportable) reporter(sm *ServerMetrics, cm *ClientMetrics, rpcType in
 		service:       service,
 		method:        method,
 		kind:          kind,
+		sendTimer:     interceptors.EmptyTimer,
+		receiveTimer:  interceptors.EmptyTimer,
 	}
 
 	switch kind {
@@ -105,6 +92,16 @@ func (rep *reportable) reporter(sm *ServerMetrics, cm *ClientMetrics, rpcType in
 			r.startTime = time.Now()
 		}
 		r.clientMetrics.clientStartedCounter.WithLabelValues(string(r.typ), r.service, r.method).Inc()
+
+		if r.clientMetrics.clientStreamSendHistogramEnabled {
+			hist := r.clientMetrics.clientStreamSendHistogram.WithLabelValues(string(r.typ), r.service, r.method)
+			r.sendTimer = prometheus.NewTimer(hist)
+		}
+
+		if r.clientMetrics.clientStreamRecvHistogramEnabled {
+			hist := r.clientMetrics.clientStreamRecvHistogram.WithLabelValues(string(r.typ), r.service, r.method)
+			r.receiveTimer = prometheus.NewTimer(hist)
+		}
 	case KindServer:
 		if r.serverMetrics.serverHandledHistogramEnabled {
 			r.startTime = time.Now()
@@ -112,7 +109,7 @@ func (rep *reportable) reporter(sm *ServerMetrics, cm *ClientMetrics, rpcType in
 		r.serverMetrics.serverStartedCounter.WithLabelValues(string(r.typ), r.service, r.method).Inc()
 	}
 
-	// TODO: @yashrsharma - What should we instead of the context interface?
+	// TODO: @yashrsharma44 - What should we use instead of the context.Background()?
 	return r, context.Background()
 }
 

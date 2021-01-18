@@ -25,10 +25,6 @@ type opentracingClientReporter struct {
 	clientSpan opentracing.Span
 }
 
-func (o *opentracingClientReporter) StartTimeCall(_ time.Time, _ string) interceptors.Timer {
-	return interceptors.EmptyTimer
-}
-
 func (o *opentracingClientReporter) PostCall(err error, _ time.Duration) {
 	// Finish span.
 	if err != nil && err != io.EOF {

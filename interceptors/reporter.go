@@ -31,13 +31,6 @@ func (zeroTimer) ObserveDuration() time.Duration {
 
 var EmptyTimer = &zeroTimer{}
 
-type RPCMethod string
-
-const (
-	Send    RPCMethod = "send"
-	Receive RPCMethod = "recv"
-)
-
 const (
 	Unary        GRPCType = "unary"
 	ClientStream GRPCType = "client_stream"
@@ -75,9 +68,7 @@ type ServerReportable interface {
 }
 
 type Reporter interface {
-	StartTimeCall(time.Time, string) Timer
 	PostCall(err error, rpcDuration time.Duration)
-
 	PostMsgSend(reqProto interface{}, err error, sendDuration time.Duration)
 	PostMsgReceive(replyProto interface{}, err error, recvDuration time.Duration)
 }
@@ -86,7 +77,6 @@ var _ Reporter = NoopReporter{}
 
 type NoopReporter struct{}
 
-func (NoopReporter) StartTimeCall(time.Time, string) Timer            { return EmptyTimer }
 func (NoopReporter) PostCall(error, time.Duration)                    {}
 func (NoopReporter) PostMsgSend(interface{}, error, time.Duration)    {}
 func (NoopReporter) PostMsgReceive(interface{}, error, time.Duration) {}
