@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"google.golang.org/grpc"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
@@ -111,20 +110,4 @@ func (rep *reportable) reporter(sm *ServerMetrics, cm *ClientMetrics, rpcType in
 
 	// TODO: @yashrsharma44 - What should we use instead of the context.Background()?
 	return r, context.Background()
-}
-
-func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
-	return interceptors.UnaryClientInterceptor(&reportable{})
-}
-
-func StreamClientInterceptor() grpc.StreamClientInterceptor {
-	return interceptors.StreamClientInterceptor(&reportable{})
-}
-
-func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
-	return interceptors.UnaryServerInterceptor(&reportable{})
-}
-
-func StreamServerInterceptor() grpc.StreamServerInterceptor {
-	return interceptors.StreamServerInterceptor(&reportable{})
 }

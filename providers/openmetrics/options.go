@@ -2,10 +2,11 @@ package metrics
 
 import (
 	prom "github.com/prometheus/client_golang/prometheus"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
-// Helper methods
+// FromError returns a grpc status if error code is a valid grpc status.
 func FromError(err error) (s *status.Status, ok bool) {
 	return status.FromError(err)
 
@@ -46,4 +47,17 @@ func WithHistogramConstLabels(labels prom.Labels) HistogramOption {
 	return func(o *prom.HistogramOpts) {
 		o.ConstLabels = labels
 	}
+}
+
+func typeFromMethodInfo(mInfo *grpc.MethodInfo) grpcType {
+	if !mInfo.IsClientStream && !mInfo.IsServerStream {
+		return Unary
+	}
+	if mInfo.IsClientStream && !mInfo.IsServerStream {
+		return ClientStream
+	}
+	if !mInfo.IsClientStream && mInfo.IsServerStream {
+		return ServerStream
+	}
+	return BidiStream
 }

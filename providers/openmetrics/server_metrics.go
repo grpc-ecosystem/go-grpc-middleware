@@ -1,7 +1,10 @@
 package metrics
 
 import (
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	prom "github.com/prometheus/client_golang/prometheus"
+
+	"google.golang.org/grpc"
 )
 
 // ServerMetrics represents a collection of metrics to be registered on a
@@ -93,5 +96,33 @@ func (m *ServerMetrics) Collect(ch chan<- prom.Metric) {
 	m.serverStreamMsgSent.Collect(ch)
 	if m.serverHandledHistogramEnabled {
 		m.serverHandledHistogram.Collect(ch)
+	}
+}
+
+// InitializeMetrics initializes all metrics, with their appropriate null
+// value, for all gRPC methods registered on a gRPC server. This is useful, to
+// ensure that all metrics exist when collecting and querying.
+func (m *ServerMetrics) InitializeMetrics(server *grpc.Server) {
+	serviceInfo := server.GetServiceInfo()
+	for serviceName, info := range serviceInfo {
+		for _, mInfo := range info.Methods {
+			m.preRegisterMethod(serviceName, &mInfo)
+		}
+	}
+}
+
+// preRegisterMethod is invoked on Register of a Server, allowing all gRPC services labels to be pre-populated.
+func (m *ServerMetrics) preRegisterMethod(serviceName string, mInfo *grpc.MethodInfo) {
+	methodName := mInfo.Name
+	methodType := string(typeFromMethodInfo(mInfo))
+	// These are just references (no increments), as just referencing will create the labels but not set values.
+	m.serverStartedCounter.GetMetricWithLabelValues(methodType, serviceName, methodName)
+	m.serverStreamMsgReceived.GetMetricWithLabelValues(methodType, serviceName, methodName)
+	m.serverStreamMsgSent.GetMetricWithLabelValues(methodType, serviceName, methodName)
+	if m.serverHandledHistogramEnabled {
+		m.serverHandledHistogram.GetMetricWithLabelValues(methodType, serviceName, methodName)
+	}
+	for _, code := range interceptors.AllCodes {
+		m.serverHandledCounter.GetMetricWithLabelValues(methodType, serviceName, methodName, code.String())
 	}
 }

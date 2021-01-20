@@ -2,6 +2,7 @@ package metrics
 
 type grpcType string
 
+// grpcType describes all types of grpc connection.
 const (
 	Unary        grpcType = "unary"
 	ClientStream grpcType = "client_stream"
@@ -9,8 +10,10 @@ const (
 	BidiStream   grpcType = "bidi_stream"
 )
 
+// Kind describes whether interceptor is a client or server type.
 type Kind string
 
+// Enum for Client and Server Kind.
 const (
 	KindClient Kind = "client"
 	KindServer Kind = "server"
