@@ -14,7 +14,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
@@ -48,9 +47,9 @@ func TestRecoverySuite(t *testing.T) {
 		InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 			TestService: &recoveryAssertService{TestServiceServer: &grpctesting.TestPingService{T: t}},
 			ServerOpts: []grpc.ServerOption{
-				middleware.WithStreamServerChain(
+				grpc.StreamInterceptor(
 					recovery.StreamServerInterceptor()),
-				middleware.WithUnaryServerChain(
+				grpc.UnaryInterceptor(
 					recovery.UnaryServerInterceptor()),
 			},
 		},
@@ -101,9 +100,9 @@ func TestRecoveryOverrideSuite(t *testing.T) {
 		InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
 			TestService: &recoveryAssertService{TestServiceServer: &grpctesting.TestPingService{T: t}},
 			ServerOpts: []grpc.ServerOption{
-				middleware.WithStreamServerChain(
+				grpc.StreamInterceptor(
 					recovery.StreamServerInterceptor(opts...)),
-				middleware.WithUnaryServerChain(
+				grpc.UnaryInterceptor(
 					recovery.UnaryServerInterceptor(opts...)),
 			},
 		},

@@ -8,7 +8,6 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2"
 	"google.golang.org/grpc"
 
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 )
@@ -27,11 +26,11 @@ func Example_initializationWithCustomLevels() {
 	}
 	// Create a server, make sure we put the tags context before everything else.
 	_ = grpc.NewServer(
-		middleware.WithUnaryServerChain(
+		grpc.ChainUnaryInterceptor(
 			tags.UnaryServerInterceptor(),
 			logging.UnaryServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
-		middleware.WithStreamServerChain(
+		grpc.ChainStreamInterceptor(
 			tags.StreamServerInterceptor(),
 			logging.StreamServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
@@ -47,11 +46,11 @@ func Example_initializationWithDurationFieldOverride() {
 	}
 	// Create a server, make sure we put the tags context before everything else.
 	_ = grpc.NewServer(
-		middleware.WithUnaryServerChain(
+		grpc.ChainUnaryInterceptor(
 			tags.UnaryServerInterceptor(),
 			logging.UnaryServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
-		middleware.WithStreamServerChain(
+		grpc.ChainStreamInterceptor(
 			tags.StreamServerInterceptor(),
 			logging.StreamServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
@@ -63,11 +62,11 @@ func Example_initializationWithCodeGenRequestFieldExtractor() {
 	logger := log.NewNopLogger()
 	// Create a server, make sure we put the tags context before everything else.
 	_ = grpc.NewServer(
-		middleware.WithUnaryServerChain(
+		grpc.ChainUnaryInterceptor(
 			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.UnaryServerInterceptor(kit.InterceptorLogger(logger)),
 		),
-		middleware.WithStreamServerChain(
+		grpc.ChainStreamInterceptor(
 			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.StreamServerInterceptor(kit.InterceptorLogger(logger)),
 		),
@@ -90,11 +89,11 @@ func ExampleWithDecider() {
 	}
 	// Create a server, make sure we put the tags context before everything else.
 	_ = []grpc.ServerOption{
-		middleware.WithUnaryServerChain(
+		grpc.ChainUnaryInterceptor(
 			tags.UnaryServerInterceptor(),
 			logging.UnaryServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
-		middleware.WithStreamServerChain(
+		grpc.ChainStreamInterceptor(
 			tags.StreamServerInterceptor(),
 			logging.StreamServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
@@ -111,12 +110,12 @@ func ExampleWithPayloadLogging() {
 
 	// Create a server, make sure we put the tags context before everything else.
 	_ = []grpc.ServerOption{
-		middleware.WithUnaryServerChain(
+		grpc.ChainUnaryInterceptor(
 			tags.UnaryServerInterceptor(),
 			logging.UnaryServerInterceptor(kit.InterceptorLogger(logger)),
 			logging.PayloadUnaryServerInterceptor(kit.InterceptorLogger(logger), payloadDecider),
 		),
-		middleware.WithStreamServerChain(
+		grpc.ChainStreamInterceptor(
 			tags.StreamServerInterceptor(),
 			logging.StreamServerInterceptor(kit.InterceptorLogger(logger)),
 			logging.PayloadStreamServerInterceptor(kit.InterceptorLogger(logger), payloadDecider),

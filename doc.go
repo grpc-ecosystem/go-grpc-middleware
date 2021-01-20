@@ -15,15 +15,12 @@ functions for chaining said interceptors, metadata convenience methods and more.
 
 Chaining
 
-By default, gRPC doesn't allow one to have more than one interceptor either on the client nor on
-the server side. `middleware` provides convenient chaining methods
-
 Simple way of turning a multiple interceptors into a single interceptor. Here's an example for
 server chaining:
 
 	myServer := grpc.NewServer(
-	    grpc.StreamInterceptor(middleware.ChainStreamServer(loggingStream, monitoringStream, authStream)),
-	    grpc.UnaryInterceptor(middleware.ChainUnaryServer(loggingUnary, monitoringUnary, authUnary),
+	    grpc.ChainStreamInterceptor(loggingStream, monitoringStream, authStream)),
+	    grpc.ChainUnaryInterceptor(loggingUnary, monitoringUnary, authUnary),
 	)
 
 These interceptors will be executed from left to right: logging, monitoring and auth.

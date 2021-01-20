@@ -30,22 +30,22 @@ some of them itself, but also will link to useful external repos.
 import "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 
 myServer := grpc.NewServer(
-    grpc.StreamInterceptor(middleware.ChainStreamServer(
+    grpc.ChainStreamInterceptor(
         tags.StreamServerInterceptor(),
         opentracing.StreamServerInterceptor(),
         prometheus.StreamServerInterceptor,
         zap.StreamServerInterceptor(zapLogger),
         auth.StreamServerInterceptor(myAuthFunction),
         recovery.StreamServerInterceptor(),
-    )),
-    grpc.UnaryInterceptor(middleware.ChainUnaryServer(
+    ),
+    grpc.ChainUnaryInterceptor(
         tags.UnaryServerInterceptor(),
         opentracing.UnaryServerInterceptor(),
         prometheus.UnaryServerInterceptor,
         zap.UnaryServerInterceptor(zapLogger),
         auth.UnaryServerInterceptor(myAuthFunction),
         recovery.UnaryServerInterceptor(),
-    )),
+    ),
 )
 ```
 

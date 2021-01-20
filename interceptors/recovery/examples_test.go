@@ -8,7 +8,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 )
 
@@ -29,10 +28,10 @@ func Example_initialization() {
 	// Create a server. Recovery handlers should typically be last in the chain so that other middleware
 	// (e.g. logging) can operate on the recovered state instead of being directly affected by any panic
 	_ = grpc.NewServer(
-		middleware.WithUnaryServerChain(
+		grpc.UnaryInterceptor(
 			recovery.UnaryServerInterceptor(opts...),
 		),
-		middleware.WithStreamServerChain(
+		grpc.StreamInterceptor(
 			recovery.StreamServerInterceptor(opts...),
 		),
 	)

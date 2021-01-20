@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
@@ -47,10 +46,10 @@ func TestPayloadSuite(t *testing.T) {
 		grpc.WithStreamInterceptor(logging.PayloadStreamClientInterceptor(s.logger, alwaysLoggingDeciderClient)),
 	}
 	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
-		middleware.WithStreamServerChain(
+		grpc.ChainStreamInterceptor(
 			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.PayloadStreamServerInterceptor(s.logger, alwaysLoggingDeciderServer)),
-		middleware.WithUnaryServerChain(
+		grpc.ChainUnaryInterceptor(
 			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.PayloadUnaryServerInterceptor(s.logger, alwaysLoggingDeciderServer)),
 	}
