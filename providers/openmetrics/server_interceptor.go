@@ -1,9 +1,10 @@
 package metrics
 
 import (
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
-	prom "github.com/prometheus/client_golang/prometheus"
+	openmetrics "github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
 
 var (
@@ -14,10 +15,10 @@ var (
 )
 
 func init() {
-	prom.MustRegister(DefaultServerMetrics.serverStartedCounter)
-	prom.MustRegister(DefaultServerMetrics.serverHandledCounter)
-	prom.MustRegister(DefaultServerMetrics.serverStreamMsgReceived)
-	prom.MustRegister(DefaultServerMetrics.serverStreamMsgSent)
+	openmetrics.MustRegister(DefaultServerMetrics.serverStartedCounter)
+	openmetrics.MustRegister(DefaultServerMetrics.serverHandledCounter)
+	openmetrics.MustRegister(DefaultServerMetrics.serverStreamMsgReceived)
+	openmetrics.MustRegister(DefaultServerMetrics.serverStreamMsgSent)
 }
 
 // UnaryServerInterceptor is a gRPC server-side interceptor that provides Prometheus monitoring for Unary RPCs.
@@ -44,5 +45,5 @@ func Register(server *grpc.Server) {
 // variable and the default Prometheus metrics registry.
 func EnableHandlingTimeHistogram(opts ...HistogramOption) {
 	DefaultServerMetrics.EnableHandlingTimeHistogram(opts...)
-	prom.Register(DefaultServerMetrics.serverHandledHistogram)
+	openmetrics.Register(DefaultServerMetrics.serverHandledHistogram)
 }

@@ -1,9 +1,10 @@
 package metrics
 
 import (
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
-	prom "github.com/prometheus/client_golang/prometheus"
+	openmetrics "github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
 
 var (
@@ -14,10 +15,10 @@ var (
 )
 
 func init() {
-	prom.MustRegister(DefaultClientMetrics.clientStartedCounter)
-	prom.MustRegister(DefaultClientMetrics.clientHandledCounter)
-	prom.MustRegister(DefaultClientMetrics.clientStreamMsgReceived)
-	prom.MustRegister(DefaultClientMetrics.clientStreamMsgSent)
+	openmetrics.MustRegister(DefaultClientMetrics.clientStartedCounter)
+	openmetrics.MustRegister(DefaultClientMetrics.clientHandledCounter)
+	openmetrics.MustRegister(DefaultClientMetrics.clientStreamMsgReceived)
+	openmetrics.MustRegister(DefaultClientMetrics.clientStreamMsgSent)
 }
 
 // UnaryClientInterceptor is a gRPC client-side interceptor that provides Prometheus monitoring for Unary RPCs.
@@ -36,7 +37,7 @@ func StreamClientInterceptor() grpc.StreamClientInterceptor {
 // default Prometheus metrics registry.
 func EnableClientHandlingTimeHistogram(opts ...HistogramOption) {
 	DefaultClientMetrics.EnableClientHandlingTimeHistogram(opts...)
-	prom.Register(DefaultClientMetrics.clientHandledHistogram)
+	openmetrics.Register(DefaultClientMetrics.clientHandledHistogram)
 }
 
 // EnableClientStreamReceiveTimeHistogram turns on recording of
@@ -45,7 +46,7 @@ func EnableClientHandlingTimeHistogram(opts ...HistogramOption) {
 // default Prometheus metrics registry.
 func EnableClientStreamReceiveTimeHistogram(opts ...HistogramOption) {
 	DefaultClientMetrics.EnableClientStreamReceiveTimeHistogram(opts...)
-	prom.Register(DefaultClientMetrics.clientStreamRecvHistogram)
+	openmetrics.Register(DefaultClientMetrics.clientStreamRecvHistogram)
 }
 
 // EnableClientStreamSendTimeHistogram turns on recording of
@@ -54,5 +55,5 @@ func EnableClientStreamReceiveTimeHistogram(opts ...HistogramOption) {
 // default Prometheus metrics registry.
 func EnableClientStreamSendTimeHistogram(opts ...HistogramOption) {
 	DefaultClientMetrics.EnableClientStreamSendTimeHistogram(opts...)
-	prom.Register(DefaultClientMetrics.clientStreamSendHistogram)
+	openmetrics.Register(DefaultClientMetrics.clientStreamSendHistogram)
 }

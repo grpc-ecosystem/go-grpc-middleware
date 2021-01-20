@@ -1,28 +1,28 @@
 package metrics
 
 import (
-	prom "github.com/prometheus/client_golang/prometheus"
+	openmetrics "github.com/prometheus/client_golang/prometheus"
 )
 
 // ClientMetrics represents a collection of metrics to be registered on a
 // Prometheus metrics registry for a gRPC client.
 type ClientMetrics struct {
-	clientStartedCounter    *prom.CounterVec
-	clientHandledCounter    *prom.CounterVec
-	clientStreamMsgReceived *prom.CounterVec
-	clientStreamMsgSent     *prom.CounterVec
+	clientStartedCounter    *openmetrics.CounterVec
+	clientHandledCounter    *openmetrics.CounterVec
+	clientStreamMsgReceived *openmetrics.CounterVec
+	clientStreamMsgSent     *openmetrics.CounterVec
 
 	clientHandledHistogramEnabled bool
-	clientHandledHistogramOpts    prom.HistogramOpts
-	clientHandledHistogram        *prom.HistogramVec
+	clientHandledHistogramOpts    openmetrics.HistogramOpts
+	clientHandledHistogram        *openmetrics.HistogramVec
 
 	clientStreamRecvHistogramEnabled bool
-	clientStreamRecvHistogramOpts    prom.HistogramOpts
-	clientStreamRecvHistogram        *prom.HistogramVec
+	clientStreamRecvHistogramOpts    openmetrics.HistogramOpts
+	clientStreamRecvHistogram        *openmetrics.HistogramVec
 
 	clientStreamSendHistogramEnabled bool
-	clientStreamSendHistogramOpts    prom.HistogramOpts
-	clientStreamSendHistogram        *prom.HistogramVec
+	clientStreamSendHistogramOpts    openmetrics.HistogramOpts
+	clientStreamSendHistogram        *openmetrics.HistogramVec
 }
 
 // NewClientMetrics returns a ClientMetrics object. Use a new instance of
@@ -32,49 +32,49 @@ type ClientMetrics struct {
 func NewClientMetrics(counterOpts ...CounterOption) *ClientMetrics {
 	opts := counterOptions(counterOpts)
 	return &ClientMetrics{
-		clientStartedCounter: prom.NewCounterVec(
-			opts.apply(prom.CounterOpts{
+		clientStartedCounter: openmetrics.NewCounterVec(
+			opts.apply(openmetrics.CounterOpts{
 				Name: "grpc_client_started_total",
 				Help: "Total number of RPCs started on the client.",
 			}), []string{"grpc_type", "grpc_service", "grpc_method"}),
 
-		clientHandledCounter: prom.NewCounterVec(
-			opts.apply(prom.CounterOpts{
+		clientHandledCounter: openmetrics.NewCounterVec(
+			opts.apply(openmetrics.CounterOpts{
 				Name: "grpc_client_handled_total",
 				Help: "Total number of RPCs completed by the client, regardless of success or failure.",
 			}), []string{"grpc_type", "grpc_service", "grpc_method", "grpc_code"}),
 
-		clientStreamMsgReceived: prom.NewCounterVec(
-			opts.apply(prom.CounterOpts{
+		clientStreamMsgReceived: openmetrics.NewCounterVec(
+			opts.apply(openmetrics.CounterOpts{
 				Name: "grpc_client_msg_received_total",
 				Help: "Total number of RPC stream messages received by the client.",
 			}), []string{"grpc_type", "grpc_service", "grpc_method"}),
 
-		clientStreamMsgSent: prom.NewCounterVec(
-			opts.apply(prom.CounterOpts{
+		clientStreamMsgSent: openmetrics.NewCounterVec(
+			opts.apply(openmetrics.CounterOpts{
 				Name: "grpc_client_msg_sent_total",
 				Help: "Total number of gRPC stream messages sent by the client.",
 			}), []string{"grpc_type", "grpc_service", "grpc_method"}),
 
 		clientHandledHistogramEnabled: false,
-		clientHandledHistogramOpts: prom.HistogramOpts{
+		clientHandledHistogramOpts: openmetrics.HistogramOpts{
 			Name:    "grpc_client_handling_seconds",
 			Help:    "Histogram of response latency (seconds) of the gRPC until it is finished by the application.",
-			Buckets: prom.DefBuckets,
+			Buckets: openmetrics.DefBuckets,
 		},
 		clientHandledHistogram:           nil,
 		clientStreamRecvHistogramEnabled: false,
-		clientStreamRecvHistogramOpts: prom.HistogramOpts{
+		clientStreamRecvHistogramOpts: openmetrics.HistogramOpts{
 			Name:    "grpc_client_msg_recv_handling_seconds",
 			Help:    "Histogram of response latency (seconds) of the gRPC single message receive.",
-			Buckets: prom.DefBuckets,
+			Buckets: openmetrics.DefBuckets,
 		},
 		clientStreamRecvHistogram:        nil,
 		clientStreamSendHistogramEnabled: false,
-		clientStreamSendHistogramOpts: prom.HistogramOpts{
+		clientStreamSendHistogramOpts: openmetrics.HistogramOpts{
 			Name:    "grpc_client_msg_send_handling_seconds",
 			Help:    "Histogram of response latency (seconds) of the gRPC single message send.",
-			Buckets: prom.DefBuckets,
+			Buckets: openmetrics.DefBuckets,
 		},
 		clientStreamSendHistogram: nil,
 	}
@@ -83,7 +83,7 @@ func NewClientMetrics(counterOpts ...CounterOption) *ClientMetrics {
 // Describe sends the super-set of all possible descriptors of metrics
 // collected by this Collector to the provided channel and returns once
 // the last descriptor has been sent.
-func (m *ClientMetrics) Describe(ch chan<- *prom.Desc) {
+func (m *ClientMetrics) Describe(ch chan<- *openmetrics.Desc) {
 	m.clientStartedCounter.Describe(ch)
 	m.clientHandledCounter.Describe(ch)
 	m.clientStreamMsgReceived.Describe(ch)
@@ -102,7 +102,7 @@ func (m *ClientMetrics) Describe(ch chan<- *prom.Desc) {
 // Collect is called by the Prometheus registry when collecting
 // metrics. The implementation sends each collected metric via the
 // provided channel and returns once the last metric has been sent.
-func (m *ClientMetrics) Collect(ch chan<- prom.Metric) {
+func (m *ClientMetrics) Collect(ch chan<- openmetrics.Metric) {
 	m.clientStartedCounter.Collect(ch)
 	m.clientHandledCounter.Collect(ch)
 	m.clientStreamMsgReceived.Collect(ch)
@@ -125,7 +125,7 @@ func (m *ClientMetrics) EnableClientHandlingTimeHistogram(opts ...HistogramOptio
 		o(&m.clientHandledHistogramOpts)
 	}
 	if !m.clientHandledHistogramEnabled {
-		m.clientHandledHistogram = prom.NewHistogramVec(
+		m.clientHandledHistogram = openmetrics.NewHistogramVec(
 			m.clientHandledHistogramOpts,
 			[]string{"grpc_type", "grpc_service", "grpc_method"},
 		)
@@ -141,7 +141,7 @@ func (m *ClientMetrics) EnableClientStreamReceiveTimeHistogram(opts ...Histogram
 	}
 
 	if !m.clientStreamRecvHistogramEnabled {
-		m.clientStreamRecvHistogram = prom.NewHistogramVec(
+		m.clientStreamRecvHistogram = openmetrics.NewHistogramVec(
 			m.clientStreamRecvHistogramOpts,
 			[]string{"grpc_type", "grpc_service", "grpc_method"},
 		)
@@ -158,7 +158,7 @@ func (m *ClientMetrics) EnableClientStreamSendTimeHistogram(opts ...HistogramOpt
 	}
 
 	if !m.clientStreamSendHistogramEnabled {
-		m.clientStreamSendHistogram = prom.NewHistogramVec(
+		m.clientStreamSendHistogram = openmetrics.NewHistogramVec(
 			m.clientStreamSendHistogramOpts,
 			[]string{"grpc_type", "grpc_service", "grpc_method"},
 		)

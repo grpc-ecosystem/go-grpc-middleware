@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	openmetrics "github.com/prometheus/client_golang/prometheus"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
@@ -94,12 +94,12 @@ func (rep *reportable) reporter(sm *ServerMetrics, cm *ClientMetrics, rpcType in
 
 		if r.clientMetrics.clientStreamSendHistogramEnabled {
 			hist := r.clientMetrics.clientStreamSendHistogram.WithLabelValues(string(r.typ), r.service, r.method)
-			r.sendTimer = prometheus.NewTimer(hist)
+			r.sendTimer = openmetrics.NewTimer(hist)
 		}
 
 		if r.clientMetrics.clientStreamRecvHistogramEnabled {
 			hist := r.clientMetrics.clientStreamRecvHistogram.WithLabelValues(string(r.typ), r.service, r.method)
-			r.receiveTimer = prometheus.NewTimer(hist)
+			r.receiveTimer = openmetrics.NewTimer(hist)
 		}
 	case KindServer:
 		if r.serverMetrics.serverHandledHistogramEnabled {

@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	prom "github.com/prometheus/client_golang/prometheus"
+	openmetrics "github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
@@ -14,11 +14,11 @@ func FromError(err error) (s *status.Status, ok bool) {
 }
 
 // A CounterOption lets you add options to Counter metrics using With* funcs.
-type CounterOption func(*prom.CounterOpts)
+type CounterOption func(*openmetrics.CounterOpts)
 
 type counterOptions []CounterOption
 
-func (co counterOptions) apply(o prom.CounterOpts) prom.CounterOpts {
+func (co counterOptions) apply(o openmetrics.CounterOpts) openmetrics.CounterOpts {
 	for _, f := range co {
 		f(&o)
 	}
@@ -26,25 +26,25 @@ func (co counterOptions) apply(o prom.CounterOpts) prom.CounterOpts {
 }
 
 // WithConstLabels allows you to add ConstLabels to Counter metrics.
-func WithConstLabels(labels prom.Labels) CounterOption {
-	return func(o *prom.CounterOpts) {
+func WithConstLabels(labels openmetrics.Labels) CounterOption {
+	return func(o *openmetrics.CounterOpts) {
 		o.ConstLabels = labels
 	}
 }
 
 // A HistogramOption lets you add options to Histogram metrics using With*
 // funcs.
-type HistogramOption func(*prom.HistogramOpts)
+type HistogramOption func(*openmetrics.HistogramOpts)
 
 // WithHistogramBuckets allows you to specify custom bucket ranges for histograms if EnableHandlingTimeHistogram is on.
 func WithHistogramBuckets(buckets []float64) HistogramOption {
-	return func(o *prom.HistogramOpts) { o.Buckets = buckets }
+	return func(o *openmetrics.HistogramOpts) { o.Buckets = buckets }
 }
 
 // WithHistogramConstLabels allows you to add custom ConstLabels to
 // histograms metrics.
-func WithHistogramConstLabels(labels prom.Labels) HistogramOption {
-	return func(o *prom.HistogramOpts) {
+func WithHistogramConstLabels(labels openmetrics.Labels) HistogramOption {
+	return func(o *openmetrics.HistogramOpts) {
 		o.ConstLabels = labels
 	}
 }

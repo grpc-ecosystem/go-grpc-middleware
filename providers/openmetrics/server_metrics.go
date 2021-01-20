@@ -1,8 +1,9 @@
 package metrics
 
 import (
+	openmetrics "github.com/prometheus/client_golang/prometheus"
+
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
-	prom "github.com/prometheus/client_golang/prometheus"
 
 	"google.golang.org/grpc"
 )
@@ -10,13 +11,13 @@ import (
 // ServerMetrics represents a collection of metrics to be registered on a
 // Prometheus metrics registry for a gRPC server.
 type ServerMetrics struct {
-	serverStartedCounter          *prom.CounterVec
-	serverHandledCounter          *prom.CounterVec
-	serverStreamMsgReceived       *prom.CounterVec
-	serverStreamMsgSent           *prom.CounterVec
+	serverStartedCounter          *openmetrics.CounterVec
+	serverHandledCounter          *openmetrics.CounterVec
+	serverStreamMsgReceived       *openmetrics.CounterVec
+	serverStreamMsgSent           *openmetrics.CounterVec
 	serverHandledHistogramEnabled bool
-	serverHandledHistogramOpts    prom.HistogramOpts
-	serverHandledHistogram        *prom.HistogramVec
+	serverHandledHistogramOpts    openmetrics.HistogramOpts
+	serverHandledHistogram        *openmetrics.HistogramVec
 }
 
 // NewServerMetrics returns a ServerMetrics object. Use a new instance of
@@ -26,31 +27,31 @@ type ServerMetrics struct {
 func NewServerMetrics(counterOpts ...CounterOption) *ServerMetrics {
 	opts := counterOptions(counterOpts)
 	return &ServerMetrics{
-		serverStartedCounter: prom.NewCounterVec(
-			opts.apply(prom.CounterOpts{
+		serverStartedCounter: openmetrics.NewCounterVec(
+			opts.apply(openmetrics.CounterOpts{
 				Name: "grpc_server_started_total",
 				Help: "Total number of RPCs started on the server.",
 			}), []string{"grpc_type", "grpc_service", "grpc_method"}),
-		serverHandledCounter: prom.NewCounterVec(
-			opts.apply(prom.CounterOpts{
+		serverHandledCounter: openmetrics.NewCounterVec(
+			opts.apply(openmetrics.CounterOpts{
 				Name: "grpc_server_handled_total",
 				Help: "Total number of RPCs completed on the server, regardless of success or failure.",
 			}), []string{"grpc_type", "grpc_service", "grpc_method", "grpc_code"}),
-		serverStreamMsgReceived: prom.NewCounterVec(
-			opts.apply(prom.CounterOpts{
+		serverStreamMsgReceived: openmetrics.NewCounterVec(
+			opts.apply(openmetrics.CounterOpts{
 				Name: "grpc_server_msg_received_total",
 				Help: "Total number of RPC stream messages received on the server.",
 			}), []string{"grpc_type", "grpc_service", "grpc_method"}),
-		serverStreamMsgSent: prom.NewCounterVec(
-			opts.apply(prom.CounterOpts{
+		serverStreamMsgSent: openmetrics.NewCounterVec(
+			opts.apply(openmetrics.CounterOpts{
 				Name: "grpc_server_msg_sent_total",
 				Help: "Total number of gRPC stream messages sent by the server.",
 			}), []string{"grpc_type", "grpc_service", "grpc_method"}),
 		serverHandledHistogramEnabled: false,
-		serverHandledHistogramOpts: prom.HistogramOpts{
+		serverHandledHistogramOpts: openmetrics.HistogramOpts{
 			Name:    "grpc_server_handling_seconds",
 			Help:    "Histogram of response latency (seconds) of gRPC that had been application-level handled by the server.",
-			Buckets: prom.DefBuckets,
+			Buckets: openmetrics.DefBuckets,
 		},
 		serverHandledHistogram: nil,
 	}
@@ -65,7 +66,7 @@ func (m *ServerMetrics) EnableHandlingTimeHistogram(opts ...HistogramOption) {
 		o(&m.serverHandledHistogramOpts)
 	}
 	if !m.serverHandledHistogramEnabled {
-		m.serverHandledHistogram = prom.NewHistogramVec(
+		m.serverHandledHistogram = openmetrics.NewHistogramVec(
 			m.serverHandledHistogramOpts,
 			[]string{"grpc_type", "grpc_service", "grpc_method"},
 		)
@@ -76,7 +77,7 @@ func (m *ServerMetrics) EnableHandlingTimeHistogram(opts ...HistogramOption) {
 // Describe sends the super-set of all possible descriptors of metrics
 // collected by this Collector to the provided channel and returns once
 // the last descriptor has been sent.
-func (m *ServerMetrics) Describe(ch chan<- *prom.Desc) {
+func (m *ServerMetrics) Describe(ch chan<- *openmetrics.Desc) {
 	m.serverStartedCounter.Describe(ch)
 	m.serverHandledCounter.Describe(ch)
 	m.serverStreamMsgReceived.Describe(ch)
@@ -89,7 +90,7 @@ func (m *ServerMetrics) Describe(ch chan<- *prom.Desc) {
 // Collect is called by the Prometheus registry when collecting
 // metrics. The implementation sends each collected metric via the
 // provided channel and returns once the last metric has been sent.
-func (m *ServerMetrics) Collect(ch chan<- prom.Metric) {
+func (m *ServerMetrics) Collect(ch chan<- openmetrics.Metric) {
 	m.serverStartedCounter.Collect(ch)
 	m.serverHandledCounter.Collect(ch)
 	m.serverStreamMsgReceived.Collect(ch)
