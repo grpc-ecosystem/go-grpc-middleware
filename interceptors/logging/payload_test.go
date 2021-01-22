@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"sort"
 	"testing"
+	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -154,7 +156,32 @@ func (s *loggingPayloadSuite) TestPingStream_LogsAllRequestsAndResponses() {
 	}
 	require.NoError(s.T(), stream.CloseSend(), "no error on send stream")
 
-	lines := s.logger.o.Lines()
-	require.Len(s.T(), lines, 4*messagesExpected)
-	s.assertPayloadLogLinesForMessage(lines, "PingStream", interceptors.BidiStream)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	require.NoError(s.T(), waitUntil(200*time.Millisecond, ctx.Done(), func() error {
+		got := len(s.logger.o.Lines())
+		if got >= 4*messagesExpected {
+			return nil
+		}
+		return errors.Errorf("not enough log lines, waiting; got: %v", got)
+	}))
+	s.assertPayloadLogLinesForMessage(s.logger.o.Lines(), "PingStream", interceptors.BidiStream)
+}
+
+// waitUntil executes f every interval seconds until timeout or no error is returned from f.
+func waitUntil(interval time.Duration, stopc <-chan struct{}, f func() error) error {
+	tick := time.NewTicker(interval)
+	defer tick.Stop()
+
+	var err error
+	for {
+		if err = f(); err == nil {
+			return nil
+		}
+		select {
+		case <-stopc:
+			return err
+		case <-tick.C:
+		}
+	}
 }
