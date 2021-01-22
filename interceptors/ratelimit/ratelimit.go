@@ -9,17 +9,17 @@ import (
 )
 
 // Limiter defines the interface to perform request rate limiting.
-// If Limit function return true, the request will be rejected.
+// If Limit function returns an error, the request will be rejected with the gRPC codes.ResourceExhausted and the provided error.
 // Otherwise, the request will pass.
 type Limiter interface {
-	Limit(ctx context.Context) bool
+	Limit(ctx context.Context) error
 }
 
 // UnaryServerInterceptor returns a new unary server interceptors that performs request rate limiting.
 func UnaryServerInterceptor(limiter Limiter) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		if limiter.Limit(ctx) {
-			return nil, status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_ratelimit middleware, please retry later.", info.FullMethod)
+		if err := limiter.Limit(ctx); err != nil {
+			return nil, status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_ratelimit middleware, please retry later. %s", info.FullMethod, err)
 		}
 		return handler(ctx, req)
 	}
@@ -28,8 +28,8 @@ func UnaryServerInterceptor(limiter Limiter) grpc.UnaryServerInterceptor {
 // StreamServerInterceptor returns a new stream server interceptor that performs rate limiting on the request.
 func StreamServerInterceptor(limiter Limiter) grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		if limiter.Limit(stream.Context()) {
-			return status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_ratelimit middleware, please retry later.", info.FullMethod)
+		if err := limiter.Limit(stream.Context()); err != nil {
+			return status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_ratelimit middleware, please retry later. %s", info.FullMethod, err)
 		}
 		return handler(srv, stream)
 	}

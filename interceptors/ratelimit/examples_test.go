@@ -12,8 +12,8 @@ import (
 // It does not limit any request because Limit function always returns false.
 type alwaysPassLimiter struct{}
 
-func (*alwaysPassLimiter) Limit(_ context.Context) bool {
-	return false
+func (*alwaysPassLimiter) Limit(_ context.Context) error {
+	return nil
 }
 
 // Simple example of server initialization code.
