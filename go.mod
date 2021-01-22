@@ -11,5 +11,5 @@ require (
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 	google.golang.org/grpc v1.30.1
 	google.golang.org/grpc/examples v0.0.0-20200723182653-9106c3fff523
-	google.golang.org/protobuf v1.25.0 // Github link: https://github.com/protocolbuffers/protobuf-go.
+	google.golang.org/protobuf v1.25.0
 )

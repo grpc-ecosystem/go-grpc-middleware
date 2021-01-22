@@ -45,8 +45,8 @@ fmt: $(GOIMPORTS)
 
 .PHONY: proto
 proto: ## Generates Go files from Thanos proto files.
-proto: $(GOIMPORTS) $(PROTOC) $(PROTOC_GEN_GOGOFAST) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) ./grpctesting/testpb/test.proto
-	@GOIMPORTS_BIN="$(GOIMPORTS)" PROTOC_BIN="$(PROTOC)" PROTOC_GEN_GO_BIN="$(PROTOC_GEN_GO)" PROTOC_GEN_GO_GRPC_BIN="$(PROTOC_GEN_GO_GRPC)" PROTOC_GEN_GOGOFAST_BIN="$(PROTOC_GEN_GOGOFAST)" scripts/genproto.sh
+proto: $(GOIMPORTS) $(PROTOC) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) ./grpctesting/testpb/test.proto
+	@GOIMPORTS_BIN="$(GOIMPORTS)" PROTOC_BIN="$(PROTOC)" PROTOC_GEN_GO_BIN="$(PROTOC_GEN_GO)" PROTOC_GEN_GO_GRPC_BIN="$(PROTOC_GEN_GO_GRPC)" scripts/genproto.sh
 
 .PHONY: test
 test:
@@ -65,6 +65,7 @@ test_module:
 deps:
 	@echo "Running deps tidy for all modules: $(MODULES)"
 	for dir in $(MODULES) ; do \
+  		echo "$${dir}"; \
 		cd $${dir} && go mod tidy; \
 	done
 

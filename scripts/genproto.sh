@@ -9,7 +9,6 @@ PROTOC_BIN=${PROTOC_BIN:-protoc}
 GOIMPORTS_BIN=${GOIMPORTS_BIN:-goimports}
 PROTOC_GEN_GO_BIN=${PROTOC_GEN_GO_BIN:-protoc-gen-go}
 PROTOC_GEN_GO_GRPC_BIN=${PROTOC_GEN_GO_GRPC_BIN:-protoc-gen-go-grpc}
-PROTOC_GEN_GOGOFAST_BIN=${PROTOC_GEN_GOGOFAST_BIN:-protoc-gen-gogofast}
 
 if ! [[ "$0" =~ "scripts/genproto.sh" ]]; then
 	echo "must be run from repository root"
