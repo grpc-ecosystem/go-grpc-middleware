@@ -1,7 +1,7 @@
 // Copyright 2016 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-package grpctesting
+package testpb
 
 import (
 	"context"
@@ -21,8 +21,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 )
 
 var (
@@ -36,7 +34,7 @@ var (
 type InterceptorTestSuite struct {
 	suite.Suite
 
-	TestService testpb.TestServiceServer
+	TestService TestServiceServer
 	ServerOpts  []grpc.ServerOption
 	ClientOpts  []grpc.DialOption
 
@@ -44,7 +42,7 @@ type InterceptorTestSuite struct {
 	ServerListener net.Listener
 	Server         *grpc.Server
 	clientConn     *grpc.ClientConn
-	Client         testpb.TestServiceClient
+	Client         TestServiceClient
 
 	restartServerWithDelayedStart chan time.Duration
 	serverRunning                 chan bool
@@ -79,7 +77,7 @@ func (s *InterceptorTestSuite) SetupSuite() {
 			if s.TestService == nil {
 				s.TestService = &TestPingService{T: s.T()}
 			}
-			testpb.RegisterTestServiceServer(s.Server, s.TestService)
+			RegisterTestServiceServer(s.Server, s.TestService)
 
 			w := sync.WaitGroup{}
 			w.Add(1)
@@ -113,7 +111,7 @@ func (s *InterceptorTestSuite) RestartServer(delayedStart time.Duration) <-chan 
 	return s.serverRunning
 }
 
-func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) testpb.TestServiceClient {
+func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) TestServiceClient {
 	newDialOpts := append(dialOpts, grpc.WithBlock())
 	if *flagTls {
 		cp := x509.NewCertPool()
@@ -129,7 +127,7 @@ func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) testpb.Tes
 	defer cancel()
 	clientConn, err := grpc.DialContext(ctx, s.ServerAddr(), newDialOpts...)
 	require.NoError(s.T(), err, "must not error on client Dial")
-	return testpb.NewTestServiceClient(clientConn)
+	return NewTestServiceClient(clientConn)
 }
 
 func (s *InterceptorTestSuite) ServerAddr() string {

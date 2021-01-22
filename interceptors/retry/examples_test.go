@@ -11,8 +11,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 var cc *grpc.ClientConn
@@ -56,7 +56,7 @@ func Example_simpleCall() {
 	defer cancel()
 
 	client := testpb.NewTestServiceClient(cc)
-	stream, _ := client.PingList(ctx, &testpb.PingRequest{}, retry.WithMax(3))
+	stream, _ := client.PingList(ctx, &testpb.PingListRequest{}, retry.WithMax(3))
 
 	for {
 		_, err := stream.Recv() // retries happen here

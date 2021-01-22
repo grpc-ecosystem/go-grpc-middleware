@@ -18,14 +18,12 @@ import (
 	"google.golang.org/grpc/status"
 
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 var (
 	retriableErrors = []codes.Code{codes.Unavailable, codes.DataLoss}
-	goodPing        = &testpb.PingRequest{Value: "something"}
 	noSleep         = 0 * time.Second
 	retryTimeout    = 50 * time.Millisecond
 )
@@ -78,7 +76,7 @@ func (s *failingService) Ping(ctx context.Context, ping *testpb.PingRequest) (*t
 	return s.TestServiceServer.Ping(ctx, ping)
 }
 
-func (s *failingService) PingList(ping *testpb.PingRequest, stream testpb.TestService_PingListServer) error {
+func (s *failingService) PingList(ping *testpb.PingListRequest, stream testpb.TestService_PingListServer) error {
 	if err := s.maybeFailRequest(); err != nil {
 		return err
 	}
@@ -94,7 +92,7 @@ func (s *failingService) PingStream(stream testpb.TestService_PingStreamServer) 
 
 func TestRetrySuite(t *testing.T) {
 	service := &failingService{
-		TestServiceServer: &grpctesting.TestPingService{T: t},
+		TestServiceServer: &testpb.TestPingService{T: t},
 	}
 	unaryInterceptor := retry.UnaryClientInterceptor(
 		retry.WithCodes(retriableErrors...),
@@ -108,7 +106,7 @@ func TestRetrySuite(t *testing.T) {
 	)
 	s := &RetrySuite{
 		srv: service,
-		InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
+		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			TestService: service,
 			ClientOpts: []grpc.DialOption{
 				grpc.WithStreamInterceptor(streamInterceptor),
@@ -120,7 +118,7 @@ func TestRetrySuite(t *testing.T) {
 }
 
 type RetrySuite struct {
-	*grpctesting.InterceptorTestSuite
+	*testpb.InterceptorTestSuite
 	srv *failingService
 }
 
@@ -130,7 +128,7 @@ func (s *RetrySuite) SetupTest() {
 
 func (s *RetrySuite) TestUnary_FailsOnNonRetriableError() {
 	s.srv.resetFailingConfiguration(5, codes.Internal, noSleep)
-	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	_, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing)
 	require.Error(s.T(), err, "error must occur from the failing service")
 	require.Equal(s.T(), codes.Internal, status.Code(err), "failure code must come from retrier")
 	require.EqualValues(s.T(), 1, s.srv.requestCount(), "one request should have been made")
@@ -138,7 +136,7 @@ func (s *RetrySuite) TestUnary_FailsOnNonRetriableError() {
 
 func (s *RetrySuite) TestUnary_FailsOnNonRetriableContextError() {
 	s.srv.resetFailingConfiguration(5, codes.Canceled, noSleep)
-	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	_, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing)
 	require.Error(s.T(), err, "error must occur from the failing service")
 	require.Equal(s.T(), codes.Canceled, status.Code(err), "failure code must come from retrier")
 	require.EqualValues(s.T(), 1, s.srv.requestCount(), "one request should have been made")
@@ -149,7 +147,7 @@ func (s *RetrySuite) TestCallOptionsDontPanicWithoutInterceptor() {
 	// If this code doesn't panic, that's good.
 	s.srv.resetFailingConfiguration(100, codes.DataLoss, noSleep) // doesn't matter all requests should fail
 	nonMiddlewareClient := s.NewClient()
-	_, err := nonMiddlewareClient.Ping(s.SimpleCtx(), goodPing,
+	_, err := nonMiddlewareClient.Ping(s.SimpleCtx(), testpb.GoodPing,
 		retry.WithMax(5),
 		retry.WithBackoff(retry.BackoffLinear(1*time.Millisecond)),
 		retry.WithCodes(codes.DataLoss),
@@ -160,7 +158,7 @@ func (s *RetrySuite) TestCallOptionsDontPanicWithoutInterceptor() {
 
 func (s *RetrySuite) TestServerStream_FailsOnNonRetriableError() {
 	s.srv.resetFailingConfiguration(5, codes.Internal, noSleep)
-	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	_, err = stream.Recv()
 	require.Error(s.T(), err, "error must occur from the failing service")
@@ -169,7 +167,7 @@ func (s *RetrySuite) TestServerStream_FailsOnNonRetriableError() {
 
 func (s *RetrySuite) TestUnary_SucceedsOnRetriableError() {
 	s.srv.resetFailingConfiguration(3, codes.DataLoss, noSleep) // see retriable_errors
-	out, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	out, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing)
 	require.NoError(s.T(), err, "the third invocation should succeed")
 	require.NotNil(s.T(), out, "Pong must be not nil")
 	require.EqualValues(s.T(), 3, s.srv.requestCount(), "three requests should have been made")
@@ -177,7 +175,7 @@ func (s *RetrySuite) TestUnary_SucceedsOnRetriableError() {
 
 func (s *RetrySuite) TestUnary_OverrideFromDialOpts() {
 	s.srv.resetFailingConfiguration(5, codes.ResourceExhausted, noSleep) // default is 3 and retriable_errors
-	out, err := s.Client.Ping(s.SimpleCtx(), goodPing, retry.WithCodes(codes.ResourceExhausted), retry.WithMax(5))
+	out, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing, retry.WithCodes(codes.ResourceExhausted), retry.WithMax(5))
 	require.NoError(s.T(), err, "the fifth invocation should succeed")
 	require.NotNil(s.T(), out, "Pong must be not nil")
 	require.EqualValues(s.T(), 5, s.srv.requestCount(), "five requests should have been made")
@@ -190,7 +188,7 @@ func (s *RetrySuite) TestUnary_PerCallDeadline_Succeeds() {
 	// a retry call with a 5 millisecond deadline. The 5th one doesn't sleep and succeeds.
 	deadlinePerCall := 5 * time.Millisecond
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
-	out, err := s.Client.Ping(s.SimpleCtx(), goodPing, retry.WithPerRetryTimeout(deadlinePerCall),
+	out, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing, retry.WithPerRetryTimeout(deadlinePerCall),
 		retry.WithMax(5))
 	require.NoError(s.T(), err, "the fifth invocation should succeed")
 	require.NotNil(s.T(), out, "Pong must be not nil")
@@ -211,7 +209,7 @@ func (s *RetrySuite) TestUnary_PerCallDeadline_FailsOnParent() {
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
 	ctx, cancel := context.WithTimeout(context.TODO(), parentDeadline)
 	defer cancel()
-	_, err := s.Client.Ping(ctx, goodPing, retry.WithPerRetryTimeout(deadlinePerCall),
+	_, err := s.Client.Ping(ctx, testpb.GoodPing, retry.WithPerRetryTimeout(deadlinePerCall),
 		retry.WithMax(5))
 	require.Error(s.T(), err, "the retries must fail due to context deadline exceeded")
 	require.Equal(s.T(), codes.DeadlineExceeded, status.Code(err), "failre code must be a gRPC error of Deadline class")
@@ -219,7 +217,7 @@ func (s *RetrySuite) TestUnary_PerCallDeadline_FailsOnParent() {
 
 func (s *RetrySuite) TestServerStream_SucceedsOnRetriableError() {
 	s.srv.resetFailingConfiguration(3, codes.DataLoss, noSleep) // see retriable_errors
-	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing)
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList)
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
 	s.assertPingListWasCorrect(stream)
 	require.EqualValues(s.T(), 3, s.srv.requestCount(), "three requests should have been made")
@@ -227,7 +225,7 @@ func (s *RetrySuite) TestServerStream_SucceedsOnRetriableError() {
 
 func (s *RetrySuite) TestServerStream_OverrideFromContext() {
 	s.srv.resetFailingConfiguration(5, codes.ResourceExhausted, noSleep) // default is 3 and retriable_errors
-	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing, retry.WithCodes(codes.ResourceExhausted), retry.WithMax(5))
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList, retry.WithCodes(codes.ResourceExhausted), retry.WithMax(5))
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
 	s.assertPingListWasCorrect(stream)
 	require.EqualValues(s.T(), 5, s.srv.requestCount(), "three requests should have been made")
@@ -240,7 +238,7 @@ func (s *RetrySuite) TestServerStream_PerCallDeadline_Succeeds() {
 	// a retry call with a 50 millisecond deadline. The 5th one doesn't sleep and succeeds.
 	deadlinePerCall := 100 * time.Millisecond
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
-	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing, retry.WithPerRetryTimeout(deadlinePerCall),
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList, retry.WithPerRetryTimeout(deadlinePerCall),
 		retry.WithMax(5))
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
 	s.assertPingListWasCorrect(stream)
@@ -261,7 +259,7 @@ func (s *RetrySuite) TestServerStream_PerCallDeadline_FailsOnParent() {
 	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
 	parentCtx, cancel := context.WithTimeout(context.TODO(), parentDeadline)
 	defer cancel()
-	stream, err := s.Client.PingList(parentCtx, goodPing, retry.WithPerRetryTimeout(deadlinePerCall),
+	stream, err := s.Client.PingList(parentCtx, testpb.GoodPingList, retry.WithPerRetryTimeout(deadlinePerCall),
 		retry.WithMax(5))
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
 	_, err = stream.Recv()
@@ -270,7 +268,7 @@ func (s *RetrySuite) TestServerStream_PerCallDeadline_FailsOnParent() {
 
 func (s *RetrySuite) TestServerStream_CallFailsOnOutOfRetries() {
 	restarted := s.RestartServer(3 * retryTimeout)
-	_, err := s.Client.PingList(s.SimpleCtx(), goodPing)
+	_, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList)
 
 	require.Error(s.T(), err, "establishing the connection should not succeed")
 	assert.Equal(s.T(), codes.Unavailable, status.Code(err))
@@ -282,7 +280,7 @@ func (s *RetrySuite) TestServerStream_CallFailsOnDeadlineExceeded() {
 	restarted := s.RestartServer(3 * retryTimeout)
 	ctx, cancel := context.WithTimeout(context.TODO(), retryTimeout)
 	defer cancel()
-	_, err := s.Client.PingList(ctx, goodPing)
+	_, err := s.Client.PingList(ctx, testpb.GoodPingList)
 
 	require.Error(s.T(), err, "establishing the connection should not succeed")
 	assert.Equal(s.T(), codes.DeadlineExceeded, status.Code(err))
@@ -293,7 +291,7 @@ func (s *RetrySuite) TestServerStream_CallFailsOnDeadlineExceeded() {
 func (s *RetrySuite) TestServerStream_CallRetrySucceeds() {
 	restarted := s.RestartServer(retryTimeout)
 
-	_, err := s.Client.PingList(s.SimpleCtx(), goodPing,
+	_, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList,
 		retry.WithMax(40),
 	)
 
@@ -310,10 +308,10 @@ func (s *RetrySuite) assertPingListWasCorrect(stream testpb.TestService_PingList
 		}
 		require.NoError(s.T(), err, "no errors during receive on client side")
 		require.NotNil(s.T(), pong, "received values must not be nil")
-		require.Equal(s.T(), goodPing.Value, pong.Value, "the returned pong contained the outgoing ping")
+		require.Equal(s.T(), testpb.GoodPingList.Value, pong.Value, "the returned pong contained the outgoing ping")
 		count += 1
 	}
-	require.EqualValues(s.T(), grpctesting.ListResponseCount, count, "should have received all ping items")
+	require.EqualValues(s.T(), testpb.ListResponseCount, count, "should have received all ping items")
 }
 
 type trackedInterceptor struct {
@@ -332,7 +330,7 @@ func (ti *trackedInterceptor) StreamClientInterceptor(ctx context.Context, desc 
 
 func TestChainedRetrySuite(t *testing.T) {
 	service := &failingService{
-		TestServiceServer: &grpctesting.TestPingService{T: t},
+		TestServiceServer: &testpb.TestPingService{T: t},
 	}
 	preRetryInterceptor := &trackedInterceptor{}
 	postRetryInterceptor := &trackedInterceptor{}
@@ -340,7 +338,7 @@ func TestChainedRetrySuite(t *testing.T) {
 		srv:                  service,
 		preRetryInterceptor:  preRetryInterceptor,
 		postRetryInterceptor: postRetryInterceptor,
-		InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
+		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			TestService: service,
 			ClientOpts: []grpc.DialOption{
 				grpc.WithUnaryInterceptor(middleware.ChainUnaryClient(preRetryInterceptor.UnaryClientInterceptor, retry.UnaryClientInterceptor(), postRetryInterceptor.UnaryClientInterceptor)),
@@ -352,7 +350,7 @@ func TestChainedRetrySuite(t *testing.T) {
 }
 
 type ChainedRetrySuite struct {
-	*grpctesting.InterceptorTestSuite
+	*testpb.InterceptorTestSuite
 	srv                  *failingService
 	preRetryInterceptor  *trackedInterceptor
 	postRetryInterceptor *trackedInterceptor
@@ -365,7 +363,7 @@ func (s *ChainedRetrySuite) SetupTest() {
 }
 
 func (s *ChainedRetrySuite) TestUnaryWithChainedInterceptors_NoFailure() {
-	_, err := s.Client.Ping(s.SimpleCtx(), goodPing, retry.WithMax(2))
+	_, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing, retry.WithMax(2))
 	require.NoError(s.T(), err, "the invocation should succeed")
 	require.EqualValues(s.T(), 1, s.srv.requestCount(), "one request should have been made")
 	require.EqualValues(s.T(), 1, s.preRetryInterceptor.called, "pre-retry interceptor should be called once")
@@ -374,7 +372,7 @@ func (s *ChainedRetrySuite) TestUnaryWithChainedInterceptors_NoFailure() {
 
 func (s *ChainedRetrySuite) TestUnaryWithChainedInterceptors_WithRetry() {
 	s.srv.resetFailingConfiguration(2, codes.Unavailable, noSleep)
-	_, err := s.Client.Ping(s.SimpleCtx(), goodPing, retry.WithMax(2))
+	_, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing, retry.WithMax(2))
 	require.NoError(s.T(), err, "the second invocation should succeed")
 	require.EqualValues(s.T(), 2, s.srv.requestCount(), "two requests should have been made")
 	require.EqualValues(s.T(), 1, s.preRetryInterceptor.called, "pre-retry interceptor should be called once")
@@ -382,7 +380,7 @@ func (s *ChainedRetrySuite) TestUnaryWithChainedInterceptors_WithRetry() {
 }
 
 func (s *ChainedRetrySuite) TestStreamWithChainedInterceptors_NoFailure() {
-	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing, retry.WithMax(2))
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList, retry.WithMax(2))
 	require.NoError(s.T(), err, "the invocation should succeed")
 	_, err = stream.Recv()
 	require.NoError(s.T(), err, "the Recv should succeed")
@@ -393,7 +391,7 @@ func (s *ChainedRetrySuite) TestStreamWithChainedInterceptors_NoFailure() {
 
 func (s *ChainedRetrySuite) TestStreamWithChainedInterceptors_WithRetry() {
 	s.srv.resetFailingConfiguration(2, codes.Unavailable, noSleep)
-	stream, err := s.Client.PingList(s.SimpleCtx(), goodPing, retry.WithMax(2))
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList, retry.WithMax(2))
 	require.NoError(s.T(), err, "the second invocation should succeed")
 	_, err = stream.Recv()
 	require.NoError(s.T(), err, "the Recv should succeed")

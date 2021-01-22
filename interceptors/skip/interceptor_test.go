@@ -14,15 +14,10 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/skip"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
-)
-
-var (
-	goodPing = &testpb.PingRequest{Value: "something", SleepTimeMs: 9999}
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 const (
@@ -54,7 +49,7 @@ func checkMetadata(ctx context.Context, grpcType interceptors.GRPCType, service 
 }
 
 func (s *skipPingService) Ping(ctx context.Context, _ *testpb.PingRequest) (*testpb.PingResponse, error) {
-	err := checkMetadata(ctx, interceptors.Unary, "grpc_middleware.testpb.TestService", "Ping")
+	err := checkMetadata(ctx, interceptors.Unary, testpb.TestServiceFullName, "Ping")
 	if err != nil {
 		return nil, err
 	}
@@ -66,13 +61,13 @@ func (s *skipPingService) Ping(ctx context.Context, _ *testpb.PingRequest) (*tes
 	return &testpb.PingResponse{}, nil
 }
 
-func (s *skipPingService) PingList(_ *testpb.PingRequest, stream testpb.TestService_PingListServer) error {
-	err := checkMetadata(stream.Context(), interceptors.ServerStream, "grpc_middleware.testpb.TestService", "PingList")
+func (s *skipPingService) PingList(_ *testpb.PingListRequest, stream testpb.TestService_PingListServer) error {
+	err := checkMetadata(stream.Context(), interceptors.ServerStream, testpb.TestServiceFullName, "PingList")
 	if err != nil {
 		return err
 	}
 
-	var out testpb.PingResponse
+	var out testpb.PingListResponse
 	if skipped(stream.Context()) {
 		out.Value = "skipped"
 	}
@@ -94,8 +89,8 @@ func filter(ctx context.Context, gRPCType interceptors.GRPCType, service string,
 
 func TestSkipSuite(t *testing.T) {
 	s := &SkipSuite{
-		InterceptorTestSuite: &grpctesting.InterceptorTestSuite{
-			TestService: &skipPingService{&grpctesting.TestPingService{T: t}},
+		InterceptorTestSuite: &testpb.InterceptorTestSuite{
+			TestService: &skipPingService{&testpb.TestPingService{T: t}},
 			ServerOpts: []grpc.ServerOption{
 				grpc.UnaryInterceptor(skip.UnaryServerInterceptor(tags.UnaryServerInterceptor(), filter)),
 				grpc.StreamInterceptor(skip.StreamServerInterceptor(tags.StreamServerInterceptor(), filter)),
@@ -106,7 +101,7 @@ func TestSkipSuite(t *testing.T) {
 }
 
 type SkipSuite struct {
-	*grpctesting.InterceptorTestSuite
+	*testpb.InterceptorTestSuite
 }
 
 func (s *SkipSuite) TestPing() {
@@ -135,7 +130,7 @@ func (s *SkipSuite) TestPing() {
 				})
 			}
 
-			resp, err := s.Client.Ping(metadata.NewOutgoingContext(s.SimpleCtx(), m), goodPing)
+			resp, err := s.Client.Ping(metadata.NewOutgoingContext(s.SimpleCtx(), m), testpb.GoodPing)
 			require.NoError(t, err)
 
 			var value string
@@ -173,7 +168,7 @@ func (s *SkipSuite) TestPingList() {
 				})
 			}
 
-			stream, err := s.Client.PingList(metadata.NewOutgoingContext(s.SimpleCtx(), m), goodPing)
+			stream, err := s.Client.PingList(metadata.NewOutgoingContext(s.SimpleCtx(), m), testpb.GoodPingList)
 			require.NoError(t, err)
 
 			for {

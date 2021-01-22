@@ -18,10 +18,10 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TestServiceClient interface {
-	PingEmpty(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error)
+	PingEmpty(ctx context.Context, in *PingEmptyRequest, opts ...grpc.CallOption) (*PingEmptyResponse, error)
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
-	PingError(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*Empty, error)
-	PingList(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (TestService_PingListClient, error)
+	PingError(ctx context.Context, in *PingErrorRequest, opts ...grpc.CallOption) (*PingErrorResponse, error)
+	PingList(ctx context.Context, in *PingListRequest, opts ...grpc.CallOption) (TestService_PingListClient, error)
 	PingStream(ctx context.Context, opts ...grpc.CallOption) (TestService_PingStreamClient, error)
 }
 
@@ -33,9 +33,9 @@ func NewTestServiceClient(cc grpc.ClientConnInterface) TestServiceClient {
 	return &testServiceClient{cc}
 }
 
-func (c *testServiceClient) PingEmpty(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error) {
-	out := new(PingResponse)
-	err := c.cc.Invoke(ctx, "/grpc_middleware.testpb.TestService/PingEmpty", in, out, opts...)
+func (c *testServiceClient) PingEmpty(ctx context.Context, in *PingEmptyRequest, opts ...grpc.CallOption) (*PingEmptyResponse, error) {
+	out := new(PingEmptyResponse)
+	err := c.cc.Invoke(ctx, "/testing.testpb.v1.TestService/PingEmpty", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -44,24 +44,24 @@ func (c *testServiceClient) PingEmpty(ctx context.Context, in *Empty, opts ...gr
 
 func (c *testServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	out := new(PingResponse)
-	err := c.cc.Invoke(ctx, "/grpc_middleware.testpb.TestService/Ping", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/testing.testpb.v1.TestService/Ping", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *testServiceClient) PingError(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/grpc_middleware.testpb.TestService/PingError", in, out, opts...)
+func (c *testServiceClient) PingError(ctx context.Context, in *PingErrorRequest, opts ...grpc.CallOption) (*PingErrorResponse, error) {
+	out := new(PingErrorResponse)
+	err := c.cc.Invoke(ctx, "/testing.testpb.v1.TestService/PingError", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *testServiceClient) PingList(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (TestService_PingListClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TestService_serviceDesc.Streams[0], "/grpc_middleware.testpb.TestService/PingList", opts...)
+func (c *testServiceClient) PingList(ctx context.Context, in *PingListRequest, opts ...grpc.CallOption) (TestService_PingListClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_TestService_serviceDesc.Streams[0], "/testing.testpb.v1.TestService/PingList", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (c *testServiceClient) PingList(ctx context.Context, in *PingRequest, opts 
 }
 
 type TestService_PingListClient interface {
-	Recv() (*PingResponse, error)
+	Recv() (*PingListResponse, error)
 	grpc.ClientStream
 }
 
@@ -84,8 +84,8 @@ type testServicePingListClient struct {
 	grpc.ClientStream
 }
 
-func (x *testServicePingListClient) Recv() (*PingResponse, error) {
-	m := new(PingResponse)
+func (x *testServicePingListClient) Recv() (*PingListResponse, error) {
+	m := new(PingListResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (x *testServicePingListClient) Recv() (*PingResponse, error) {
 }
 
 func (c *testServiceClient) PingStream(ctx context.Context, opts ...grpc.CallOption) (TestService_PingStreamClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TestService_serviceDesc.Streams[1], "/grpc_middleware.testpb.TestService/PingStream", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TestService_serviceDesc.Streams[1], "/testing.testpb.v1.TestService/PingStream", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -102,8 +102,8 @@ func (c *testServiceClient) PingStream(ctx context.Context, opts ...grpc.CallOpt
 }
 
 type TestService_PingStreamClient interface {
-	Send(*PingRequest) error
-	Recv() (*PingResponse, error)
+	Send(*PingStreamRequest) error
+	Recv() (*PingStreamResponse, error)
 	grpc.ClientStream
 }
 
@@ -111,12 +111,12 @@ type testServicePingStreamClient struct {
 	grpc.ClientStream
 }
 
-func (x *testServicePingStreamClient) Send(m *PingRequest) error {
+func (x *testServicePingStreamClient) Send(m *PingStreamRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *testServicePingStreamClient) Recv() (*PingResponse, error) {
-	m := new(PingResponse)
+func (x *testServicePingStreamClient) Recv() (*PingStreamResponse, error) {
+	m := new(PingStreamResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -127,10 +127,10 @@ func (x *testServicePingStreamClient) Recv() (*PingResponse, error) {
 // All implementations must embed UnimplementedTestServiceServer
 // for forward compatibility
 type TestServiceServer interface {
-	PingEmpty(context.Context, *Empty) (*PingResponse, error)
+	PingEmpty(context.Context, *PingEmptyRequest) (*PingEmptyResponse, error)
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
-	PingError(context.Context, *PingRequest) (*Empty, error)
-	PingList(*PingRequest, TestService_PingListServer) error
+	PingError(context.Context, *PingErrorRequest) (*PingErrorResponse, error)
+	PingList(*PingListRequest, TestService_PingListServer) error
 	PingStream(TestService_PingStreamServer) error
 	mustEmbedUnimplementedTestServiceServer()
 }
@@ -139,16 +139,16 @@ type TestServiceServer interface {
 type UnimplementedTestServiceServer struct {
 }
 
-func (*UnimplementedTestServiceServer) PingEmpty(context.Context, *Empty) (*PingResponse, error) {
+func (*UnimplementedTestServiceServer) PingEmpty(context.Context, *PingEmptyRequest) (*PingEmptyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PingEmpty not implemented")
 }
 func (*UnimplementedTestServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (*UnimplementedTestServiceServer) PingError(context.Context, *PingRequest) (*Empty, error) {
+func (*UnimplementedTestServiceServer) PingError(context.Context, *PingErrorRequest) (*PingErrorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PingError not implemented")
 }
-func (*UnimplementedTestServiceServer) PingList(*PingRequest, TestService_PingListServer) error {
+func (*UnimplementedTestServiceServer) PingList(*PingListRequest, TestService_PingListServer) error {
 	return status.Errorf(codes.Unimplemented, "method PingList not implemented")
 }
 func (*UnimplementedTestServiceServer) PingStream(TestService_PingStreamServer) error {
@@ -161,7 +161,7 @@ func RegisterTestServiceServer(s *grpc.Server, srv TestServiceServer) {
 }
 
 func _TestService_PingEmpty_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(PingEmptyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -170,10 +170,10 @@ func _TestService_PingEmpty_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/grpc_middleware.testpb.TestService/PingEmpty",
+		FullMethod: "/testing.testpb.v1.TestService/PingEmpty",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TestServiceServer).PingEmpty(ctx, req.(*Empty))
+		return srv.(TestServiceServer).PingEmpty(ctx, req.(*PingEmptyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -188,7 +188,7 @@ func _TestService_Ping_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/grpc_middleware.testpb.TestService/Ping",
+		FullMethod: "/testing.testpb.v1.TestService/Ping",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TestServiceServer).Ping(ctx, req.(*PingRequest))
@@ -197,7 +197,7 @@ func _TestService_Ping_Handler(srv interface{}, ctx context.Context, dec func(in
 }
 
 func _TestService_PingError_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PingRequest)
+	in := new(PingErrorRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -206,16 +206,16 @@ func _TestService_PingError_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/grpc_middleware.testpb.TestService/PingError",
+		FullMethod: "/testing.testpb.v1.TestService/PingError",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TestServiceServer).PingError(ctx, req.(*PingRequest))
+		return srv.(TestServiceServer).PingError(ctx, req.(*PingErrorRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _TestService_PingList_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(PingRequest)
+	m := new(PingListRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ func _TestService_PingList_Handler(srv interface{}, stream grpc.ServerStream) er
 }
 
 type TestService_PingListServer interface {
-	Send(*PingResponse) error
+	Send(*PingListResponse) error
 	grpc.ServerStream
 }
 
@@ -231,7 +231,7 @@ type testServicePingListServer struct {
 	grpc.ServerStream
 }
 
-func (x *testServicePingListServer) Send(m *PingResponse) error {
+func (x *testServicePingListServer) Send(m *PingListResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -240,8 +240,8 @@ func _TestService_PingStream_Handler(srv interface{}, stream grpc.ServerStream) 
 }
 
 type TestService_PingStreamServer interface {
-	Send(*PingResponse) error
-	Recv() (*PingRequest, error)
+	Send(*PingStreamResponse) error
+	Recv() (*PingStreamRequest, error)
 	grpc.ServerStream
 }
 
@@ -249,12 +249,12 @@ type testServicePingStreamServer struct {
 	grpc.ServerStream
 }
 
-func (x *testServicePingStreamServer) Send(m *PingResponse) error {
+func (x *testServicePingStreamServer) Send(m *PingStreamResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *testServicePingStreamServer) Recv() (*PingRequest, error) {
-	m := new(PingRequest)
+func (x *testServicePingStreamServer) Recv() (*PingStreamRequest, error) {
+	m := new(PingStreamRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -262,7 +262,7 @@ func (x *testServicePingStreamServer) Recv() (*PingRequest, error) {
 }
 
 var _TestService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "grpc_middleware.testpb.TestService",
+	ServiceName: "testing.testpb.v1.TestService",
 	HandlerType: (*TestServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
