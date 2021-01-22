@@ -21,8 +21,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 )
 
-type mockedReporter struct {
-	m                   *sync.Mutex
+type mockReport struct {
 	typ                 GRPCType
 	svcName, methodName string
 
@@ -31,32 +30,98 @@ type mockedReporter struct {
 	postMsgReceives []error
 }
 
-func (m *mockedReporter) PostCall(err error, _ time.Duration) {
+type mockReportable struct {
+	m    sync.Mutex
+	curr *mockReport
+
+	reports []*mockReport
+}
+
+// Equal replaces require.Equal as google.golang.org/grpc/status errors are not easily comparable.
+func (m *mockReportable) Equal(t *testing.T, expected []*mockReport) {
+	require.Len(t, expected, len(m.reports))
+	for i, e := range m.reports {
+		require.Equal(t, expected[i].typ, e.typ, "%v", i)
+		require.Equal(t, expected[i].svcName, e.svcName, "%v", i)
+		require.Equal(t, expected[i].methodName, e.methodName, "%v", i)
+
+		require.Len(t, expected[i].postCalls, len(e.postCalls), "%v", i)
+		for k, err := range e.postCalls {
+			if expected[i].postCalls[k] == nil {
+				require.NoError(t, err)
+				continue
+			}
+			require.Equal(t, expected[i].postCalls[k].Error(), err.Error(), "%v %v", i, k)
+		}
+		require.Len(t, expected[i].postMsgSends, len(e.postMsgSends), "%v", i)
+		for k, err := range e.postMsgSends {
+			if expected[i].postMsgSends[k] == nil {
+				require.NoError(t, err)
+				continue
+			}
+			require.Equal(t, expected[i].postMsgSends[k].Error(), err.Error(), "%v %v", i, k)
+		}
+		require.Len(t, expected[i].postMsgReceives, len(e.postMsgReceives), "%v", i)
+		for k, err := range e.postMsgReceives {
+			if expected[i].postMsgReceives[k] == nil {
+				require.NoError(t, err)
+				continue
+			}
+			require.Equal(t, expected[i].postMsgReceives[k].Error(), err.Error(), "%v %v", i, k)
+		}
+
+	}
+
+}
+
+func (m *mockReportable) requireOneReportWithRetry(ctx context.Context, t *testing.T, expected *mockReport) {
+	for {
+		select {
+		case <-ctx.Done():
+			t.Fatal("timeout waiting for mockReport")
+		case <-time.After(200 * time.Millisecond):
+		}
+
+		m.m.Lock()
+		if len(m.reports) == 0 {
+			m.m.Unlock()
+			continue
+		}
+		defer m.m.Unlock()
+		break
+	}
+	// Even without reading, we should get initial mockReport.
+	m.Equal(t, []*mockReport{expected})
+}
+
+func (m *mockReportable) PostCall(err error, _ time.Duration) {
 	m.m.Lock()
 	defer m.m.Unlock()
-	m.postCalls = append(m.postCalls, err)
+	m.curr.postCalls = append(m.curr.postCalls, err)
 }
 
-func (m *mockedReporter) PostMsgSend(_ interface{}, err error, _ time.Duration) {
+func (m *mockReportable) PostMsgSend(_ interface{}, err error, _ time.Duration) {
 	m.m.Lock()
 	defer m.m.Unlock()
-	m.postMsgSends = append(m.postMsgSends, err)
+	m.curr.postMsgSends = append(m.curr.postMsgSends, err)
 }
 
-func (m *mockedReporter) PostMsgReceive(_ interface{}, err error, _ time.Duration) {
+func (m *mockReportable) PostMsgReceive(_ interface{}, err error, _ time.Duration) {
 	m.m.Lock()
 	defer m.m.Unlock()
-	m.postMsgReceives = append(m.postMsgReceives, err)
+	m.curr.postMsgReceives = append(m.curr.postMsgReceives, err)
 }
 
-type mockClientReportable struct {
-	reports []*mockedReporter
+func (m *mockReportable) ClientReporter(ctx context.Context, _ interface{}, typ GRPCType, serviceName string, methodName string) (Reporter, context.Context) {
+	m.curr = &mockReport{typ: typ, svcName: serviceName, methodName: methodName}
+	m.reports = append(m.reports, m.curr)
+	return m, ctx
 }
 
-func (m *mockClientReportable) ClientReporter(ctx context.Context, _ interface{}, typ GRPCType, serviceName string, methodName string) (Reporter, context.Context) {
-	mock := &mockedReporter{m: &sync.Mutex{}, typ: typ, svcName: serviceName, methodName: methodName}
-	m.reports = append(m.reports, mock)
-	return mock, ctx
+func (m *mockReportable) ServerReporter(ctx context.Context, _ interface{}, typ GRPCType, serviceName string, methodName string) (Reporter, context.Context) {
+	m.curr = &mockReport{typ: typ, svcName: serviceName, methodName: methodName}
+	m.reports = append(m.reports, m.curr)
+	return m, ctx
 }
 
 func TestClientInterceptorSuite(t *testing.T) {
@@ -73,27 +138,31 @@ type ClientInterceptorTestSuite struct {
 	ctx            context.Context
 	cancel         context.CancelFunc
 
-	mock *mockClientReportable
+	mock *mockReportable
+
+	stopped chan error
 }
 
 func (s *ClientInterceptorTestSuite) SetupSuite() {
 	var err error
-
-	s.mock = &mockClientReportable{}
+	s.stopped = make(chan error)
+	s.mock = &mockReportable{}
 
 	s.serverListener, err = net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(s.T(), err, "must be able to allocate a port for serverListener")
 
-	// This is the point where we hook up the interceptor
 	s.server = grpc.NewServer()
 	testpb.RegisterTestServiceServer(s.server, &grpctesting.TestPingService{T: s.T()})
 
 	go func() {
-		_ = s.server.Serve(s.serverListener)
+		defer close(s.stopped)
+		s.stopped <- s.server.Serve(s.serverListener)
 	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
+
+	// This is the point where we hook up the interceptor.
 	s.clientConn, err = grpc.DialContext(
 		ctx,
 		s.serverListener.Addr().String(),
@@ -107,9 +176,14 @@ func (s *ClientInterceptorTestSuite) SetupSuite() {
 }
 
 func (s *ClientInterceptorTestSuite) SetupTest() {
+	select {
+	case err := <-s.stopped:
+		s.T().Fatal("gRPC server stopped prematurely", err)
+	default:
+	}
+
 	// Make all RPC calls last at most 2 sec, meaning all async issues or deadlock will not kill tests.
 	s.ctx, s.cancel = context.WithTimeout(context.TODO(), 2*time.Second)
-
 	s.mock.reports = s.mock.reports[:0]
 }
 
@@ -118,11 +192,11 @@ func (s *ClientInterceptorTestSuite) TearDownSuite() {
 		s.server.Stop()
 		s.T().Logf("stopped grpc.Server at: %v", s.serverListener.Addr().String())
 		_ = s.serverListener.Close()
-
 	}
 	if s.clientConn != nil {
 		_ = s.clientConn.Close()
 	}
+	<-s.stopped
 }
 
 func (s *ClientInterceptorTestSuite) TearDownTest() {
@@ -132,62 +206,61 @@ func (s *ClientInterceptorTestSuite) TearDownTest() {
 func (s *ClientInterceptorTestSuite) TestUnaryReporting() {
 	_, err := s.testClient.PingEmpty(s.ctx, &testpb.Empty{}) // should return with code=OK
 	require.NoError(s.T(), err)
-	require.Equal(s.T(), []*mockedReporter{{
-		m:               &sync.Mutex{},
+	s.mock.Equal(s.T(), []*mockReport{{
 		typ:             Unary,
 		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingEmpty",
 		postCalls:       []error{nil},
 		postMsgReceives: []error{nil},
 		postMsgSends:    []error{nil},
-	}}, s.mock.reports)
+	}})
 	s.mock.reports = s.mock.reports[:0] // Reset.
 
 	_, err = s.testClient.PingError(s.ctx, &testpb.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
 	require.Error(s.T(), err)
-	require.Equal(s.T(), []*mockedReporter{{
-		m:               &sync.Mutex{},
+	s.mock.Equal(s.T(), []*mockReport{{
 		typ:             Unary,
 		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingError",
 		postCalls:       []error{status.Errorf(codes.FailedPrecondition, "Userspace error.")},
 		postMsgReceives: []error{status.Errorf(codes.FailedPrecondition, "Userspace error.")},
 		postMsgSends:    []error{nil},
-	}}, s.mock.reports)
+	}})
 }
 
-func (s *ClientInterceptorTestSuite) TestStartedStreamingReporting() {
+func (s *ClientInterceptorTestSuite) TestStartedListReporting() {
 	_, err := s.testClient.PingList(s.ctx, &testpb.PingRequest{})
 	require.NoError(s.T(), err)
-	// Even without reading, we should get initial report.
-	require.Equal(s.T(), []*mockedReporter{{
-		m:            &sync.Mutex{},
+
+	// Even without reading, we should get initial mockReport.
+	s.mock.Equal(s.T(), []*mockReport{{
 		typ:          ServerStream,
 		svcName:      testpb.TestServiceFullName,
 		methodName:   "PingList",
 		postMsgSends: []error{nil},
-	}}, s.mock.reports)
+	}})
 
-	_, err = s.testClient.PingList(s.ctx, &testpb.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
+	_, err = s.testClient.PingList(s.ctx, &testpb.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)})
 	require.NoError(s.T(), err, "PingList must not fail immediately")
-	// Even without reading, we should get initial report.
-	require.Equal(s.T(), []*mockedReporter{{
-		m:            &sync.Mutex{},
+
+	// Even without reading, we should get initial mockReport.
+	s.mock.Equal(s.T(), []*mockReport{{
 		typ:          ServerStream,
 		svcName:      testpb.TestServiceFullName,
 		methodName:   "PingList",
 		postMsgSends: []error{nil},
 	}, {
-		m:            &sync.Mutex{},
 		typ:          ServerStream,
 		svcName:      testpb.TestServiceFullName,
 		methodName:   "PingList",
 		postMsgSends: []error{nil},
-	}}, s.mock.reports)
+	}})
 }
 
-func (s *ClientInterceptorTestSuite) TestStreamingReporting() {
-	ss, _ := s.testClient.PingList(s.ctx, &testpb.PingRequest{}) // should return with code=OK
+func (s *ClientInterceptorTestSuite) TestListReporting() {
+	ss, err := s.testClient.PingList(s.ctx, &testpb.PingRequest{})
+	require.NoError(s.T(), err)
+
 	// Do a read, just for kicks.
 	count := 0
 	for {
@@ -200,41 +273,46 @@ func (s *ClientInterceptorTestSuite) TestStreamingReporting() {
 	}
 	require.EqualValues(s.T(), grpctesting.ListResponseCount, count, "Number of received msg on the wire must match")
 
-	require.Equal(s.T(), []*mockedReporter{{
-		m:               &sync.Mutex{},
+	s.mock.Equal(s.T(), []*mockReport{{
 		typ:             ServerStream,
 		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingList",
 		postCalls:       []error{io.EOF},
 		postMsgReceives: append(make([]error, grpctesting.ListResponseCount), io.EOF),
 		postMsgSends:    []error{nil},
-	}}, s.mock.reports)
+	}})
 	s.mock.reports = s.mock.reports[:0] // Reset.
 
-	ss, err := s.testClient.PingList(s.ctx, &testpb.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
+	ss, err = s.testClient.PingList(s.ctx, &testpb.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)})
 	require.NoError(s.T(), err, "PingList must not fail immediately")
 
 	// Do a read, just to propagate errors.
 	_, err = ss.Recv()
+	require.Error(s.T(), err)
 	st, _ := status.FromError(err)
 	require.Equal(s.T(), codes.FailedPrecondition, st.Code(), "Recv must return FailedPrecondition, otherwise the test is wrong")
 
-	require.Equal(s.T(), []*mockedReporter{{
-		m:               &sync.Mutex{},
+	// Next same.
+	_, err = ss.Recv()
+	require.Error(s.T(), err)
+	st, _ = status.FromError(err)
+	require.Equal(s.T(), codes.FailedPrecondition, st.Code(), "Recv must return FailedPrecondition, otherwise the test is wrong")
+
+	s.mock.Equal(s.T(), []*mockReport{{
 		typ:             ServerStream,
 		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingList",
-		postCalls:       []error{status.Errorf(codes.FailedPrecondition, "foobar")},
-		postMsgReceives: []error{status.Errorf(codes.FailedPrecondition, "foobar")},
+		postCalls:       []error{status.Errorf(codes.FailedPrecondition, "foobar"), status.Errorf(codes.FailedPrecondition, "foobar")},
+		postMsgReceives: []error{status.Errorf(codes.FailedPrecondition, "foobar"), status.Errorf(codes.FailedPrecondition, "foobar")},
 		postMsgSends:    []error{nil},
-	}}, s.mock.reports)
+	}})
 }
 
 func (s *ClientInterceptorTestSuite) TestBiStreamingReporting() {
 	ss, err := s.testClient.PingStream(s.ctx)
 	require.NoError(s.T(), err)
-	wg := sync.WaitGroup{}
 
+	wg := sync.WaitGroup{}
 	defer func() {
 		_ = ss.CloseSend()
 		wg.Wait()
@@ -264,14 +342,12 @@ func (s *ClientInterceptorTestSuite) TestBiStreamingReporting() {
 	wg.Wait()
 
 	require.EqualValues(s.T(), count, 100, "Number of received msg on the wire must match")
-
-	require.Equal(s.T(), []*mockedReporter{{
-		m:               &sync.Mutex{},
+	s.mock.Equal(s.T(), []*mockReport{{
 		typ:             BidiStream,
 		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingStream",
 		postCalls:       []error{io.EOF},
 		postMsgReceives: append(make([]error, 100), io.EOF),
 		postMsgSends:    make([]error, 100),
-	}}, s.mock.reports)
+	}})
 }

@@ -202,3 +202,4 @@ coverage.txt
 vendor/
 
 .envrc
+.bin

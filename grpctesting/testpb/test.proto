@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package grpc_middleware.testpb;
 
-option go_package = "testpb";
+option go_package = "../testpb";
 
 message Empty {
 }

@@ -21,20 +21,6 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 )
 
-type mockServerReportable struct {
-	m       sync.Mutex
-	reports []*mockedReporter
-}
-
-func (m *mockServerReportable) ServerReporter(ctx context.Context, _ interface{}, typ GRPCType, serviceName string, methodName string) (Reporter, context.Context) {
-	mock := &mockedReporter{m: &m.m, typ: typ, svcName: serviceName, methodName: methodName}
-	m.m.Lock()
-	defer m.m.Unlock()
-
-	m.reports = append(m.reports, mock)
-	return mock, ctx
-}
-
 func TestServerInterceptorSuite(t *testing.T) {
 	suite.Run(t, &ServerInterceptorTestSuite{})
 }
@@ -49,13 +35,13 @@ type ServerInterceptorTestSuite struct {
 	ctx            context.Context
 	cancel         context.CancelFunc
 
-	mock *mockServerReportable
+	mock *mockReportable
 }
 
 func (s *ServerInterceptorTestSuite) SetupSuite() {
 	var err error
 
-	s.mock = &mockServerReportable{}
+	s.mock = &mockReportable{}
 
 	s.serverListener, err = net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(s.T(), err, "must be able to allocate a port for serverListener")
@@ -105,28 +91,26 @@ func (s *ServerInterceptorTestSuite) TearDownTest() {
 func (s *ServerInterceptorTestSuite) TestUnaryReporting() {
 	_, err := s.testClient.PingEmpty(s.ctx, &testpb.Empty{}) // should return with code=OK
 	require.NoError(s.T(), err)
-	require.Equal(s.T(), []*mockedReporter{{
-		m:               &sync.Mutex{},
+	s.mock.Equal(s.T(), []*mockReport{{
 		typ:             Unary,
 		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingEmpty",
 		postCalls:       []error{nil},
 		postMsgReceives: []error{nil},
 		postMsgSends:    []error{nil},
-	}}, s.mock.reports)
+	}})
 	s.mock.reports = s.mock.reports[:0] // Reset.
 
 	_, err = s.testClient.PingError(s.ctx, &testpb.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
 	require.Error(s.T(), err)
-	require.Equal(s.T(), []*mockedReporter{{
-		m:               &sync.Mutex{},
+	s.mock.Equal(s.T(), []*mockReport{{
 		typ:             Unary,
 		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingError",
 		postCalls:       []error{status.Errorf(codes.FailedPrecondition, "Userspace error.")},
 		postMsgReceives: []error{nil},
 		postMsgSends:    []error{status.Errorf(codes.FailedPrecondition, "Userspace error.")},
-	}}, s.mock.reports)
+	}})
 }
 
 func (s *ServerInterceptorTestSuite) TestStreamingReports() {
@@ -142,48 +126,26 @@ func (s *ServerInterceptorTestSuite) TestStreamingReports() {
 		count++
 	}
 	require.EqualValues(s.T(), grpctesting.ListResponseCount, count, "Number of received msg on the wire must match")
-	require.Equal(s.T(), []*mockedReporter{{
-		m:               &sync.Mutex{},
+	s.mock.Equal(s.T(), []*mockReport{{
 		typ:             ServerStream,
 		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingList",
 		postCalls:       []error{nil},
 		postMsgReceives: []error{nil},
 		postMsgSends:    make([]error, grpctesting.ListResponseCount),
-	}}, s.mock.reports)
+	}})
 	s.mock.reports = s.mock.reports[:0] // Reset.
 
 	_, err := s.testClient.PingList(s.ctx, &testpb.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
 	require.NoError(s.T(), err, "PingList must not fail immediately")
 
-	s.mock.requireOneReportWithRetry(s.ctx, s.T(), &mockedReporter{
+	s.mock.requireOneReportWithRetry(s.ctx, s.T(), &mockReport{
 		typ:             ServerStream,
 		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingList",
 		postCalls:       []error{status.Errorf(codes.FailedPrecondition, "foobar")},
 		postMsgReceives: []error{nil},
 	})
-}
-
-func (m *mockServerReportable) requireOneReportWithRetry(ctx context.Context, t *testing.T, expected *mockedReporter) {
-	for {
-		select {
-		case <-ctx.Done():
-			t.Fatal("timeout waiting for report")
-		case <-time.After(200 * time.Millisecond):
-		}
-
-		m.m.Lock()
-		if len(m.reports) == 0 {
-			m.m.Unlock()
-			continue
-		}
-		defer m.m.Unlock()
-		break
-	}
-	expected.m = &m.m
-	// Even without reading, we should get initial report.
-	require.Equal(t, []*mockedReporter{expected}, m.reports)
 }
 
 func (s *ServerInterceptorTestSuite) TestBiStreamingReporting() {
@@ -221,13 +183,12 @@ func (s *ServerInterceptorTestSuite) TestBiStreamingReporting() {
 
 	require.EqualValues(s.T(), count, 100, "Number of received msg on the wire must match")
 
-	require.Equal(s.T(), []*mockedReporter{{
-		m:               &sync.Mutex{},
+	s.mock.Equal(s.T(), []*mockReport{{
 		typ:             BidiStream,
 		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingStream",
 		postCalls:       []error{nil},
 		postMsgReceives: append(make([]error, 100), io.EOF),
 		postMsgSends:    make([]error, 100),
-	}}, s.mock.reports)
+	}})
 }
