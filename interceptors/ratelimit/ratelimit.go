@@ -9,7 +9,7 @@ import (
 )
 
 // Limiter defines the interface to perform request rate limiting.
-// If Limit function returns an error, the request will be rejected with status code and the provided error as the response.
+// If Limit function returns an error, the request will be rejected with the gRPC codes.ResourceExhausted and the provided error.
 // Otherwise, the request will pass.
 type Limiter interface {
 	Limit(ctx context.Context) error
