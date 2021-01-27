@@ -35,25 +35,28 @@ func StreamClientInterceptor() grpc.StreamClientInterceptor {
 // RPCs. Histogram metrics can be very expensive for Prometheus to retain and
 // query. This function acts on the DefaultClientMetrics variable and the
 // default Prometheus metrics registry.
+// Method panics if the registry isn't correct, so use it during server initialization.
 func EnableClientHandlingTimeHistogram(opts ...HistogramOption) {
 	DefaultClientMetrics.EnableClientHandlingTimeHistogram(opts...)
-	openmetrics.Register(DefaultClientMetrics.clientHandledHistogram)
+	openmetrics.MustRegister(DefaultClientMetrics.clientHandledHistogram)
 }
 
 // EnableClientStreamReceiveTimeHistogram turns on recording of
 // single message receive time of streaming RPCs.
 // This function acts on the DefaultClientMetrics variable and the
 // default Prometheus metrics registry.
+// Method panics if the registry isn't correct, so use it during server initialization.
 func EnableClientStreamReceiveTimeHistogram(opts ...HistogramOption) {
 	DefaultClientMetrics.EnableClientStreamReceiveTimeHistogram(opts...)
-	openmetrics.Register(DefaultClientMetrics.clientStreamRecvHistogram)
+	openmetrics.MustRegister(DefaultClientMetrics.clientStreamRecvHistogram)
 }
 
 // EnableClientStreamSendTimeHistogram turns on recording of
 // single message send time of streaming RPCs.
 // This function acts on the DefaultClientMetrics variable and the
 // default Prometheus metrics registry.
+// Method panics if the registry isn't correct, so use it during server initialization.
 func EnableClientStreamSendTimeHistogram(opts ...HistogramOption) {
 	DefaultClientMetrics.EnableClientStreamSendTimeHistogram(opts...)
-	openmetrics.Register(DefaultClientMetrics.clientStreamSendHistogram)
+	openmetrics.MustRegister(DefaultClientMetrics.clientStreamSendHistogram)
 }

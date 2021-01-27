@@ -43,7 +43,8 @@ func Register(server *grpc.Server) {
 // of RPCs. Histogram metrics can be very expensive for Prometheus
 // to retain and query. This function acts on the DefaultServerMetrics
 // variable and the default Prometheus metrics registry.
+// Method panics if the registry isn't correct, so use it during server initialization.
 func EnableHandlingTimeHistogram(opts ...HistogramOption) {
 	DefaultServerMetrics.EnableHandlingTimeHistogram(opts...)
-	openmetrics.Register(DefaultServerMetrics.serverHandledHistogram)
+	openmetrics.MustRegister(DefaultServerMetrics.serverHandledHistogram)
 }
