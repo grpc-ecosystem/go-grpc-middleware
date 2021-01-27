@@ -1,0 +1,54 @@
+  
+syntax = "proto3";
+
+package providers.openmetrics.testproto.v1;
+
+message PingEmptyRequest {
+}
+
+message PingEmptyResponse {
+  string value = 1;
+  int32 counter = 2;
+}
+
+message PingRequest {
+  string value = 1;
+  int32 sleep_time_ms = 2;
+  uint32 error_code_returned = 3;
+}
+
+message PingResponse {
+  string value = 1;
+  int32 counter = 2;
+}
+
+message PingErrorRequest {
+  string value = 1;
+  int32 sleep_time_ms = 2;
+  uint32 error_code_returned = 3;
+}
+
+message PingErrorResponse {
+}
+
+message PingListRequest {
+  string value = 1;
+  int32 sleep_time_ms = 2;
+  uint32 error_code_returned = 3;
+}
+
+message PingListResponse {
+  string value = 1;
+  int32 counter = 2;
+}
+
+
+service TestService {
+  rpc PingEmpty(PingEmptyRequest) returns (PingEmptyResponse) {}
+
+  rpc Ping(PingRequest) returns (PingResponse) {}
+
+  rpc PingError(PingErrorRequest) returns (PingErrorResponse) {}
+
+  rpc PingList(PingListRequest) returns (stream PingListResponse) {}
+}
