@@ -16,7 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2/testproto"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2/testproto/v1"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
@@ -128,13 +128,13 @@ func (s *ServerInterceptorTestSuite) TestRegisterPresetsStuff() {
 }
 
 func (s *ServerInterceptorTestSuite) TestUnaryIncrementsMetrics() {
-	_, err := s.testClient.PingEmpty(s.ctx, &pb_testproto.Empty{}) // should return with code=OK
+	_, err := s.testClient.PingEmpty(s.ctx, &pb_testproto.PingEmptyRequest{}) // should return with code=OK
 	require.NoError(s.T(), err)
 	requireValue(s.T(), 1, DefaultServerMetrics.serverStartedCounter.WithLabelValues("unary", "mwitkow.testproto.TestService", "PingEmpty"))
 	requireValue(s.T(), 1, DefaultServerMetrics.serverHandledCounter.WithLabelValues("unary", "mwitkow.testproto.TestService", "PingEmpty", "OK"))
 	requireValueHistCount(s.T(), 1, DefaultServerMetrics.serverHandledHistogram.WithLabelValues("unary", "mwitkow.testproto.TestService", "PingEmpty"))
 
-	_, err = s.testClient.PingError(s.ctx, &pb_testproto.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
+	_, err = s.testClient.PingError(s.ctx, &pb_testproto.PingErrorRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
 	require.Error(s.T(), err)
 	requireValue(s.T(), 1, DefaultServerMetrics.serverStartedCounter.WithLabelValues("unary", "mwitkow.testproto.TestService", "PingError"))
 	requireValue(s.T(), 1, DefaultServerMetrics.serverHandledCounter.WithLabelValues("unary", "mwitkow.testproto.TestService", "PingError", "FailedPrecondition"))
@@ -142,19 +142,19 @@ func (s *ServerInterceptorTestSuite) TestUnaryIncrementsMetrics() {
 }
 
 func (s *ServerInterceptorTestSuite) TestStartedStreamingIncrementsStarted() {
-	_, err := s.testClient.PingList(s.ctx, &pb_testproto.PingRequest{})
+	_, err := s.testClient.PingList(s.ctx, &pb_testproto.PingListRequest{})
 	require.NoError(s.T(), err)
 	requireValueWithRetry(s.ctx, s.T(), 1,
 		DefaultServerMetrics.serverStartedCounter.WithLabelValues("server_stream", "mwitkow.testproto.TestService", "PingList"))
 
-	_, err = s.testClient.PingList(s.ctx, &pb_testproto.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
+	_, err = s.testClient.PingList(s.ctx, &pb_testproto.PingListRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
 	require.NoError(s.T(), err, "PingList must not fail immediately")
 	requireValueWithRetry(s.ctx, s.T(), 2,
 		DefaultServerMetrics.serverStartedCounter.WithLabelValues("server_stream", "mwitkow.testproto.TestService", "PingList"))
 }
 
 func (s *ServerInterceptorTestSuite) TestStreamingIncrementsMetrics() {
-	ss, _ := s.testClient.PingList(s.ctx, &pb_testproto.PingRequest{}) // should return with code=OK
+	ss, _ := s.testClient.PingList(s.ctx, &pb_testproto.PingListRequest{}) // should return with code=OK
 	// Do a read, just for kicks.
 	count := 0
 	for {
@@ -178,7 +178,7 @@ func (s *ServerInterceptorTestSuite) TestStreamingIncrementsMetrics() {
 	requireValueWithRetryHistCount(s.ctx, s.T(), 1,
 		DefaultServerMetrics.serverHandledHistogram.WithLabelValues("server_stream", "mwitkow.testproto.TestService", "PingList"))
 
-	_, err := s.testClient.PingList(s.ctx, &pb_testproto.PingRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
+	_, err := s.testClient.PingList(s.ctx, &pb_testproto.PingListRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
 	require.NoError(s.T(), err, "PingList must not fail immediately")
 
 	requireValueWithRetry(s.ctx, s.T(), 2,
@@ -229,8 +229,8 @@ type testService struct {
 	t *testing.T
 }
 
-func (s *testService) PingEmpty(ctx context.Context, _ *pb_testproto.Empty) (*pb_testproto.PingResponse, error) {
-	return &pb_testproto.PingResponse{Value: pingDefaultValue, Counter: 42}, nil
+func (s *testService) PingEmpty(ctx context.Context, _ *pb_testproto.PingEmptyRequest) (*pb_testproto.PingEmptyResponse, error) {
+	return &pb_testproto.PingEmptyResponse{Value: pingDefaultValue, Counter: 42}, nil
 }
 
 func (s *testService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
@@ -238,18 +238,18 @@ func (s *testService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) 
 	return &pb_testproto.PingResponse{Value: ping.Value, Counter: 42}, nil
 }
 
-func (s *testService) PingError(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.Empty, error) {
+func (s *testService) PingError(ctx context.Context, ping *pb_testproto.PingErrorRequest) (*pb_testproto.PingErrorResponse, error) {
 	code := codes.Code(ping.ErrorCodeReturned)
 	return nil, status.Errorf(code, "Userspace error.")
 }
 
-func (s *testService) PingList(ping *pb_testproto.PingRequest, stream pb_testproto.TestService_PingListServer) error {
+func (s *testService) PingList(ping *pb_testproto.PingListRequest, stream pb_testproto.TestService_PingListServer) error {
 	if ping.ErrorCodeReturned != 0 {
 		return status.Errorf(codes.Code(ping.ErrorCodeReturned), "foobar")
 	}
 	// Send user trailers and headers.
 	for i := 0; i < countListResponses; i++ {
-		stream.Send(&pb_testproto.PingResponse{Value: ping.Value, Counter: int32(i)})
+		stream.Send(&pb_testproto.PingListResponse{Value: ping.Value, Counter: int32(i)})
 	}
 	return nil
 }
