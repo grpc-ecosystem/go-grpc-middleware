@@ -19,7 +19,6 @@ const (
 func Example() {
 
 	limiter := TockenBucketInterceptor{}
-
 	limiter.tokenBucket = ratelimit.NewBucket(rate, int64(tokenCapacity))
 
 	_ = grpc.NewServer(
