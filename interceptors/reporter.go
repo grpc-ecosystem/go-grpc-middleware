@@ -14,6 +14,23 @@ import (
 
 type GRPCType string
 
+// Timer is a helper interface to time functions.
+// Useful for interceptors to record the total
+// time elapsed since completion of a call.
+type Timer interface {
+	ObserveDuration() time.Duration
+}
+
+// zeroTimer.
+type zeroTimer struct {
+}
+
+func (zeroTimer) ObserveDuration() time.Duration {
+	return 0
+}
+
+var EmptyTimer = &zeroTimer{}
+
 const (
 	Unary        GRPCType = "unary"
 	ClientStream GRPCType = "client_stream"
