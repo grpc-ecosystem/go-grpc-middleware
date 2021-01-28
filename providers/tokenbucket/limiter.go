@@ -9,7 +9,7 @@ import (
 	"github.com/juju/ratelimit"
 )
 
-// TockenBucketInterceptor implement tocken bucket algorithm.
+// TokenBucketInterceptor implement token bucket algorithm.
 type TockenBucketInterceptor struct {
 	tokenBucket *ratelimit.Bucket
 }
