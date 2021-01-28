@@ -10,7 +10,7 @@ import (
 )
 
 // TokenBucketInterceptor implement token bucket algorithm.
-type TockenBucketInterceptor struct {
+type TokenBucketInterceptor struct {
 	tokenBucket *ratelimit.Bucket
 }
 
