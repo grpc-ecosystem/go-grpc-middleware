@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Here hard-coded for simplicity sake, but in your application you should make this configurable.
+// Hard-coded for simplicity sake, but make this configurable in your application.
 const (
 	// Add 5 token per seconds.
 	rate = 5
