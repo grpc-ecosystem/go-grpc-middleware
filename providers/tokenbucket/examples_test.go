@@ -1,7 +1,6 @@
 package tokenbucket
 
 import (
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	grpc_ratelimit "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/ratelimit"
 	"github.com/juju/ratelimit"
 	"google.golang.org/grpc"
@@ -17,16 +16,15 @@ const (
 
 // Simple example of server initialization code.
 func Example() {
-
-	limiter := TockenBucketInterceptor{}
+	limiter := TokenBucketInterceptor{}
 	limiter.tokenBucket = ratelimit.NewBucket(rate, int64(tokenCapacity))
 
 	_ = grpc.NewServer(
-		middleware.WithUnaryServerChain(
-			grpc_ratelimit.UnaryServerInterceptor(limiter),
+		grpc.ChainUnaryInterceptor(
+			grpc_ratelimit.UnaryServerInterceptor(&limiter),
 		),
-		middleware.WithStreamServerChain(
-			grpc_ratelimit.UnaryServerInterceptor(limiter),
+		grpc.ChainStreamInterceptor(
+			grpc_ratelimit.StreamServerInterceptor(&limiter),
 		),
 	)
 }

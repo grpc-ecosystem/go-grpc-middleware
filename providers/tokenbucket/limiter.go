@@ -14,7 +14,7 @@ type TokenBucketInterceptor struct {
 	tokenBucket *ratelimit.Bucket
 }
 
-// Limit Implement Limiter interface
+// Limit implements Limiter interface.
 func (r *TokenBucketInterceptor) Limit(_ context.Context) error {
 	// Take one token per request. This call doesn't block.
 	tokenRes := r.tokenBucket.TakeAvailable(1)
