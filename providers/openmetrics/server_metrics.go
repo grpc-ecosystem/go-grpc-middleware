@@ -11,7 +11,7 @@ import (
 // ServerMetrics represents a collection of metrics to be registered on a
 // Prometheus metrics registry for a gRPC server.
 type ServerMetrics struct {
-	serverRegister                openmetrics.Registerer
+	serverRegister openmetrics.Registerer
 
 	serverStartedCounter          *openmetrics.CounterVec
 	serverHandledCounter          *openmetrics.CounterVec
@@ -62,16 +62,15 @@ func NewServerMetrics(serverRegistry openmetrics.Registerer, counterOpts ...Coun
 
 // Register registers the provided Collector with the custom register.
 // returns error much like DefaultRegisterer of Prometheus.
-func(m *ServerMetrics) Register(c openmetrics.Collector) error{
+func (m *ServerMetrics) Register(c openmetrics.Collector) error {
 	return m.serverRegister.Register(c)
 }
 
 // MustRegister registers the provided Collectors with the custom Registerer
 // and panics if any error occurs much like DefaultRegisterer of Prometheus.
-func(m *ServerMetrics) MustRegister(c openmetrics.Collector){
+func (m *ServerMetrics) MustRegister(c openmetrics.Collector) {
 	m.serverRegister.MustRegister(c)
 }
-
 
 // EnableHandlingTimeHistogram turns on recording of handling time
 // of RPCs. Histogram metrics can be very expensive for Prometheus

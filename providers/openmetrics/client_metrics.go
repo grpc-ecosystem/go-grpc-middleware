@@ -8,7 +8,6 @@ import (
 // ClientMetrics represents a collection of metrics to be registered on a
 // Prometheus metrics registry for a gRPC client.
 type ClientMetrics struct {
-
 	clientRegister openmetrics.Registerer
 
 	clientStartedCounter    *openmetrics.CounterVec
@@ -87,13 +86,13 @@ func NewClientMetrics(clientRegistry prometheus.Registerer, counterOpts ...Count
 
 // Register registers the provided Collector with the custom register.
 // returns error much like DefaultRegisterer of Prometheus.
-func(m *ClientMetrics) Register(c openmetrics.Collector) error{
+func (m *ClientMetrics) Register(c openmetrics.Collector) error {
 	return m.clientRegister.Register(c)
 }
 
 // MustRegister registers the provided Collectors with the custom Registerer
 // and panics if any error occurs much like DefaultRegisterer of Prometheus.
-func(m *ClientMetrics) MustRegister(c openmetrics.Collector){
+func (m *ClientMetrics) MustRegister(c openmetrics.Collector) {
 	m.clientRegister.MustRegister(c)
 }
 

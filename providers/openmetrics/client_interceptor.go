@@ -34,4 +34,3 @@ func StreamClientInterceptor(clientRegister openmetrics.Registerer) grpc.StreamC
 		registry: clientRegister,
 	})
 }
-

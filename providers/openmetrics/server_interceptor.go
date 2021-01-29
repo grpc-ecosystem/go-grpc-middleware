@@ -1,9 +1,10 @@
 package metrics
 
 import (
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	openmetrics "github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
 
 var (
@@ -33,7 +34,6 @@ func StreamServerInterceptor(serverRegister openmetrics.Registerer) grpc.StreamS
 		registry: serverRegister,
 	})
 }
-
 
 // RegisterAllMetrics takes a gRPC server and pre-initializes all counters to 0. This
 // allows for easier monitoring in Prometheus (no missing metrics), and should
