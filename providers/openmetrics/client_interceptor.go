@@ -7,18 +7,17 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
 
-var (
-	// DefaultClientMetrics is the default instance of ClientMetrics. It is
-	// intended to be used in conjunction the default Prometheus metrics
-	// registry.
-	DefaultClientMetrics = NewClientMetrics(openmetrics.DefaultRegisterer)
-)
+// RegisterClientMetrics returns a custom ClientMetrics object registered
+// with the user's registry, and registers some common metrics associated
+// with every instance.
+func RegisterClientMetrics(registry openmetrics.Registerer) *ClientMetrics {
+	customClientMetrics := NewClientMetrics(registry)
+	customClientMetrics.MustRegister(customClientMetrics.clientStartedCounter)
+	customClientMetrics.MustRegister(customClientMetrics.clientHandledCounter)
+	customClientMetrics.MustRegister(customClientMetrics.clientStreamMsgReceived)
+	customClientMetrics.MustRegister(customClientMetrics.clientStreamMsgSent)
 
-func init() {
-	DefaultClientMetrics.MustRegister(DefaultClientMetrics.clientStartedCounter)
-	DefaultClientMetrics.MustRegister(DefaultClientMetrics.clientHandledCounter)
-	DefaultClientMetrics.MustRegister(DefaultClientMetrics.clientStreamMsgReceived)
-	DefaultClientMetrics.MustRegister(DefaultClientMetrics.clientStreamMsgSent)
+	return customClientMetrics
 }
 
 // UnaryClientInterceptor is a gRPC client-side interceptor that provides Prometheus monitoring for Unary RPCs.

@@ -28,8 +28,7 @@ import (
 )
 
 var (
-	// server metrics must satisfy the Collector interface
-	customServerMetrics *ServerMetrics = NewServerMetrics(prometheus.DefaultRegisterer)
+	DefaultServerMetrics = RegisterServerMetrics(prometheus.DefaultRegisterer)
 )
 
 const (
@@ -55,7 +54,7 @@ type ServerInterceptorTestSuite struct {
 func (s *ServerInterceptorTestSuite) SetupSuite() {
 	var err error
 
-	customServerMetrics.EnableHandlingTimeHistogram()
+	DefaultServerMetrics.EnableHandlingTimeHistogram()
 
 	s.serverListener, err = net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(s.T(), err, "must be able to allocate a port for serverListener")
@@ -86,7 +85,7 @@ func (s *ServerInterceptorTestSuite) SetupTest() {
 	DefaultServerMetrics.serverHandledHistogram.Reset()
 	DefaultServerMetrics.serverStreamMsgReceived.Reset()
 	DefaultServerMetrics.serverStreamMsgSent.Reset()
-	RegisterAllMetrics(s.server)
+	DefaultServerMetrics.InitializeMetrics(s.server)
 }
 
 func (s *ServerInterceptorTestSuite) TearDownSuite() {
