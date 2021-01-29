@@ -69,7 +69,6 @@ type ServerReportable interface {
 
 type Reporter interface {
 	PostCall(err error, rpcDuration time.Duration)
-
 	PostMsgSend(reqProto interface{}, err error, sendDuration time.Duration)
 	PostMsgReceive(replyProto interface{}, err error, recvDuration time.Duration)
 }
