@@ -11,6 +11,8 @@ import (
 // ServerMetrics represents a collection of metrics to be registered on a
 // Prometheus metrics registry for a gRPC server.
 type ServerMetrics struct {
+	serverRegister                openmetrics.Registerer
+
 	serverStartedCounter          *openmetrics.CounterVec
 	serverHandledCounter          *openmetrics.CounterVec
 	serverStreamMsgReceived       *openmetrics.CounterVec
@@ -24,9 +26,10 @@ type ServerMetrics struct {
 // ServerMetrics when not using the default Prometheus metrics registry, for
 // example when wanting to control which metrics are added to a registry as
 // opposed to automatically adding metrics via init functions.
-func NewServerMetrics(counterOpts ...CounterOption) *ServerMetrics {
+func NewServerMetrics(serverRegistry openmetrics.Registerer, counterOpts ...CounterOption) *ServerMetrics {
 	opts := counterOptions(counterOpts)
 	return &ServerMetrics{
+		serverRegister: serverRegistry,
 		serverStartedCounter: openmetrics.NewCounterVec(
 			opts.apply(openmetrics.CounterOpts{
 				Name: "grpc_server_started_total",
@@ -57,11 +60,24 @@ func NewServerMetrics(counterOpts ...CounterOption) *ServerMetrics {
 	}
 }
 
-// EnableHandlingTimeHistogram enables histograms being registered when
-// registering the ServerMetrics on a Prometheus registry. Histograms can be
-// expensive on Prometheus servers. It takes options to configure histogram
+// Register registers the provided Collector with the custom register.
+// returns error much like DefaultRegisterer of Prometheus.
+func(m *ServerMetrics) Register(c openmetrics.Collector) error{
+	return m.serverRegister.Register(c)
+}
+
+// MustRegister registers the provided Collectors with the custom Registerer
+// and panics if any error occurs much like DefaultRegisterer of Prometheus.
+func(m *ServerMetrics) MustRegister(c openmetrics.Collector){
+	m.serverRegister.MustRegister(c)
+}
+
+
+// EnableHandlingTimeHistogram turns on recording of handling time
+// of RPCs. Histogram metrics can be very expensive for Prometheus
+// to retain and query.It takes options to configure histogram
 // options such as the defined buckets.
-func (m *ServerMetrics) EnableHandlingTimeHistogram(opts ...HistogramOption) {
+func (m *ServerMetrics) EnableHandlingTimeHistogram(opts ...HistogramOption) error {
 	for _, o := range opts {
 		o(&m.serverHandledHistogramOpts)
 	}
@@ -72,6 +88,7 @@ func (m *ServerMetrics) EnableHandlingTimeHistogram(opts ...HistogramOption) {
 		)
 	}
 	m.serverHandledHistogramEnabled = true
+	return m.serverRegister.Register(m.serverHandledHistogram)
 }
 
 // Describe sends the super-set of all possible descriptors of metrics

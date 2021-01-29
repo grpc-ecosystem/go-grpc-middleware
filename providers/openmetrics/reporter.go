@@ -61,15 +61,16 @@ func (r *reporter) PostMsgReceive(_ interface{}, _ error, _ time.Duration) {
 }
 
 type reportable struct {
+	registry openmetrics.Registerer
 }
 
 func (rep *reportable) ServerReporter(ctx context.Context, _ interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
-	m := NewServerMetrics()
+	m := NewServerMetrics(rep.registry)
 	return rep.reporter(m, nil, typ, service, method, KindServer)
 }
 
 func (rep *reportable) ClientReporter(ctx context.Context, _ interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
-	m := NewClientMetrics()
+	m := NewClientMetrics(rep.registry)
 	return rep.reporter(nil, m, typ, service, method, KindClient)
 }
 

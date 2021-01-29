@@ -1,12 +1,16 @@
 package metrics
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
 	openmetrics "github.com/prometheus/client_golang/prometheus"
 )
 
 // ClientMetrics represents a collection of metrics to be registered on a
 // Prometheus metrics registry for a gRPC client.
 type ClientMetrics struct {
+
+	clientRegister openmetrics.Registerer
+
 	clientStartedCounter    *openmetrics.CounterVec
 	clientHandledCounter    *openmetrics.CounterVec
 	clientStreamMsgReceived *openmetrics.CounterVec
@@ -29,9 +33,10 @@ type ClientMetrics struct {
 // ClientMetrics when not using the default Prometheus metrics registry, for
 // example when wanting to control which metrics are added to a registry as
 // opposed to automatically adding metrics via init functions.
-func NewClientMetrics(counterOpts ...CounterOption) *ClientMetrics {
+func NewClientMetrics(clientRegistry prometheus.Registerer, counterOpts ...CounterOption) *ClientMetrics {
 	opts := counterOptions(counterOpts)
 	return &ClientMetrics{
+		clientRegister: clientRegistry,
 		clientStartedCounter: openmetrics.NewCounterVec(
 			opts.apply(openmetrics.CounterOpts{
 				Name: "grpc_client_started_total",
@@ -80,6 +85,18 @@ func NewClientMetrics(counterOpts ...CounterOption) *ClientMetrics {
 	}
 }
 
+// Register registers the provided Collector with the custom register.
+// returns error much like DefaultRegisterer of Prometheus.
+func(m *ClientMetrics) Register(c openmetrics.Collector) error{
+	return m.clientRegister.Register(c)
+}
+
+// MustRegister registers the provided Collectors with the custom Registerer
+// and panics if any error occurs much like DefaultRegisterer of Prometheus.
+func(m *ClientMetrics) MustRegister(c openmetrics.Collector){
+	m.clientRegister.MustRegister(c)
+}
+
 // Describe sends the super-set of all possible descriptors of metrics
 // collected by this Collector to the provided channel and returns once
 // the last descriptor has been sent.
@@ -120,7 +137,7 @@ func (m *ClientMetrics) Collect(ch chan<- openmetrics.Metric) {
 
 // EnableClientHandlingTimeHistogram turns on recording of handling time of RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func (m *ClientMetrics) EnableClientHandlingTimeHistogram(opts ...HistogramOption) {
+func (m *ClientMetrics) EnableClientHandlingTimeHistogram(opts ...HistogramOption) error {
 	for _, o := range opts {
 		o(&m.clientHandledHistogramOpts)
 	}
@@ -131,11 +148,12 @@ func (m *ClientMetrics) EnableClientHandlingTimeHistogram(opts ...HistogramOptio
 		)
 	}
 	m.clientHandledHistogramEnabled = true
+	return m.clientRegister.Register(m.clientHandledHistogram)
 }
 
 // EnableClientStreamReceiveTimeHistogram turns on recording of single message receive time of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func (m *ClientMetrics) EnableClientStreamReceiveTimeHistogram(opts ...HistogramOption) {
+func (m *ClientMetrics) EnableClientStreamReceiveTimeHistogram(opts ...HistogramOption) error {
 	for _, o := range opts {
 		o(&m.clientStreamRecvHistogramOpts)
 	}
@@ -148,11 +166,12 @@ func (m *ClientMetrics) EnableClientStreamReceiveTimeHistogram(opts ...Histogram
 	}
 
 	m.clientStreamRecvHistogramEnabled = true
+	return m.clientRegister.Register(m.clientStreamRecvHistogram)
 }
 
 // EnableClientStreamSendTimeHistogram turns on recording of single message send time of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func (m *ClientMetrics) EnableClientStreamSendTimeHistogram(opts ...HistogramOption) {
+func (m *ClientMetrics) EnableClientStreamSendTimeHistogram(opts ...HistogramOption) error {
 	for _, o := range opts {
 		o(&m.clientStreamSendHistogramOpts)
 	}
@@ -165,4 +184,5 @@ func (m *ClientMetrics) EnableClientStreamSendTimeHistogram(opts ...HistogramOpt
 	}
 
 	m.clientStreamSendHistogramEnabled = true
+	return m.clientRegister.Register(m.clientStreamSendHistogram)
 }

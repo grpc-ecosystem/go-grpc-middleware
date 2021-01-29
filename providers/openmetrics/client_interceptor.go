@@ -11,52 +11,27 @@ var (
 	// DefaultClientMetrics is the default instance of ClientMetrics. It is
 	// intended to be used in conjunction the default Prometheus metrics
 	// registry.
-	DefaultClientMetrics = NewClientMetrics()
+	DefaultClientMetrics = NewClientMetrics(openmetrics.DefaultRegisterer)
 )
 
 func init() {
-	openmetrics.MustRegister(DefaultClientMetrics.clientStartedCounter)
-	openmetrics.MustRegister(DefaultClientMetrics.clientHandledCounter)
-	openmetrics.MustRegister(DefaultClientMetrics.clientStreamMsgReceived)
-	openmetrics.MustRegister(DefaultClientMetrics.clientStreamMsgSent)
+	DefaultClientMetrics.MustRegister(DefaultClientMetrics.clientStartedCounter)
+	DefaultClientMetrics.MustRegister(DefaultClientMetrics.clientHandledCounter)
+	DefaultClientMetrics.MustRegister(DefaultClientMetrics.clientStreamMsgReceived)
+	DefaultClientMetrics.MustRegister(DefaultClientMetrics.clientStreamMsgSent)
 }
 
 // UnaryClientInterceptor is a gRPC client-side interceptor that provides Prometheus monitoring for Unary RPCs.
-func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
-	return interceptors.UnaryClientInterceptor(&reportable{})
+func UnaryClientInterceptor(clientRegister openmetrics.Registerer) grpc.UnaryClientInterceptor {
+	return interceptors.UnaryClientInterceptor(&reportable{
+		registry: clientRegister,
+	})
 }
 
 // StreamClientInterceptor is a gRPC client-side interceptor that provides Prometheus monitoring for Streaming RPCs.
-func StreamClientInterceptor() grpc.StreamClientInterceptor {
-	return interceptors.StreamClientInterceptor(&reportable{})
+func StreamClientInterceptor(clientRegister openmetrics.Registerer) grpc.StreamClientInterceptor {
+	return interceptors.StreamClientInterceptor(&reportable{
+		registry: clientRegister,
+	})
 }
 
-// EnableClientHandlingTimeHistogram turns on recording of handling time of
-// RPCs. Histogram metrics can be very expensive for Prometheus to retain and
-// query. This function acts on the DefaultClientMetrics variable and the
-// default Prometheus metrics registry.
-// Method panics if the registry isn't correct, so use it during server initialization.
-func EnableClientHandlingTimeHistogram(opts ...HistogramOption) {
-	DefaultClientMetrics.EnableClientHandlingTimeHistogram(opts...)
-	openmetrics.MustRegister(DefaultClientMetrics.clientHandledHistogram)
-}
-
-// EnableClientStreamReceiveTimeHistogram turns on recording of
-// single message receive time of streaming RPCs.
-// This function acts on the DefaultClientMetrics variable and the
-// default Prometheus metrics registry.
-// Method panics if the registry isn't correct, so use it during server initialization.
-func EnableClientStreamReceiveTimeHistogram(opts ...HistogramOption) {
-	DefaultClientMetrics.EnableClientStreamReceiveTimeHistogram(opts...)
-	openmetrics.MustRegister(DefaultClientMetrics.clientStreamRecvHistogram)
-}
-
-// EnableClientStreamSendTimeHistogram turns on recording of
-// single message send time of streaming RPCs.
-// This function acts on the DefaultClientMetrics variable and the
-// default Prometheus metrics registry.
-// Method panics if the registry isn't correct, so use it during server initialization.
-func EnableClientStreamSendTimeHistogram(opts ...HistogramOption) {
-	DefaultClientMetrics.EnableClientStreamSendTimeHistogram(opts...)
-	openmetrics.MustRegister(DefaultClientMetrics.clientStreamSendHistogram)
-}
