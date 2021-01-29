@@ -55,11 +55,14 @@ func newCommonFields(kind string, c interceptors.CallMeta) Fields {
 	}
 }
 
-func (f Fields) Iter() FieldsIter {
+// Iter returns FieldsIterator.
+func (f Fields) Iter() FieldsIterator {
+	// We start from -2 as we iterate over two items per iteration and first iteration will advance iterator to 0.
 	return iter{i: -2, f: f}
 }
 
-type FieldsIter interface {
+// FieldsIterator is an interface allowing to iterate over fields.
+type FieldsIterator interface {
 	Next() bool
 	At() (k, v string)
 }
@@ -90,7 +93,7 @@ func (i iter) At() (k, v string) {
 	return i.f[i.i], i.f[i.i+1]
 }
 
-// AppendUnique returns fields which is the union of all keys with the added values having lower priority.
+// AppendUnique returns fields which is the union of all keys. Any keys that already exist in the log fields will take precedence over duplicates in add.
 func (f Fields) AppendUnique(add Fields) Fields {
 	if len(add) == 0 {
 		return f
@@ -119,7 +122,7 @@ func (f Fields) AppendUnique(add Fields) Fields {
 
 // ExtractFields returns logging.Fields object from the Context.
 // Logging interceptor adds fields into context when used.
-// If no one injected fields before ExtractFields returns empty Fields.
+// If there are no fields in the context, returns an empty Fields value.
 //
 // It's useful for server implementations to use this method to instantiate request logger for consistent fields (e.g request-id/tracing-id).
 func ExtractFields(ctx context.Context) Fields {
@@ -132,13 +135,13 @@ func ExtractFields(ctx context.Context) Fields {
 	return n
 }
 
-// InjectFields allows to add logging.Fields that will be used logging interceptor in the path of given context (if any).
+// InjectFields allows adding Fields to any existing Fields that will be used by the logging interceptor.
 func InjectFields(ctx context.Context, f Fields) context.Context {
 	return context.WithValue(ctx, fieldsCtxMarkerKey, ExtractFields(ctx).AppendUnique(f))
 }
 
-// JsonPBMarshaller is a marshaller that serializes protobuf messages.
-type JsonPBMarshaller interface {
+// JsonPBMarshaler is a marshaler that serializes protobuf messages.
+type JsonPBMarshaler interface {
 	Marshal(pb proto.Message) ([]byte, error)
 }
 

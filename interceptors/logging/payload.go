@@ -143,7 +143,7 @@ func (r *payloadReportable) ClientReporter(ctx context.Context, c interceptors.C
 	if d, ok := ctx.Deadline(); ok {
 		singleUseFields = append(singleUseFields, "grpc.request.deadline", d.Format(r.timestampFormat))
 	}
-	return &clientPayloadReporter{ctx: ctx, logger: r.logger.With(fields...)}, InjectFields(ctx, fields)
+	return &clientPayloadReporter{ctx: ctx, logger: r.logger.With(fields...).With(singleUseFields...)}, InjectFields(ctx, fields)
 }
 
 // PayloadUnaryServerInterceptor returns a new unary server interceptors that logs the payloads of requests on INFO level.

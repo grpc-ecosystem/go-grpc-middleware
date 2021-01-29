@@ -2,15 +2,15 @@
 // Licensed under the Apache License 2.0.
 
 /*
-logging is a "parent" package for gRPC logging middlewares.
+Package logging is a "parent" package for gRPC logging middlewares.
 
 The gRPC logging middleware populates request-scoped data to `logging.Fields` that relate to the current gRPC call
-(e.g. service and method names). You can laverage that data using `logging.ExtractFields` and `logging.InjectFields`.
+(e.g. service and method names). You can leverage that data using `logging.ExtractFields` and `logging.InjectFields`.
 
 Once the gRPC logging middleware has added the gRPC specific Fields to the ctx they will then be written with the log lines.
 
 All logging middleware will emit a final log statement. It is based on the error returned by the handler function,
-the gRPC status code, an error (if any) and it emit at a level controlled via `WithLevels`. You can control this behavior
+the gRPC status code, an error (if any) and it emits at a level controlled via `WithLevels`. You can control this behavior
 using `WithDecider`.
 
 This parent package
