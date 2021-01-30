@@ -12,9 +12,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
-	"github.com/stretchr/testify/assert"
 )
 
 var cc *grpc.ClientConn
@@ -91,17 +92,17 @@ func ExampleWithPerRetryTimeout() {
 		retry.WithPerRetryTimeout(1*time.Second))
 }
 
-// scale duration by a factor
+// scale duration by a factor.
 func scaleDuration(d time.Duration, factor float64) time.Duration {
 	return time.Duration(float64(d) * factor)
 }
 
 func TestJitterUp(t *testing.T) {
-	// arguments to jitterup
+	// arguments to jitterup.
 	duration := 10 * time.Second
 	variance := 0.10
 
-	// bound to check
+	// bound to check.
 	max := 11000 * time.Millisecond
 	min := 9000 * time.Millisecond
 	high := scaleDuration(max, 0.98)
