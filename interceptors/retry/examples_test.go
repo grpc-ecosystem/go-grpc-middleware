@@ -6,6 +6,7 @@ package retry_test
 import (
 	"context"
 	"io"
+	"testing"
 	"time"
 
 	"google.golang.org/grpc"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
+	"github.com/stretchr/testify/assert"
 )
 
 var cc *grpc.ClientConn
@@ -87,4 +89,40 @@ func ExampleWithPerRetryTimeout() {
 		&testpb.PingRequest{},
 		retry.WithMax(3),
 		retry.WithPerRetryTimeout(1*time.Second))
+}
+
+// scale duration by a factor
+func scaleDuration(d time.Duration, factor float64) time.Duration {
+	return time.Duration(float64(d) * factor)
+}
+
+func TestJitterUp(t *testing.T) {
+	// arguments to jitterup
+	duration := 10 * time.Second
+	variance := 0.10
+
+	// bound to check
+	max := 11000 * time.Millisecond
+	min := 9000 * time.Millisecond
+	high := scaleDuration(max, 0.98)
+	low := scaleDuration(min, 1.02)
+
+	highCount := 0
+	lowCount := 0
+
+	for i := 0; i < 1000; i++ {
+		out := retry.JitterUp(duration, variance)
+		assert.True(t, out <= max, "value %s must be <= %s", out, max)
+		assert.True(t, out >= min, "value %s must be >= %s", out, min)
+
+		if out > high {
+			highCount++
+		}
+		if out < low {
+			lowCount++
+		}
+	}
+
+	assert.True(t, highCount != 0, "at least one sample should reach to >%s", high)
+	assert.True(t, lowCount != 0, "at least one sample should to <%s", low)
 }
