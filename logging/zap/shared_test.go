@@ -75,9 +75,10 @@ func newBaseZapSuite(t *testing.T) *zapBaseSuite {
 
 type zapBaseSuite struct {
 	*grpc_testing.InterceptorTestSuite
-	mutexBuffer *grpc_testing.MutexReadWriter
-	buffer      *bytes.Buffer
-	log         *zap.Logger
+	mutexBuffer     *grpc_testing.MutexReadWriter
+	buffer          *bytes.Buffer
+	log             *zap.Logger
+	timestampFormat string
 }
 
 func (s *zapBaseSuite) SetupTest() {

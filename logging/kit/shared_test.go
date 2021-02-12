@@ -49,9 +49,10 @@ func (s *loggingPingService) PingEmpty(ctx context.Context, empty *pb_testproto.
 
 type kitBaseSuite struct {
 	*grpc_testing.InterceptorTestSuite
-	mutexBuffer *grpc_testing.MutexReadWriter
-	buffer      *bytes.Buffer
-	logger      log.Logger
+	mutexBuffer     *grpc_testing.MutexReadWriter
+	buffer          *bytes.Buffer
+	logger          log.Logger
+	timestampFormat string
 }
 
 func newKitBaseSuite(t *testing.T) *kitBaseSuite {

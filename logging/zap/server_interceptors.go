@@ -26,7 +26,7 @@ func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServer
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		startTime := time.Now()
 
-		newCtx := newLoggerForCall(ctx, logger, info.FullMethod, startTime)
+		newCtx := newLoggerForCall(ctx, logger, info.FullMethod, startTime, o.timestampFormat)
 
 		resp, err := handler(newCtx, req)
 		if !o.shouldLog(info.FullMethod, err) {
@@ -46,7 +46,7 @@ func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServ
 	o := evaluateServerOpt(opts)
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		startTime := time.Now()
-		newCtx := newLoggerForCall(stream.Context(), logger, info.FullMethod, startTime)
+		newCtx := newLoggerForCall(stream.Context(), logger, info.FullMethod, startTime, o.timestampFormat)
 		wrapped := grpc_middleware.WrapServerStream(stream)
 		wrapped.WrappedContext = newCtx
 
@@ -74,11 +74,11 @@ func serverCallFields(fullMethodString string) []zapcore.Field {
 	}
 }
 
-func newLoggerForCall(ctx context.Context, logger *zap.Logger, fullMethodString string, start time.Time) context.Context {
+func newLoggerForCall(ctx context.Context, logger *zap.Logger, fullMethodString string, start time.Time, timestampFormat string) context.Context {
 	var f []zapcore.Field
-	f = append(f, zap.String("grpc.start_time", start.Format(time.RFC3339)))
+	f = append(f, zap.String("grpc.start_time", start.Format(timestampFormat)))
 	if d, ok := ctx.Deadline(); ok {
-		f = append(f, zap.String("grpc.request.deadline", d.Format(time.RFC3339)))
+		f = append(f, zap.String("grpc.request.deadline", d.Format(timestampFormat)))
 	}
 	callLog := logger.With(append(f, serverCallFields(fullMethodString)...)...)
 	return ctxzap.ToContext(ctx, callLog)
