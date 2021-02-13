@@ -36,16 +36,16 @@ func TestPayloadSuite(t *testing.T) {
 		},
 	}
 	s.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
-		grpc.WithUnaryInterceptor(logging.PayloadUnaryClientInterceptor(s.logger, alwaysLoggingDeciderClient)),
-		grpc.WithStreamInterceptor(logging.PayloadStreamClientInterceptor(s.logger, alwaysLoggingDeciderClient)),
+		grpc.WithUnaryInterceptor(logging.PayloadUnaryClientInterceptor(s.logger, alwaysLoggingDeciderClient, time.RFC3339)),
+		grpc.WithStreamInterceptor(logging.PayloadStreamClientInterceptor(s.logger, alwaysLoggingDeciderClient, time.RFC3339)),
 	}
 	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
 		grpc.ChainStreamInterceptor(
 			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
-			logging.PayloadStreamServerInterceptor(s.logger, alwaysLoggingDeciderServer)),
+			logging.PayloadStreamServerInterceptor(s.logger, alwaysLoggingDeciderServer, time.RFC3339)),
 		grpc.ChainUnaryInterceptor(
 			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
-			logging.PayloadUnaryServerInterceptor(s.logger, alwaysLoggingDeciderServer)),
+			logging.PayloadUnaryServerInterceptor(s.logger, alwaysLoggingDeciderServer, time.RFC3339)),
 	}
 	suite.Run(t, s)
 }
