@@ -34,19 +34,33 @@ func TestZapLoggingSuite(t *testing.T) {
 		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
 		return
 	}
-	opts := []grpc_zap.Option{
-		grpc_zap.WithLevels(customCodeToLevel),
+
+	for _, tcase := range []struct {
+		timestampFormat string
+	}{
+		{
+			timestampFormat: time.RFC3339,
+		},
+		{
+			timestampFormat: "2006-01-02",
+		},
+	} {
+		opts := []grpc_zap.Option{
+			grpc_zap.WithLevels(customCodeToLevel),
+			grpc_zap.WithTimestampFormat(tcase.timestampFormat),
+		}
+		b := newBaseZapSuite(t)
+		b.timestampFormat = tcase.timestampFormat
+		b.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
+			grpc_middleware.WithStreamServerChain(
+				grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+				grpc_zap.StreamServerInterceptor(b.log, opts...)),
+			grpc_middleware.WithUnaryServerChain(
+				grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+				grpc_zap.UnaryServerInterceptor(b.log, opts...)),
+		}
+		suite.Run(t, &zapServerSuite{b})
 	}
-	b := newBaseZapSuite(t)
-	b.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
-		grpc_middleware.WithStreamServerChain(
-			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.StreamServerInterceptor(b.log, opts...)),
-		grpc_middleware.WithUnaryServerChain(
-			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.UnaryServerInterceptor(b.log, opts...)),
-	}
-	suite.Run(t, &zapServerSuite{b})
 }
 
 type zapServerSuite struct {
@@ -70,13 +84,13 @@ func (s *zapServerSuite) TestPing_WithCustomTags() {
 
 		assert.Contains(s.T(), m, "custom_tags.int", "all lines must contain `custom_tags.int`")
 		require.Contains(s.T(), m, "grpc.start_time", "all lines must contain the start time")
-		_, err := time.Parse(time.RFC3339, m["grpc.start_time"].(string))
-		assert.NoError(s.T(), err, "should be able to parse start time as RFC3339")
+		_, err := time.Parse(s.timestampFormat, m["grpc.start_time"].(string))
+		assert.NoError(s.T(), err, "should be able to parse start time")
 
 		require.Contains(s.T(), m, "grpc.request.deadline", "all lines must contain the deadline of the call")
-		_, err = time.Parse(time.RFC3339, m["grpc.request.deadline"].(string))
-		require.NoError(s.T(), err, "should be able to parse deadline as RFC3339")
-		assert.Equal(s.T(), m["grpc.request.deadline"], deadline.Format(time.RFC3339), "should have the same deadline that was set by the caller")
+		_, err = time.Parse(s.timestampFormat, m["grpc.request.deadline"].(string))
+		require.NoError(s.T(), err, "should be able to parse deadline")
+		assert.Equal(s.T(), m["grpc.request.deadline"], deadline.Format(s.timestampFormat), "should have the same deadline that was set by the caller")
 	}
 
 	assert.Equal(s.T(), msgs[0]["msg"], "some ping", "handler's message must contain user message")
@@ -130,8 +144,8 @@ func (s *zapServerSuite) TestPingError_WithCustomLevels() {
 		assert.Equal(s.T(), m["msg"], "finished unary call with code "+tcase.code.String(), "needs the correct end message")
 
 		require.Contains(s.T(), m, "grpc.start_time", "all lines must contain the start time")
-		_, err = time.Parse(time.RFC3339, m["grpc.start_time"].(string))
-		assert.NoError(s.T(), err, "should be able to parse start time as RFC3339")
+		_, err = time.Parse(s.timestampFormat, m["grpc.start_time"].(string))
+		assert.NoError(s.T(), err, "should be able to parse start time")
 	}
 }
 
@@ -157,8 +171,8 @@ func (s *zapServerSuite) TestPingList_WithCustomTags() {
 
 		assert.Contains(s.T(), m, "custom_tags.int", "all lines must contain `custom_tags.int` set by AddFields")
 		require.Contains(s.T(), m, "grpc.start_time", "all lines must contain the start time")
-		_, err := time.Parse(time.RFC3339, m["grpc.start_time"].(string))
-		assert.NoError(s.T(), err, "should be able to parse start time as RFC3339")
+		_, err := time.Parse(s.timestampFormat, m["grpc.start_time"].(string))
+		assert.NoError(s.T(), err, "should be able to parse start time")
 	}
 
 	assert.Equal(s.T(), msgs[0]["msg"], "some pinglist", "handler's message must contain user message")

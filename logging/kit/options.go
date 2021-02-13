@@ -11,17 +11,19 @@ import (
 
 var (
 	defaultOptions = &options{
-		shouldLog:    grpc_logging.DefaultDeciderMethod,
-		codeFunc:     grpc_logging.DefaultErrorToCode,
-		durationFunc: DefaultDurationToField,
+		shouldLog:       grpc_logging.DefaultDeciderMethod,
+		codeFunc:        grpc_logging.DefaultErrorToCode,
+		durationFunc:    DefaultDurationToField,
+		timestampFormat: time.RFC3339,
 	}
 )
 
 type options struct {
-	levelFunc    CodeToLevel
-	shouldLog    grpc_logging.Decider
-	codeFunc     grpc_logging.ErrorToCode
-	durationFunc DurationToField
+	levelFunc       CodeToLevel
+	shouldLog       grpc_logging.Decider
+	codeFunc        grpc_logging.ErrorToCode
+	durationFunc    DurationToField
+	timestampFormat string
 }
 
 type Option func(*options)
@@ -77,6 +79,13 @@ func WithCodes(f grpc_logging.ErrorToCode) Option {
 func WithDurationField(f DurationToField) Option {
 	return func(o *options) {
 		o.durationFunc = f
+	}
+}
+
+// WithTimestampFormat customizes the timestamps emitted in the log fields.
+func WithTimestampFormat(format string) Option {
+	return func(o *options) {
+		o.timestampFormat = format
 	}
 }
 

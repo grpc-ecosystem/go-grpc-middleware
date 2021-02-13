@@ -25,7 +25,7 @@ func UnaryServerInterceptor(logger log.Logger, opts ...Option) grpc.UnaryServerI
 	o := evaluateServerOpt(opts)
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		startTime := time.Now()
-		newCtx := injectLogger(ctx, logger, info.FullMethod, startTime)
+		newCtx := injectLogger(ctx, logger, info.FullMethod, startTime, o.timestampFormat)
 
 		resp, err := handler(newCtx, req)
 		if !o.shouldLog(info.FullMethod, err) {
@@ -44,7 +44,7 @@ func StreamServerInterceptor(logger log.Logger, opts ...Option) grpc.StreamServe
 	o := evaluateServerOpt(opts)
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		startTime := time.Now()
-		newCtx := injectLogger(stream.Context(), logger, info.FullMethod, startTime)
+		newCtx := injectLogger(stream.Context(), logger, info.FullMethod, startTime, o.timestampFormat)
 
 		wrapped := grpc_middleware.WrapServerStream(stream)
 		wrapped.WrappedContext = newCtx
@@ -61,11 +61,11 @@ func StreamServerInterceptor(logger log.Logger, opts ...Option) grpc.StreamServe
 	}
 }
 
-func injectLogger(ctx context.Context, logger log.Logger, fullMethodString string, start time.Time) context.Context {
+func injectLogger(ctx context.Context, logger log.Logger, fullMethodString string, start time.Time, timestampFormat string) context.Context {
 	f := ctxkit.TagsToFields(ctx)
-	f = append(f, "grpc.start_time", start.Format(time.RFC3339))
+	f = append(f, "grpc.start_time", start.Format(timestampFormat))
 	if d, ok := ctx.Deadline(); ok {
-		f = append(f, "grpc.request.deadline", d.Format(time.RFC3339))
+		f = append(f, "grpc.request.deadline", d.Format(timestampFormat))
 	}
 	f = append(f, serverCallFields(fullMethodString)...)
 	callLog := log.With(logger, f...)

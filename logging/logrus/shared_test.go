@@ -57,9 +57,10 @@ func (s *loggingPingService) PingEmpty(ctx context.Context, empty *pb_testproto.
 
 type logrusBaseSuite struct {
 	*grpc_testing.InterceptorTestSuite
-	mutexBuffer *grpc_testing.MutexReadWriter
-	buffer      *bytes.Buffer
-	logger      *logrus.Logger
+	mutexBuffer     *grpc_testing.MutexReadWriter
+	buffer          *bytes.Buffer
+	logger          *logrus.Logger
+	timestampFormat string
 }
 
 func newLogrusBaseSuite(t *testing.T) *logrusBaseSuite {
