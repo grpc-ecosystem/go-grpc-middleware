@@ -6,6 +6,7 @@ package grpc_zap
 import (
 	"fmt"
 
+	grpc_logsettable "github.com/grpc-ecosystem/go-grpc-middleware/logging/settable"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/grpclog"
 )
@@ -47,17 +48,35 @@ func (l *zapGrpcLogger) Println(args ...interface{}) {
 }
 
 // ReplaceGrpcLoggerV2 replaces the grpc_log.LoggerV2 with the provided logger.
+// It should be called before any gRPC functions.
 func ReplaceGrpcLoggerV2(logger *zap.Logger) {
 	ReplaceGrpcLoggerV2WithVerbosity(logger, 0)
 }
 
 // ReplaceGrpcLoggerV2WithVerbosity replaces the grpc_.LoggerV2 with the provided logger and verbosity.
+// It should be called before any gRPC functions.
 func ReplaceGrpcLoggerV2WithVerbosity(logger *zap.Logger, verbosity int) {
 	zgl := &zapGrpcLoggerV2{
 		logger:    logger.With(SystemField, zap.Bool("grpc_log", true)),
 		verbosity: verbosity,
 	}
 	grpclog.SetLoggerV2(zgl)
+}
+
+// SetGrpcLoggerV2 replaces the grpc_log.LoggerV2 with the provided logger.
+// It can be used even when grpc infrastructure was initialized.
+func SetGrpcLoggerV2(settable grpc_logsettable.SettableLoggerV2, logger *zap.Logger) {
+	SetGrpcLoggerV2WithVerbosity(settable, logger, 0)
+}
+
+// SetGrpcLoggerV2WithVerbosity replaces the grpc_.LoggerV2 with the provided logger and verbosity.
+// It can be used even when grpc infrastructure was initialized.
+func SetGrpcLoggerV2WithVerbosity(settable grpc_logsettable.SettableLoggerV2, logger *zap.Logger, verbosity int) {
+	zgl := &zapGrpcLoggerV2{
+		logger:    logger.With(SystemField, zap.Bool("grpc_log", true)),
+		verbosity: verbosity,
+	}
+	settable.Set(zgl)
 }
 
 type zapGrpcLoggerV2 struct {
