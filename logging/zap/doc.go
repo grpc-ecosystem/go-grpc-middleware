@@ -70,5 +70,6 @@ Note - due to implementation ZAP differs from Logrus in the "grpc.request.conten
 
 
 Please see examples and tests for examples of use.
+Please see settable_test.go for canonical integration through "zaptest" with golang testing infrastructure.
 */
 package grpc_zap
