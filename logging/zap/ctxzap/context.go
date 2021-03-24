@@ -44,6 +44,11 @@ func Extract(ctx context.Context) *zap.Logger {
 	return l.logger.With(fields...)
 }
 
+// ExtractS is a shorthand method for calling Extract(ctx).Sugar().
+func ExtractS(ctx context.Context) *zap.SugaredLogger {
+	return Extract(ctx).Sugar()
+}
+
 // TagsToFields transforms the Tags on the supplied context into zap fields.
 func TagsToFields(ctx context.Context) []zapcore.Field {
 	fields := []zapcore.Field{}
