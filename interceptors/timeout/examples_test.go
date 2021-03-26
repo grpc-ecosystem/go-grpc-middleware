@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/grpctesting/testpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/timeout"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"google.golang.org/grpc"
 )
 
@@ -25,7 +25,7 @@ func Example_initialization() {
 
 	// Initialize your grpc service with connection.
 	testServiceClient := testpb.NewTestServiceClient(clientConn)
-	resp, err := testServiceClient.PingEmpty(context.TODO(), &testpb.Empty{})
+	resp, err := testServiceClient.Ping(context.TODO(), &testpb.PingRequest{Value: "my_example_value"})
 	if err != nil {
 		log.Fatal(err)
 	}
