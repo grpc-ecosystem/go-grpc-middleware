@@ -26,6 +26,9 @@ var (
 		backoffFunc: BackoffFuncContext(func(ctx context.Context, attempt uint) time.Duration {
 			return BackoffLinearWithJitter(50*time.Millisecond /*jitter*/, 0.10)(attempt)
 		}),
+		onRetryCallback: OnRetryCallbackContext(func(ctx context.Context, attempt uint, err error) {
+			// By default we don't have any callback logic to execute
+		}),
 	}
 )
 
@@ -44,6 +47,15 @@ type BackoffFunc func(attempt uint) time.Duration
 // the deadline of the request takes precedence and the wait will be interrupted before proceeding
 // with the next iteration. The context can be used to extract request scoped metadata and context values.
 type BackoffFuncContext func(ctx context.Context, attempt uint) time.Duration
+
+// OnRetryCallback called in retry attempts flow, which can be used to add additiional logic when retry occurs
+//
+type OnRetryCallback func(attempt uint, err error)
+
+// OnRetryCallback called in retry attempts flow, which can be used to add additiional logic when retry occurs
+//
+// The context can be used to extract request scoped metadata and context values.
+type OnRetryCallbackContext func(ctx context.Context, attempt uint, err error)
 
 // Disable disables the retry behaviour on this call, or this interceptor.
 //
@@ -72,6 +84,22 @@ func WithBackoff(bf BackoffFunc) CallOption {
 func WithBackoffContext(bf BackoffFuncContext) CallOption {
 	return CallOption{applyFunc: func(o *options) {
 		o.backoffFunc = bf
+	}}
+}
+
+// WithOnRetryCallback sets the `OnRetryCallback` used to add additional logic when retry occurs.
+func WithOnRetryCallback(fn OnRetryCallback) CallOption {
+	return CallOption{applyFunc: func(o *options) {
+		o.onRetryCallback = OnRetryCallbackContext(func(ctx context.Context, attempt uint, err error) {
+			fn(attempt, err)
+		})
+	}}
+}
+
+// WithOnRetryCallbackContext sets the `OnRetryCallbackContext` used to add additional logic when retry occurs.
+func WithOnRetryCallbackContext(fn OnRetryCallbackContext) CallOption {
+	return CallOption{applyFunc: func(o *options) {
+		o.onRetryCallback = fn
 	}}
 }
 
@@ -105,11 +133,12 @@ func WithPerRetryTimeout(timeout time.Duration) CallOption {
 }
 
 type options struct {
-	max            uint
-	perCallTimeout time.Duration
-	includeHeader  bool
-	codes          []codes.Code
-	backoffFunc    BackoffFuncContext
+	max             uint
+	perCallTimeout  time.Duration
+	includeHeader   bool
+	codes           []codes.Code
+	backoffFunc     BackoffFuncContext
+	onRetryCallback OnRetryCallbackContext
 }
 
 // CallOption is a grpc.CallOption that is local to grpc_retry.
