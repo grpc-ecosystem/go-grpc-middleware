@@ -27,7 +27,7 @@ var (
 			return BackoffLinearWithJitter(50*time.Millisecond /*jitter*/, 0.10)(attempt)
 		}),
 		onRetryCallback: OnRetryCallback(func(ctx context.Context, attempt uint, err error) {
-			// By default we don't have any callback logic to execute
+			logTrace(ctx, "grpc_retry attempt: %d, backoff for %v", attempt, err)
 		}),
 	}
 )
@@ -83,7 +83,7 @@ func WithBackoffContext(bf BackoffFuncContext) CallOption {
 
 // WithOnRetryCallback sets the callback to use when a retry occurs.
 //
-// By default, no action is performed on retry.
+// By default, when no callback function provided, we will just print a log to trace
 func WithOnRetryCallback(fn OnRetryCallback) CallOption {
 	return CallOption{applyFunc: func(o *options) {
 		o.onRetryCallback = fn
