@@ -26,7 +26,7 @@ var (
 		backoffFunc: BackoffFuncContext(func(ctx context.Context, attempt uint) time.Duration {
 			return BackoffLinearWithJitter(50*time.Millisecond /*jitter*/, 0.10)(attempt)
 		}),
-		onRetryCallback: OnRetryCallbackContext(func(ctx context.Context, attempt uint, err error) {
+		onRetryCallback: OnRetryCallback(func(ctx context.Context, attempt uint, err error) {
 			// By default we don't have any callback logic to execute
 		}),
 	}
@@ -48,14 +48,8 @@ type BackoffFunc func(attempt uint) time.Duration
 // with the next iteration. The context can be used to extract request scoped metadata and context values.
 type BackoffFuncContext func(ctx context.Context, attempt uint) time.Duration
 
-// OnRetryCallback called in retry attempts flow, which can be used to add additiional logic when retry occurs
-//
-type OnRetryCallback func(attempt uint, err error)
-
-// OnRetryCallback called in retry attempts flow, which can be used to add additiional logic when retry occurs
-//
-// The context can be used to extract request scoped metadata and context values.
-type OnRetryCallbackContext func(ctx context.Context, attempt uint, err error)
+// OnRetryCallback is the type of function called when a retry occurs.
+type OnRetryCallback func(ctx context.Context, attempt uint, err error)
 
 // Disable disables the retry behaviour on this call, or this interceptor.
 //
@@ -87,17 +81,10 @@ func WithBackoffContext(bf BackoffFuncContext) CallOption {
 	}}
 }
 
-// WithOnRetryCallback sets the `OnRetryCallback` used to add additional logic when retry occurs.
+// WithOnRetryCallback sets the callback to use when a retry occurs.
+//
+// By default, no action is performed on retry.
 func WithOnRetryCallback(fn OnRetryCallback) CallOption {
-	return CallOption{applyFunc: func(o *options) {
-		o.onRetryCallback = OnRetryCallbackContext(func(ctx context.Context, attempt uint, err error) {
-			fn(attempt, err)
-		})
-	}}
-}
-
-// WithOnRetryCallbackContext sets the `OnRetryCallbackContext` used to add additional logic when retry occurs.
-func WithOnRetryCallbackContext(fn OnRetryCallbackContext) CallOption {
 	return CallOption{applyFunc: func(o *options) {
 		o.onRetryCallback = fn
 	}}
@@ -138,7 +125,7 @@ type options struct {
 	includeHeader   bool
 	codes           []codes.Code
 	backoffFunc     BackoffFuncContext
-	onRetryCallback OnRetryCallbackContext
+	onRetryCallback OnRetryCallback
 }
 
 // CallOption is a grpc.CallOption that is local to grpc_retry.

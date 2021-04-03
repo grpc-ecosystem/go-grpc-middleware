@@ -219,9 +219,11 @@ func (s *RetrySuite) TestUnary_OnRetryCallbackCalled() {
 	retryCallbackCount := 0
 
 	s.srv.resetFailingConfiguration(3, codes.Unavailable, noSleep) // see retriable_errors
-	out, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing, retry.WithOnRetryCallback(func(attempt uint, err error) {
-		retryCallbackCount++
-	}))
+	out, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing,
+		retry.WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
+			retryCallbackCount++
+		}),
+	)
 
 	require.NoError(s.T(), err, "the third invocation should succeed")
 	require.NotNil(s.T(), out, "Pong must be not nil")
@@ -283,9 +285,11 @@ func (s *RetrySuite) TestServerStream_OnRetryCallbackCalled() {
 	retryCallbackCount := 0
 
 	s.srv.resetFailingConfiguration(3, codes.Unavailable, noSleep) // see retriable_errors
-	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList, retry.WithOnRetryCallback(func(attempt uint, err error) {
-		retryCallbackCount++
-	}))
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList,
+		retry.WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
+			retryCallbackCount++
+		}),
+	)
 
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
 	s.assertPingListWasCorrect(stream)
