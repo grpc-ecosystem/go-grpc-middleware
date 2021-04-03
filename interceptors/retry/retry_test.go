@@ -215,6 +215,21 @@ func (s *RetrySuite) TestUnary_PerCallDeadline_FailsOnParent() {
 	require.Equal(s.T(), codes.DeadlineExceeded, status.Code(err), "failre code must be a gRPC error of Deadline class")
 }
 
+func (s *RetrySuite) TestUnary_OnRetryCallbackCalled() {
+	retryCallbackCount := 0
+
+	s.srv.resetFailingConfiguration(3, codes.Unavailable, noSleep) // see retriable_errors
+	out, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing,
+		retry.WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
+			retryCallbackCount++
+		}),
+	)
+
+	require.NoError(s.T(), err, "the third invocation should succeed")
+	require.NotNil(s.T(), out, "Pong must be not nil")
+	require.EqualValues(s.T(), 2, retryCallbackCount, "two retry callbacks should be called")
+}
+
 func (s *RetrySuite) TestServerStream_SucceedsOnRetriableError() {
 	s.srv.resetFailingConfiguration(3, codes.DataLoss, noSleep) // see retriable_errors
 	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList)
@@ -264,6 +279,21 @@ func (s *RetrySuite) TestServerStream_PerCallDeadline_FailsOnParent() {
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
 	_, err = stream.Recv()
 	require.Equal(s.T(), codes.DeadlineExceeded, status.Code(err), "failre code must be a gRPC error of Deadline class")
+}
+
+func (s *RetrySuite) TestServerStream_OnRetryCallbackCalled() {
+	retryCallbackCount := 0
+
+	s.srv.resetFailingConfiguration(3, codes.Unavailable, noSleep) // see retriable_errors
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList,
+		retry.WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
+			retryCallbackCount++
+		}),
+	)
+
+	require.NoError(s.T(), err, "establishing the connection must always succeed")
+	s.assertPingListWasCorrect(stream)
+	require.EqualValues(s.T(), 2, retryCallbackCount, "two retry callbacks should be called")
 }
 
 func (s *RetrySuite) TestServerStream_CallFailsOnOutOfRetries() {
