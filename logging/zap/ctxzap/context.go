@@ -62,3 +62,27 @@ func ToContext(ctx context.Context, logger *zap.Logger) context.Context {
 	}
 	return context.WithValue(ctx, ctxMarkerKey, l)
 }
+
+// Debug is equivalent to calling Debug on the zap.Logger in the context.
+// It is a no-op if the context does not contain a zap.Logger.
+func Debug(ctx context.Context, msg string, fields ...zap.Field) {
+	Extract(ctx).Debug(msg, fields...)
+}
+
+// Info is equivalent to calling Info on the zap.Logger in the context.
+// It is a no-op if the context does not contain a zap.Logger.
+func Info(ctx context.Context, msg string, fields ...zap.Field) {
+	Extract(ctx).Info(msg, fields...)
+}
+
+// Warn is equivalent to calling Warn on the zap.Logger in the context.
+// It is a no-op if the context does not contain a zap.Logger.
+func Warn(ctx context.Context, msg string, fields ...zap.Field) {
+	Extract(ctx).Warn(msg, fields...)
+}
+
+// Error is equivalent to calling Error on the zap.Logger in the context.
+// It is a no-op if the context does not contain a zap.Logger.
+func Error(ctx context.Context, msg string, fields ...zap.Field) {
+	Extract(ctx).Error(msg, fields...)
+}
