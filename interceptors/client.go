@@ -7,6 +7,7 @@ package interceptors
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"google.golang.org/grpc"
@@ -74,7 +75,10 @@ func (s *monitoredClientStream) RecvMsg(m interface{}) error {
 	if err == nil {
 		return nil
 	}
-
-	s.reporter.PostCall(err, time.Since(s.startTime))
+	var postErr error
+	if err != io.EOF {
+		postErr = err
+	}
+	s.reporter.PostCall(postErr, time.Since(s.startTime))
 	return err
 }

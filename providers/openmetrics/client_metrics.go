@@ -1,99 +1,103 @@
 package metrics
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	openmetrics "github.com/prometheus/client_golang/prometheus"
 )
 
 // ClientMetrics represents a collection of metrics to be registered on a
 // Prometheus metrics registry for a gRPC client.
 type ClientMetrics struct {
-	clientRegister openmetrics.Registerer
-
 	clientStartedCounter    *openmetrics.CounterVec
 	clientHandledCounter    *openmetrics.CounterVec
 	clientStreamMsgReceived *openmetrics.CounterVec
 	clientStreamMsgSent     *openmetrics.CounterVec
 
-	clientHandledHistogramEnabled bool
-	clientHandledHistogramOpts    openmetrics.HistogramOpts
-	clientHandledHistogram        *openmetrics.HistogramVec
-
-	clientStreamRecvHistogramEnabled bool
-	clientStreamRecvHistogramOpts    openmetrics.HistogramOpts
-	clientStreamRecvHistogram        *openmetrics.HistogramVec
-
-	clientStreamSendHistogramEnabled bool
-	clientStreamSendHistogramOpts    openmetrics.HistogramOpts
-	clientStreamSendHistogram        *openmetrics.HistogramVec
+	// clientHandledHistogram can be nil
+	clientHandledHistogram *openmetrics.HistogramVec
+	// clientStreamRecvHistogram can be nil
+	clientStreamRecvHistogram *openmetrics.HistogramVec
+	// clientStreamSendHistogram can be nil
+	clientStreamSendHistogram *openmetrics.HistogramVec
 }
 
-// NewClientMetrics returns a ClientMetrics object. Use a new instance of
-// ClientMetrics when not using the default Prometheus metrics registry, for
-// example when wanting to control which metrics are added to a registry as
-// opposed to automatically adding metrics via init functions.
-func NewClientMetrics(clientRegistry prometheus.Registerer, counterOpts ...CounterOption) *ClientMetrics {
-	opts := counterOptions(counterOpts)
+// NewClientMetrics returns a new ClientMetrics object.
+func NewClientMetrics(opts ...ClientMetricsOption) *ClientMetrics {
+	var config clientMetricsConfig
+	config.apply(opts)
 	return &ClientMetrics{
-		clientRegister: clientRegistry,
 		clientStartedCounter: openmetrics.NewCounterVec(
-			opts.apply(openmetrics.CounterOpts{
+			config.counterOpts.apply(openmetrics.CounterOpts{
 				Name: "grpc_client_started_total",
 				Help: "Total number of RPCs started on the client.",
 			}), []string{"grpc_type", "grpc_service", "grpc_method"}),
 
 		clientHandledCounter: openmetrics.NewCounterVec(
-			opts.apply(openmetrics.CounterOpts{
+			config.counterOpts.apply(openmetrics.CounterOpts{
 				Name: "grpc_client_handled_total",
 				Help: "Total number of RPCs completed by the client, regardless of success or failure.",
 			}), []string{"grpc_type", "grpc_service", "grpc_method", "grpc_code"}),
 
 		clientStreamMsgReceived: openmetrics.NewCounterVec(
-			opts.apply(openmetrics.CounterOpts{
+			config.counterOpts.apply(openmetrics.CounterOpts{
 				Name: "grpc_client_msg_received_total",
 				Help: "Total number of RPC stream messages received by the client.",
 			}), []string{"grpc_type", "grpc_service", "grpc_method"}),
 
 		clientStreamMsgSent: openmetrics.NewCounterVec(
-			opts.apply(openmetrics.CounterOpts{
+			config.counterOpts.apply(openmetrics.CounterOpts{
 				Name: "grpc_client_msg_sent_total",
 				Help: "Total number of gRPC stream messages sent by the client.",
 			}), []string{"grpc_type", "grpc_service", "grpc_method"}),
 
-		clientHandledHistogramEnabled: false,
-		clientHandledHistogramOpts: openmetrics.HistogramOpts{
-			Name:    "grpc_client_handling_seconds",
-			Help:    "Histogram of response latency (seconds) of the gRPC until it is finished by the application.",
-			Buckets: openmetrics.DefBuckets,
-		},
-		clientHandledHistogram:           nil,
-		clientStreamRecvHistogramEnabled: false,
-		clientStreamRecvHistogramOpts: openmetrics.HistogramOpts{
-			Name:    "grpc_client_msg_recv_handling_seconds",
-			Help:    "Histogram of response latency (seconds) of the gRPC single message receive.",
-			Buckets: openmetrics.DefBuckets,
-		},
-		clientStreamRecvHistogram:        nil,
-		clientStreamSendHistogramEnabled: false,
-		clientStreamSendHistogramOpts: openmetrics.HistogramOpts{
-			Name:    "grpc_client_msg_send_handling_seconds",
-			Help:    "Histogram of response latency (seconds) of the gRPC single message send.",
-			Buckets: openmetrics.DefBuckets,
-		},
-		clientStreamSendHistogram: nil,
+		clientHandledHistogram:    config.clientHandledHistogram,
+		clientStreamRecvHistogram: config.clientStreamRecvHistogram,
+		clientStreamSendHistogram: config.clientStreamSendHistogram,
 	}
 }
 
-// Register registers the provided Collector with the custom register.
-// returns error much like DefaultRegisterer of Prometheus.
-func (m *ClientMetrics) Register(c openmetrics.Collector) error {
-	return m.clientRegister.Register(c)
+// NewRegisteredClientMetrics returns a custom ClientMetrics object registered
+// with the user's registry, and registers some common metrics associated
+// with every instance.
+func NewRegisteredClientMetrics(registry openmetrics.Registerer, opts ...ClientMetricsOption) *ClientMetrics {
+	customClientMetrics := NewClientMetrics(opts...)
+	customClientMetrics.MustRegister(registry)
+	return customClientMetrics
 }
 
-// MustRegister registers the provided Collectors with the custom Registerer
+// Register registers the metrics with the registry.
+// returns error much like DefaultRegisterer of Prometheus.
+func (m *ClientMetrics) Register(registry openmetrics.Registerer) error {
+	for _, collector := range m.toRegister() {
+		if err := registry.Register(collector); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// MustRegister registers the metrics with the registry
 // and panics if any error occurs much like DefaultRegisterer of Prometheus.
-func (m *ClientMetrics) MustRegister(c openmetrics.Collector) {
-	m.clientRegister.MustRegister(c)
+func (m *ClientMetrics) MustRegister(registry openmetrics.Registerer) {
+	registry.MustRegister(m.toRegister()...)
+}
+
+func (m *ClientMetrics) toRegister() []openmetrics.Collector {
+	res := []openmetrics.Collector{
+		m.clientStartedCounter,
+		m.clientHandledCounter,
+		m.clientStreamMsgReceived,
+		m.clientStreamMsgSent,
+	}
+	if m.clientHandledHistogram != nil {
+		res = append(res, m.clientHandledHistogram)
+	}
+	if m.clientStreamRecvHistogram != nil {
+		res = append(res, m.clientStreamRecvHistogram)
+	}
+	if m.clientStreamSendHistogram != nil {
+		res = append(res, m.clientStreamSendHistogram)
+	}
+	return res
 }
 
 // Describe sends the super-set of all possible descriptors of metrics
@@ -104,13 +108,13 @@ func (m *ClientMetrics) Describe(ch chan<- *openmetrics.Desc) {
 	m.clientHandledCounter.Describe(ch)
 	m.clientStreamMsgReceived.Describe(ch)
 	m.clientStreamMsgSent.Describe(ch)
-	if m.clientHandledHistogramEnabled {
+	if m.clientHandledHistogram != nil {
 		m.clientHandledHistogram.Describe(ch)
 	}
-	if m.clientStreamRecvHistogramEnabled {
+	if m.clientStreamRecvHistogram != nil {
 		m.clientStreamRecvHistogram.Describe(ch)
 	}
-	if m.clientStreamSendHistogramEnabled {
+	if m.clientStreamSendHistogram != nil {
 		m.clientStreamSendHistogram.Describe(ch)
 	}
 }
@@ -123,65 +127,13 @@ func (m *ClientMetrics) Collect(ch chan<- openmetrics.Metric) {
 	m.clientHandledCounter.Collect(ch)
 	m.clientStreamMsgReceived.Collect(ch)
 	m.clientStreamMsgSent.Collect(ch)
-	if m.clientHandledHistogramEnabled {
+	if m.clientHandledHistogram != nil {
 		m.clientHandledHistogram.Collect(ch)
 	}
-	if m.clientStreamRecvHistogramEnabled {
+	if m.clientStreamRecvHistogram != nil {
 		m.clientStreamRecvHistogram.Collect(ch)
 	}
-	if m.clientStreamSendHistogramEnabled {
+	if m.clientStreamSendHistogram != nil {
 		m.clientStreamSendHistogram.Collect(ch)
 	}
-}
-
-// EnableClientHandlingTimeHistogram turns on recording of handling time of RPCs.
-// Histogram metrics can be very expensive for Prometheus to retain and query.
-func (m *ClientMetrics) EnableClientHandlingTimeHistogram(opts ...HistogramOption) error {
-	for _, o := range opts {
-		o(&m.clientHandledHistogramOpts)
-	}
-	if !m.clientHandledHistogramEnabled {
-		m.clientHandledHistogram = openmetrics.NewHistogramVec(
-			m.clientHandledHistogramOpts,
-			[]string{"grpc_type", "grpc_service", "grpc_method"},
-		)
-	}
-	m.clientHandledHistogramEnabled = true
-	return m.clientRegister.Register(m.clientHandledHistogram)
-}
-
-// EnableClientStreamReceiveTimeHistogram turns on recording of single message receive time of streaming RPCs.
-// Histogram metrics can be very expensive for Prometheus to retain and query.
-func (m *ClientMetrics) EnableClientStreamReceiveTimeHistogram(opts ...HistogramOption) error {
-	for _, o := range opts {
-		o(&m.clientStreamRecvHistogramOpts)
-	}
-
-	if !m.clientStreamRecvHistogramEnabled {
-		m.clientStreamRecvHistogram = openmetrics.NewHistogramVec(
-			m.clientStreamRecvHistogramOpts,
-			[]string{"grpc_type", "grpc_service", "grpc_method"},
-		)
-	}
-
-	m.clientStreamRecvHistogramEnabled = true
-	return m.clientRegister.Register(m.clientStreamRecvHistogram)
-}
-
-// EnableClientStreamSendTimeHistogram turns on recording of single message send time of streaming RPCs.
-// Histogram metrics can be very expensive for Prometheus to retain and query.
-func (m *ClientMetrics) EnableClientStreamSendTimeHistogram(opts ...HistogramOption) error {
-	for _, o := range opts {
-		o(&m.clientStreamSendHistogramOpts)
-	}
-
-	if !m.clientStreamSendHistogramEnabled {
-		m.clientStreamSendHistogram = openmetrics.NewHistogramVec(
-			m.clientStreamSendHistogramOpts,
-			[]string{"grpc_type", "grpc_service", "grpc_method"},
-		)
-	}
-
-	m.clientStreamSendHistogramEnabled = true
-	return m.clientRegister.Register(m.clientStreamSendHistogram)
 }

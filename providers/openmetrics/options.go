@@ -36,6 +36,15 @@ func WithConstLabels(labels openmetrics.Labels) CounterOption {
 // funcs.
 type HistogramOption func(*openmetrics.HistogramOpts)
 
+type histogramOptions []HistogramOption
+
+func (ho histogramOptions) apply(o openmetrics.HistogramOpts) openmetrics.HistogramOpts {
+	for _, f := range ho {
+		f(&o)
+	}
+	return o
+}
+
 // WithHistogramBuckets allows you to specify custom bucket ranges for histograms if EnableHandlingTimeHistogram is on.
 func WithHistogramBuckets(buckets []float64) HistogramOption {
 	return func(o *openmetrics.HistogramOpts) { o.Buckets = buckets }
