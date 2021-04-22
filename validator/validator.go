@@ -11,8 +11,29 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// The validate interface starting with protoc-gen-validate v0.6.0.
+// See https://github.com/envoyproxy/protoc-gen-validate/pull/455.
 type validator interface {
+	Validate(all bool) error
+}
+
+// The validate interface prior to protoc-gen-validate v0.6.0.
+type validatorLegacy interface {
 	Validate() error
+}
+
+func validate(req interface{}) error {
+	switch v := req.(type) {
+	case validatorLegacy:
+		if err := v.Validate(); err != nil {
+			return status.Error(codes.InvalidArgument, err.Error())
+		}
+	case validator:
+		if err := v.Validate(false); err != nil {
+			return status.Error(codes.InvalidArgument, err.Error())
+		}
+	}
+	return nil
 }
 
 // UnaryServerInterceptor returns a new unary server interceptor that validates incoming messages.
@@ -20,10 +41,8 @@ type validator interface {
 // Invalid messages will be rejected with `InvalidArgument` before reaching any userspace handlers.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		if v, ok := req.(validator); ok {
-			if err := v.Validate(); err != nil {
-				return nil, status.Error(codes.InvalidArgument, err.Error())
-			}
+		if err := validate(req); err != nil {
+			return nil, err
 		}
 		return handler(ctx, req)
 	}
@@ -34,10 +53,8 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 // Invalid messages will be rejected with `InvalidArgument` before sending the request to server.
 func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		if v, ok := req.(validator); ok {
-			if err := v.Validate(); err != nil {
-				return status.Error(codes.InvalidArgument, err.Error())
-			}
+		if err := validate(req); err != nil {
+			return err
 		}
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
@@ -64,10 +81,10 @@ func (s *recvWrapper) RecvMsg(m interface{}) error {
 	if err := s.ServerStream.RecvMsg(m); err != nil {
 		return err
 	}
-	if v, ok := m.(validator); ok {
-		if err := v.Validate(); err != nil {
-			return status.Error(codes.InvalidArgument, err.Error())
-		}
+
+	if err := validate(m); err != nil {
+		return err
 	}
+
 	return nil
 }
