@@ -1,15 +1,15 @@
 // Copyright 2016 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-package grpc_validator_test
+package grpc_validator
 
 import (
 	"io"
+	"math"
 	"testing"
 
 	grpc_testing "github.com/grpc-ecosystem/go-grpc-middleware/testing"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
-	grpc_validator "github.com/grpc-ecosystem/go-grpc-middleware/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -22,14 +22,26 @@ var (
 	// See test.manual_validator.pb.go for the validator check of SleepTimeMs.
 	goodPing = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 9999}
 	badPing  = &pb_testproto.PingRequest{Value: "something", SleepTimeMs: 10001}
+
+	// See test.manual_validator.pb.go for the validator check of the counter.
+	goodPingResponse = &pb_testproto.PingResponse{Counter: 100}
+	badPingResponse  = &pb_testproto.PingResponse{Counter: math.MaxInt16 + 1}
 )
+
+func TestValidateWrapper(t *testing.T) {
+	assert.NoError(t, validate(goodPing))
+	assert.Error(t, validate(badPing))
+
+	assert.NoError(t, validate(goodPingResponse))
+	assert.Error(t, validate(badPingResponse))
+}
 
 func TestValidatorTestSuite(t *testing.T) {
 	s := &ValidatorTestSuite{
 		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
 			ServerOpts: []grpc.ServerOption{
-				grpc.StreamInterceptor(grpc_validator.StreamServerInterceptor()),
-				grpc.UnaryInterceptor(grpc_validator.UnaryServerInterceptor()),
+				grpc.StreamInterceptor(StreamServerInterceptor()),
+				grpc.UnaryInterceptor(UnaryServerInterceptor()),
 			},
 		},
 	}
@@ -38,7 +50,7 @@ func TestValidatorTestSuite(t *testing.T) {
 	cs := &ClientValidatorTestSuite{
 		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
 			ClientOpts: []grpc.DialOption{
-				grpc.WithUnaryInterceptor(grpc_validator.UnaryClientInterceptor()),
+				grpc.WithUnaryInterceptor(UnaryClientInterceptor()),
 			},
 		},
 	}
