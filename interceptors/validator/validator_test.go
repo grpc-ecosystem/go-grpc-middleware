@@ -1,7 +1,7 @@
 // Copyright 2016 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-package validator_test
+package validator
 
 import (
 	"io"
@@ -14,16 +14,23 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/validator"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
+
+func TestValidateWrapper(t *testing.T) {
+	assert.NoError(t, validate(testpb.GoodPing))
+	assert.Error(t, validate(testpb.BadPing))
+
+	assert.NoError(t, validate(testpb.GoodPingResponse))
+	assert.Error(t, validate(testpb.BadPingResponse))
+}
 
 func TestValidatorTestSuite(t *testing.T) {
 	s := &ValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ServerOpts: []grpc.ServerOption{
-				grpc.StreamInterceptor(validator.StreamServerInterceptor()),
-				grpc.UnaryInterceptor(validator.UnaryServerInterceptor()),
+				grpc.StreamInterceptor(StreamServerInterceptor()),
+				grpc.UnaryInterceptor(UnaryServerInterceptor()),
 			},
 		},
 	}
@@ -32,7 +39,7 @@ func TestValidatorTestSuite(t *testing.T) {
 	cs := &ClientValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ClientOpts: []grpc.DialOption{
-				grpc.WithUnaryInterceptor(validator.UnaryClientInterceptor()),
+				grpc.WithUnaryInterceptor(UnaryClientInterceptor()),
 			},
 		},
 	}
