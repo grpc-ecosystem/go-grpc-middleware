@@ -90,9 +90,9 @@ func (r *reportable) ClientReporter(ctx context.Context, _ interface{}, typ inte
 
 func (r *reportable) reporter(ctx context.Context, typ interceptors.GRPCType, service string, method string, kind string) (interceptors.Reporter, context.Context) {
 	fields := commonFields(kind, typ, service, method)
-	fields = append(fields, "grpc.start_time", time.Now().Format(time.RFC3339))
+	fields = append(fields, "grpc.start_time", time.Now().Format(r.opts.timestampFormat))
 	if d, ok := ctx.Deadline(); ok {
-		fields = append(fields, "grpc.request.deadline", d.Format(time.RFC3339))
+		fields = append(fields, "grpc.request.deadline", d.Format(r.opts.timestampFormat))
 	}
 	return &reporter{
 		ctx:             ctx,

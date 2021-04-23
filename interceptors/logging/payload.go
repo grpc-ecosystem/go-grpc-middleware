@@ -89,9 +89,10 @@ func (c *clientPayloadReporter) PostMsgReceive(reply interface{}, err error, dur
 }
 
 type payloadReportable struct {
-	clientDecider ClientPayloadLoggingDecider
-	serverDecider ServerPayloadLoggingDecider
-	logger        Logger
+	clientDecider   ClientPayloadLoggingDecider
+	serverDecider   ServerPayloadLoggingDecider
+	logger          Logger
+	timestampFormat string
 }
 
 func (r *payloadReportable) ServerReporter(ctx context.Context, req interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
@@ -99,9 +100,9 @@ func (r *payloadReportable) ServerReporter(ctx context.Context, req interface{},
 		return interceptors.NoopReporter{}, ctx
 	}
 	fields := commonFields(KindServerFieldValue, typ, service, method)
-	fields = append(fields, "grpc.start_time", time.Now().Format(time.RFC3339))
+	fields = append(fields, "grpc.start_time", time.Now().Format(r.timestampFormat))
 	if d, ok := ctx.Deadline(); ok {
-		fields = append(fields, "grpc.request.deadline", d.Format(time.RFC3339))
+		fields = append(fields, "grpc.request.deadline", d.Format(r.timestampFormat))
 	}
 	return &serverPayloadReporter{
 		ctx:    ctx,
@@ -113,9 +114,9 @@ func (r *payloadReportable) ClientReporter(ctx context.Context, _ interface{}, t
 		return interceptors.NoopReporter{}, ctx
 	}
 	fields := commonFields(KindClientFieldValue, typ, service, method)
-	fields = append(fields, "grpc.start_time", time.Now().Format(time.RFC3339))
+	fields = append(fields, "grpc.start_time", time.Now().Format(r.timestampFormat))
 	if d, ok := ctx.Deadline(); ok {
-		fields = append(fields, "grpc.request.deadline", d.Format(time.RFC3339))
+		fields = append(fields, "grpc.request.deadline", d.Format(r.timestampFormat))
 	}
 	return &clientPayloadReporter{
 		ctx:    ctx,
@@ -125,26 +126,26 @@ func (r *payloadReportable) ClientReporter(ctx context.Context, _ interface{}, t
 
 // PayloadUnaryServerInterceptor returns a new unary server interceptors that logs the payloads of requests on INFO level.
 // Logger tags will be used from tags context.
-func PayloadUnaryServerInterceptor(logger Logger, decider ServerPayloadLoggingDecider) grpc.UnaryServerInterceptor {
-	return interceptors.UnaryServerInterceptor(&payloadReportable{logger: logger, serverDecider: decider})
+func PayloadUnaryServerInterceptor(logger Logger, decider ServerPayloadLoggingDecider, timestampFormat string) grpc.UnaryServerInterceptor {
+	return interceptors.UnaryServerInterceptor(&payloadReportable{logger: logger, serverDecider: decider, timestampFormat: timestampFormat})
 }
 
 // PayloadStreamServerInterceptor returns a new server server interceptors that logs the payloads of requests on INFO level.
 // Logger tags will be used from tags context.
-func PayloadStreamServerInterceptor(logger Logger, decider ServerPayloadLoggingDecider) grpc.StreamServerInterceptor {
-	return interceptors.StreamServerInterceptor(&payloadReportable{logger: logger, serverDecider: decider})
+func PayloadStreamServerInterceptor(logger Logger, decider ServerPayloadLoggingDecider, timestampFormat string) grpc.StreamServerInterceptor {
+	return interceptors.StreamServerInterceptor(&payloadReportable{logger: logger, serverDecider: decider, timestampFormat: timestampFormat})
 }
 
-// PayloadUnaryClientInterceptor returns a new unary client interceptor that logs the paylods of requests and responses on INFO level.
+// PayloadUnaryClientInterceptor returns a new unary client interceptor that logs the payloads of requests and responses on INFO level.
 // Logger tags will be used from tags context.
-func PayloadUnaryClientInterceptor(logger Logger, decider ClientPayloadLoggingDecider) grpc.UnaryClientInterceptor {
-	return interceptors.UnaryClientInterceptor(&payloadReportable{logger: logger, clientDecider: decider})
+func PayloadUnaryClientInterceptor(logger Logger, decider ClientPayloadLoggingDecider, timestampFormat string) grpc.UnaryClientInterceptor {
+	return interceptors.UnaryClientInterceptor(&payloadReportable{logger: logger, clientDecider: decider, timestampFormat: timestampFormat})
 }
 
 // PayloadStreamClientInterceptor returns a new streaming client interceptor that logs the paylods of requests and responses on INFO level.
 // Logger tags will be used from tags context.
-func PayloadStreamClientInterceptor(logger Logger, decider ClientPayloadLoggingDecider) grpc.StreamClientInterceptor {
-	return interceptors.StreamClientInterceptor(&payloadReportable{logger: logger, clientDecider: decider})
+func PayloadStreamClientInterceptor(logger Logger, decider ClientPayloadLoggingDecider, timestampFormat string) grpc.StreamClientInterceptor {
+	return interceptors.StreamClientInterceptor(&payloadReportable{logger: logger, clientDecider: decider, timestampFormat: timestampFormat})
 }
 
 func logProtoMessageAsJson(logger Logger, pbMsg proto.Message, key string, msg string) {
