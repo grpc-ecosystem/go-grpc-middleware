@@ -50,7 +50,7 @@ func (m *mockReportable) Equal(t *testing.T, expected []*mockReport) {
 				require.NoError(t, err)
 				continue
 			}
-			require.Equal(t, expected[i].postCalls[k].Error(), err.Error(), "%v %v", i, k)
+			require.EqualError(t, err, expected[i].postCalls[k].Error(), "%v %v", i, k)
 		}
 		require.Len(t, expected[i].postMsgSends, len(e.postMsgSends), "%v", i)
 		for k, err := range e.postMsgSends {
@@ -276,7 +276,7 @@ func (s *ClientInterceptorTestSuite) TestListReporting() {
 		typ:             ServerStream,
 		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingList",
-		postCalls:       []error{io.EOF},
+		postCalls:       []error{nil},
 		postMsgReceives: append(make([]error, testpb.ListResponseCount), io.EOF),
 		postMsgSends:    []error{nil},
 	}})
@@ -329,7 +329,9 @@ func (s *ClientInterceptorTestSuite) TestBiStreamingReporting() {
 			if err == io.EOF {
 				break
 			}
-			require.NoError(s.T(), err, "reading pingStream shouldn't fail")
+			if !s.Assert().NoError(err, "reading pingStream shouldn't fail") {
+				break
+			}
 			count++
 		}
 	}()
@@ -340,12 +342,12 @@ func (s *ClientInterceptorTestSuite) TestBiStreamingReporting() {
 	require.NoError(s.T(), ss.CloseSend())
 	wg.Wait()
 
-	require.EqualValues(s.T(), count, 100, "Number of received msg on the wire must match")
+	require.EqualValues(s.T(), 100, count, "Number of received msg on the wire must match")
 	s.mock.Equal(s.T(), []*mockReport{{
 		typ:             BidiStream,
 		svcName:         testpb.TestServiceFullName,
 		methodName:      "PingStream",
-		postCalls:       []error{io.EOF},
+		postCalls:       []error{nil},
 		postMsgReceives: append(make([]error, 100), io.EOF),
 		postMsgSends:    make([]error, 100),
 	}})

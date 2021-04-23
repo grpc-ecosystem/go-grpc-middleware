@@ -28,13 +28,13 @@ func (r *reporter) PostCall(err error, duration time.Duration) {
 	switch r.kind {
 	case KindServer:
 		r.serverMetrics.serverHandledCounter.WithLabelValues(string(r.typ), r.service, r.method, code.String()).Inc()
-		if r.serverMetrics.serverHandledHistogramEnabled {
+		if r.serverMetrics.serverHandledHistogram != nil {
 			r.serverMetrics.serverHandledHistogram.WithLabelValues(string(r.typ), r.service, r.method).Observe(time.Since(r.startTime).Seconds())
 		}
 
 	case KindClient:
 		r.clientMetrics.clientHandledCounter.WithLabelValues(string(r.typ), r.service, r.method, code.String()).Inc()
-		if r.clientMetrics.clientHandledHistogramEnabled {
+		if r.clientMetrics.clientHandledHistogram != nil {
 			r.clientMetrics.clientHandledHistogram.WithLabelValues(string(r.typ), r.service, r.method).Observe(time.Since(r.startTime).Seconds())
 		}
 	}
@@ -61,17 +61,16 @@ func (r *reporter) PostMsgReceive(_ interface{}, _ error, _ time.Duration) {
 }
 
 type reportable struct {
-	registry openmetrics.Registerer
+	clientMetrics *ClientMetrics
+	serverMetrics *ServerMetrics
 }
 
 func (rep *reportable) ServerReporter(ctx context.Context, _ interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
-	m := NewServerMetrics(rep.registry)
-	return rep.reporter(m, nil, typ, service, method, KindServer)
+	return rep.reporter(rep.serverMetrics, nil, typ, service, method, KindServer)
 }
 
 func (rep *reportable) ClientReporter(ctx context.Context, _ interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
-	m := NewClientMetrics(rep.registry)
-	return rep.reporter(nil, m, typ, service, method, KindClient)
+	return rep.reporter(nil, rep.clientMetrics, typ, service, method, KindClient)
 }
 
 func (rep *reportable) reporter(sm *ServerMetrics, cm *ClientMetrics, rpcType interceptors.GRPCType, service, method string, kind Kind) (interceptors.Reporter, context.Context) {
@@ -88,22 +87,22 @@ func (rep *reportable) reporter(sm *ServerMetrics, cm *ClientMetrics, rpcType in
 
 	switch kind {
 	case KindClient:
-		if r.clientMetrics.clientHandledHistogramEnabled {
+		if r.clientMetrics.clientHandledHistogram != nil {
 			r.startTime = time.Now()
 		}
 		r.clientMetrics.clientStartedCounter.WithLabelValues(string(r.typ), r.service, r.method).Inc()
 
-		if r.clientMetrics.clientStreamSendHistogramEnabled {
+		if r.clientMetrics.clientStreamSendHistogram != nil {
 			hist := r.clientMetrics.clientStreamSendHistogram.WithLabelValues(string(r.typ), r.service, r.method)
 			r.sendTimer = openmetrics.NewTimer(hist)
 		}
 
-		if r.clientMetrics.clientStreamRecvHistogramEnabled {
+		if r.clientMetrics.clientStreamRecvHistogram != nil {
 			hist := r.clientMetrics.clientStreamRecvHistogram.WithLabelValues(string(r.typ), r.service, r.method)
 			r.receiveTimer = openmetrics.NewTimer(hist)
 		}
 	case KindServer:
-		if r.serverMetrics.serverHandledHistogramEnabled {
+		if r.serverMetrics.serverHandledHistogram != nil {
 			r.startTime = time.Now()
 		}
 		r.serverMetrics.serverStartedCounter.WithLabelValues(string(r.typ), r.service, r.method).Inc()
