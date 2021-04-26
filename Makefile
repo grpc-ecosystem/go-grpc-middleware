@@ -71,8 +71,9 @@ lint: ## Runs various static analysis tools against our code.
 lint: $(BUF) $(COPYRIGHT) fmt
 	@echo ">> lint proto files"
 	@$(BUF) lint
+	
 	@echo "Running lint for all modules: $(MODULES)"
-	./scripts/git-tree.sh
+	@./scripts/git-tree.sh
 	for dir in $(MODULES) ; do \
 		$(MAKE) lint_module DIR=$${dir} ; \
 	done
@@ -93,8 +94,10 @@ lint_module: ## Runs various static analysis against our code.
 lint_module: $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL)
 	@echo ">> verifying modules being imported"
 	@cd $(DIR) && $(FAILLINT) -paths "errors=github.com/pkg/errors,fmt.{Print,Printf,Println}" ./...
+	
 	@echo ">> examining all of the Go files"
 	@cd $(DIR) && go vet -stdmethods=false ./...
+	
 	@echo ">> linting all of the Go files GOGC=${GOGC}"
 	@cd $(DIR) && $(GOLANGCI_LINT) run
 	@./scripts/git-tree.sh
