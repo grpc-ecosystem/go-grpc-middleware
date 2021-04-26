@@ -1,3 +1,6 @@
+// Copyright (c) The go-grpc-middleware Authors.
+// Licensed under the Apache License 2.0.
+
 package timeout_test
 
 import (
@@ -5,10 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/timeout"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/timeout"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 type TimeoutTestServiceServer struct {

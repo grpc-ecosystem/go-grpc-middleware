@@ -1,3 +1,6 @@
+// Copyright (c) The go-grpc-middleware Authors.
+// Licensed under the Apache License 2.0.
+
 /*
 `skip` allow users to skip interceptors in certain condition.
 

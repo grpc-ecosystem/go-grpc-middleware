@@ -1,3 +1,6 @@
+// Copyright (c) The go-grpc-middleware Authors.
+// Licensed under the Apache License 2.0.
+
 /*
 `tags` adds a Tag object to the context that can be used by other middleware to add context about a request.
 

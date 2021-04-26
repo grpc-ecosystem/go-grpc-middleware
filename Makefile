@@ -46,7 +46,7 @@ test:
 	for dir in $(MODULES) ; do \
 		$(MAKE) test_module DIR=$${dir} ; \
 	done
-	./scripts/test_all.sh
+	@./scripts/test_all.sh
 
 .PHONY: test_module
 test_module:
@@ -68,7 +68,7 @@ deps:
 #      --mem-profile-path string   Path to memory profile output file
 # to debug big allocations during linting.
 lint: ## Runs various static analysis tools against our code.
-lint: $(BUF) fmt
+lint: $(BUF) $(COPYRIGHT) fmt
 	@echo ">> lint proto files"
 	@$(BUF) lint
 	@echo "Running lint for all modules: $(MODULES)"
@@ -76,6 +76,12 @@ lint: $(BUF) fmt
 	for dir in $(MODULES) ; do \
 		$(MAKE) lint_module DIR=$${dir} ; \
 	done
+	@$(call require_clean_work_tree,"lint and format files")
+
+	@echo ">> ensuring copyright headers"
+	@$(COPYRIGHT) $(shell go list -f "{{.Dir}}" ./... | xargs -i find "{}" -name "*.go")
+	@$(call require_clean_work_tree,"set copyright headers")
+	@echo ">> ensured all .go files have copyright headers"
 
 .PHONY: lint_module
 # PROTIP:
@@ -111,3 +117,5 @@ proto: $(BUF) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) $(PROTO_TEST_DIR)/test.prot
 		--go_out=$(PROTO_TEST_DIR)/../ \
 		--go-grpc_out=$(PROTO_TEST_DIR)/../ \
 	    $(PROTO_TEST_DIR)/*.proto
+
+    
