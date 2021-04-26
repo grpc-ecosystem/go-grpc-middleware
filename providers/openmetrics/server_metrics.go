@@ -132,13 +132,13 @@ func (m *ServerMetrics) preRegisterMethod(serviceName string, mInfo *grpc.Method
 	methodName := mInfo.Name
 	methodType := string(typeFromMethodInfo(mInfo))
 	// These are just references (no increments), as just referencing will create the labels but not set values.
-	m.serverStartedCounter.GetMetricWithLabelValues(methodType, serviceName, methodName)
-	m.serverStreamMsgReceived.GetMetricWithLabelValues(methodType, serviceName, methodName)
-	m.serverStreamMsgSent.GetMetricWithLabelValues(methodType, serviceName, methodName)
+	_, _ = m.serverStartedCounter.GetMetricWithLabelValues(methodType, serviceName, methodName)
+	_, _ = m.serverStreamMsgReceived.GetMetricWithLabelValues(methodType, serviceName, methodName)
+	_, _ = m.serverStreamMsgSent.GetMetricWithLabelValues(methodType, serviceName, methodName)
 	if m.serverHandledHistogram != nil {
-		m.serverHandledHistogram.GetMetricWithLabelValues(methodType, serviceName, methodName)
+		_, _ = m.serverHandledHistogram.GetMetricWithLabelValues(methodType, serviceName, methodName)
 	}
 	for _, code := range interceptors.AllCodes {
-		m.serverHandledCounter.GetMetricWithLabelValues(methodType, serviceName, methodName, code.String())
+		_, _ = m.serverHandledCounter.GetMetricWithLabelValues(methodType, serviceName, methodName, code.String())
 	}
 }
