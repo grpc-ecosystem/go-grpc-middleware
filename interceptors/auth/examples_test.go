@@ -54,14 +54,18 @@ func Example_serverConfig() {
 	)
 }
 
-type gRPCserverAuthenticated struct{}
+type gRPCserverAuthenticated struct {
+	pb.UnimplementedGreeterServer
+}
 
 // SayHello only can be called by client when authenticated by exampleAuthFunc
 func (g gRPCserverAuthenticated) SayHello(ctx context.Context, request *pb.HelloRequest) (*pb.HelloReply, error) {
 	return &pb.HelloReply{Message: "pong authenticated"}, nil
 }
 
-type gRPCserverUnauthenticated struct{}
+type gRPCserverUnauthenticated struct {
+	pb.UnimplementedGreeterServer
+}
 
 // SayHello can be called by client without being authenticated by exampleAuthFunc as AuthFuncOverride is called instead
 func (g *gRPCserverUnauthenticated) SayHello(ctx context.Context, request *pb.HelloRequest) (*pb.HelloReply, error) {
