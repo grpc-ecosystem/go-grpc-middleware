@@ -4,7 +4,6 @@ package testpb
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -12,7 +11,8 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
+// Requires gRPC-Go v1.32.0 or later.
+const _ = grpc.SupportPackageIsVersion7
 
 // TestServiceClient is the client API for TestService service.
 //
@@ -61,7 +61,7 @@ func (c *testServiceClient) PingError(ctx context.Context, in *PingErrorRequest,
 }
 
 func (c *testServiceClient) PingList(ctx context.Context, in *PingListRequest, opts ...grpc.CallOption) (TestService_PingListClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TestService_serviceDesc.Streams[0], "/testing.testpb.v1.TestService/PingList", opts...)
+	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[0], "/testing.testpb.v1.TestService/PingList", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (x *testServicePingListClient) Recv() (*PingListResponse, error) {
 }
 
 func (c *testServiceClient) PingStream(ctx context.Context, opts ...grpc.CallOption) (TestService_PingStreamClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TestService_serviceDesc.Streams[1], "/testing.testpb.v1.TestService/PingStream", opts...)
+	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[1], "/testing.testpb.v1.TestService/PingStream", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -139,25 +139,32 @@ type TestServiceServer interface {
 type UnimplementedTestServiceServer struct {
 }
 
-func (*UnimplementedTestServiceServer) PingEmpty(context.Context, *PingEmptyRequest) (*PingEmptyResponse, error) {
+func (UnimplementedTestServiceServer) PingEmpty(context.Context, *PingEmptyRequest) (*PingEmptyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PingEmpty not implemented")
 }
-func (*UnimplementedTestServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
+func (UnimplementedTestServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (*UnimplementedTestServiceServer) PingError(context.Context, *PingErrorRequest) (*PingErrorResponse, error) {
+func (UnimplementedTestServiceServer) PingError(context.Context, *PingErrorRequest) (*PingErrorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PingError not implemented")
 }
-func (*UnimplementedTestServiceServer) PingList(*PingListRequest, TestService_PingListServer) error {
+func (UnimplementedTestServiceServer) PingList(*PingListRequest, TestService_PingListServer) error {
 	return status.Errorf(codes.Unimplemented, "method PingList not implemented")
 }
-func (*UnimplementedTestServiceServer) PingStream(TestService_PingStreamServer) error {
+func (UnimplementedTestServiceServer) PingStream(TestService_PingStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method PingStream not implemented")
 }
-func (*UnimplementedTestServiceServer) mustEmbedUnimplementedTestServiceServer() {}
+func (UnimplementedTestServiceServer) mustEmbedUnimplementedTestServiceServer() {}
 
-func RegisterTestServiceServer(s *grpc.Server, srv TestServiceServer) {
-	s.RegisterService(&_TestService_serviceDesc, srv)
+// UnsafeTestServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to TestServiceServer will
+// result in compilation errors.
+type UnsafeTestServiceServer interface {
+	mustEmbedUnimplementedTestServiceServer()
+}
+
+func RegisterTestServiceServer(s grpc.ServiceRegistrar, srv TestServiceServer) {
+	s.RegisterService(&TestService_ServiceDesc, srv)
 }
 
 func _TestService_PingEmpty_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -261,7 +268,10 @@ func (x *testServicePingStreamServer) Recv() (*PingStreamRequest, error) {
 	return m, nil
 }
 
-var _TestService_serviceDesc = grpc.ServiceDesc{
+// TestService_ServiceDesc is the grpc.ServiceDesc for TestService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var TestService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "testing.testpb.v1.TestService",
 	HandlerType: (*TestServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
