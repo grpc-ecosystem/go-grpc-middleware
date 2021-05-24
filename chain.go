@@ -16,6 +16,8 @@ import (
 // Execution is done in left-to-right order, including passing of context.
 // For example ChainUnaryServer(one, two, three) will execute one before two before three, and three
 // will see context changes of one and two.
+//
+// While this can be useful in some scenarios, it is generally advisable to use google.golang.org/grpc.ChainUnaryInterceptor directly.
 func ChainUnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
 	n := len(interceptors)
 
@@ -40,6 +42,8 @@ func ChainUnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnarySer
 // Execution is done in left-to-right order, including passing of context.
 // For example ChainUnaryServer(one, two, three) will execute one before two before three.
 // If you want to pass context between interceptors, use WrapServerStream.
+//
+// While this can be useful in some scenarios, it is generally advisable to use google.golang.org/grpc.ChainStreamInterceptor directly.
 func ChainStreamServer(interceptors ...grpc.StreamServerInterceptor) grpc.StreamServerInterceptor {
 	n := len(interceptors)
 
@@ -109,12 +113,16 @@ func ChainStreamClient(interceptors ...grpc.StreamClientInterceptor) grpc.Stream
 //
 // WithUnaryServerChain is a grpc.Server config option that accepts multiple unary interceptors.
 // Basically syntactic sugar.
+//
+// Deprecated: use google.golang.org/grpc.ChainUnaryInterceptor instead.
 func WithUnaryServerChain(interceptors ...grpc.UnaryServerInterceptor) grpc.ServerOption {
-	return grpc.UnaryInterceptor(ChainUnaryServer(interceptors...))
+	return grpc.ChainUnaryInterceptor(interceptors...)
 }
 
 // WithStreamServerChain is a grpc.Server config option that accepts multiple stream interceptors.
 // Basically syntactic sugar.
+//
+// Deprecated: use google.golang.org/grpc.ChainStreamInterceptor instead.
 func WithStreamServerChain(interceptors ...grpc.StreamServerInterceptor) grpc.ServerOption {
-	return grpc.StreamInterceptor(ChainStreamServer(interceptors...))
+	return grpc.ChainStreamInterceptor(interceptors...)
 }
