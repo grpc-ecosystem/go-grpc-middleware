@@ -1,7 +1,7 @@
 // Copyright 2016 Michal Witkowski. All Rights Reserved.
 // See LICENSE for licensing terms.
 
-// gRPC Prometheus monitoring interceptors for server-side gRPC.
+// Go gRPC Middleware monitoring interceptors for server-side gRPC.
 
 package interceptors
 
