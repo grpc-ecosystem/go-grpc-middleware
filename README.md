@@ -63,6 +63,7 @@ myServer := grpc.NewServer(
    * [`logrus`](providers/logrus) - integration of [logrus](https://github.com/sirupsen/logrus) logging library into gRPC handlers.
    * [`kit`](providers/kit) - integration of [go-kit](https://github.com/go-kit/kit/tree/master/log) logging library into gRPC handlers.
    * [`zerolog`](providers/zerolog) - integration of [zerolog](https://github.com/rs/zerolog) logging Library into gRPC handlers.
+   * [`phuslog`](providers/phuslog) - integration of [phuslog](https://github.com/phuslu/log) logging Library into gRPC handlers.
 
 #### Monitoring
    * [`grpc_prometheus`⚡](https://github.com/grpc-ecosystem/go-grpc-prometheus) - Prometheus client-side and server-side monitoring middleware

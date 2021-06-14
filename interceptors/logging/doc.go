@@ -30,6 +30,7 @@ Implementations:
 * providers/zap
 * providers/kit
 * providers/zerolog
+* providers/phuslog
 
 See relevant packages below.
 */
