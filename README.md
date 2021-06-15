@@ -61,7 +61,7 @@ myServer := grpc.NewServer(
    * [`tags`](interceptors/tags) - a library that adds a `Tag` map to context, with data populated from request body
    * [`zap`](providers/zap) - integration of [zap](https://github.com/uber-go/zap) logging library into gRPC handlers.
    * [`logrus`](providers/logrus) - integration of [logrus](https://github.com/sirupsen/logrus) logging library into gRPC handlers.
-   * [`kit`](providers/kit) - integration of [go-kit](https://github.com/go-kit/kit/tree/master/log) logging library into gRPC handlers.
+   * [`kit`](providers/kit) - integration of [go-kit/log](https://github.com/go-kit/log) logging library into gRPC handlers.
    * [`zerolog`](providers/zerolog) - integration of [zerolog](https://github.com/rs/zerolog) logging Library into gRPC handlers.
 
 #### Monitoring
