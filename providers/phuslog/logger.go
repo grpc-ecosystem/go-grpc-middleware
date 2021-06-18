@@ -33,9 +33,7 @@ func (l *Logger) Log(lvl logging.Level, msg string) {
 	case logging.ERROR:
 		l.Error(msg)
 	default:
-		// TODO(kb): Perhaps this should be a logged warning, defaulting to ERROR to get attention
-		// without interrupting code flow?
-		panic(fmt.Sprintf("phuslog: unknown level %s", lvl))
+		l.With("error-lvl", fmt.Sprintf("phuslog: unknown level %s", lvl)).Log(logging.ERROR, msg)
 	}
 }
 
