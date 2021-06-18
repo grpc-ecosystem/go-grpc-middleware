@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_kit "github.com/grpc-ecosystem/go-grpc-middleware/logging/kit"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"

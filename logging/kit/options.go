@@ -3,8 +3,8 @@ package kit
 import (
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/logging"
 	"google.golang.org/grpc/codes"
 )

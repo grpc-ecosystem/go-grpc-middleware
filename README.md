@@ -58,7 +58,7 @@ myServer := grpc.NewServer(
    * [`grpc_ctxtags`](tags/) - a library that adds a `Tag` map to context, with data populated from request body
    * [`grpc_zap`](logging/zap/) - integration of [zap](https://github.com/uber-go/zap) logging library into gRPC handlers.
    * [`grpc_logrus`](logging/logrus/) - integration of [logrus](https://github.com/sirupsen/logrus) logging library into gRPC handlers.
-   * [`grpc_kit`](logging/kit/) - integration of [go-kit](https://github.com/go-kit/kit/tree/master/log) logging library into gRPC handlers.
+   * [`grpc_kit`](logging/kit/) - integration of [go-kit/log](https://github.com/go-kit/log) logging library into gRPC handlers.
    * [`grpc_grpc_logsettable`](logging/settable/) - a wrapper around `grpclog.LoggerV2` that allows to replace loggers in runtime (thread-safe).
 
 #### Monitoring
