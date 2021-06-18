@@ -2,6 +2,7 @@ package ctxzap
 
 import (
 	"context"
+	"runtime"
 	"testing"
 
 	"go.uber.org/zap"
@@ -31,8 +32,11 @@ func TestShorthands(t *testing.T) {
 				if e.Message != message {
 					t.Fatalf("message: expected %v, got %v", message, e.Message)
 				}
+				if _, file, _, _ := runtime.Caller(0); e.Caller.File != file {
+					t.Errorf("caller: expected %v, got %v", file, e.Caller.File)
+				}
 				return nil
-			})))
+			}))).WithOptions(zap.AddCaller())
 			ctx := ToContext(context.Background(), logger)
 			c.fn(ctx, message)
 			if !called {
