@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 	"github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2"
 	"google.golang.org/grpc"
 
