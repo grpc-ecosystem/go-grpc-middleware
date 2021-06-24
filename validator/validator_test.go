@@ -8,14 +8,15 @@ import (
 	"math"
 	"testing"
 
-	grpc_testing "github.com/grpc-ecosystem/go-grpc-middleware/testing"
-	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	grpc_testing "github.com/grpc-ecosystem/go-grpc-middleware/testing"
+	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 )
 
 var (
@@ -29,11 +30,15 @@ var (
 )
 
 func TestValidateWrapper(t *testing.T) {
-	assert.NoError(t, validate(goodPing))
-	assert.Error(t, validate(badPing))
+	assert.NoError(t, validate(goodPing, false))
+	assert.NoError(t, validate(goodPing, true))
+	assert.Error(t, validate(badPing, false))
+	assert.Error(t, validate(badPing, true))
 
-	assert.NoError(t, validate(goodPingResponse))
-	assert.Error(t, validate(badPingResponse))
+	assert.NoError(t, validate(goodPingResponse, false))
+	assert.NoError(t, validate(goodPingResponse, true))
+	assert.Error(t, validate(badPingResponse, false))
+	assert.Error(t, validate(badPingResponse, true))
 }
 
 func TestValidatorTestSuite(t *testing.T) {
@@ -46,6 +51,15 @@ func TestValidatorTestSuite(t *testing.T) {
 		},
 	}
 	suite.Run(t, s)
+	sAll := &ValidatorTestSuite{
+		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
+			ServerOpts: []grpc.ServerOption{
+				grpc.StreamInterceptor(StreamServerInterceptor(true)),
+				grpc.UnaryInterceptor(UnaryServerInterceptor(true)),
+			},
+		},
+	}
+	suite.Run(t, sAll)
 
 	cs := &ClientValidatorTestSuite{
 		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
@@ -55,6 +69,14 @@ func TestValidatorTestSuite(t *testing.T) {
 		},
 	}
 	suite.Run(t, cs)
+	csAll := &ClientValidatorTestSuite{
+		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
+			ClientOpts: []grpc.DialOption{
+				grpc.WithUnaryInterceptor(UnaryClientInterceptor(true)),
+			},
+		},
+	}
+	suite.Run(t, csAll)
 }
 
 type ValidatorTestSuite struct {
