@@ -57,7 +57,7 @@ func ReplaceGrpcLoggerV2(logger *zap.Logger) {
 // It should be called before any gRPC functions.
 func ReplaceGrpcLoggerV2WithVerbosity(logger *zap.Logger, verbosity int) {
 	zgl := &zapGrpcLoggerV2{
-		logger:    logger.With(SystemField, zap.Bool("grpc_log", true)),
+		logger:    logger.With(SystemField, zap.Bool("grpc_log", true)).WithOptions(zap.AddCallerSkip(2)),
 		verbosity: verbosity,
 	}
 	grpclog.SetLoggerV2(zgl)
