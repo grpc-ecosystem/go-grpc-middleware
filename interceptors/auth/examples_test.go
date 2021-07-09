@@ -54,26 +54,26 @@ func Example_serverConfig() {
 	)
 }
 
-type gRPCserverAuthenticated struct {
+type gRPCServerAuthenticated struct {
 	pb.UnimplementedGreeterServer
 }
 
 // SayHello only can be called by client when authenticated by exampleAuthFunc
-func (g gRPCserverAuthenticated) SayHello(ctx context.Context, request *pb.HelloRequest) (*pb.HelloReply, error) {
+func (g gRPCServerAuthenticated) SayHello(ctx context.Context, request *pb.HelloRequest) (*pb.HelloReply, error) {
 	return &pb.HelloReply{Message: "pong authenticated"}, nil
 }
 
-type gRPCserverUnauthenticated struct {
+type gRPCServerUnauthenticated struct {
 	pb.UnimplementedGreeterServer
 }
 
 // SayHello can be called by client without being authenticated by exampleAuthFunc as AuthFuncOverride is called instead
-func (g *gRPCserverUnauthenticated) SayHello(ctx context.Context, request *pb.HelloRequest) (*pb.HelloReply, error) {
+func (g *gRPCServerUnauthenticated) SayHello(ctx context.Context, request *pb.HelloRequest) (*pb.HelloReply, error) {
 	return &pb.HelloReply{Message: "pong unauthenticated"}, nil
 }
 
 // AuthFuncOverride is called instead of exampleAuthFunc
-func (g *gRPCserverUnauthenticated) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (g *gRPCServerUnauthenticated) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	log.Println("client is calling method:", fullMethodName)
 	return ctx, nil
 }
@@ -88,8 +88,8 @@ func Example_serverConfigWithAuthOverride() {
 	overrideActive := true
 
 	if overrideActive {
-		pb.RegisterGreeterServer(server, &gRPCserverUnauthenticated{})
+		pb.RegisterGreeterServer(server, &gRPCServerUnauthenticated{})
 	} else {
-		pb.RegisterGreeterServer(server, &gRPCserverAuthenticated{})
+		pb.RegisterGreeterServer(server, &gRPCServerAuthenticated{})
 	}
 }
