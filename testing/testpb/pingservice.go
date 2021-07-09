@@ -1,5 +1,5 @@
-// Copyright 2016 Michal Witkowski. All Rights Reserved.
-// See LICENSE for licensing terms.
+// Copyright (c) The go-grpc-middleware Authors.
+// Licensed under the Apache License 2.0.
 
 /*
 Package `grpc_testing` provides helper functions for testing validators in this package.

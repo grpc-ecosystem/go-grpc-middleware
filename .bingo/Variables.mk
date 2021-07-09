@@ -1,11 +1,11 @@
-# Auto generated binary variables helper managed by https://github.com/bwplotka/bingo v0.3.0. DO NOT EDIT.
+# Auto generated binary variables helper managed by https://github.com/bwplotka/bingo v0.4.0. DO NOT EDIT.
 # All tools are designed to be build inside $GOBIN.
 BINGO_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 GOPATH ?= $(shell go env GOPATH)
 GOBIN  ?= $(firstword $(subst :, ,${GOPATH}))/bin
 GO     ?= $(shell which go)
 
-# Bellow generated variables ensure that every time a tool under each variable is invoked, the correct version
+# Below generated variables ensure that every time a tool under each variable is invoked, the correct version
 # will be used; reinstalling only if needed.
 # For example for bingo variable:
 #
@@ -28,6 +28,12 @@ $(BUF): $(BINGO_DIR)/buf.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
 	@echo "(re)installing $(GOBIN)/buf-v0.35.1"
 	@cd $(BINGO_DIR) && $(GO) build -mod=mod -modfile=buf.mod -o=$(GOBIN)/buf-v0.35.1 "github.com/bufbuild/buf/cmd/buf"
+
+COPYRIGHT := $(GOBIN)/copyright-v0.0.0-20210326193628-425a09c04e05
+$(COPYRIGHT): $(BINGO_DIR)/copyright.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/copyright-v0.0.0-20210326193628-425a09c04e05"
+	@cd $(BINGO_DIR) && $(GO) build -mod=mod -modfile=copyright.mod -o=$(GOBIN)/copyright-v0.0.0-20210326193628-425a09c04e05 "github.com/efficientgo/tools/copyright"
 
 FAILLINT := $(GOBIN)/faillint-v1.5.0
 $(FAILLINT): $(BINGO_DIR)/faillint.mod

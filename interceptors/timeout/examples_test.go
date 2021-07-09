@@ -1,3 +1,6 @@
+// Copyright (c) The go-grpc-middleware Authors.
+// Licensed under the Apache License 2.0.
+
 package timeout_test
 
 import (
@@ -5,9 +8,10 @@ import (
 	"log"
 	"time"
 
+	"google.golang.org/grpc"
+
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/timeout"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
-	"google.golang.org/grpc"
 )
 
 // Initialization shows an initialization sequence with a custom client request timeout.

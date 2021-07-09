@@ -46,7 +46,7 @@ test:
 	for dir in $(MODULES) ; do \
 		$(MAKE) test_module DIR=$${dir} ; \
 	done
-	./scripts/test_all.sh
+	@./scripts/test_all.sh
 
 .PHONY: test_module
 test_module:
@@ -68,14 +68,21 @@ deps:
 #      --mem-profile-path string   Path to memory profile output file
 # to debug big allocations during linting.
 lint: ## Runs various static analysis tools against our code.
-lint: $(BUF) fmt
+lint: $(BUF) $(COPYRIGHT) fmt
 	@echo ">> lint proto files"
 	@$(BUF) lint
+	
 	@echo "Running lint for all modules: $(MODULES)"
-	./scripts/git-tree.sh
+	@./scripts/git-tree.sh
 	for dir in $(MODULES) ; do \
 		$(MAKE) lint_module DIR=$${dir} ; \
 	done
+	@$(call require_clean_work_tree,"lint and format files")
+
+	@echo ">> ensuring copyright headers"
+	@$(COPYRIGHT) $(shell go list -f "{{.Dir}}" ./... | xargs -i find "{}" -name "*.go")
+	@$(call require_clean_work_tree,"set copyright headers")
+	@echo ">> ensured all .go files have copyright headers"
 
 .PHONY: lint_module
 # PROTIP:
@@ -87,8 +94,10 @@ lint_module: ## Runs various static analysis against our code.
 lint_module: $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL)
 	@echo ">> verifying modules being imported"
 	@cd $(DIR) && $(FAILLINT) -paths "errors=github.com/pkg/errors,fmt.{Print,Printf,Println}" ./...
+	
 	@echo ">> examining all of the Go files"
 	@cd $(DIR) && go vet -stdmethods=false ./...
+	
 	@echo ">> linting all of the Go files GOGC=${GOGC}"
 	@cd $(DIR) && $(GOLANGCI_LINT) run
 	@./scripts/git-tree.sh

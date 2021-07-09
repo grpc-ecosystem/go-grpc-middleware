@@ -1,7 +1,6 @@
-// Copyright 2017 Michal Witkowski. All Rights Reserved.
-// See LICENSE for licensing terms.
+// Copyright (c) The go-grpc-middleware Authors.
+// Licensed under the Apache License 2.0.
 
-//
 /*
 logging is a "parent" package for gRPC logging middlewares.
 
