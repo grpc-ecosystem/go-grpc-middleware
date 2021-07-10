@@ -6,6 +6,7 @@ package metrics
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -242,6 +243,9 @@ func (s *testService) PingEmpty(ctx context.Context, _ *pb_testproto.PingEmptyRe
 
 func (s *testService) Ping(ctx context.Context, ping *pb_testproto.PingRequest) (*pb_testproto.PingResponse, error) {
 	// Send user trailers and headers.
+	if _, ok := grpc.Method(ctx); !ok {
+		return nil, errors.New("cannot retrieve method name")
+	}
 	return &pb_testproto.PingResponse{Value: ping.Value, Counter: 42}, nil
 }
 
@@ -251,6 +255,9 @@ func (s *testService) PingError(ctx context.Context, ping *pb_testproto.PingErro
 }
 
 func (s *testService) PingList(ping *pb_testproto.PingListRequest, stream pb_testproto.TestService_PingListServer) error {
+	if _, ok := grpc.Method(stream.Context()); !ok {
+		return errors.New("cannot retrieve method name")
+	}
 	if ping.ErrorCodeReturned != 0 {
 		return status.Error(codes.Code(ping.ErrorCodeReturned), "foobar")
 	}
