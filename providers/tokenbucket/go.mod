@@ -1,4 +1,4 @@
-module github.com/grpc-ecosystem/go-grpc-middleware/providers/tockenbucket/v2
+module github.com/grpc-ecosystem/go-grpc-middleware/providers/tokenbucket/v2
 
 go 1.15
 
