@@ -66,14 +66,14 @@ type reportable struct {
 }
 
 func (rep *reportable) ServerReporter(ctx context.Context, _ interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
-	return rep.reporter(rep.serverMetrics, nil, typ, service, method, KindServer)
+	return rep.reporter(ctx, rep.serverMetrics, nil, typ, service, method, KindServer)
 }
 
 func (rep *reportable) ClientReporter(ctx context.Context, _ interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
-	return rep.reporter(nil, rep.clientMetrics, typ, service, method, KindClient)
+	return rep.reporter(ctx, nil, rep.clientMetrics, typ, service, method, KindClient)
 }
 
-func (rep *reportable) reporter(sm *ServerMetrics, cm *ClientMetrics, rpcType interceptors.GRPCType, service, method string, kind Kind) (interceptors.Reporter, context.Context) {
+func (rep *reportable) reporter(ctx context.Context, sm *ServerMetrics, cm *ClientMetrics, rpcType interceptors.GRPCType, service, method string, kind Kind) (interceptors.Reporter, context.Context) {
 	r := &reporter{
 		clientMetrics: cm,
 		serverMetrics: sm,
@@ -107,7 +107,5 @@ func (rep *reportable) reporter(sm *ServerMetrics, cm *ClientMetrics, rpcType in
 		}
 		r.serverMetrics.serverStartedCounter.WithLabelValues(string(r.typ), r.service, r.method).Inc()
 	}
-
-	// TODO: @yashrsharma44 - What should we use instead of the context.Background()?
-	return r, context.Background()
+	return r, ctx
 }
