@@ -66,8 +66,9 @@ func (s *RecoverySuite) TestUnary_SuccessfulRequest() {
 func (s *RecoverySuite) TestUnary_PanickingRequest() {
 	_, err := s.Client.Ping(s.SimpleCtx(), &testpb.PingRequest{Value: "panic"})
 	require.Error(s.T(), err, "there must be an error")
-	assert.Equal(s.T(), codes.Internal, status.Code(err), "must error with internal")
-	assert.Equal(s.T(), "very bad thing happened", status.Convert(err).Message(), "must error with message")
+	assert.Equal(s.T(), codes.Unknown, status.Code(err), "must error with unknown")
+	assert.Contains(s.T(), status.Convert(err).Message(), "panic caught", "must error with message")
+	assert.Contains(s.T(), status.Convert(err).Message(), "recovery.recoverFrom", "must include stack trace")
 }
 
 func (s *RecoverySuite) TestStream_SuccessfulReceive() {
@@ -83,8 +84,9 @@ func (s *RecoverySuite) TestStream_PanickingReceive() {
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	_, err = stream.Recv()
 	require.Error(s.T(), err, "there must be an error")
-	assert.Equal(s.T(), codes.Internal, status.Code(err), "must error with internal")
-	assert.Equal(s.T(), "very bad thing happened", status.Convert(err).Message(), "must error with message")
+	assert.Equal(s.T(), codes.Unknown, status.Code(err), "must error with unknown")
+	assert.Contains(s.T(), status.Convert(err).Message(), "panic caught", "must error with message")
+	assert.Contains(s.T(), status.Convert(err).Message(), "recovery.recoverFrom", "must include stack trace")
 }
 
 func TestRecoveryOverrideSuite(t *testing.T) {

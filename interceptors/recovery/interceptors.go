@@ -8,10 +8,10 @@ package recovery
 
 import (
 	"context"
+	"fmt"
+	"runtime"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // RecoveryHandlerFunc is a function that recovers from the panic `p` by returning an `error`.
@@ -50,8 +50,19 @@ func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 }
 
 func recoverFrom(ctx context.Context, p interface{}, r RecoveryHandlerFuncContext) error {
-	if r == nil {
-		return status.Errorf(codes.Internal, "%s", p)
+	if r != nil {
+		return r(ctx, p)
 	}
-	return r(ctx, p)
+	stack := make([]byte, 64<<10)
+	stack = stack[:runtime.Stack(stack, false)]
+	return &PanicError{Panic: p, Stack: stack}
+}
+
+type PanicError struct {
+	Panic interface{}
+	Stack []byte
+}
+
+func (e *PanicError) Error() string {
+	return fmt.Sprintf("panic caught: %v\n\n%s", e.Panic, e.Stack)
 }
