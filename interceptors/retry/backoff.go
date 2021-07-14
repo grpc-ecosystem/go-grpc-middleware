@@ -23,8 +23,8 @@ func JitterUp(duration time.Duration, jitter float64) time.Duration {
 	return time.Duration(float64(duration) * (1 + multiplier))
 }
 
-// ExponentBase2 computes 2^(a-1) where a >= 1. If a is 0, the result is 0.
-func ExponentBase2(a uint) uint {
+// exponentBase2 computes 2^(a-1) where a >= 1. If a is 0, the result is 0.
+func exponentBase2(a uint) uint {
 	return (1 << a) >> 1
 }
 
@@ -41,7 +41,7 @@ func BackoffLinearWithJitter(waitBetween time.Duration, jitterFraction float64) 
 // retry with a scalar of 100ms is 100ms, while the 5th attempt would be 1.6s.
 func BackoffExponential(scalar time.Duration) BackoffFunc {
 	return func(attempt uint) time.Duration {
-		return scalar * time.Duration(ExponentBase2(attempt))
+		return scalar * time.Duration(exponentBase2(attempt))
 	}
 }
 
@@ -49,6 +49,6 @@ func BackoffExponential(scalar time.Duration) BackoffFunc {
 // BackoffExponential does, but adds jitter.
 func BackoffExponentialWithJitter(scalar time.Duration, jitterFraction float64) BackoffFunc {
 	return func(attempt uint) time.Duration {
-		return JitterUp(scalar*time.Duration(ExponentBase2(attempt)), jitterFraction)
+		return JitterUp(scalar*time.Duration(exponentBase2(attempt)), jitterFraction)
 	}
 }
