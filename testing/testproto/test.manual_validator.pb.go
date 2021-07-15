@@ -23,7 +23,8 @@ func (p *PingResponse) Validate(bool) error {
 	return nil
 }
 
-// Implements the new validation interface at main branch from protoc-gen-validate.
+// Implements the new ValidateAll interface from protoc-gen-validate.
+// Check this PR for details: https://github.com/envoyproxy/protoc-gen-validate/pull/468.
 func (p *PingResponse) ValidateAll() error {
 	if p.Counter > math.MaxInt16 {
 		return errors.New("ping allocation exceeded")
