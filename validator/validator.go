@@ -12,6 +12,7 @@ import (
 )
 
 // The validateAller interface at protoc-gen-validate main branch.
+// See https://github.com/envoyproxy/protoc-gen-validate/pull/468.
 type validateAller interface {
 	ValidateAll() error
 }
