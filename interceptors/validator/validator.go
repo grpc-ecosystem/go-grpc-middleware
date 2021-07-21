@@ -63,11 +63,11 @@ func validate(req interface{}, all bool) error {
 // UnaryServerInterceptor returns a new unary server interceptor that validates incoming messages.
 //
 // Invalid messages will be rejected with `InvalidArgument` before reaching any userspace handlers.
-func UnaryServerInterceptor(validateAll ...bool) grpc.UnaryServerInterceptor {
-	var all = false
-	if len(validateAll) > 0 {
-		all = validateAll[0]
-	}
+// If `all` is false, the interceptor returns first validation error. Otherwise the interceptor
+// returns ALL validation error as a wrapped multi-error.
+// Note that generated codes prior to protoc-gen-validate v0.6.0 do not provide an all-validation
+// interface. In this case the interceptor fallbacks to legacy validation and `all` is ignored.
+func UnaryServerInterceptor(all bool) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		if err := validate(req, all); err != nil {
 			return nil, err
@@ -79,11 +79,11 @@ func UnaryServerInterceptor(validateAll ...bool) grpc.UnaryServerInterceptor {
 // UnaryClientInterceptor returns a new unary client interceptor that validates outgoing messages.
 //
 // Invalid messages will be rejected with `InvalidArgument` before sending the request to server.
-func UnaryClientInterceptor(validateAll ...bool) grpc.UnaryClientInterceptor {
-	var all = false
-	if len(validateAll) > 0 && validateAll[0] {
-		all = true
-	}
+// If `all` is false, the interceptor returns first validation error. Otherwise the interceptor
+// returns ALL validation error as a wrapped multi-error.
+// Note that generated codes prior to protoc-gen-validate v0.6.0 do not provide an all-validation
+// interface. In this case the interceptor fallbacks to legacy validation and `all` is ignored.
+func UnaryClientInterceptor(all bool) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		if err := validate(req, all); err != nil {
 			return err
@@ -94,15 +94,15 @@ func UnaryClientInterceptor(validateAll ...bool) grpc.UnaryClientInterceptor {
 
 // StreamServerInterceptor returns a new streaming server interceptor that validates incoming messages.
 //
+// If `all` is false, the interceptor returns first validation error. Otherwise the interceptor
+// returns ALL validation error as a wrapped multi-error.
+// Note that generated codes prior to protoc-gen-validate v0.6.0 do not provide an all-validation
+// interface. In this case the interceptor fallbacks to legacy validation and `all` is ignored.
 // The stage at which invalid messages will be rejected with `InvalidArgument` varies based on the
 // type of the RPC. For `ServerStream` (1:m) requests, it will happen before reaching any userspace
 // handlers. For `ClientStream` (n:1) or `BidiStream` (n:m) RPCs, the messages will be rejected on
 // calls to `stream.Recv()`.
-func StreamServerInterceptor(validateAll ...bool) grpc.StreamServerInterceptor {
-	var all = false
-	if len(validateAll) > 0 && validateAll[0] {
-		all = true
-	}
+func StreamServerInterceptor(all bool) grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		wrapper := &recvWrapper{
 			all:          all,

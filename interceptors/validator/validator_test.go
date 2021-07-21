@@ -38,8 +38,8 @@ func TestValidatorTestSuite(t *testing.T) {
 	s := &ValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ServerOpts: []grpc.ServerOption{
-				grpc.StreamInterceptor(StreamServerInterceptor()),
-				grpc.UnaryInterceptor(UnaryServerInterceptor()),
+				grpc.StreamInterceptor(StreamServerInterceptor(false)),
+				grpc.UnaryInterceptor(UnaryServerInterceptor(false)),
 			},
 		},
 	}
@@ -57,7 +57,7 @@ func TestValidatorTestSuite(t *testing.T) {
 	cs := &ClientValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ClientOpts: []grpc.DialOption{
-				grpc.WithUnaryInterceptor(UnaryClientInterceptor()),
+				grpc.WithUnaryInterceptor(UnaryClientInterceptor(false)),
 			},
 		},
 	}
