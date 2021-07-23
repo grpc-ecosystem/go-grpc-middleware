@@ -18,32 +18,58 @@ import (
 )
 
 func TestValidateWrapper(t *testing.T) {
-	assert.NoError(t, validate(testpb.GoodPing))
-	assert.Error(t, validate(testpb.BadPing))
+	assert.NoError(t, validate(testpb.GoodPing, false))
+	assert.Error(t, validate(testpb.BadPing, false))
+	assert.NoError(t, validate(testpb.GoodPing, true))
+	assert.Error(t, validate(testpb.BadPing, true))
 
-	assert.NoError(t, validate(testpb.GoodPingResponse))
-	assert.Error(t, validate(testpb.BadPingResponse))
+	assert.NoError(t, validate(testpb.GoodPingError, false))
+	assert.Error(t, validate(testpb.BadPingError, false))
+	assert.NoError(t, validate(testpb.GoodPingError, true))
+	assert.Error(t, validate(testpb.BadPingError, true))
+
+	assert.NoError(t, validate(testpb.GoodPingResponse, false))
+	assert.NoError(t, validate(testpb.GoodPingResponse, true))
+	assert.Error(t, validate(testpb.BadPingResponse, false))
+	assert.Error(t, validate(testpb.BadPingResponse, true))
 }
 
 func TestValidatorTestSuite(t *testing.T) {
 	s := &ValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ServerOpts: []grpc.ServerOption{
-				grpc.StreamInterceptor(StreamServerInterceptor()),
-				grpc.UnaryInterceptor(UnaryServerInterceptor()),
+				grpc.StreamInterceptor(StreamServerInterceptor(false)),
+				grpc.UnaryInterceptor(UnaryServerInterceptor(false)),
 			},
 		},
 	}
 	suite.Run(t, s)
+	sAll := &ValidatorTestSuite{
+		InterceptorTestSuite: &testpb.InterceptorTestSuite{
+			ServerOpts: []grpc.ServerOption{
+				grpc.StreamInterceptor(StreamServerInterceptor(true)),
+				grpc.UnaryInterceptor(UnaryServerInterceptor(true)),
+			},
+		},
+	}
+	suite.Run(t, sAll)
 
 	cs := &ClientValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ClientOpts: []grpc.DialOption{
-				grpc.WithUnaryInterceptor(UnaryClientInterceptor()),
+				grpc.WithUnaryInterceptor(UnaryClientInterceptor(false)),
 			},
 		},
 	}
 	suite.Run(t, cs)
+	csAll := &ClientValidatorTestSuite{
+		InterceptorTestSuite: &testpb.InterceptorTestSuite{
+			ClientOpts: []grpc.DialOption{
+				grpc.WithUnaryInterceptor(UnaryClientInterceptor(true)),
+			},
+		},
+	}
+	suite.Run(t, csAll)
 }
 
 type ValidatorTestSuite struct {

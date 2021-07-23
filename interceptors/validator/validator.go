@@ -11,6 +11,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// The validateAller interface at protoc-gen-validate main branch.
+// See https://github.com/envoyproxy/protoc-gen-validate/pull/468.
+type validateAller interface {
+	ValidateAll() error
+}
+
 // The validate interface starting with protoc-gen-validate v0.6.0.
 // See https://github.com/envoyproxy/protoc-gen-validate/pull/455.
 type validator interface {
@@ -22,9 +28,25 @@ type validatorLegacy interface {
 	Validate() error
 }
 
-// Calls the Validate function on a proto message using either the current or legacy interface if the Validate function
-// is present. If validation fails, the error is wrapped with `InvalidArgument` and returned.
-func validate(req interface{}) error {
+func validate(req interface{}, all bool) error {
+	if all {
+		switch v := req.(type) {
+		case validateAller:
+			if err := v.ValidateAll(); err != nil {
+				return status.Error(codes.InvalidArgument, err.Error())
+			}
+		case validator:
+			if err := v.Validate(true); err != nil {
+				return status.Error(codes.InvalidArgument, err.Error())
+			}
+		case validatorLegacy:
+			// Fallback to legacy validator
+			if err := v.Validate(); err != nil {
+				return status.Error(codes.InvalidArgument, err.Error())
+			}
+		}
+		return nil
+	}
 	switch v := req.(type) {
 	case validatorLegacy:
 		if err := v.Validate(); err != nil {
@@ -41,9 +63,13 @@ func validate(req interface{}) error {
 // UnaryServerInterceptor returns a new unary server interceptor that validates incoming messages.
 //
 // Invalid messages will be rejected with `InvalidArgument` before reaching any userspace handlers.
-func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
+// If `all` is false, the interceptor returns first validation error. Otherwise the interceptor
+// returns ALL validation error as a wrapped multi-error.
+// Note that generated codes prior to protoc-gen-validate v0.6.0 do not provide an all-validation
+// interface. In this case the interceptor fallbacks to legacy validation and `all` is ignored.
+func UnaryServerInterceptor(all bool) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		if err := validate(req); err != nil {
+		if err := validate(req, all); err != nil {
 			return nil, err
 		}
 		return handler(ctx, req)
@@ -53,9 +79,13 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 // UnaryClientInterceptor returns a new unary client interceptor that validates outgoing messages.
 //
 // Invalid messages will be rejected with `InvalidArgument` before sending the request to server.
-func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
+// If `all` is false, the interceptor returns first validation error. Otherwise the interceptor
+// returns ALL validation error as a wrapped multi-error.
+// Note that generated codes prior to protoc-gen-validate v0.6.0 do not provide an all-validation
+// interface. In this case the interceptor fallbacks to legacy validation and `all` is ignored.
+func UnaryClientInterceptor(all bool) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		if err := validate(req); err != nil {
+		if err := validate(req, all); err != nil {
 			return err
 		}
 		return invoker(ctx, method, req, reply, cc, opts...)
@@ -64,18 +94,26 @@ func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 
 // StreamServerInterceptor returns a new streaming server interceptor that validates incoming messages.
 //
+// If `all` is false, the interceptor returns first validation error. Otherwise the interceptor
+// returns ALL validation error as a wrapped multi-error.
+// Note that generated codes prior to protoc-gen-validate v0.6.0 do not provide an all-validation
+// interface. In this case the interceptor fallbacks to legacy validation and `all` is ignored.
 // The stage at which invalid messages will be rejected with `InvalidArgument` varies based on the
 // type of the RPC. For `ServerStream` (1:m) requests, it will happen before reaching any userspace
 // handlers. For `ClientStream` (n:1) or `BidiStream` (n:m) RPCs, the messages will be rejected on
 // calls to `stream.Recv()`.
-func StreamServerInterceptor() grpc.StreamServerInterceptor {
+func StreamServerInterceptor(all bool) grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		wrapper := &recvWrapper{stream}
+		wrapper := &recvWrapper{
+			all:          all,
+			ServerStream: stream,
+		}
 		return handler(srv, wrapper)
 	}
 }
 
 type recvWrapper struct {
+	all bool
 	grpc.ServerStream
 }
 
@@ -83,7 +121,7 @@ func (s *recvWrapper) RecvMsg(m interface{}) error {
 	if err := s.ServerStream.RecvMsg(m); err != nil {
 		return err
 	}
-	if err := validate(m); err != nil {
+	if err := validate(m, s.all); err != nil {
 		return err
 	}
 	return nil
