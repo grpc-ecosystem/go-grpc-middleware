@@ -1,7 +1,7 @@
 // Copyright (c) The go-grpc-middleware Authors.
 // Licensed under the Apache License 2.0.
 
-package retry_test
+package retry
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
@@ -20,20 +19,20 @@ var cc *grpc.ClientConn
 // Simple example of using the default interceptor configuration.
 func Example_initialization() {
 	_, _ = grpc.Dial("myservice.example.com",
-		grpc.WithStreamInterceptor(retry.StreamClientInterceptor()),
-		grpc.WithUnaryInterceptor(retry.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(StreamClientInterceptor()),
+		grpc.WithUnaryInterceptor(UnaryClientInterceptor()),
 	)
 }
 
 // Complex example with a 100ms linear backoff interval, and retry only on NotFound and Unavailable.
 func Example_initializationWithOptions() {
-	opts := []retry.CallOption{
-		retry.WithBackoff(retry.BackoffLinear(100 * time.Millisecond)),
-		retry.WithCodes(codes.NotFound, codes.Aborted),
+	opts := []CallOption{
+		WithBackoff(BackoffLinear(100 * time.Millisecond)),
+		WithCodes(codes.NotFound, codes.Aborted),
 	}
 	_, _ = grpc.Dial("myservice.example.com",
-		grpc.WithStreamInterceptor(retry.StreamClientInterceptor(opts...)),
-		grpc.WithUnaryInterceptor(retry.UnaryClientInterceptor(opts...)),
+		grpc.WithStreamInterceptor(StreamClientInterceptor(opts...)),
+		grpc.WithUnaryInterceptor(UnaryClientInterceptor(opts...)),
 	)
 }
 
@@ -41,12 +40,12 @@ func Example_initializationWithOptions() {
 //
 // Each next interval is the previous interval multiplied by 2.
 func Example_initializationWithExponentialBackoff() {
-	opts := []retry.CallOption{
-		retry.WithBackoff(retry.BackoffExponential(100 * time.Millisecond)),
+	opts := []CallOption{
+		WithBackoff(BackoffExponential(100 * time.Millisecond)),
 	}
 	_, _ = grpc.Dial("myservice.example.com",
-		grpc.WithStreamInterceptor(retry.StreamClientInterceptor(opts...)),
-		grpc.WithUnaryInterceptor(retry.UnaryClientInterceptor(opts...)),
+		grpc.WithStreamInterceptor(StreamClientInterceptor(opts...)),
+		grpc.WithUnaryInterceptor(UnaryClientInterceptor(opts...)),
 	)
 }
 
@@ -56,7 +55,7 @@ func Example_simpleCall() {
 	defer cancel()
 
 	client := testpb.NewTestServiceClient(cc)
-	stream, _ := client.PingList(ctx, &testpb.PingListRequest{}, retry.WithMax(3))
+	stream, _ := client.PingList(ctx, &testpb.PingListRequest{}, WithMax(3))
 
 	for {
 		_, err := stream.Recv() // retries happen here
@@ -85,8 +84,8 @@ func ExampleWithPerRetryTimeout() {
 	_, _ = client.Ping(
 		ctx,
 		&testpb.PingRequest{},
-		retry.WithMax(3),
-		retry.WithPerRetryTimeout(1*time.Second))
+		WithMax(3),
+		WithPerRetryTimeout(1*time.Second))
 }
 
 // Scale duration by a factor.

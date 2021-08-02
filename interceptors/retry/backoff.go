@@ -15,10 +15,10 @@ func BackoffLinear(waitBetween time.Duration) BackoffFunc {
 	}
 }
 
-// JitterUp adds random jitter to the duration.
+// jitterUp adds random jitter to the duration.
 // This adds or subtracts time from the duration within a given jitter fraction.
 // For example for 10s and jitter 0.1, it will return a time within [9s, 11s])
-func JitterUp(duration time.Duration, jitter float64) time.Duration {
+func jitterUp(duration time.Duration, jitter float64) time.Duration {
 	multiplier := jitter * (rand.Float64()*2 - 1)
 	return time.Duration(float64(duration) * (1 + multiplier))
 }
@@ -32,7 +32,7 @@ func exponentBase2(a uint) uint {
 // For example waitBetween=1s and jitter=0.10 can generate waits between 900ms and 1100ms.
 func BackoffLinearWithJitter(waitBetween time.Duration, jitterFraction float64) BackoffFunc {
 	return func(attempt uint) time.Duration {
-		return JitterUp(waitBetween, jitterFraction)
+		return jitterUp(waitBetween, jitterFraction)
 	}
 }
 
@@ -49,6 +49,6 @@ func BackoffExponential(scalar time.Duration) BackoffFunc {
 // BackoffExponential does, but adds jitter.
 func BackoffExponentialWithJitter(scalar time.Duration, jitterFraction float64) BackoffFunc {
 	return func(attempt uint) time.Duration {
-		return JitterUp(scalar*time.Duration(exponentBase2(attempt)), jitterFraction)
+		return jitterUp(scalar*time.Duration(exponentBase2(attempt)), jitterFraction)
 	}
 }
