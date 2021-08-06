@@ -152,7 +152,7 @@ func PayloadUnaryServerInterceptor(logger Logger, decider ServerPayloadLoggingDe
 	return interceptors.UnaryServerInterceptor(&payloadReportable{logger: logger, serverDecider: decider, timestampFormat: timestampFormat})
 }
 
-// PayloadStreamServerInterceptor returns a new server server interceptors that logs the payloads of requests on INFO level.
+// PayloadStreamServerInterceptor returns a new server interceptors that logs the payloads of requests on INFO level.
 // Logger tags will be used from tags context.
 func PayloadStreamServerInterceptor(logger Logger, decider ServerPayloadLoggingDecider, timestampFormat string) grpc.StreamServerInterceptor {
 	return interceptors.StreamServerInterceptor(&payloadReportable{logger: logger, serverDecider: decider, timestampFormat: timestampFormat})
