@@ -30,11 +30,9 @@ func Example_initializationWithCustomLevels() {
 	// Create a server, make sure we put the tags context before everything else.
 	_ = grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			tags.UnaryServerInterceptor(),
 			logging.UnaryServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
 		grpc.ChainStreamInterceptor(
-			tags.StreamServerInterceptor(),
 			logging.StreamServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
 	)
@@ -50,7 +48,6 @@ func Example_initializationWithDurationFieldOverride() {
 	// Create a server, make sure we put the tags context before everything else.
 	_ = grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			tags.UnaryServerInterceptor(),
 			logging.UnaryServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
 		grpc.ChainStreamInterceptor(

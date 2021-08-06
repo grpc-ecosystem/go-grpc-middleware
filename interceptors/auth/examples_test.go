@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
 var tokenInfoKey struct{}
@@ -38,12 +38,10 @@ func exampleAuthFunc(ctx context.Context) (context.Context, error) {
 		return nil, status.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
 	}
 
-	tags.Extract(ctx).Set("auth.sub", userClaimFromToken(tokenInfo))
+	ctx = logging.InjectFields(ctx, logging.Fields{"auth.sub", userClaimFromToken(tokenInfo)})
 
-	// WARNING: in production define your own type to avoid context collisions
-	newCtx := context.WithValue(ctx, tokenInfoKey, tokenInfo)
-
-	return newCtx, nil
+	// WARNING: In production define your own type to avoid context collisions.
+	return context.WithValue(ctx, tokenInfoKey, tokenInfo), nil
 }
 
 // Simple example of server initialization code

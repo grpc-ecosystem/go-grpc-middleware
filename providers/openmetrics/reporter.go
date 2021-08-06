@@ -68,12 +68,12 @@ type reportable struct {
 	serverMetrics *ServerMetrics
 }
 
-func (rep *reportable) ServerReporter(ctx context.Context, _ interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
-	return rep.reporter(ctx, rep.serverMetrics, nil, typ, service, method, KindServer)
+func (rep *reportable) ServerReporter(ctx context.Context, meta interceptors.CallMeta) (interceptors.Reporter, context.Context) {
+	return rep.reporter(ctx, rep.serverMetrics, nil, meta.Typ, meta.Service, meta.Method, KindServer)
 }
 
-func (rep *reportable) ClientReporter(ctx context.Context, _ interface{}, typ interceptors.GRPCType, service string, method string) (interceptors.Reporter, context.Context) {
-	return rep.reporter(ctx, nil, rep.clientMetrics, typ, service, method, KindClient)
+func (rep *reportable) ClientReporter(ctx context.Context, meta interceptors.CallMeta) (interceptors.Reporter, context.Context) {
+	return rep.reporter(ctx, nil, rep.clientMetrics, meta.Typ, meta.Service, meta.Method, KindClient)
 }
 
 func (rep *reportable) reporter(ctx context.Context, sm *ServerMetrics, cm *ClientMetrics, rpcType interceptors.GRPCType, service, method string, kind Kind) (interceptors.Reporter, context.Context) {
