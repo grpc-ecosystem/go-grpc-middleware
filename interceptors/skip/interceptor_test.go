@@ -19,7 +19,6 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/skip"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
@@ -29,8 +28,13 @@ const (
 	keyMethod   = "skip.method"
 )
 
+var ctxKey = &ctxKeMarker{}
+
+type ctxKeMarker struct{}
+
 func skipped(ctx context.Context) bool {
-	return len(tags.Extract(ctx).Values()) <= 0
+	val, ok := ctx.Value(ctxKey).(bool)
+	return !ok || !val
 }
 
 type skipPingService struct {
@@ -90,13 +94,27 @@ func filter(ctx context.Context, gRPCType interceptors.GRPCType, service string,
 	return true
 }
 
+type withContextStream struct {
+	grpc.ServerStream
+
+	ctx context.Context
+}
+
+func (s *withContextStream) Context() context.Context {
+	return s.ctx
+}
+
 func TestSkipSuite(t *testing.T) {
 	s := &SkipSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			TestService: &skipPingService{&testpb.TestPingService{T: t}},
 			ServerOpts: []grpc.ServerOption{
-				grpc.UnaryInterceptor(skip.UnaryServerInterceptor(tags.UnaryServerInterceptor(), filter)),
-				grpc.StreamInterceptor(skip.StreamServerInterceptor(tags.StreamServerInterceptor(), filter)),
+				grpc.UnaryInterceptor(skip.UnaryServerInterceptor(func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+					return handler(context.WithValue(ctx, ctxKey, true), req)
+				}, filter)),
+				grpc.StreamInterceptor(skip.StreamServerInterceptor(func(srv interface{}, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+					return handler(srv, &withContextStream{ServerStream: ss, ctx: context.WithValue(ss.Context(), ctxKey, true)})
+				}, filter)),
 			},
 		},
 	}
