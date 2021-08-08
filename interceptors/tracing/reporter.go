@@ -1,3 +1,6 @@
+// Copyright (c) The go-grpc-middleware Authors.
+// Licensed under the Apache License 2.0.
+
 package tracing
 
 import (
@@ -5,9 +8,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tracing/kv"
 )
