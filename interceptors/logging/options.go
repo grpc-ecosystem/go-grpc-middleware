@@ -6,6 +6,9 @@ package logging
 import (
 	"fmt"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -29,9 +32,6 @@ type options struct {
 
 type Option func(*options)
 
-// DurationToFields function defines how to produce duration fields for logging.
-type DurationToFields func(duration time.Duration) Fields
-
 func evaluateServerOpt(opts []Option) *options {
 	optCopy := &options{}
 	*optCopy = *defaultOptions
@@ -50,6 +50,62 @@ func evaluateClientOpt(opts []Option) *options {
 		o(optCopy)
 	}
 	return optCopy
+}
+
+// DurationToFields function defines how to produce duration fields for logging.
+type DurationToFields func(duration time.Duration) Fields
+
+// ErrorToCode function determines the error code of an error.
+// This makes using custom errors with grpc middleware easier.
+type ErrorToCode func(err error) codes.Code
+
+func DefaultErrorToCode(err error) codes.Code {
+	return status.Code(err)
+}
+
+// Decider function defines rules for suppressing any interceptor logs.
+type Decider func(fullMethodName string, err error) Decision
+
+// DefaultDeciderMethod is the default implementation of decider to see if you should log the call
+// by default this if always true so all calls are logged.
+func DefaultDeciderMethod(_ string, _ error) Decision {
+	return LogStartAndFinishCall
+}
+
+// CodeToLevel function defines the mapping between gRPC return codes and interceptor log level.
+type CodeToLevel func(code codes.Code) Level
+
+// DefaultServerCodeToLevel is the helper mapper that maps gRPC return codes to log levels for server side.
+func DefaultServerCodeToLevel(code codes.Code) Level {
+	switch code {
+	case codes.OK, codes.NotFound, codes.Canceled, codes.AlreadyExists, codes.InvalidArgument, codes.Unauthenticated:
+		return INFO
+
+	case codes.DeadlineExceeded, codes.PermissionDenied, codes.ResourceExhausted, codes.FailedPrecondition, codes.Aborted,
+		codes.OutOfRange, codes.Unavailable:
+		return WARNING
+
+	case codes.Unknown, codes.Unimplemented, codes.Internal, codes.DataLoss:
+		return ERROR
+
+	default:
+		return ERROR
+	}
+}
+
+// DefaultClientCodeToLevel is the helper mapper that maps gRPC return codes to log levels for client side.
+func DefaultClientCodeToLevel(code codes.Code) Level {
+	switch code {
+	case codes.OK, codes.Canceled, codes.InvalidArgument, codes.NotFound, codes.AlreadyExists, codes.ResourceExhausted,
+		codes.FailedPrecondition, codes.Aborted, codes.OutOfRange:
+		return DEBUG
+	case codes.Unknown, codes.DeadlineExceeded, codes.PermissionDenied, codes.Unauthenticated:
+		return INFO
+	case codes.Unimplemented, codes.Internal, codes.Unavailable, codes.DataLoss:
+		return WARNING
+	default:
+		return INFO
+	}
 }
 
 // WithDecider customizes the function for deciding if the gRPC interceptor logs should log.
