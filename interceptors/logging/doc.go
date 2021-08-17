@@ -5,7 +5,7 @@
 Package logging is a "parent" package for gRPC logging middlewares.
 
 The gRPC logging middleware populates request-scoped data to `logging.Fields` that relate to the current gRPC call
-(e.g. service and method names). You can leverage that data using `logging.ExtractFields` and `logging.InjectFields`.
+(e.g. service and method names). You can extract/inject data in the propagated context using `logging.ExtractFields` and `logging.InjectFields`.
 
 Once the gRPC logging middleware has added the gRPC specific Fields to the ctx they will then be written with the log lines.
 

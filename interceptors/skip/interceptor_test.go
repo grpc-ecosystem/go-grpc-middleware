@@ -28,9 +28,9 @@ const (
 	keyMethod   = "skip.method"
 )
 
-var ctxKey = &ctxKeMarker{}
+var ctxKey = &ctxKeyMarker{}
 
-type ctxKeMarker struct{}
+type ctxKeyMarker struct{}
 
 func skipped(ctx context.Context) bool {
 	val, ok := ctx.Value(ctxKey).(bool)
