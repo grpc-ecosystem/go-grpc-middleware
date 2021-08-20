@@ -14,25 +14,26 @@ import (
 )
 
 func Test_zapGrpcLogger_V(t *testing.T) {
-	// copied from gRPC
 	const (
-		// infoLog indicates Info severity.
-		infoLog int = iota
-		// warningLog indicates Warning severity.
-		warningLog
-		// errorLog indicates Error severity.
-		errorLog
-		// fatalLog indicates Fatal severity.
-		fatalLog
+		// The default verbosity level.
+		// See https://github.com/grpc/grpc-go/blob/8ab16ef276a33df4cdb106446eeff40ff56a6928/grpclog/loggerv2.go#L108.
+		normal = 0
+
+		// Currently the only level of "being verbose".
+		// For example https://github.com/grpc/grpc-go/blob/8ab16ef276a33df4cdb106446eeff40ff56a6928/grpclog/grpclog.go#L21.
+		verbose = 2
+
+		// As is mentioned in https://github.com/grpc/grpc-go/blob/8ab16ef276a33df4cdb106446eeff40ff56a6928/README.md#how-to-turn-on-logging,
+		// though currently not being used in the code.
+		extremelyVerbose = 99
 	)
 
 	core, _ := observer.New(zapcore.DebugLevel)
 	logger := zap.New(core)
-	ReplaceGrpcLoggerV2WithVerbosity(logger, warningLog)
-	assert.False(t, grpclog.V(infoLog))
-	assert.True(t, grpclog.V(warningLog))
-	assert.True(t, grpclog.V(errorLog))
-	assert.True(t, grpclog.V(fatalLog))
+	ReplaceGrpcLoggerV2WithVerbosity(logger, verbose)
+	assert.True(t, grpclog.V(normal))
+	assert.True(t, grpclog.V(verbose))
+	assert.False(t, grpclog.V(extremelyVerbose))
 }
 
 func TestReplaceGrpcLoggerV2(t *testing.T) {

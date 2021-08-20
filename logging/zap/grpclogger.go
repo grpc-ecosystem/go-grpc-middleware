@@ -133,5 +133,7 @@ func (l *zapGrpcLoggerV2) Fatalf(format string, args ...interface{}) {
 }
 
 func (l *zapGrpcLoggerV2) V(level int) bool {
-	return l.verbosity <= level
+	// Check whether the verbosity of the current log ('level') is within the specified threshold ('l.verbosity').
+	// As in https://github.com/grpc/grpc-go/blob/41e044e1c82fcf6a5801d6cbd7ecf952505eecb1/grpclog/loggerv2.go#L199-L201.
+	return level <= l.verbosity
 }
