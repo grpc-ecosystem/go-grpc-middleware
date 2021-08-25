@@ -37,13 +37,11 @@ func (o *reporter) PostCall(err error, _ time.Duration) {
 
 func (o *reporter) PostMsgSend(payload interface{}, err error, d time.Duration) {
 	o.sentMessageID++
-
 	addEvent(o.span, RPCMessageTypeSent, o.sentMessageID, payload)
 }
 
 func (o *reporter) PostMsgReceive(payload interface{}, err error, d time.Duration) {
 	o.receivedMessageID++
-
 	addEvent(o.span, RPCMessageTypeReceived, o.receivedMessageID, payload)
 }
 
