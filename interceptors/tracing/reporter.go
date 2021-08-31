@@ -52,12 +52,12 @@ func addEvent(span Span, messageType kv.KeyValue, messageID int, payload interfa
 			rpcMessageIDKey.Int(messageID),
 			rpcMessageUncompressedSizeKey.Int(proto.Size(p)),
 		)
-	} else {
-		span.AddEvent("message",
-			messageType,
-			rpcMessageIDKey.Int(messageID),
-		)
+		return
 	}
+	span.AddEvent("message",
+		messageType,
+		rpcMessageIDKey.Int(messageID),
+	)
 }
 
 // statusCodeAttr returns status code attribute based on given gRPC code
