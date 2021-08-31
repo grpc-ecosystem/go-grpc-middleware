@@ -113,6 +113,7 @@ func (s *InterceptorTestSuite) RestartServer(delayedStart time.Duration) <-chan 
 
 func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) TestServiceClient {
 	newDialOpts := append(dialOpts, grpc.WithBlock())
+	var err error
 	if *flagTls {
 		cp := x509.NewCertPool()
 		if !cp.AppendCertsFromPEM(certPEM) {
@@ -125,9 +126,9 @@ func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) TestServic
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	clientConn, err := grpc.DialContext(ctx, s.ServerAddr(), newDialOpts...)
+	s.clientConn, err = grpc.DialContext(ctx, s.ServerAddr(), newDialOpts...)
 	require.NoError(s.T(), err, "must not error on client Dial")
-	return NewTestServiceClient(clientConn)
+	return NewTestServiceClient(s.clientConn)
 }
 
 func (s *InterceptorTestSuite) ServerAddr() string {
