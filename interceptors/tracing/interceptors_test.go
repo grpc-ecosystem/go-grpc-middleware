@@ -104,7 +104,6 @@ func (t *mockTracer) Start(ctx context.Context, spanName string, kind tracing.Sp
 		statusCode: codes.OK,
 	}
 
-	// parentSpan := spanFromContext(ctx)
 	parentSpan := extractFromContext(ctx, kind)
 	if parentSpan != nil {
 		// Fetch span from context as parent span
@@ -115,8 +114,6 @@ func (t *mockTracer) Start(ctx context.Context, spanName string, kind tracing.Sp
 	}
 
 	t.spanStore[span.spanID] = &span
-
-	// ctx = contextWithSpan(ctx, &span)
 	if kind == tracing.SpanKindClient {
 		ctx = injectWithContext(ctx, &span, kind)
 	}
