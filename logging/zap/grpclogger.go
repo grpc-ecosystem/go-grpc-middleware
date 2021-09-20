@@ -47,14 +47,16 @@ func (l *zapGrpcLogger) Println(args ...interface{}) {
 	l.logger.Info(fmt.Sprint(args...))
 }
 
-// ReplaceGrpcLoggerV2 replaces the grpc_log.LoggerV2 with the provided logger.
-// It should be called before any gRPC functions.
+// ReplaceGrpcLoggerV2 replaces the grpclog.LoggerV2 with the provided logger.
+// It should be called before any gRPC functions. Logging verbosity defaults to info level.
+// To adjust gRPC logging verbosity, see ReplaceGrpcLoggerV2WithVerbosity.
 func ReplaceGrpcLoggerV2(logger *zap.Logger) {
 	ReplaceGrpcLoggerV2WithVerbosity(logger, 0)
 }
 
-// ReplaceGrpcLoggerV2WithVerbosity replaces the grpc_.LoggerV2 with the provided logger and verbosity.
+// ReplaceGrpcLoggerV2WithVerbosity replaces the grpclog.Logger with the provided logger and verbosity.
 // It should be called before any gRPC functions.
+// verbosity correlates to grpclogs verbosity levels. A higher verbosity value results in less logging.
 func ReplaceGrpcLoggerV2WithVerbosity(logger *zap.Logger, verbosity int) {
 	zgl := &zapGrpcLoggerV2{
 		logger:    logger.With(SystemField, zap.Bool("grpc_log", true)).WithOptions(zap.AddCallerSkip(2)),
@@ -63,7 +65,7 @@ func ReplaceGrpcLoggerV2WithVerbosity(logger *zap.Logger, verbosity int) {
 	grpclog.SetLoggerV2(zgl)
 }
 
-// SetGrpcLoggerV2 replaces the grpc_log.LoggerV2 with the provided logger.
+// SetGrpcLoggerV2 replaces the grpc_log.Logger with the provided logger.
 // It can be used even when grpc infrastructure was initialized.
 func SetGrpcLoggerV2(settable grpc_logsettable.SettableLoggerV2, logger *zap.Logger) {
 	SetGrpcLoggerV2WithVerbosity(settable, logger, 0)
