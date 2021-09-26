@@ -6,9 +6,8 @@
 title: Go gRPC Middleware
 description: Go gRPC Middleware Documentation Website
 baseurl: "/go-grpc-middleware" # the subpath of your site, e.g. /blog
-url: "https://iamrajiv.github.io/go-grpc-middleware" # the base hostname & protocol for your site, e.g. http://example.com
-
-repository: iamrajiv/go-grpc-middleware
+url: "https://grpc-ecosystem.github.io/go-grpc-middleware" # the base hostname & protocol for your site, e.g. http://example.com
+repository: grpc-ecosystem/go-grpc-middleware
 remote_theme: pmarsceill/just-the-docs
 
 permalink: pretty
