@@ -1,8 +1,21 @@
-<div align="center">
-<h1>Go gRPC Middleware</h1>
-<p>
-<a href="https://github.com/grpc/grpc-go">gRPC Go</a> Middleware: interceptors, helpers, utilities.
-</p>
+---
+layout: default
+title: Go gRPC Middleware
+nav_order: 0
+description: 'Documentation site for the Go gRPC Middleware'
+permalink: /
+---
+
+# Go gRPC Middleware
+{: .fs-9 }
+
+Go gRPC Middleware is a collection of gRPC middleware packages: interceptors, helpers and tools
+{: .fs-6 .fw-300 }
+
+[Get started](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 } [View it on GitHub](https://github.com/grpc-ecosystem/go-grpc-middleware){: .btn .fs-5 .mb-4 .mb-md-0 }
+
+## Getting started
+
 <a href="https://travis-ci.org/grpc-ecosystem/go-grpc-middleware"><img src="https://img.shields.io/travis/grpc-ecosystem/go-grpc-middleware?logo=travis&logoColor=ffffff&style=flat-square"/></a>
 <a href="https://goreportcard.com/report/github.com/grpc-ecosystem/go-grpc-middleware"><img src="https://goreportcard.com/badge/github.com/grpc-ecosystem/go-grpc-middleware?style=flat-square"/></a>
 <img src="http://img.shields.io/badge/Godoc-Reference-blue?logoColor=ffffff&style=flat-square"/>
@@ -13,7 +26,6 @@
 <a href="https://github.com/grpc-ecosystem/go-grpc-middleware/stargazers"><img src="https://img.shields.io/github/stars/grpc-ecosystem/go-grpc-middleware?style=flat-square"/></a>
 <a href="https://github.com/grpc-ecosystem/go-grpc-middleware/releases"><img src="https://img.shields.io/github/v/release/grpc-ecosystem/go-grpc-middleware?logoColor=ffffff&style=flat-square"/></a>
 <a href="https://gophers.slack.com/archives/CNJL30P4P"><img src="https://img.shields.io/badge/slack-grpc--gateway-379c9c?logo=slack&logoColor=ffffff&style=flat-square"/></a>
-</div>
 
 ## Middleware
 
@@ -84,8 +96,20 @@ _Please send a PR to add new interceptors or middleware to this list_
 
 This code has been running in _production_ since May 2016 as the basis of the gRPC microservices stack at [Improbable](https://improbable.io).
 
-Additional tooling will be added, and contributions are welcome.
+## Contribution
+
+See [CONTRIBUTING.md](https://github.com/grpc-ecosystem/go-grpc-middleware/blob/master/CONTRIBUTING.md).
 
 ## License
 
 Go gRPC Middleware is released under the Apache 2.0 License. See [LICENSE](https://github.com/grpc-ecosystem/go-grpc-middleware/blob/master/LICENSE) for more details.
+
+### Thank you to the contributors of Go gRPC Middleware
+
+<ul class="list-style-none">
+{% for contributor in site.github.contributors %}
+<li class="d-inline-block mr-1">
+<a href="{{ contributor.html_url }}"><img src="{{ contributor.avatar_url }}" width="32" height="32" alt="{{ contributor.login }}"/></a>
+</li>
+{% endfor %}
+</ul>
