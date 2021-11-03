@@ -20,6 +20,13 @@ var (
 	JsonPbMarshaller grpc_logging.JsonPbMarshaler = &jsonpb.Marshaler{}
 )
 
+// LoggerFactory Helps instantiate a logger
+type LoggerFactory interface {
+
+	// GetLogger fetches a context based logger
+	GetLogger(ctx context.Context) *zap.Logger
+}
+
 // PayloadUnaryServerInterceptor returns a new unary server interceptors that logs the payloads of requests.
 //
 // This *only* works when placed *after* the `grpc_zap.UnaryServerInterceptor`. However, the logging can be done to a
@@ -29,14 +36,7 @@ func PayloadUnaryServerInterceptor(logger *zap.Logger, decider grpc_logging.Serv
 		if !decider(ctx, info.FullMethod, info.Server) {
 			return handler(ctx, req)
 		}
-		// Use the provided zap.Logger for logging but use the fields from context.
-		logEntry := logger.With(append(serverCallFields(info.FullMethod), ctxzap.TagsToFields(ctx)...)...)
-		logProtoMessageAsJson(logEntry, req, "grpc.request.content", "server request payload logged as grpc.request.content field")
-		resp, err := handler(ctx, req)
-		if err == nil {
-			logProtoMessageAsJson(logEntry, resp, "grpc.response.content", "server response payload logged as grpc.response.content field")
-		}
-		return resp, err
+		return logAndHandleUnaryCall(ctx, logger, req, info, handler)
 	}
 }
 
@@ -81,6 +81,46 @@ func PayloadStreamClientInterceptor(logger *zap.Logger, decider grpc_logging.Cli
 		clientStream, err := streamer(ctx, desc, cc, method, opts...)
 		newStream := &loggingClientStream{ClientStream: clientStream, logger: logEntry}
 		return newStream, err
+	}
+}
+
+// FactoryBasedPayloadUnaryServerInterceptor returns a new unary server interceptors that logs the payloads of requests.
+//
+// This *only* works when placed *after* the `grpc_zap.UnaryServerInterceptor`. However, the logging can be done to a
+// separate instance of the logger.
+func FactoryBasedPayloadUnaryServerInterceptor(loggerFactory LoggerFactory, decider grpc_logging.ServerPayloadLoggingDecider) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		if !decider(ctx, info.FullMethod, info.Server) {
+			return handler(ctx, req)
+		}
+		return logAndHandleUnaryCall(ctx, loggerFactory.GetLogger(ctx), req, info, handler)
+	}
+}
+
+func logAndHandleUnaryCall(ctx context.Context, logger *zap.Logger, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	// Use the provided zap.Logger for logging but use the fields from context.
+	logEntry := logger.With(append(serverCallFields(info.FullMethod), ctxzap.TagsToFields(ctx)...)...)
+	logProtoMessageAsJson(logEntry, req, "grpc.request.content", "server request payload logged as grpc.request.content field")
+	resp, err := handler(ctx, req)
+	if err == nil {
+		logProtoMessageAsJson(logEntry, resp, "grpc.response.content", "server response payload logged as grpc.response.content field")
+	}
+	return resp, err
+}
+
+// FactoryBasedPayloadUnaryClientInterceptor returns a new unary client interceptor that logs the payloads of requests and responses.
+func FactoryBasedPayloadUnaryClientInterceptor(loggerFactory LoggerFactory, decider grpc_logging.ClientPayloadLoggingDecider) grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		if !decider(ctx, method) {
+			return invoker(ctx, method, req, reply, cc, opts...)
+		}
+		logEntry := loggerFactory.GetLogger(ctx).With(newClientLoggerFields(ctx, method)...)
+		logProtoMessageAsJson(logEntry, req, "grpc.request.content", "client request payload logged as grpc.request.content")
+		err := invoker(ctx, method, req, reply, cc, opts...)
+		if err == nil {
+			logProtoMessageAsJson(logEntry, reply, "grpc.response.content", "client response payload logged as grpc.response.content")
+		}
+		return err
 	}
 }
 
