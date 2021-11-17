@@ -1,22 +1,15 @@
 package grpc_logrus
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging"
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus/ctxlogrus"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-)
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
-var (
-	// JsonPbMarshaller is the marshaller used for serializing protobuf messages.
-	// If needed, this variable can be reassigned with a different marshaller with the same Marshal() signature.
-	JsonPbMarshaller grpc_logging.JsonPbMarshaler = &jsonpb.Marshaler{}
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus/ctxlogrus"
 )
 
 // PayloadUnaryServerInterceptor returns a new unary server interceptors that logs the payloads of requests.
@@ -137,9 +130,5 @@ type jsonpbMarshalleble struct {
 }
 
 func (j *jsonpbMarshalleble) MarshalJSON() ([]byte, error) {
-	b := &bytes.Buffer{}
-	if err := JsonPbMarshaller.Marshal(b, j.Message); err != nil {
-		return nil, fmt.Errorf("jsonpb serializer failed: %v", err)
-	}
-	return b.Bytes(), nil
+	return protojson.Marshal(j.Message)
 }

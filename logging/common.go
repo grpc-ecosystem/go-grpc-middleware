@@ -7,9 +7,9 @@ import (
 	"context"
 	"io"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 // ErrorToCode function determines the error code of an error
@@ -37,7 +37,7 @@ type ServerPayloadLoggingDecider func(ctx context.Context, fullMethodName string
 // request/response payloads
 type ClientPayloadLoggingDecider func(ctx context.Context, fullMethodName string) bool
 
-// JsonPbMarshaller is a marshaller that serializes protobuf messages.
+// JsonPbMarshaler is a marshaller that serializes protobuf messages.
 type JsonPbMarshaler interface {
 	Marshal(out io.Writer, pb proto.Message) error
 }
