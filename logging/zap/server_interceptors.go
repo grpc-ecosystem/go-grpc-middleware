@@ -20,13 +20,23 @@ var (
 	ServerField = zap.String("span.kind", "server")
 )
 
+type extractLogger = func(ctx context.Context) *zap.Logger
+
 // UnaryServerInterceptor returns a new unary server interceptors that adds zap.Logger to the context.
 func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServerInterceptor {
+	return LoggingUnaryServerInterceptor(
+		func(_ context.Context) *zap.Logger {
+			return logger
+		}, opts...)
+}
+
+// LoggingUnaryServerInterceptor returns a new unary server interceptors that extracts zap.Logger from the context.
+func LoggingUnaryServerInterceptor(extractLogger extractLogger, opts ...Option) grpc.UnaryServerInterceptor {
 	o := evaluateServerOpt(opts)
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		startTime := time.Now()
 
-		newCtx := newLoggerForCall(ctx, logger, info.FullMethod, startTime, o.timestampFormat)
+		newCtx := newLoggerForCall(ctx, extractLogger(ctx), info.FullMethod, startTime, o.timestampFormat)
 
 		resp, err := handler(newCtx, req)
 		if !o.shouldLog(info.FullMethod, err) {
@@ -43,10 +53,20 @@ func UnaryServerInterceptor(logger *zap.Logger, opts ...Option) grpc.UnaryServer
 
 // StreamServerInterceptor returns a new streaming server interceptor that adds zap.Logger to the context.
 func StreamServerInterceptor(logger *zap.Logger, opts ...Option) grpc.StreamServerInterceptor {
+	return LoggingStreamServerInterceptor(
+		func(_ context.Context) *zap.Logger {
+			return logger
+		}, opts...)
+}
+
+// LoggingStreamServerInterceptor returns a new streaming server interceptor that extracts zap.Logger from the context.
+func LoggingStreamServerInterceptor(extractLogger extractLogger, opts ...Option) grpc.StreamServerInterceptor {
 	o := evaluateServerOpt(opts)
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		ctx := stream.Context()
+
 		startTime := time.Now()
-		newCtx := newLoggerForCall(stream.Context(), logger, info.FullMethod, startTime, o.timestampFormat)
+		newCtx := newLoggerForCall(ctx, extractLogger(ctx), info.FullMethod, startTime, o.timestampFormat)
 		wrapped := grpc_middleware.WrapServerStream(stream)
 		wrapped.WrappedContext = newCtx
 
