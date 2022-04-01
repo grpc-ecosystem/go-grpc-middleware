@@ -6,13 +6,12 @@ package kit_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/go-kit/log"
 	"github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2"
-	"google.golang.org/grpc"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -51,7 +50,6 @@ func Example_initializationWithDurationFieldOverride() {
 			logging.UnaryServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
 		grpc.ChainStreamInterceptor(
-			tags.StreamServerInterceptor(),
 			logging.StreamServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
 	)
@@ -63,11 +61,9 @@ func Example_initializationWithCodeGenRequestFieldExtractor() {
 	// Create a server, make sure we put the tags context before everything else.
 	_ = grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			tags.UnaryServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.UnaryServerInterceptor(kit.InterceptorLogger(logger)),
 		),
 		grpc.ChainStreamInterceptor(
-			tags.StreamServerInterceptor(tags.WithFieldExtractor(tags.CodeGenRequestFieldExtractor)),
 			logging.StreamServerInterceptor(kit.InterceptorLogger(logger)),
 		),
 	)
@@ -78,7 +74,7 @@ func ExampleWithDecider() {
 	logger := log.NewNopLogger()
 	// Shared options for the logger, with a custom decider that log everything except successful calls from "/blah.foo.healthcheck/Check" method.
 	opts := []logging.Option{
-		logging.WithDecider(func(methodFullName string) logging.Decision {
+		logging.WithDecider(func(methodFullName string, err error) logging.Decision {
 			// will not log gRPC calls if it was a call to healthcheck and no error was raised
 			if methodFullName == "/blah.foo.healthcheck/Check" {
 				return logging.NoLogCall
@@ -90,11 +86,9 @@ func ExampleWithDecider() {
 	// Create a server, make sure we put the tags context before everything else.
 	_ = []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(
-			tags.UnaryServerInterceptor(),
 			logging.UnaryServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
 		grpc.ChainStreamInterceptor(
-			tags.StreamServerInterceptor(),
 			logging.StreamServerInterceptor(kit.InterceptorLogger(logger), opts...),
 		),
 	}
@@ -104,21 +98,21 @@ func ExampleServerPayloadLoggingDecider() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
 	logger := log.NewNopLogger()
 	// Expect payload from  "/blah.foo.healthcheck/Check" call to be logged.
-	payloadDecider := func(ctx context.Context, fullMethodName string, servingObject interface{}) bool {
-		return fullMethodName == "/blah.foo.healthcheck/Check"
+	payloadDecider := func(ctx context.Context, fullMethodName string, servingObject interface{}) logging.PayloadDecision {
+		// return fullMethodName == "/blah.foo.healthcheck/Check"
+		// TODO Fix
+		return 0
 	}
 
 	// Create a server, make sure we put the tags context before everything else.
 	_ = []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(
-			tags.UnaryServerInterceptor(),
 			logging.UnaryServerInterceptor(kit.InterceptorLogger(logger)),
-			logging.PayloadUnaryServerInterceptor(kit.InterceptorLogger(logger), payloadDecider),
+			logging.PayloadUnaryServerInterceptor(kit.InterceptorLogger(logger), payloadDecider, time.RFC3339Nano),
 		),
 		grpc.ChainStreamInterceptor(
-			tags.StreamServerInterceptor(),
 			logging.StreamServerInterceptor(kit.InterceptorLogger(logger)),
-			logging.PayloadStreamServerInterceptor(kit.InterceptorLogger(logger), payloadDecider),
+			logging.PayloadStreamServerInterceptor(kit.InterceptorLogger(logger), payloadDecider, time.RFC3339Nano),
 		),
 	}
 }
