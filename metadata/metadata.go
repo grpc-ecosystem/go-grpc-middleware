@@ -1,48 +1,48 @@
 // Copyright (c) The go-grpc-middleware Authors.
 // Licensed under the Apache License 2.0.
 
-package metautils
+package metadata
 
 import (
 	"context"
 	"strings"
 
-	"google.golang.org/grpc/metadata"
+	grpcMetadata "google.golang.org/grpc/metadata"
 )
 
-// NiceMD is a convenience wrapper defining extra functions on the metadata.
-type NiceMD metadata.MD
+// MD is a convenience wrapper defining extra functions on the metadata.
+type MD grpcMetadata.MD
 
 // ExtractIncoming extracts an inbound metadata from the server-side context.
 //
-// This function always returns a NiceMD wrapper of the metadata.MD, in case the context doesn't have metadata it returns
-// a new empty NiceMD.
-func ExtractIncoming(ctx context.Context) NiceMD {
-	md, ok := metadata.FromIncomingContext(ctx)
+// This function always returns a MD wrapper of the grpcMetadata.MD, in case the context doesn't have metadata it returns
+// a new empty MD.
+func ExtractIncoming(ctx context.Context) MD {
+	md, ok := grpcMetadata.FromIncomingContext(ctx)
 	if !ok {
-		return NiceMD(metadata.Pairs())
+		return MD(grpcMetadata.Pairs())
 	}
-	return NiceMD(md)
+	return MD(md)
 }
 
 // ExtractOutgoing extracts an outbound metadata from the client-side context.
 //
-// This function always returns a NiceMD wrapper of the metadata.MD, in case the context doesn't have metadata it returns
-// a new empty NiceMD.
-func ExtractOutgoing(ctx context.Context) NiceMD {
-	md, ok := metadata.FromOutgoingContext(ctx)
+// This function always returns a MD wrapper of the grpcMetadata.MD, in case the context doesn't have metadata it returns
+// a new empty MD.
+func ExtractOutgoing(ctx context.Context) MD {
+	md, ok := grpcMetadata.FromOutgoingContext(ctx)
 	if !ok {
-		return NiceMD(metadata.Pairs())
+		return MD(grpcMetadata.Pairs())
 	}
-	return NiceMD(md)
+	return MD(md)
 }
 
-// Clone performs a *deep* copy of the metadata.MD.
+// Clone performs a *deep* copy of the grpcMetadata.MD.
 //
 // You can specify the lower-case copiedKeys to only copy certain whitelisted keys. If no keys are explicitly whitelisted
 // all keys get copied.
-func (m NiceMD) Clone(copiedKeys ...string) NiceMD {
-	newMd := NiceMD(metadata.Pairs())
+func (m MD) Clone(copiedKeys ...string) MD {
+	newMd := MD(grpcMetadata.Pairs())
 	for k, vv := range m {
 		found := false
 		if len(copiedKeys) == 0 {
@@ -64,16 +64,16 @@ func (m NiceMD) Clone(copiedKeys ...string) NiceMD {
 	return newMd
 }
 
-// ToOutgoing sets the given NiceMD as a client-side context for dispatching.
-func (m NiceMD) ToOutgoing(ctx context.Context) context.Context {
-	return metadata.NewOutgoingContext(ctx, metadata.MD(m))
+// ToOutgoing sets the given MD as a client-side context for dispatching.
+func (m MD) ToOutgoing(ctx context.Context) context.Context {
+	return grpcMetadata.NewOutgoingContext(ctx, grpcMetadata.MD(m))
 }
 
-// ToIncoming sets the given NiceMD as a server-side context for dispatching.
+// ToIncoming sets the given MD as a server-side context for dispatching.
 //
 // This is mostly useful in ServerInterceptors.
-func (m NiceMD) ToIncoming(ctx context.Context) context.Context {
-	return metadata.NewIncomingContext(ctx, metadata.MD(m))
+func (m MD) ToIncoming(ctx context.Context) context.Context {
+	return grpcMetadata.NewIncomingContext(ctx, grpcMetadata.MD(m))
 }
 
 // Get retrieves a single value from the metadata.
@@ -82,7 +82,7 @@ func (m NiceMD) ToIncoming(ctx context.Context) context.Context {
 // an empty string is returned.
 //
 // The function is binary-key safe.
-func (m NiceMD) Get(key string) string {
+func (m MD) Get(key string) string {
 	k, _ := encodeKeyValue(key, "")
 	vv, ok := m[k]
 	if !ok {
@@ -97,7 +97,7 @@ func (m NiceMD) Get(key string) string {
 //
 // The function is binary-key safe.
 
-func (m NiceMD) Del(key string) NiceMD {
+func (m MD) Del(key string) MD {
 	k, _ := encodeKeyValue(key, "")
 	delete(m, k)
 	return m
@@ -108,7 +108,7 @@ func (m NiceMD) Del(key string) NiceMD {
 // It works analogously to http.Header.Set, overwriting all previous metadata values.
 //
 // The function is binary-key safe.
-func (m NiceMD) Set(key string, value string) NiceMD {
+func (m MD) Set(key string, value string) MD {
 	k, v := encodeKeyValue(key, value)
 	m[k] = []string{v}
 	return m
@@ -119,7 +119,7 @@ func (m NiceMD) Set(key string, value string) NiceMD {
 // It works analogously to http.Header.Add, as it appends to any existing values associated with key.
 //
 // The function is binary-key safe.
-func (m NiceMD) Add(key string, value string) NiceMD {
+func (m MD) Add(key string, value string) MD {
 	k, v := encodeKeyValue(key, value)
 	m[k] = append(m[k], v)
 	return m

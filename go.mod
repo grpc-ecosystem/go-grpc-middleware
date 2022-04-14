@@ -4,7 +4,6 @@ go 1.14
 
 require (
 	github.com/golang/protobuf v1.5.2
-	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20210423184538-5f58ad60dda6

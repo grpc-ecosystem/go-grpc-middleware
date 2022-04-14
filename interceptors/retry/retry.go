@@ -13,10 +13,10 @@ import (
 	"golang.org/x/net/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
+	grpcMetadata "google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/util/metautils"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 )
 
 const (
@@ -170,11 +170,11 @@ func (s *serverStreamingRetryingStream) CloseSend() error {
 	return s.getStream().CloseSend()
 }
 
-func (s *serverStreamingRetryingStream) Header() (metadata.MD, error) {
+func (s *serverStreamingRetryingStream) Header() (grpcMetadata.MD, error) {
 	return s.getStream().Header()
 }
 
-func (s *serverStreamingRetryingStream) Trailer() metadata.MD {
+func (s *serverStreamingRetryingStream) Trailer() grpcMetadata.MD {
 	return s.getStream().Trailer()
 }
 
@@ -296,7 +296,7 @@ func perCallContext(parentCtx context.Context, callOpts *options, attempt uint) 
 		ctx, cancel = context.WithTimeout(ctx, callOpts.perCallTimeout)
 	}
 	if attempt > 0 && callOpts.includeHeader {
-		mdClone := metautils.ExtractOutgoing(ctx).Clone().Set(AttemptMetadataKey, fmt.Sprintf("%d", attempt))
+		mdClone := metadata.ExtractOutgoing(ctx).Clone().Set(AttemptMetadataKey, fmt.Sprintf("%d", attempt))
 		ctx = mdClone.ToOutgoing(ctx)
 	}
 	return ctx, cancel

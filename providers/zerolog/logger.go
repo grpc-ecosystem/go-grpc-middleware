@@ -16,26 +16,25 @@ var _ logging.Logger = &Logger{}
 
 // Logger is a zerolog logging adapter compatible with logging middlewares.
 type Logger struct {
-	zerolog.Context
+	zerolog.Logger
 }
 
 // InterceptorLogger is a zerolog.Logger to Logger adapter.
 func InterceptorLogger(logger zerolog.Logger) *Logger {
-	return &Logger{logger.With()}
+	return &Logger{logger}
 }
 
 // Log implements the logging.Logger interface.
 func (l *Logger) Log(lvl logging.Level, msg string) {
-	cl := l.Logger()
 	switch lvl {
 	case logging.DEBUG:
-		cl.Debug().Msg(msg)
+		l.Debug().Msg(msg)
 	case logging.INFO:
-		cl.Info().Msg(msg)
+		l.Info().Msg(msg)
 	case logging.WARNING:
-		cl.Warn().Msg(msg)
+		l.Warn().Msg(msg)
 	case logging.ERROR:
-		cl.Error().Msg(msg)
+		l.Error().Msg(msg)
 	default:
 		// TODO(kb): Perhaps this should be a logged warning, defaulting to ERROR to get attention
 		// without interrupting code flow?
@@ -44,10 +43,10 @@ func (l *Logger) Log(lvl logging.Level, msg string) {
 }
 
 // With implements the logging.Logger interface.
-func (l *Logger) With(fields ...string) logging.Logger {
+func (l Logger) With(fields ...string) logging.Logger {
 	vals := make(map[string]interface{}, len(fields)/2)
 	for i := 0; i < len(fields); i += 2 {
 		vals[fields[i]] = fields[i+1]
 	}
-	return InterceptorLogger(l.Fields(vals).Logger())
+	return InterceptorLogger(l.Logger.With().Fields(vals).Logger())
 }

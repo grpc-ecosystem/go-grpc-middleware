@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
+	grpcMetadata "google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
@@ -42,7 +42,7 @@ type skipPingService struct {
 }
 
 func checkMetadata(ctx context.Context, grpcType interceptors.GRPCType, service string, method string) error {
-	m, _ := metadata.FromIncomingContext(ctx)
+	m, _ := grpcMetadata.FromIncomingContext(ctx)
 	if typeFromMetadata := m.Get(keyGRPCType)[0]; typeFromMetadata != string(grpcType) {
 		return status.Errorf(codes.Internal, fmt.Sprintf("expected grpc type %s, got: %s", grpcType, typeFromMetadata))
 	}
@@ -82,7 +82,7 @@ func (s *skipPingService) PingList(_ *testpb.PingListRequest, stream testpb.Test
 }
 
 func filter(ctx context.Context, gRPCType interceptors.GRPCType, service string, method string) bool {
-	m, _ := metadata.FromIncomingContext(ctx)
+	m, _ := grpcMetadata.FromIncomingContext(ctx)
 	// Set parameters into metadata
 	m.Set(keyGRPCType, string(gRPCType))
 	m.Set(keyService, service)
@@ -144,14 +144,14 @@ func (s *SkipSuite) TestPing() {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			var m metadata.MD
+			var m grpcMetadata.MD
 			if tc.skip {
-				m = metadata.New(map[string]string{
+				m = grpcMetadata.New(map[string]string{
 					"skip": "true",
 				})
 			}
 
-			resp, err := s.Client.Ping(metadata.NewOutgoingContext(s.SimpleCtx(), m), testpb.GoodPing)
+			resp, err := s.Client.Ping(grpcMetadata.NewOutgoingContext(s.SimpleCtx(), m), testpb.GoodPing)
 			require.NoError(t, err)
 
 			var value string
@@ -182,14 +182,14 @@ func (s *SkipSuite) TestPingList() {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			var m metadata.MD
+			var m grpcMetadata.MD
 			if tc.skip {
-				m = metadata.New(map[string]string{
+				m = grpcMetadata.New(map[string]string{
 					"skip": "true",
 				})
 			}
 
-			stream, err := s.Client.PingList(metadata.NewOutgoingContext(s.SimpleCtx(), m), testpb.GoodPingList)
+			stream, err := s.Client.PingList(grpcMetadata.NewOutgoingContext(s.SimpleCtx(), m), testpb.GoodPingList)
 			require.NoError(t, err)
 
 			for {

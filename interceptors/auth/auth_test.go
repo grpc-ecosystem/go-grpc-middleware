@@ -16,12 +16,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/oauth"
-	"google.golang.org/grpc/metadata"
+	grpcMetadata "google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/util/metautils"
 )
 
 var authedMarker struct{}
@@ -66,9 +66,8 @@ func (s *assertingPingService) PingList(ping *testpb.PingListRequest, stream tes
 }
 
 func ctxWithToken(ctx context.Context, scheme string, token string) context.Context {
-	md := metadata.Pairs("authorization", fmt.Sprintf("%s %v", scheme, token))
-	nCtx := metautils.NiceMD(md).ToOutgoing(ctx)
-	return nCtx
+	md := grpcMetadata.Pairs("authorization", fmt.Sprintf("%s %v", scheme, token))
+	return metadata.MD(md).ToOutgoing(ctx)
 }
 
 func TestAuthTestSuite(t *testing.T) {
