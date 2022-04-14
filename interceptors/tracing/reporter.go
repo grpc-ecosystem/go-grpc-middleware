@@ -11,8 +11,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tracing/kv"
 )
 
 type reporter struct {
@@ -45,22 +43,22 @@ func (o *reporter) PostMsgReceive(payload interface{}, err error, d time.Duratio
 	addEvent(o.span, RPCMessageTypeReceived, o.receivedMessageID, payload)
 }
 
-func addEvent(span Span, messageType kv.KeyValue, messageID int, payload interface{}) {
+func addEvent(span Span, messageType KeyValue, messageID int, payload interface{}) {
 	if p, ok := payload.(proto.Message); ok {
 		span.AddEvent("message",
 			messageType,
-			rpcMessageIDKey.Int(messageID),
-			rpcMessageUncompressedSizeKey.Int(proto.Size(p)),
+			rpcMessageIDKey.Value(messageID),
+			rpcMessageUncompressedSizeKey.Value(proto.Size(p)),
 		)
 		return
 	}
 	span.AddEvent("message",
 		messageType,
-		rpcMessageIDKey.Int(messageID),
+		rpcMessageIDKey.Value(messageID),
 	)
 }
 
 // statusCodeAttr returns status code attribute based on given gRPC code
-func statusCodeAttr(c codes.Code) kv.KeyValue {
-	return grpcStatusCodeKey.Int64(int64(c))
+func statusCodeAttr(c codes.Code) KeyValue {
+	return grpcStatusCodeKey.Value(int64(c))
 }

@@ -18,7 +18,6 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tracing"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tracing/kv"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
@@ -136,10 +135,10 @@ type mockSpan struct {
 	msgSendCounter     int
 	msgReceivedCounter int
 	eventNameList      []string
-	attributesList     [][]kv.KeyValue
+	attributesList     [][]tracing.KeyValue
 }
 
-func (s *mockSpan) SetAttributes(attrs ...kv.KeyValue) {
+func (s *mockSpan) SetAttributes(attrs ...tracing.KeyValue) {
 	s.attributesList = append(s.attributesList, attrs)
 }
 
@@ -152,7 +151,7 @@ func (s *mockSpan) SetStatus(code codes.Code, message string) {
 	s.statusMessage = message
 }
 
-func (s *mockSpan) AddEvent(name string, attrs ...kv.KeyValue) {
+func (s *mockSpan) AddEvent(name string, attrs ...tracing.KeyValue) {
 	s.eventNameList = append(s.eventNameList, name)
 
 	for _, v := range attrs {
@@ -237,17 +236,17 @@ func (s *tracingSuite) TestPing() {
 				assert.Equal(t, codes.InvalidArgument, clientSpan.statusCode)
 				assert.Equal(t, tc.errorMessage, clientSpan.statusMessage)
 				assert.Equal(t, errorMethod, clientSpan.name)
-				assert.Equal(t, [][]kv.KeyValue{{kv.Key("rpc.grpc.status_code").Int64(3)}}, clientSpan.attributesList)
+				assert.Equal(t, [][]tracing.KeyValue{{tracing.Key("rpc.grpc.status_code").Value(int64(3))}}, clientSpan.attributesList)
 
 				assert.Equal(t, errorMethod, serverSpan.name)
-				assert.Equal(t, [][]kv.KeyValue{{kv.Key("rpc.grpc.status_code").Int64(3)}}, serverSpan.attributesList)
+				assert.Equal(t, [][]tracing.KeyValue{{tracing.Key("rpc.grpc.status_code").Value(int64(3))}}, serverSpan.attributesList)
 			} else {
 				assert.Equal(t, codes.OK, clientSpan.statusCode)
 				assert.Equal(t, method, clientSpan.name)
-				assert.Equal(t, [][]kv.KeyValue{{kv.Key("rpc.grpc.status_code").Int64(0)}}, clientSpan.attributesList)
+				assert.Equal(t, [][]tracing.KeyValue{{tracing.Key("rpc.grpc.status_code").Value(int64(0))}}, clientSpan.attributesList)
 
 				assert.Equal(t, method, serverSpan.name)
-				assert.Equal(t, [][]kv.KeyValue{{kv.Key("rpc.grpc.status_code").Int64(0)}}, serverSpan.attributesList)
+				assert.Equal(t, [][]tracing.KeyValue{{tracing.Key("rpc.grpc.status_code").Value(int64(0))}}, serverSpan.attributesList)
 			}
 		})
 	}

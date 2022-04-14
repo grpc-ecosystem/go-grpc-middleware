@@ -7,28 +7,26 @@ import (
 	"context"
 
 	"google.golang.org/grpc/codes"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tracing/kv"
 )
 
 const (
 	// Type of message transmitted or received.
-	rpcMessageTypeKey = kv.Key("message.type")
+	rpcMessageTypeKey = Key("message.type")
 
 	// Identifier of message transmitted or received.
-	rpcMessageIDKey = kv.Key("message.id")
+	rpcMessageIDKey = Key("message.id")
 
 	// The uncompressed size of the message transmitted or received in
 	// bytes.
-	rpcMessageUncompressedSizeKey = kv.Key("message.uncompressed_size")
+	rpcMessageUncompressedSizeKey = Key("message.uncompressed_size")
 
 	// grpcStatusCodeKey is convention for numeric status code of a gRPC request.
-	grpcStatusCodeKey = kv.Key("rpc.grpc.status_code")
+	grpcStatusCodeKey = Key("rpc.grpc.status_code")
 )
 
 var (
-	RPCMessageTypeSent     = rpcMessageTypeKey.String("SENT")
-	RPCMessageTypeReceived = rpcMessageTypeKey.String("RECEIVED")
+	RPCMessageTypeSent     = rpcMessageTypeKey.Value("SENT")
+	RPCMessageTypeReceived = rpcMessageTypeKey.Value("RECEIVED")
 )
 
 type Tracer interface {
@@ -51,10 +49,10 @@ type Span interface {
 
 	// AddEvent adds an event to the span.
 	// Middleware will call it while receiving or sending messages.
-	AddEvent(name string, attrs ...kv.KeyValue)
+	AddEvent(name string, attrs ...KeyValue)
 
 	// SetAttributes sets kv as attributes of the Span. If a key from kv
 	// already exists for an attribute of the Span it should be overwritten with
 	// the value contained in kv.
-	SetAttributes(attrs ...kv.KeyValue)
+	SetAttributes(attrs ...KeyValue)
 }
