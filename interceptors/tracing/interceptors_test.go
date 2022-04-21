@@ -135,11 +135,11 @@ type mockSpan struct {
 	msgSendCounter     int
 	msgReceivedCounter int
 	eventNameList      []string
-	attributesList     [][]tracing.KeyValue
+	attributesList     [][]interface{}
 }
 
-func (s *mockSpan) SetAttributes(attrs ...tracing.KeyValue) {
-	s.attributesList = append(s.attributesList, attrs)
+func (s *mockSpan) SetAttributes(keyvals ...interface{}) {
+	s.attributesList = append(s.attributesList, keyvals)
 }
 
 func (s *mockSpan) End() {
@@ -151,15 +151,24 @@ func (s *mockSpan) SetStatus(code codes.Code, message string) {
 	s.statusMessage = message
 }
 
-func (s *mockSpan) AddEvent(name string, attrs ...tracing.KeyValue) {
+func (s *mockSpan) AddEvent(name string, keyvals ...interface{}) {
 	s.eventNameList = append(s.eventNameList, name)
 
-	for _, v := range attrs {
-		switch v {
-		case tracing.RPCMessageTypeSent:
-			s.msgSendCounter++
-		case tracing.RPCMessageTypeReceived:
-			s.msgReceivedCounter++
+	if len(keyvals)%2 == 1 {
+		keyvals = append(keyvals, nil)
+	}
+
+	for i := 0; i < len(keyvals); i += 2 {
+		k, keyOK := keyvals[i].(string)
+		v, valueOK := keyvals[i+1].(string)
+
+		if keyOK && valueOK && k == "message.type" {
+			switch v {
+			case tracing.RPCMessageTypeSent:
+				s.msgSendCounter++
+			case tracing.RPCMessageTypeReceived:
+				s.msgReceivedCounter++
+			}
 		}
 	}
 }
@@ -236,17 +245,17 @@ func (s *tracingSuite) TestPing() {
 				assert.Equal(t, codes.InvalidArgument, clientSpan.statusCode)
 				assert.Equal(t, tc.errorMessage, clientSpan.statusMessage)
 				assert.Equal(t, errorMethod, clientSpan.name)
-				assert.Equal(t, [][]tracing.KeyValue{{tracing.Key("rpc.grpc.status_code").Value(int64(3))}}, clientSpan.attributesList)
+				assert.Equal(t, [][]interface{}{{[]interface{}{"rpc.grpc.status_code", int64(3)}}}, clientSpan.attributesList)
 
 				assert.Equal(t, errorMethod, serverSpan.name)
-				assert.Equal(t, [][]tracing.KeyValue{{tracing.Key("rpc.grpc.status_code").Value(int64(3))}}, serverSpan.attributesList)
+				assert.Equal(t, [][]interface{}{{[]interface{}{"rpc.grpc.status_code", int64(3)}}}, serverSpan.attributesList)
 			} else {
 				assert.Equal(t, codes.OK, clientSpan.statusCode)
 				assert.Equal(t, method, clientSpan.name)
-				assert.Equal(t, [][]tracing.KeyValue{{tracing.Key("rpc.grpc.status_code").Value(int64(0))}}, clientSpan.attributesList)
+				assert.Equal(t, [][]interface{}{{[]interface{}{"rpc.grpc.status_code", int64(0)}}}, clientSpan.attributesList)
 
 				assert.Equal(t, method, serverSpan.name)
-				assert.Equal(t, [][]tracing.KeyValue{{tracing.Key("rpc.grpc.status_code").Value(int64(0))}}, serverSpan.attributesList)
+				assert.Equal(t, [][]interface{}{{[]interface{}{"rpc.grpc.status_code", int64(0)}}}, serverSpan.attributesList)
 			}
 		})
 	}

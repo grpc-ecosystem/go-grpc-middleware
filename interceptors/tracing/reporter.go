@@ -43,22 +43,22 @@ func (o *reporter) PostMsgReceive(payload interface{}, err error, d time.Duratio
 	addEvent(o.span, RPCMessageTypeReceived, o.receivedMessageID, payload)
 }
 
-func addEvent(span Span, messageType KeyValue, messageID int, payload interface{}) {
+func addEvent(span Span, messageType string, messageID int, payload interface{}) {
 	if p, ok := payload.(proto.Message); ok {
 		span.AddEvent("message",
-			messageType,
-			rpcMessageIDKey.Value(messageID),
-			rpcMessageUncompressedSizeKey.Value(proto.Size(p)),
+			rpcMessageTypeKey, messageType,
+			rpcMessageIDKey, messageID,
+			rpcMessageUncompressedSizeKey, proto.Size(p),
 		)
 		return
 	}
 	span.AddEvent("message",
-		messageType,
-		rpcMessageIDKey.Value(messageID),
+		rpcMessageTypeKey, messageType,
+		rpcMessageIDKey, messageID,
 	)
 }
 
 // statusCodeAttr returns status code attribute based on given gRPC code
-func statusCodeAttr(c codes.Code) KeyValue {
-	return grpcStatusCodeKey.Value(int64(c))
+func statusCodeAttr(c codes.Code) []interface{} {
+	return []interface{}{grpcStatusCodeKey, int64(c)}
 }

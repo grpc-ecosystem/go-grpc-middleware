@@ -11,22 +11,22 @@ import (
 
 const (
 	// Type of message transmitted or received.
-	rpcMessageTypeKey = Key("message.type")
+	rpcMessageTypeKey = "message.type"
 
 	// Identifier of message transmitted or received.
-	rpcMessageIDKey = Key("message.id")
+	rpcMessageIDKey = "message.id"
 
 	// The uncompressed size of the message transmitted or received in
 	// bytes.
-	rpcMessageUncompressedSizeKey = Key("message.uncompressed_size")
+	rpcMessageUncompressedSizeKey = "message.uncompressed_size"
 
 	// grpcStatusCodeKey is convention for numeric status code of a gRPC request.
-	grpcStatusCodeKey = Key("rpc.grpc.status_code")
+	grpcStatusCodeKey = "rpc.grpc.status_code"
 )
 
-var (
-	RPCMessageTypeSent     = rpcMessageTypeKey.Value("SENT")
-	RPCMessageTypeReceived = rpcMessageTypeKey.Value("RECEIVED")
+const (
+	RPCMessageTypeSent     = "SENT"
+	RPCMessageTypeReceived = "RECEIVED"
 )
 
 type Tracer interface {
@@ -47,12 +47,12 @@ type Span interface {
 	// is to add an OK message or to override a previous status on the Span.
 	SetStatus(code codes.Code, msg string)
 
-	// AddEvent adds an event to the span.
+	// AddEvent adds an event to the span with key/value pairs as attributes.
 	// Middleware will call it while receiving or sending messages.
-	AddEvent(name string, attrs ...KeyValue)
+	AddEvent(name string, keyvals ...interface{})
 
-	// SetAttributes sets kv as attributes of the Span. If a key from kv
+	// SetAttributes sets key/value pairs as attributes. If a key
 	// already exists for an attribute of the Span it should be overwritten with
-	// the value contained in kv.
-	SetAttributes(attrs ...KeyValue)
+	// the value.
+	SetAttributes(keyvals ...interface{})
 }
