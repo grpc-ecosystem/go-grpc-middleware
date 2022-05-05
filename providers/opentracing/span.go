@@ -6,11 +6,12 @@ package opentracing
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 	"google.golang.org/grpc/codes"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tracing"
 )

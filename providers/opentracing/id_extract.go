@@ -6,9 +6,10 @@ package opentracing
 import (
 	"strings"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc/grpclog"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
 const (

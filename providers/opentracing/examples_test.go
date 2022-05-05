@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 
 	grpcopentracing "github.com/grpc-ecosystem/go-grpc-middleware/providers/opentracing/v2"
+
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tracing"
 )
 

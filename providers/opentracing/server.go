@@ -6,11 +6,12 @@ package opentracing
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"google.golang.org/grpc/grpclog"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 )
 
 func newServerSpanFromInbound(ctx context.Context, tracer opentracing.Tracer, traceHeaderName, fullMethodName string) (context.Context, opentracing.Span) {

@@ -12,7 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/mocktracer"
 	"github.com/pkg/errors"
@@ -22,7 +21,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+
 	grpcopentracing "github.com/grpc-ecosystem/go-grpc-middleware/providers/opentracing/v2"
+
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tracing"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
