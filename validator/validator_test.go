@@ -80,7 +80,7 @@ func (s *ValidatorTestSuite) TestValidPasses_ServerStream() {
 		if err == io.EOF {
 			break
 		}
-		assert.NoError(s.T(), err, "no error on messages sent occured")
+		assert.NoError(s.T(), err, "no error on messages sent occurred")
 	}
 }
 
