@@ -34,7 +34,7 @@ Types of changes:
 
 ### Fixed
 - [172](https://github.com/grpc-ecosystem/go-grpc-middleware/pull/172) Passing ctx into retry and recover - [johanbrandhorst](https://github.com/johanbrandhorst)
-- Numerious documentation fixes.
+- Numerous documentation fixes.
 
 ## v1.0.0 - 2018-05-08
 ### Added
