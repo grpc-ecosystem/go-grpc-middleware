@@ -16,11 +16,11 @@ var _ logging.Logger = &Logger{}
 
 // Logger is a phuslog logging adapter compatible with logging middlewares.
 type Logger struct {
-	log.GrcpGatewayLogger
+	log.GrpcGatewayLogger
 }
 
 // InterceptorLogger is a phuslog.Logger to Logger adapter.
-func InterceptorLogger(logger log.GrcpGatewayLogger) *Logger {
+func InterceptorLogger(logger log.GrpcGatewayLogger) *Logger {
 	return &Logger{logger}
 }
 

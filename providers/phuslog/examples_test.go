@@ -22,7 +22,7 @@ var (
 
 func Example_initializationWithCustomLevels() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
-	logger := log.DefaultLogger.GrcpGateway()
+	logger := log.DefaultLogger.GrpcGateway()
 	// Shared options for the logger, with a custom gRPC code to log level function.
 	opts := []logging.Option{
 		logging.WithLevels(customFunc),
@@ -40,7 +40,7 @@ func Example_initializationWithCustomLevels() {
 
 func Example_initializationWithDurationFieldOverride() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
-	logger := log.DefaultLogger.GrcpGateway()
+	logger := log.DefaultLogger.GrpcGateway()
 	// Shared options for the logger, with a custom duration to log field function.
 	opts := []logging.Option{
 		logging.WithDurationField(customDurationToFields),
@@ -58,7 +58,7 @@ func Example_initializationWithDurationFieldOverride() {
 
 func ExampleWithDecider() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
-	logger := log.DefaultLogger.GrcpGateway()
+	logger := log.DefaultLogger.GrpcGateway()
 	// Shared options for the logger, with a custom decider that log everything except successful
 	// calls from "/blah.foo.healthcheck/Check" method.
 	opts := []logging.Option{
@@ -85,7 +85,7 @@ func ExampleWithDecider() {
 
 func ExampleServerPayloadLoggingDecider() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
-	logger := log.DefaultLogger.GrcpGateway()
+	logger := log.DefaultLogger.GrpcGateway()
 	// Expect payload from  "/blah.foo.healthcheck/Check" call to be logged.
 	payloadDecider := func(ctx context.Context, fullMethodName string, servingObject interface{}) bool {
 		return fullMethodName == "/blah.foo.healthcheck/Check"
