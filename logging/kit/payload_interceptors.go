@@ -31,8 +31,8 @@ func PayloadUnaryServerInterceptor(logger log.Logger, decider grpc_logging.Serve
 			return handler(ctx, req)
 		}
 		// Use the provided log.Logger for logging but use the fields from context.
-		logger = log.With(logger, append(serverCallFields(info.FullMethod), ctxkit.TagsToFields(ctx)...)...)
-		logProtoMessageAsJson(logger, req, "grpc.request.content", "server request payload logged as grpc.request.content field")
+		logEntry := log.With(logger, append(serverCallFields(info.FullMethod), ctxkit.TagsToFields(ctx)...)...)
+		logProtoMessageAsJson(logEntry, req, "grpc.request.content", "server request payload logged as grpc.request.content field")
 		resp, err := handler(ctx, req)
 		if err == nil {
 			logProtoMessageAsJson(logger, resp, "grpc.response.content", "server response payload logged as grpc.request.content field")
