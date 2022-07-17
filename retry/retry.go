@@ -5,8 +5,8 @@ package grpc_retry
 
 import (
 	"context"
-	"fmt"
 	"io"
+	"strconv"
 	"sync"
 	"time"
 
@@ -293,7 +293,7 @@ func perCallContext(parentCtx context.Context, callOpts *options, attempt uint) 
 		ctx, _ = context.WithTimeout(ctx, callOpts.perCallTimeout)
 	}
 	if attempt > 0 && callOpts.includeHeader {
-		mdClone := metautils.ExtractOutgoing(ctx).Clone().Set(AttemptMetadataKey, fmt.Sprintf("%d", attempt))
+		mdClone := metautils.ExtractOutgoing(ctx).Clone().Set(AttemptMetadataKey, strconv.FormatUint(uint64(attempt), 10))
 		ctx = mdClone.ToOutgoing(ctx)
 	}
 	return ctx
