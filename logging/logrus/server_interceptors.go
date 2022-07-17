@@ -4,6 +4,7 @@ package grpc_logrus
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"time"
 
@@ -41,7 +42,7 @@ func UnaryServerInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryServe
 			durField:    durVal,
 		}
 		if err != nil {
-			fields[logrus.ErrorKey] = err
+			fields[logrus.ErrorKey] = fmt.Sprintf("%+v", err)
 		}
 
 		o.messageFunc(newCtx, "finished unary call with code "+code.String(), level, code, err, fields)

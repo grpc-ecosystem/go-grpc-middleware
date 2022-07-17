@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"testing"
 
@@ -107,7 +108,7 @@ func (s *logrusBaseSuite) getOutputJSONs() []map[string]interface{} {
 
 func StubMessageProducer(ctx context.Context, format string, level logrus.Level, code codes.Code, err error, fields logrus.Fields) {
 	if err != nil {
-		fields[logrus.ErrorKey] = err
+		fields[logrus.ErrorKey] = fmt.Sprintf("%+v", err)
 	}
 	format = "custom message"
 	entry := ctxlogrus.Extract(ctx).WithContext(ctx).WithFields(fields)

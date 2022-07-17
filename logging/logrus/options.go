@@ -5,6 +5,7 @@ package grpc_logrus
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/logging"
@@ -210,7 +211,7 @@ type MessageProducer func(ctx context.Context, format string, level logrus.Level
 // DefaultMessageProducer writes the default message
 func DefaultMessageProducer(ctx context.Context, format string, level logrus.Level, code codes.Code, err error, fields logrus.Fields) {
 	if err != nil {
-		fields[logrus.ErrorKey] = err
+		fields[logrus.ErrorKey] = fmt.Sprintf("%+v", err)
 	}
 	entry := ctxlogrus.Extract(ctx).WithContext(ctx).WithFields(fields)
 	switch level {
