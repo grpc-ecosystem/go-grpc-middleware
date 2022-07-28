@@ -15,6 +15,8 @@ type tracer struct {
 	tracer opentracing.Tracer
 	// This is only used for server.
 	traceHeaderName string
+	// This is used for log grpc_opentracing errors
+	errorLogFunc ErrorLogFunc
 }
 
 // Compatibility check.
@@ -24,16 +26,16 @@ var _ tracing.Tracer = &tracer{}
 func InterceptorTracer(opts ...Option) *tracer {
 	o := evaluateOptions(opts)
 
-	return &tracer{tracer: o.tracer, traceHeaderName: o.traceHeaderName}
+	return &tracer{tracer: o.tracer, traceHeaderName: o.traceHeaderName, errorLogFunc: o.errorLogFunc}
 }
 
 func (t *tracer) Start(ctx context.Context, spanName string, kind tracing.SpanKind) (context.Context, tracing.Span) {
 	var span opentracing.Span
 	switch kind {
 	case tracing.SpanKindClient:
-		ctx, span = newClientSpanFromContext(ctx, t.tracer, spanName)
+		ctx, span = newClientSpanFromContext(ctx, t.tracer, spanName, t.errorLogFunc)
 	case tracing.SpanKindServer:
-		ctx, span = newServerSpanFromInbound(ctx, t.tracer, t.traceHeaderName, spanName)
+		ctx, span = newServerSpanFromInbound(ctx, t.tracer, t.traceHeaderName, spanName, t.errorLogFunc)
 	}
 	return ctx, newSpan(span, ctx)
 }

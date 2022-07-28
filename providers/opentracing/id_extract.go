@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/opentracing/opentracing-go"
-	"google.golang.org/grpc/grpclog"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
@@ -29,11 +28,11 @@ const (
 // https://www.jaegertracing.io/docs/client-libraries/#trace-span-identity
 // Datadog uses keys ending with 'trace-id' and 'parent-id' (for span) by default:
 // https://github.com/DataDog/dd-trace-go/blob/v1/ddtrace/tracer/textmap.go#L77
-func injectOpentracingIdsToTags(traceHeaderName string, span opentracing.Span, fields logging.Fields) logging.Fields {
+func injectOpentracingIdsToTags(traceHeaderName string, span opentracing.Span, fields logging.Fields, errorLogFunc ErrorLogFunc) logging.Fields {
 	tagsCarrier := tagsCarrier{fields: fields, traceHeaderName: traceHeaderName}
 	if err := span.Tracer().Inject(span.Context(), opentracing.HTTPHeaders,
 		&tagsCarrier); err != nil {
-		grpclog.Infof("grpc_opentracing: failed extracting trace info into ctx %v", err)
+		errorLogFunc("grpc_opentracing: failed extracting trace info into ctx %v", err)
 	}
 	return tagsCarrier.fields
 }

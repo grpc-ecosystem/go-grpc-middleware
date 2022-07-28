@@ -8,17 +8,16 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	"google.golang.org/grpc/grpclog"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 )
 
-func newServerSpanFromInbound(ctx context.Context, tracer opentracing.Tracer, traceHeaderName, fullMethodName string) (context.Context, opentracing.Span) {
+func newServerSpanFromInbound(ctx context.Context, tracer opentracing.Tracer, traceHeaderName, fullMethodName string, errorLogFunc ErrorLogFunc) (context.Context, opentracing.Span) {
 	md := metadata.ExtractIncoming(ctx)
 	parentSpanContext, err := tracer.Extract(opentracing.HTTPHeaders, metadataTextMap(md))
 	if err != nil && err != opentracing.ErrSpanContextNotFound {
-		grpclog.Infof("grpc_opentracing: failed parsing trace information: %v", err)
+		errorLogFunc("grpc_opentracing: failed parsing trace information: %v", err)
 	}
 
 	serverSpan := tracer.StartSpan(
@@ -35,7 +34,7 @@ func newServerSpanFromInbound(ctx context.Context, tracer opentracing.Tracer, tr
 		serverSpan.SetTag(k, v)
 	}
 
-	fields := injectOpentracingIdsToTags(traceHeaderName, serverSpan, logging.ExtractFields(ctx))
+	fields := injectOpentracingIdsToTags(traceHeaderName, serverSpan, logging.ExtractFields(ctx), errorLogFunc)
 	ctx = logging.InjectFields(ctx, fields)
 	return opentracing.ContextWithSpan(ctx, serverSpan), serverSpan
 }

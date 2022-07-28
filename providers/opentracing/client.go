@@ -8,7 +8,6 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	"google.golang.org/grpc/grpclog"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 )
@@ -26,7 +25,7 @@ func ClientAddContextTags(ctx context.Context, tags opentracing.Tags) context.Co
 
 type clientSpanTagKey struct{}
 
-func newClientSpanFromContext(ctx context.Context, tracer opentracing.Tracer, fullMethodName string) (context.Context, opentracing.Span) {
+func newClientSpanFromContext(ctx context.Context, tracer opentracing.Tracer, fullMethodName string, errorLogFunc ErrorLogFunc) (context.Context, opentracing.Span) {
 	var parentSpanCtx opentracing.SpanContext
 	if parent := opentracing.SpanFromContext(ctx); parent != nil {
 		parentSpanCtx = parent.Context()
@@ -45,7 +44,7 @@ func newClientSpanFromContext(ctx context.Context, tracer opentracing.Tracer, fu
 	// Make sure we add this to the metadata of the call, so it gets propagated:
 	md := metadata.ExtractOutgoing(ctx).Clone()
 	if err := tracer.Inject(clientSpan.Context(), opentracing.HTTPHeaders, metadataTextMap(md)); err != nil {
-		grpclog.Infof("grpc_opentracing: failed serializing trace information: %v", err)
+		errorLogFunc("grpc_opentracing: failed serializing trace information: %v", err)
 	}
 	ctxWithMetadata := md.ToOutgoing(ctx)
 	return opentracing.ContextWithSpan(ctxWithMetadata, clientSpan), clientSpan
