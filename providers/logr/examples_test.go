@@ -8,10 +8,11 @@ import (
 	"testing"
 
 	grpclogr "github.com/grpc-ecosystem/go-grpc-middleware/providers/logr/v2"
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"google.golang.org/grpc"
 	"k8s.io/klog/v2"
+
+	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
 var (

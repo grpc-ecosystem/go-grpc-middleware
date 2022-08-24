@@ -7,9 +7,10 @@ import (
 	"testing"
 
 	grpclogr "github.com/grpc-ecosystem/go-grpc-middleware/providers/logr/v2"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/klog/v2/ktesting"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
 type (
