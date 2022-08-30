@@ -30,6 +30,6 @@ Implementations:
 * providers/kit
 * providers/zerolog
 * providers/phuslog
-
+* providers/logr
 */
 package logging
