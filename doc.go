@@ -2,9 +2,11 @@
 // Licensed under the Apache License 2.0.
 
 /*
+Package middleware
+
 `middleware` is a collection of gRPC middleware packages: interceptors, helpers and tools.
 
-Middleware
+# Middleware
 
 gRPC is a fantastic RPC middleware, which sees a lot of adoption in the Golang world. However, the
 upstream gRPC codebase is relatively bare bones.
@@ -13,7 +15,7 @@ This package, and most of its child packages provides commonly needed middleware
 client-side interceptors for retires, server-side interceptors for input validation and auth,
 functions for chaining said interceptors, metadata convenience methods and more.
 
-Chaining
+# Chaining
 
 Simple way of turning a multiple interceptors into a single interceptor. Here's an example for
 server chaining:
@@ -39,7 +41,7 @@ These interceptors will be executed from left to right: monitoring and then retr
 
 The retry interceptor will call every interceptor that follows it whenever when a retry happens.
 
-Writing Your Own
+# Writing Your Own
 
 Implementing your own interceptor is pretty trivial: there are interfaces for that. But the interesting
 bit exposing common data to handlers (and other middleware), similarly to HTTP Middleware design.
