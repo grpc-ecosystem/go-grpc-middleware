@@ -13,12 +13,12 @@ All logging middleware will emit a final log statement. It is based on the error
 the gRPC status code, an error (if any) and it emits at a level controlled via `WithLevels`. You can control this behavior
 using `WithDecider`.
 
-This parent package
+# This parent package
 
 This particular package is intended for use by other middleware, logging or otherwise. It contains interfaces that other
 logging middlewares *could* share. This allows code to be shared between different implementations.
 
-Field names
+# Field names
 
 All field names of loggers follow the OpenTracing semantics definitions, with `grpc.` prefix if needed:
 https://github.com/opentracing/specification/blob/master/semantic_conventions.md
