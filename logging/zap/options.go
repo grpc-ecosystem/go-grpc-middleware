@@ -209,9 +209,11 @@ type MessageProducer func(ctx context.Context, msg string, level zapcore.Level, 
 // DefaultMessageProducer writes the default message
 func DefaultMessageProducer(ctx context.Context, msg string, level zapcore.Level, code codes.Code, err error, duration zapcore.Field) {
 	// re-extract logger from newCtx, as it may have extra fields that changed in the holder.
-	ctxzap.Extract(ctx).Check(level, msg).Write(
-		zap.Error(err),
-		zap.String("grpc.code", code.String()),
-		duration,
-	)
+	if ce := ctxzap.Extract(ctx).Check(level, msg); ce != nil {
+		ce.Write(
+			zap.Error(err),
+			zap.String("grpc.code", code.String()),
+			duration,
+		)
+	} /* TODO(ermik): else ? */
 }
