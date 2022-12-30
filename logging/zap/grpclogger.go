@@ -98,6 +98,10 @@ func (l *zapGrpcLoggerV2) Infof(format string, args ...interface{}) {
 	l.logger.Info(fmt.Sprintf(format, args...))
 }
 
+func (l *zapGrpcLoggerV2) InfoDepth(depth int, args ...interface{}) {
+	l.logger.WithOptions(zap.AddCallerSkip(depth)).Info(fmt.Sprint(args...))
+}
+
 func (l *zapGrpcLoggerV2) Warning(args ...interface{}) {
 	l.logger.Warn(fmt.Sprint(args...))
 }
@@ -108,6 +112,10 @@ func (l *zapGrpcLoggerV2) Warningln(args ...interface{}) {
 
 func (l *zapGrpcLoggerV2) Warningf(format string, args ...interface{}) {
 	l.logger.Warn(fmt.Sprintf(format, args...))
+}
+
+func (l *zapGrpcLoggerV2) WarningDepth(depth int, args ...interface{}) {
+	l.logger.WithOptions(zap.AddCallerSkip(depth)).Warn(fmt.Sprint(args...))
 }
 
 func (l *zapGrpcLoggerV2) Error(args ...interface{}) {
@@ -122,6 +130,10 @@ func (l *zapGrpcLoggerV2) Errorf(format string, args ...interface{}) {
 	l.logger.Error(fmt.Sprintf(format, args...))
 }
 
+func (l *zapGrpcLoggerV2) ErrorDepth(depth int, args ...interface{}) {
+	l.logger.WithOptions(zap.AddCallerSkip(depth)).Error(fmt.Sprint(args...))
+}
+
 func (l *zapGrpcLoggerV2) Fatal(args ...interface{}) {
 	l.logger.Fatal(fmt.Sprint(args...))
 }
@@ -132,6 +144,10 @@ func (l *zapGrpcLoggerV2) Fatalln(args ...interface{}) {
 
 func (l *zapGrpcLoggerV2) Fatalf(format string, args ...interface{}) {
 	l.logger.Fatal(fmt.Sprintf(format, args...))
+}
+
+func (l *zapGrpcLoggerV2) FatalDepth(depth int, args ...interface{}) {
+	l.logger.WithOptions(zap.AddCallerSkip(depth)).Fatal(fmt.Sprint(args...))
 }
 
 func (l *zapGrpcLoggerV2) V(level int) bool {
