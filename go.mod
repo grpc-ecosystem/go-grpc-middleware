@@ -3,6 +3,7 @@ module github.com/grpc-ecosystem/go-grpc-middleware
 require (
 	github.com/go-kit/log v0.1.0
 	github.com/gogo/protobuf v1.3.2
+	github.com/golang-jwt/jwt/v4 v4.4.3
 	github.com/golang/protobuf v1.3.3
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/sirupsen/logrus v1.4.2
