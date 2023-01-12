@@ -29,10 +29,10 @@ func Example_initializationWithCustomLevels() {
 	}
 	// Create a server, make sure we put the tags context before everything else.
 	_ = grpc.NewServer(
-		grpc.UnaryInterceptor(
+		grpc.ChainUnaryInterceptor(
 			logging.UnaryServerInterceptor(grpczap.InterceptorLogger(logger), opts...),
 		),
-		grpc.StreamInterceptor(
+		grpc.ChainStreamInterceptor(
 			logging.StreamServerInterceptor(grpczap.InterceptorLogger(logger), opts...),
 		),
 	)
@@ -47,10 +47,10 @@ func Example_initializationWithDurationFieldOverride() {
 	}
 	// Create a server, make sure we put the tags context before everything else.
 	_ = grpc.NewServer(
-		grpc.UnaryInterceptor(
+		grpc.ChainUnaryInterceptor(
 			logging.UnaryServerInterceptor(grpczap.InterceptorLogger(logger), opts...),
 		),
-		grpc.StreamInterceptor(
+		grpc.ChainStreamInterceptor(
 			logging.StreamServerInterceptor(grpczap.InterceptorLogger(logger), opts...),
 		),
 	)
@@ -73,10 +73,10 @@ func ExampleWithDecider() {
 	}
 	// Create a server, make sure we put the tags context before everything else.
 	_ = []grpc.ServerOption{
-		grpc.UnaryInterceptor(
+		grpc.ChainUnaryInterceptor(
 			logging.UnaryServerInterceptor(grpczap.InterceptorLogger(logger), opts...),
 		),
-		grpc.StreamInterceptor(
+		grpc.ChainStreamInterceptor(
 			logging.StreamServerInterceptor(grpczap.InterceptorLogger(logger), opts...),
 		),
 	}
@@ -95,16 +95,12 @@ func ExampleServerPayloadLoggingDecider() {
 
 	// Create a server, make sure we put the tags context before everything else.
 	_ = []grpc.ServerOption{
-		grpc.UnaryInterceptor(
+		grpc.ChainUnaryInterceptor(
 			logging.UnaryServerInterceptor(grpczap.InterceptorLogger(logger)),
-		),
-		grpc.UnaryInterceptor(
 			logging.PayloadUnaryServerInterceptor(grpczap.InterceptorLogger(logger), payloadDecider, time.RFC3339),
 		),
-		grpc.StreamInterceptor(
+		grpc.ChainStreamInterceptor(
 			logging.StreamServerInterceptor(grpczap.InterceptorLogger(logger)),
-		),
-		grpc.StreamInterceptor(
 			logging.PayloadStreamServerInterceptor(grpczap.InterceptorLogger(logger), payloadDecider, time.RFC3339),
 		),
 	}
