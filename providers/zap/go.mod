@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
+	github.com/stretchr/testify v1.7.0
 	go.uber.org/zap v1.18.1
 	google.golang.org/grpc v1.45.0
 )
