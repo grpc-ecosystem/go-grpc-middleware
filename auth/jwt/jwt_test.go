@@ -2,6 +2,9 @@ package grpc_jwt_test
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"fmt"
 	"testing"
 	"time"
@@ -159,6 +162,73 @@ func (s *AuthTestSuite) TestStream_GoodAuthWithPerRpcCredentials() {
 	require.NoError(s.T(), err, "no error must occur")
 	require.NotNil(s.T(), pong, "pong must not be nil")
 }
+
+///////////////////////
+
+func TestJwtTestSuite2(t *testing.T) {
+	key, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	authFunc := grpc_jwt.NewAuthFuncWithConfig(
+		grpc_jwt.Config{
+			SigningMethod: jwt.SigningMethodES256.Name,
+			SigningKey:    &key.PublicKey,
+		},
+	)
+	s := &AuthTestSuite2{
+		InterceptorTestSuite: &grpc_testing.InterceptorTestSuite{
+			TestService: &assertingPingService{&grpc_testing.TestPingService{T: t}, t},
+			ServerOpts: []grpc.ServerOption{
+				grpc.StreamInterceptor(grpc_auth.StreamServerInterceptor(authFunc)),
+				grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authFunc)),
+			},
+		},
+		key: key,
+	}
+	suite.Run(t, s)
+}
+
+type AuthTestSuite2 struct {
+	*grpc_testing.InterceptorTestSuite
+	key *ecdsa.PrivateKey
+}
+
+func (s *AuthTestSuite2) TestUnary_NoAuth() {
+	_, err := s.Client.Ping(s.SimpleCtx(), goodPing)
+	assert.Error(s.T(), err, "there must be an error")
+	assert.Equal(s.T(), codes.Unauthenticated, status.Code(err), "must error with unauthenticated")
+}
+
+func (s *AuthTestSuite2) TestUnary_BrokenAuth() {
+	_, err := s.Client.Ping(ctxWithToken(s.SimpleCtx(), "bearer", brokenAuthToken), goodPing)
+	assert.Error(s.T(), err, "there must be an error")
+	assert.Equal(s.T(), codes.Unauthenticated, status.Code(err), "must error with unauthenticated")
+}
+
+func (s *AuthTestSuite2) TestUnary_BadAuth() {
+	badKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, exampleClaims)
+	signedToken, _ := token.SignedString(&badKey)
+	_, err := s.Client.Ping(ctxWithToken(s.SimpleCtx(), "bearer", signedToken), goodPing)
+	assert.Error(s.T(), err, "there must be an error")
+	assert.Equal(s.T(), codes.Unauthenticated, status.Code(err), "must error with unauthenticated")
+}
+
+func (s *AuthTestSuite2) TestUnary_GoodAuth() {
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, exampleClaims)
+	signedToken, _ := token.SignedString(s.key)
+	_, err := s.Client.Ping(ctxWithToken(s.SimpleCtx(), "bearer", signedToken), goodPing)
+	require.NoError(s.T(), err, "no error must occur")
+}
+
+func (s *AuthTestSuite2) TestUnary_GoodAuthWithPerRpcCredentials() {
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, exampleClaims)
+	signedToken, _ := token.SignedString(s.key)
+	grpcCreds := oauth.TokenSource{TokenSource: &fakeOAuth2TokenSource{accessToken: signedToken}}
+	client := s.NewClient(grpc.WithPerRPCCredentials(grpcCreds))
+	_, err := client.Ping(s.SimpleCtx(), goodPing)
+	require.NoError(s.T(), err, "no error must occur")
+}
+
+////////////////////////
 
 // fakeOAuth2TokenSource implements a fake oauth2.TokenSource for the purpose of credentials test.
 type fakeOAuth2TokenSource struct {
