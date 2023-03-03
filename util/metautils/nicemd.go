@@ -39,7 +39,7 @@ func ExtractOutgoing(ctx context.Context) NiceMD {
 
 // Clone performs a *deep* copy of the metadata.MD.
 //
-// You can specify the lower-case copiedKeys to only copy certain whitelisted keys. If no keys are explicitly whitelisted
+// You can specify the lower-case copiedKeys to only copy certain allow-listed keys. If no keys are explicitly allow-listed
 // all keys get copied.
 func (m NiceMD) Clone(copiedKeys ...string) NiceMD {
 	newMd := NiceMD(metadata.Pairs())
