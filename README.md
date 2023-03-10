@@ -31,7 +31,6 @@ import "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 
 myServer := grpc.NewServer(
     grpc.ChainStreamInterceptor(
-        tags.StreamServerInterceptor(),
         opentracing.StreamServerInterceptor(),
         prometheus.StreamServerInterceptor,
         zap.StreamServerInterceptor(zapLogger),
@@ -39,7 +38,6 @@ myServer := grpc.NewServer(
         recovery.StreamServerInterceptor(),
     ),
     grpc.ChainUnaryInterceptor(
-        tags.UnaryServerInterceptor(),
         opentracing.UnaryServerInterceptor(),
         prometheus.UnaryServerInterceptor,
         zap.UnaryServerInterceptor(zapLogger),
@@ -58,7 +56,6 @@ myServer := grpc.NewServer(
 
 #### Logging
 
-   * [`tags`](interceptors/tags) - a library that adds a `Tag` map to context, with data populated from request body
    * [`zap`](providers/zap) - integration of [zap](https://github.com/uber-go/zap) logging library into gRPC handlers.
    * [`logrus`](providers/logrus) - integration of [logrus](https://github.com/sirupsen/logrus) logging library into gRPC handlers.
    * [`kit`](providers/kit) - integration of [go-kit/log](https://github.com/go-kit/log) logging library into gRPC handlers.
