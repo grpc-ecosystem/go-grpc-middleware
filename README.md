@@ -11,6 +11,13 @@
 
 [gRPC Go](https://github.com/grpc/grpc-go) Middleware: interceptors, helpers, utilities.
 
+## ⚠️  Status
+
+Version [v2](https://github.com/grpc-ecosystem/go-grpc-middleware/tree/v2) is about to be released, with migration guide, which will replace v1. Try v2 and give us feedback! 
+
+Version v1 is currently in deprecation mode, which means only critical and safety bug fixes will be merged.
+
+
 ## Middleware
 
 [gRPC Go](https://github.com/grpc/grpc-go) recently acquired support for
@@ -80,11 +87,6 @@ _Please send a PR to add new interceptors or middleware to this list_
 - [`grpc_recovery`](recovery/) - turn panics into gRPC errors
 - [`ratelimit`](ratelimit/) - grpc rate limiting by your own limiter
 
-## Status
-
-This code has been running in _production_ since May 2016 as the basis of the gRPC microservices stack at [Improbable](https://improbable.io).
-
-Additional tooling will be added, and contributions are welcome.
 
 ## License
 
