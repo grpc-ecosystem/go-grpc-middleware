@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	AttemptMetadataKey = "x-retry-attempty"
+	AttemptMetadataKey = "x-retry-attempt"
 )
 
 // UnaryClientInterceptor returns a new retrying unary client interceptor.

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	grpclogrus "github.com/grpc-ecosystem/go-grpc-middleware/providers/logrus/v2"
+	grpclogrus "github.com/grpc-ecosystem/go-grpc-middleware/providers/logrus"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 

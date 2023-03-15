@@ -17,7 +17,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
@@ -91,7 +90,7 @@ func (s *failingService) PingStream(stream testpb.TestService_PingStreamServer) 
 
 func TestRetrySuite(t *testing.T) {
 	service := &failingService{
-		TestServiceServer: &testpb.TestPingService{T: t},
+		TestServiceServer: &testpb.TestPingService{},
 	}
 	unaryInterceptor := UnaryClientInterceptor(
 		WithCodes(retriableErrors...),
@@ -359,7 +358,7 @@ func (ti *trackedInterceptor) StreamClientInterceptor(ctx context.Context, desc 
 
 func TestChainedRetrySuite(t *testing.T) {
 	service := &failingService{
-		TestServiceServer: &testpb.TestPingService{T: t},
+		TestServiceServer: &testpb.TestPingService{},
 	}
 	preRetryInterceptor := &trackedInterceptor{}
 	postRetryInterceptor := &trackedInterceptor{}
@@ -370,8 +369,16 @@ func TestChainedRetrySuite(t *testing.T) {
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			TestService: service,
 			ClientOpts: []grpc.DialOption{
-				grpc.WithUnaryInterceptor(middleware.ChainUnaryClient(preRetryInterceptor.UnaryClientInterceptor, UnaryClientInterceptor(), postRetryInterceptor.UnaryClientInterceptor)),
-				grpc.WithStreamInterceptor(middleware.ChainStreamClient(preRetryInterceptor.StreamClientInterceptor, StreamClientInterceptor(), postRetryInterceptor.StreamClientInterceptor)),
+				grpc.WithChainUnaryInterceptor(
+					preRetryInterceptor.UnaryClientInterceptor,
+					UnaryClientInterceptor(),
+					postRetryInterceptor.UnaryClientInterceptor,
+				),
+				grpc.WithChainStreamInterceptor(
+					preRetryInterceptor.StreamClientInterceptor,
+					StreamClientInterceptor(),
+					postRetryInterceptor.StreamClientInterceptor,
+				),
 			},
 		},
 	}

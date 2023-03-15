@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/credentials/insecure"
+
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -152,7 +154,7 @@ func (s *ClientInterceptorTestSuite) SetupSuite() {
 	require.NoError(s.T(), err, "must be able to allocate a port for serverListener")
 
 	s.server = grpc.NewServer()
-	testpb.RegisterTestServiceServer(s.server, &testpb.TestPingService{T: s.T()})
+	testpb.RegisterTestServiceServer(s.server, &testpb.TestPingService{})
 
 	go func() {
 		defer close(s.stopped)
@@ -166,7 +168,7 @@ func (s *ClientInterceptorTestSuite) SetupSuite() {
 	s.clientConn, err = grpc.DialContext(
 		ctx,
 		s.serverListener.Addr().String(),
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 		grpc.WithUnaryInterceptor(UnaryClientInterceptor(s.mock)),
 		grpc.WithStreamInterceptor(StreamClientInterceptor(s.mock)),

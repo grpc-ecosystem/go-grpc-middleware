@@ -7,8 +7,9 @@ Fork, then clone the repo:
 ```bash
 git clone git@github.com:your-username/go-grpc-middleware.git
 ```
-Before submitting a patch, please make sure to run the following make commands to execute the
-formatting check, regenerate the proto files, and run the tests and linters:
+
+Before submitting a patch, please make sure to run the following make commands to execute the formatting check, regenerate the proto files, and run the tests and linters:
+
 ```powershell
 make fmt : Run formatting across all go files
 
@@ -26,6 +27,5 @@ make all
 ```
 
 This will `lint`, `fmt`, regenerate proto files and documentation and run all tests.
-
 
 Push to your fork and open a pull request.

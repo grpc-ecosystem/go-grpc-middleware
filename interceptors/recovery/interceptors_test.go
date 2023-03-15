@@ -42,7 +42,7 @@ func (s *recoveryAssertService) PingList(ping *testpb.PingListRequest, stream te
 func TestRecoverySuite(t *testing.T) {
 	s := &RecoverySuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
-			TestService: &recoveryAssertService{TestServiceServer: &testpb.TestPingService{T: t}},
+			TestService: &recoveryAssertService{TestServiceServer: &testpb.TestPingService{}},
 			ServerOpts: []grpc.ServerOption{
 				grpc.StreamInterceptor(
 					recovery.StreamServerInterceptor()),
@@ -97,7 +97,7 @@ func TestRecoveryOverrideSuite(t *testing.T) {
 	}
 	s := &RecoveryOverrideSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
-			TestService: &recoveryAssertService{TestServiceServer: &testpb.TestPingService{T: t}},
+			TestService: &recoveryAssertService{TestServiceServer: &testpb.TestPingService{}},
 			ServerOpts: []grpc.ServerOption{
 				grpc.StreamInterceptor(
 					recovery.StreamServerInterceptor(opts...)),

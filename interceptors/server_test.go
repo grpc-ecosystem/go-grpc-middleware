@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/credentials/insecure"
+
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -50,7 +52,7 @@ func (s *ServerInterceptorTestSuite) SetupSuite() {
 		grpc.StreamInterceptor(StreamServerInterceptor(s.mock)),
 		grpc.UnaryInterceptor(UnaryServerInterceptor(s.mock)),
 	)
-	testpb.RegisterTestServiceServer(s.server, &testpb.TestPingService{T: s.T()})
+	testpb.RegisterTestServiceServer(s.server, &testpb.TestPingService{})
 
 	go func() {
 		_ = s.server.Serve(s.serverListener)
@@ -59,7 +61,7 @@ func (s *ServerInterceptorTestSuite) SetupSuite() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	s.clientConn, err = grpc.DialContext(ctx, s.serverListener.Addr().String(), grpc.WithInsecure(), grpc.WithBlock())
+	s.clientConn, err = grpc.DialContext(ctx, s.serverListener.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	require.NoError(s.T(), err, "must not error on client Dial")
 	s.testClient = testpb.NewTestServiceClient(s.clientConn)
 }

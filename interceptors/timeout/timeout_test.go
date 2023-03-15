@@ -32,7 +32,7 @@ func TestTimeoutUnaryClientInterceptor(t *testing.T) {
 
 	its := &testpb.InterceptorTestSuite{
 		ClientOpts: []grpc.DialOption{
-			grpc.WithUnaryInterceptor(timeout.TimeoutUnaryClientInterceptor(100 * time.Millisecond)),
+			grpc.WithUnaryInterceptor(timeout.UnaryClientInterceptor(100 * time.Millisecond)),
 		},
 		TestService: server,
 	}

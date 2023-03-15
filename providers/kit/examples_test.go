@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
-	"github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2"
+	"github.com/grpc-ecosystem/go-grpc-middleware/providers/kit"
 	"google.golang.org/grpc"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"

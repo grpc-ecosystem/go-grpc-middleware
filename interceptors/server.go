@@ -15,8 +15,8 @@ import (
 // UnaryServerInterceptor is a gRPC server-side interceptor that provides reporting for Unary RPCs.
 func UnaryServerInterceptor(reportable ServerReportable) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		r := newReport(Unary, info.FullMethod)
-		reporter, newCtx := reportable.ServerReporter(ctx, CallMeta{ReqProtoOrNil: req, Typ: r.rpcType, Service: r.service, Method: r.method})
+		r := newReport(NewServerCallMeta(info.FullMethod, nil, req))
+		reporter, newCtx := reportable.ServerReporter(ctx, r.callMeta)
 
 		reporter.PostMsgReceive(req, nil, time.Since(r.startTime))
 		resp, err := handler(newCtx, req)
@@ -30,21 +30,12 @@ func UnaryServerInterceptor(reportable ServerReportable) grpc.UnaryServerInterce
 // StreamServerInterceptor is a gRPC server-side interceptor that provides reporting for Streaming RPCs.
 func StreamServerInterceptor(reportable ServerReportable) grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		r := newReport(ServerStream, info.FullMethod)
-		reporter, newCtx := reportable.ServerReporter(ss.Context(), CallMeta{ReqProtoOrNil: nil, Typ: StreamRPCType(info), Service: r.service, Method: r.method})
+		r := newReport(NewServerCallMeta(info.FullMethod, info, nil))
+		reporter, newCtx := reportable.ServerReporter(ss.Context(), r.callMeta)
 		err := handler(srv, &monitoredServerStream{ServerStream: ss, newCtx: newCtx, reporter: reporter})
 		reporter.PostCall(err, time.Since(r.startTime))
 		return err
 	}
-}
-
-func StreamRPCType(info *grpc.StreamServerInfo) GRPCType {
-	if info.IsClientStream && !info.IsServerStream {
-		return ClientStream
-	} else if !info.IsClientStream && info.IsServerStream {
-		return ServerStream
-	}
-	return BidiStream
 }
 
 // monitoredStream wraps grpc.ServerStream allowing each Sent/Recv of message to report.

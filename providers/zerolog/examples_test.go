@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	grpczerolog "github.com/grpc-ecosystem/go-grpc-middleware/providers/zerolog/v2"
+	grpczerolog "github.com/grpc-ecosystem/go-grpc-middleware/providers/zerolog"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 

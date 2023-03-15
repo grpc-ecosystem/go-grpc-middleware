@@ -16,8 +16,8 @@ import (
 // UnaryClientInterceptor is a gRPC client-side interceptor that provides reporting for Unary RPCs.
 func UnaryClientInterceptor(reportable ClientReportable) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		r := newReport(Unary, method)
-		reporter, newCtx := reportable.ClientReporter(ctx, CallMeta{ReqProtoOrNil: req, Typ: r.rpcType, Service: r.service, Method: r.method})
+		r := newReport(NewClientCallMeta(method, nil, req))
+		reporter, newCtx := reportable.ClientReporter(ctx, r.callMeta)
 
 		reporter.PostMsgSend(req, nil, time.Since(r.startTime))
 		err := invoker(newCtx, method, req, reply, cc, opts...)
@@ -30,8 +30,8 @@ func UnaryClientInterceptor(reportable ClientReportable) grpc.UnaryClientInterce
 // StreamClientInterceptor is a gRPC client-side interceptor that provides reporting for Stream RPCs.
 func StreamClientInterceptor(reportable ClientReportable) grpc.StreamClientInterceptor {
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-		r := newReport(clientStreamType(desc), method)
-		reporter, newCtx := reportable.ClientReporter(ctx, CallMeta{ReqProtoOrNil: nil, Typ: r.rpcType, Service: r.service, Method: r.method})
+		r := newReport(NewClientCallMeta(method, desc, nil))
+		reporter, newCtx := reportable.ClientReporter(ctx, r.callMeta)
 
 		clientStream, err := streamer(newCtx, desc, cc, method, opts...)
 		if err != nil {
@@ -40,15 +40,6 @@ func StreamClientInterceptor(reportable ClientReportable) grpc.StreamClientInter
 		}
 		return &monitoredClientStream{ClientStream: clientStream, startTime: r.startTime, reporter: reporter}, nil
 	}
-}
-
-func clientStreamType(desc *grpc.StreamDesc) GRPCType {
-	if desc.ClientStreams && !desc.ServerStreams {
-		return ClientStream
-	} else if !desc.ClientStreams && desc.ServerStreams {
-		return ServerStream
-	}
-	return BidiStream
 }
 
 // monitoredClientStream wraps grpc.ClientStream allowing each Sent/Recv of message to report.

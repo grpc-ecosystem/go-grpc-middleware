@@ -36,7 +36,7 @@ func (c *reporter) logMessage(logger Logger, err error, msg string, duration tim
 }
 
 func (c *reporter) PostCall(err error, duration time.Duration) {
-	switch c.opts.shouldLog(c.FullMethod(), err) {
+	switch c.opts.shouldLog(c.CallMeta, err) {
 	case LogFinishCall, LogStartAndFinishCall:
 		if err == io.EOF {
 			err = nil
@@ -51,7 +51,7 @@ func (c *reporter) PostMsgSend(_ interface{}, err error, duration time.Duration)
 	if c.startCallLogged {
 		return
 	}
-	switch c.opts.shouldLog(c.FullMethod(), err) {
+	switch c.opts.shouldLog(c.CallMeta, err) {
 	case LogStartAndFinishCall:
 		c.startCallLogged = true
 		c.logMessage(c.logger, err, "started call", duration)
@@ -62,7 +62,7 @@ func (c *reporter) PostMsgReceive(_ interface{}, err error, duration time.Durati
 	if c.startCallLogged {
 		return
 	}
-	switch c.opts.shouldLog(c.FullMethod(), err) {
+	switch c.opts.shouldLog(c.CallMeta, err) {
 	case LogStartAndFinishCall:
 		c.startCallLogged = true
 		c.logMessage(c.logger, err, "started call", duration)
@@ -70,17 +70,20 @@ func (c *reporter) PostMsgReceive(_ interface{}, err error, duration time.Durati
 }
 
 func reportable(logger Logger, opts *options) interceptors.CommonReportableFunc {
-	return func(ctx context.Context, c interceptors.CallMeta, isClient bool) (interceptors.Reporter, context.Context) {
+	return func(ctx context.Context, c interceptors.CallMeta) (interceptors.Reporter, context.Context) {
 		kind := KindServerFieldValue
-		if isClient {
+		if c.IsClient {
 			kind = KindClientFieldValue
 		}
 
 		fields := newCommonFields(kind, c)
-		if !isClient {
+		if !c.IsClient {
 			if peer, ok := peer.FromContext(ctx); ok {
 				fields = append(fields, "peer.address", peer.Addr.String())
 			}
+		}
+		if opts.fieldsFromCtxFn != nil {
+			fields = fields.AppendUnique(opts.fieldsFromCtxFn(ctx))
 		}
 		fields = fields.AppendUnique(ExtractFields(ctx))
 

@@ -1,14 +1,19 @@
-module github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2
+module github.com/grpc-ecosystem/go-grpc-middleware/providers/kit
 
-go 1.14
+go 1.19
 
 require (
 	github.com/go-kit/log v0.2.0
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.2.0.20201002093600-73cf2ae9d891
-	golang.org/x/net v0.0.0-20220401154927-543a649e0bdd // indirect
-	golang.org/x/sys v0.0.0-20220330033206-e17cdc41300f // indirect
-	google.golang.org/genproto v0.0.0-20220401170504-314d38edb7de // indirect
-	google.golang.org/grpc v1.45.0
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
+	google.golang.org/grpc v1.53.0
 )
 
-replace github.com/grpc-ecosystem/go-grpc-middleware/v2 => ../..
+require (
+	github.com/go-logfmt/logfmt v0.5.1 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
+	golang.org/x/net v0.5.0 // indirect
+	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/text v0.6.0 // indirect
+	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
+)

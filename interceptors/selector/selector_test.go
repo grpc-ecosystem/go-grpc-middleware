@@ -7,37 +7,23 @@ import (
 	"context"
 	"testing"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 )
 
-var blockList = []string{"/auth.v1beta1.AuthService/Login"}
-
-const errMsgFake = "fake error"
-
-var ctxKey = struct{}{}
-
-// allow After the method is matched, the interceptor is run
-func allow(methods []string) MatchFunc {
-	return func(ctx context.Context, fullMethod string) bool {
+// allow matches only given methods.
+func allow(methods []string) Matcher {
+	return MatchFunc(func(ctx context.Context, c interceptors.CallMeta) bool {
 		for _, s := range methods {
-			if s == fullMethod {
+			if s == c.FullMethod() {
 				return true
 			}
 		}
 		return false
-	}
-}
-
-// Block the interceptor will not run after the method matches
-func block(methods []string) MatchFunc {
-	allow := allow(methods)
-	return func(ctx context.Context, fullMethod string) bool {
-		return !allow(ctx, fullMethod)
-	}
+	})
 }
 
 type mockGRPCServerStream struct {
@@ -50,73 +36,65 @@ func (m *mockGRPCServerStream) Context() context.Context {
 	return m.ctx
 }
 
+const svcMethod = "/v1beta1.SomeService/NeedsAuth"
+
 func TestUnaryServerInterceptor(t *testing.T) {
-	ctx := context.Background()
-	interceptor := UnaryServerInterceptor(auth.UnaryServerInterceptor(
-		func(ctx context.Context) (context.Context, error) {
-			newCtx := context.WithValue(ctx, ctxKey, true)
-			return newCtx, nil
-		},
-	), block(blockList))
+	interceptor := UnaryServerInterceptor(
+		func(context.Context, interface{}, *grpc.UnaryServerInfo, grpc.UnaryHandler) (interface{}, error) {
+			return nil, errors.New("always error")
+		}, allow([]string{svcMethod}),
+	)
+
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		val := ctx.Value(ctxKey)
-		if b, ok := val.(bool); ok && b {
-			return "good", nil
-		}
-		return nil, errors.New(errMsgFake)
+		return "good", nil
 	}
 
-	t.Run("nextStep", func(t *testing.T) {
+	t.Run("not-selected", func(t *testing.T) {
 		info := &grpc.UnaryServerInfo{
 			FullMethod: "FakeMethod",
 		}
-		resp, err := interceptor(ctx, nil, info, handler)
+		resp, err := interceptor(context.Background(), nil, info, handler)
 		assert.Nil(t, err)
 		assert.Equal(t, resp, "good")
 	})
 
-	t.Run("skipped", func(t *testing.T) {
+	t.Run("selected", func(t *testing.T) {
 		info := &grpc.UnaryServerInfo{
-			FullMethod: "/auth.v1beta1.AuthService/Login",
+			FullMethod: svcMethod,
 		}
-		resp, err := interceptor(ctx, nil, info, handler)
+		resp, err := interceptor(context.Background(), nil, info, handler)
 		assert.Nil(t, resp)
-		assert.EqualError(t, err, errMsgFake)
+		assert.EqualError(t, err, "always error")
 	})
 }
 
 func TestStreamServerInterceptor(t *testing.T) {
-	ctx := context.Background()
-	interceptor := StreamServerInterceptor(auth.StreamServerInterceptor(
-		func(ctx context.Context) (context.Context, error) {
-			newCtx := context.WithValue(ctx, ctxKey, true)
-			return newCtx, nil
+	interceptor := StreamServerInterceptor(
+		func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+			return errors.New("always error")
 		},
-	), block(blockList))
+		allow([]string{svcMethod}),
+	)
 
 	handler := func(srv interface{}, stream grpc.ServerStream) error {
-		ctx := stream.Context()
-		val := ctx.Value(ctxKey)
-		if b, ok := val.(bool); ok && b {
-			return nil
-		}
-		return errors.New(errMsgFake)
+		return nil
 	}
 
-	t.Run("nextStep", func(t *testing.T) {
+	t.Run("not-selected", func(t *testing.T) {
 		info := &grpc.StreamServerInfo{
 			FullMethod: "FakeMethod",
 		}
-		err := interceptor(nil, &mockGRPCServerStream{ctx: ctx}, info, handler)
+
+		err := interceptor(nil, &mockGRPCServerStream{ctx: context.Background()}, info, handler)
 		assert.Nil(t, err)
 	})
 
-	t.Run("skipped", func(t *testing.T) {
+	t.Run("slected", func(t *testing.T) {
 		info := &grpc.StreamServerInfo{
-			FullMethod: "/auth.v1beta1.AuthService/Login",
+			FullMethod: svcMethod,
 		}
-		err := interceptor(nil, &mockGRPCServerStream{ctx: ctx}, info, handler)
-		assert.EqualError(t, err, errMsgFake)
+		err := interceptor(nil, &mockGRPCServerStream{ctx: context.Background()}, info, handler)
+		assert.EqualError(t, err, "always error")
 	})
 }
 
@@ -150,7 +128,7 @@ func TestAllow(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			allow := allow(tt.args.methods)
-			want := allow(context.Background(), tt.method)
+			want := allow.Match(context.Background(), interceptors.NewServerCallMeta(tt.method, nil, nil))
 			assert.Equalf(t, tt.want, want, "Allow(%v)(ctx, %v)", tt.args.methods, tt.method)
 		})
 	}

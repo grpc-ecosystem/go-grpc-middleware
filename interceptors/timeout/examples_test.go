@@ -20,7 +20,7 @@ func Example_initialization() {
 		"ServerAddr",
 		grpc.WithUnaryInterceptor(
 			// Set your client request timeout.
-			timeout.TimeoutUnaryClientInterceptor(20*time.Millisecond),
+			timeout.UnaryClientInterceptor(20*time.Millisecond),
 		),
 	)
 	if err != nil {

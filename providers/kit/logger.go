@@ -29,19 +29,19 @@ func InterceptorLogger(logger log.Logger) *Logger {
 func (l *Logger) Log(lvl logging.Level, msg string) {
 	switch lvl {
 	case logging.DEBUG:
-		_ = level.Debug(l.Logger).Log(msg)
+		_ = level.Debug(l.Logger).Log("msg", msg)
 	case logging.INFO:
-		_ = level.Info(l.Logger).Log(msg)
+		_ = level.Info(l.Logger).Log("msg", msg)
 	case logging.WARNING:
-		_ = level.Warn(l.Logger).Log(msg)
+		_ = level.Warn(l.Logger).Log("msg", msg)
 	case logging.ERROR:
-		_ = level.Error(l.Logger).Log(msg)
+		_ = level.Error(l.Logger).Log("msg", msg)
 	default:
 		panic(fmt.Sprintf("kit: unknown level %s", lvl))
 	}
 }
 
-// Log implements logging.Logger interface.
+// With adds fields to the logger.
 func (l *Logger) With(fields ...string) logging.Logger {
 	vals := make([]interface{}, 0, len(fields))
 	for _, v := range fields {

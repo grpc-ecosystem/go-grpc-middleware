@@ -26,10 +26,10 @@ type loggingPayloadSuite struct {
 }
 
 func TestPayloadSuite(t *testing.T) {
-	alwaysLoggingDeciderServer := func(context.Context, string, interface{}) logging.PayloadDecision {
+	alwaysLoggingDeciderServer := func(context.Context, interceptors.CallMeta) logging.PayloadDecision {
 		return logging.LogPayloadRequestAndResponse
 	}
-	alwaysLoggingDeciderClient := func(context.Context, string) logging.PayloadDecision {
+	alwaysLoggingDeciderClient := func(context.Context, interceptors.CallMeta) logging.PayloadDecision {
 		return logging.LogPayloadRequestAndResponse
 	}
 
@@ -37,7 +37,7 @@ func TestPayloadSuite(t *testing.T) {
 		baseLoggingSuite: &baseLoggingSuite{
 			logger: newMockLogger(),
 			InterceptorTestSuite: &testpb.InterceptorTestSuite{
-				TestService: &testpb.TestPingService{T: t},
+				TestService: &testpb.TestPingService{},
 			},
 		},
 	}

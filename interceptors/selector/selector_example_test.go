@@ -6,6 +6,10 @@ package selector_test
 import (
 	"context"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,7 +17,6 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/ratelimit"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
 )
 
 // alwaysPassLimiter is an example limiter which implements Limiter interface.
@@ -24,18 +27,18 @@ func (*alwaysPassLimiter) Limit(_ context.Context) error {
 	return nil
 }
 
-func healthSkip(ctx context.Context, fullMethod string) bool {
-	return fullMethod != "/ping.v1.PingService/Health"
+func healthSkip(_ context.Context, c interceptors.CallMeta) bool {
+	return c.FullMethod() != "/ping.v1.PingService/Health"
 }
 
 func Example_ratelimit() {
 	limiter := &alwaysPassLimiter{}
 	_ = grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			selector.UnaryServerInterceptor(ratelimit.UnaryServerInterceptor(limiter), healthSkip),
+			selector.UnaryServerInterceptor(ratelimit.UnaryServerInterceptor(limiter), selector.MatchFunc(healthSkip)),
 		),
 		grpc.ChainStreamInterceptor(
-			selector.StreamServerInterceptor(ratelimit.StreamServerInterceptor(limiter), healthSkip),
+			selector.StreamServerInterceptor(ratelimit.StreamServerInterceptor(limiter), selector.MatchFunc(healthSkip)),
 		),
 	)
 }
@@ -68,17 +71,17 @@ func exampleAuthFunc(ctx context.Context) (context.Context, error) {
 	return context.WithValue(ctx, tokenInfoKey, tokenInfo), nil
 }
 
-func loginSkip(ctx context.Context, fullMethod string) bool {
-	return fullMethod != "/auth.v1.AuthService/Login"
+func loginSkip(_ context.Context, c interceptors.CallMeta) bool {
+	return c.FullMethod() != "/auth.v1.AuthService/Login"
 }
 
 func Example_login() {
 	_ = grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(exampleAuthFunc), loginSkip),
+			selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(exampleAuthFunc), selector.MatchFunc(loginSkip)),
 		),
 		grpc.ChainStreamInterceptor(
-			selector.StreamServerInterceptor(auth.StreamServerInterceptor(exampleAuthFunc), loginSkip),
+			selector.StreamServerInterceptor(auth.StreamServerInterceptor(exampleAuthFunc), selector.MatchFunc(loginSkip)),
 		),
 	)
 }

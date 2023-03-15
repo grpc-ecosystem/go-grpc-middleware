@@ -17,6 +17,8 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/grpc/credentials/insecure"
+
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -75,7 +77,7 @@ func (s *InterceptorTestSuite) SetupSuite() {
 			s.Server = grpc.NewServer(s.ServerOpts...)
 			// Create a service if the instantiator hasn't provided one.
 			if s.TestService == nil {
-				s.TestService = &TestPingService{T: s.T()}
+				s.TestService = &TestPingService{}
 			}
 			RegisterTestServiceServer(s.Server, s.TestService)
 
@@ -122,7 +124,7 @@ func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) TestServic
 		creds := credentials.NewTLS(&tls.Config{ServerName: "localhost", RootCAs: cp})
 		newDialOpts = append(newDialOpts, grpc.WithTransportCredentials(creds))
 	} else {
-		newDialOpts = append(newDialOpts, grpc.WithInsecure())
+		newDialOpts = append(newDialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()

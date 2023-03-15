@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	grpclogr "github.com/grpc-ecosystem/go-grpc-middleware/providers/logr/v2"
+	grpclogr "github.com/grpc-ecosystem/go-grpc-middleware/providers/logr"
 	"google.golang.org/grpc"
 	"k8s.io/klog/v2"
 

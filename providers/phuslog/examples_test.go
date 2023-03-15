@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	grpcphuslog "github.com/grpc-ecosystem/go-grpc-middleware/providers/phuslog/v2"
+	"github.com/grpc-ecosystem/go-grpc-middleware/providers/phuslog"
 	"github.com/phuslu/log"
 	"google.golang.org/grpc"
 
@@ -30,10 +30,10 @@ func Example_initializationWithCustomLevels() {
 	// Create a server, make sure we put the tags context before everything else.
 	_ = grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			logging.UnaryServerInterceptor(grpcphuslog.InterceptorLogger(logger), opts...),
+			logging.UnaryServerInterceptor(phuslog.InterceptorLogger(logger), opts...),
 		),
 		grpc.ChainStreamInterceptor(
-			logging.StreamServerInterceptor(grpcphuslog.InterceptorLogger(logger), opts...),
+			logging.StreamServerInterceptor(phuslog.InterceptorLogger(logger), opts...),
 		),
 	)
 }
@@ -48,10 +48,10 @@ func Example_initializationWithDurationFieldOverride() {
 	// Create a server, make sure we put the tags context before everything else.
 	_ = grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			logging.UnaryServerInterceptor(grpcphuslog.InterceptorLogger(logger), opts...),
+			logging.UnaryServerInterceptor(phuslog.InterceptorLogger(logger), opts...),
 		),
 		grpc.ChainStreamInterceptor(
-			logging.StreamServerInterceptor(grpcphuslog.InterceptorLogger(logger), opts...),
+			logging.StreamServerInterceptor(phuslog.InterceptorLogger(logger), opts...),
 		),
 	)
 }
@@ -75,10 +75,10 @@ func ExampleWithDecider() {
 	// Create a server, make sure we put the tags context before everything else.
 	_ = []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(
-			logging.UnaryServerInterceptor(grpcphuslog.InterceptorLogger(logger), opts...),
+			logging.UnaryServerInterceptor(phuslog.InterceptorLogger(logger), opts...),
 		),
 		grpc.ChainStreamInterceptor(
-			logging.StreamServerInterceptor(grpcphuslog.InterceptorLogger(logger), opts...),
+			logging.StreamServerInterceptor(phuslog.InterceptorLogger(logger), opts...),
 		),
 	}
 }
@@ -97,12 +97,12 @@ func ExampleServerPayloadLoggingDecider() {
 	// Create a server, make sure we put the tags context before everything else.
 	_ = []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(
-			logging.UnaryServerInterceptor(grpcphuslog.InterceptorLogger(logger)),
-			logging.PayloadUnaryServerInterceptor(grpcphuslog.InterceptorLogger(logger), payloadDecider, time.RFC3339),
+			logging.UnaryServerInterceptor(phuslog.InterceptorLogger(logger)),
+			logging.PayloadUnaryServerInterceptor(phuslog.InterceptorLogger(logger), payloadDecider, time.RFC3339),
 		),
 		grpc.ChainStreamInterceptor(
-			logging.StreamServerInterceptor(grpcphuslog.InterceptorLogger(logger)),
-			logging.PayloadStreamServerInterceptor(grpcphuslog.InterceptorLogger(logger), payloadDecider, time.RFC3339),
+			logging.StreamServerInterceptor(phuslog.InterceptorLogger(logger)),
+			logging.PayloadStreamServerInterceptor(phuslog.InterceptorLogger(logger), payloadDecider, time.RFC3339),
 		),
 	}
 }
