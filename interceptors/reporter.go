@@ -49,17 +49,17 @@ func (f CommonReportableFunc) ServerReporter(ctx context.Context, c CallMeta) (R
 
 type Reporter interface {
 	PostCall(err error, rpcDuration time.Duration)
-	PostMsgSend(reqProto interface{}, err error, sendDuration time.Duration)
-	PostMsgReceive(replyProto interface{}, err error, recvDuration time.Duration)
+	PostMsgSend(reqProto any, err error, sendDuration time.Duration)
+	PostMsgReceive(replyProto any, err error, recvDuration time.Duration)
 }
 
 var _ Reporter = NoopReporter{}
 
 type NoopReporter struct{}
 
-func (NoopReporter) PostCall(error, time.Duration)                    {}
-func (NoopReporter) PostMsgSend(interface{}, error, time.Duration)    {}
-func (NoopReporter) PostMsgReceive(interface{}, error, time.Duration) {}
+func (NoopReporter) PostCall(error, time.Duration)            {}
+func (NoopReporter) PostMsgSend(any, error, time.Duration)    {}
+func (NoopReporter) PostMsgReceive(any, error, time.Duration) {}
 
 type report struct {
 	callMeta  CallMeta

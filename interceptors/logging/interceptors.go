@@ -9,10 +9,9 @@ import (
 	"io"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
 
 type reporter struct {
@@ -47,7 +46,7 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 	}
 }
 
-func (c *reporter) PostMsgSend(_ interface{}, err error, duration time.Duration) {
+func (c *reporter) PostMsgSend(_ any, err error, duration time.Duration) {
 	if c.startCallLogged {
 		return
 	}
@@ -58,7 +57,7 @@ func (c *reporter) PostMsgSend(_ interface{}, err error, duration time.Duration)
 	}
 }
 
-func (c *reporter) PostMsgReceive(_ interface{}, err error, duration time.Duration) {
+func (c *reporter) PostMsgReceive(_ any, err error, duration time.Duration) {
 	if c.startCallLogged {
 		return
 	}

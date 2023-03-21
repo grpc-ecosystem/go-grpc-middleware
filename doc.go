@@ -50,7 +50,7 @@ to the handling function.
 
 For example, a client side interceptor example for auth looks like:
 
-	func FakeAuthUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	func FakeAuthUnaryInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	   newCtx := context.WithValue(ctx, "user_id", "john@example.com")
 	   return handler(newCtx, req)
 	}
@@ -59,7 +59,7 @@ Unfortunately, it's not as easy for streaming RPCs. These have the `context.Cont
 the `grpc.ServerStream` object. To pass values through context, a wrapper (`WrappedServerStream`) is
 needed. For example:
 
-	func FakeAuthStreamingInterceptor(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	func FakeAuthStreamingInterceptor(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	   newStream := middleware.WrapServerStream(stream)
 	   newStream.WrappedContext = context.WithValue(ctx, "user_id", "john@example.com")
 	   return handler(srv, newStream)

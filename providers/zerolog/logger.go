@@ -6,9 +6,8 @@ package zerolog
 import (
 	"fmt"
 
-	"github.com/rs/zerolog"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/rs/zerolog"
 )
 
 // Compatibility check.
@@ -44,7 +43,7 @@ func (l *Logger) Log(lvl logging.Level, msg string) {
 
 // With implements the logging.Logger interface.
 func (l Logger) With(fields ...string) logging.Logger {
-	vals := make(map[string]interface{}, len(fields)/2)
+	vals := make(map[string]any, len(fields)/2)
 	for i := 0; i < len(fields); i += 2 {
 		vals[fields[i]] = fields[i+1]
 	}

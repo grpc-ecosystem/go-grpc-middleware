@@ -4,6 +4,7 @@ SHELL=/bin/bash
 
 PROVIDER_MODULES ?= $(shell find $(PWD)/providers/  -name "go.mod" | grep -v ".bingo" | xargs dirname)
 MODULES          ?= $(PROVIDER_MODULES) $(PWD)/ $(PWD)/examples
+GO_FILES_TO_FMT  ?= $(shell find . -path -prune -o -name '*.go' -print)
 
 GOBIN             ?= $(firstword $(subst :, ,${GOPATH}))/bin
 
@@ -37,8 +38,12 @@ all: fmt proto lint test
 
 .PHONY: fmt
 fmt: $(GOIMPORTS)
-	@echo "Running fmt for all modules: $(MODULES)"
-	@$(GOIMPORTS) -local github.com/grpc-ecosystem/go-grpc-middleware/v2 -w $(MODULES)
+	@echo ">> formatting go code"
+	@gofmt -s -w $(GO_FILES_TO_FMT)
+	@for file in $(GO_FILES_TO_FMT) ; do \
+		./goimports.sh "$${file}"; \
+	done
+	@$(GOIMPORTS) -w $(GO_FILES_TO_FMT)
 
 .PHONY: test
 test:

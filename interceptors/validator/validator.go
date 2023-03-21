@@ -28,7 +28,7 @@ type validatorLegacy interface {
 	Validate() error
 }
 
-func validate(req interface{}, all bool) error {
+func validate(req any, all bool) error {
 	if all {
 		switch v := req.(type) {
 		case validateAller:
@@ -68,7 +68,7 @@ func validate(req interface{}, all bool) error {
 // Note that generated codes prior to protoc-gen-validate v0.6.0 do not provide an all-validation
 // interface. In this case the interceptor fallbacks to legacy validation and `all` is ignored.
 func UnaryServerInterceptor(all bool) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		if err := validate(req, all); err != nil {
 			return nil, err
 		}
@@ -84,7 +84,7 @@ func UnaryServerInterceptor(all bool) grpc.UnaryServerInterceptor {
 // Note that generated codes prior to protoc-gen-validate v0.6.0 do not provide an all-validation
 // interface. In this case the interceptor fallbacks to legacy validation and `all` is ignored.
 func UnaryClientInterceptor(all bool) grpc.UnaryClientInterceptor {
-	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		if err := validate(req, all); err != nil {
 			return err
 		}
@@ -103,7 +103,7 @@ func UnaryClientInterceptor(all bool) grpc.UnaryClientInterceptor {
 // handlers. For `ClientStream` (n:1) or `BidiStream` (n:m) RPCs, the messages will be rejected on
 // calls to `stream.Recv()`.
 func StreamServerInterceptor(all bool) grpc.StreamServerInterceptor {
-	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		wrapper := &recvWrapper{
 			all:          all,
 			ServerStream: stream,
@@ -117,7 +117,7 @@ type recvWrapper struct {
 	grpc.ServerStream
 }
 
-func (s *recvWrapper) RecvMsg(m interface{}) error {
+func (s *recvWrapper) RecvMsg(m any) error {
 	if err := s.ServerStream.RecvMsg(m); err != nil {
 		return err
 	}

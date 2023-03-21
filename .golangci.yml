@@ -9,7 +9,5 @@ output:
 linters-settings:
   errcheck:
     exclude: errcheck_excludes.txt
-  goimports:
-    local-prefixes: github.com/grpc-ecosystem/go-grpc-middleware/v2
   gofumpt:
     extra-rules: true

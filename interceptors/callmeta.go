@@ -19,14 +19,14 @@ func splitFullMethodName(fullMethod string) (string, string) {
 }
 
 type CallMeta struct {
-	ReqOrNil interface{}
+	ReqOrNil any
 	Typ      GRPCType
 	Service  string
 	Method   string
 	IsClient bool
 }
 
-func NewClientCallMeta(fullMethod string, streamDesc *grpc.StreamDesc, reqOrNil interface{}) CallMeta {
+func NewClientCallMeta(fullMethod string, streamDesc *grpc.StreamDesc, reqOrNil any) CallMeta {
 	c := CallMeta{IsClient: true, ReqOrNil: reqOrNil, Typ: Unary}
 	if streamDesc != nil {
 		c.Typ = clientStreamType(streamDesc)
@@ -35,7 +35,7 @@ func NewClientCallMeta(fullMethod string, streamDesc *grpc.StreamDesc, reqOrNil 
 	return c
 }
 
-func NewServerCallMeta(fullMethod string, streamInfo *grpc.StreamServerInfo, reqOrNil interface{}) CallMeta {
+func NewServerCallMeta(fullMethod string, streamInfo *grpc.StreamServerInfo, reqOrNil any) CallMeta {
 	c := CallMeta{IsClient: false, ReqOrNil: reqOrNil, Typ: Unary}
 	if streamInfo != nil {
 		c.Typ = serverStreamType(streamInfo)

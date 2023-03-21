@@ -9,10 +9,9 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/providers/phuslog"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/phuslu/log"
 	"google.golang.org/grpc"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
 var (
@@ -87,7 +86,7 @@ func ExampleServerPayloadLoggingDecider() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
 	logger := log.DefaultLogger.GrpcGateway()
 	// Expect payload from  "/blah.foo.healthcheck/Check" call to be logged.
-	payloadDecider := func(ctx context.Context, fullMethodName string, servingObject interface{}) logging.PayloadDecision {
+	payloadDecider := func(ctx context.Context, fullMethodName string, servingObject any) logging.PayloadDecision {
 		if fullMethodName == "/blah.foo.healthcheck/Check" {
 			return logging.LogPayloadRequestAndResponse
 		}

@@ -9,12 +9,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
 
 type serverPayloadReporter struct {
@@ -25,7 +24,7 @@ type serverPayloadReporter struct {
 
 func (c *serverPayloadReporter) PostCall(error, time.Duration) {}
 
-func (c *serverPayloadReporter) PostMsgSend(req interface{}, err error, duration time.Duration) {
+func (c *serverPayloadReporter) PostMsgSend(req any, err error, duration time.Duration) {
 	if err != nil {
 		return
 	}
@@ -50,7 +49,7 @@ func (c *serverPayloadReporter) PostMsgSend(req interface{}, err error, duration
 	)
 }
 
-func (c *serverPayloadReporter) PostMsgReceive(reply interface{}, err error, duration time.Duration) {
+func (c *serverPayloadReporter) PostMsgReceive(reply any, err error, duration time.Duration) {
 	if err != nil {
 		return
 	}
@@ -84,7 +83,7 @@ type clientPayloadReporter struct {
 
 func (c *clientPayloadReporter) PostCall(error, time.Duration) {}
 
-func (c *clientPayloadReporter) PostMsgSend(req interface{}, err error, duration time.Duration) {
+func (c *clientPayloadReporter) PostMsgSend(req any, err error, duration time.Duration) {
 	if err != nil {
 		return
 	}
@@ -108,7 +107,7 @@ func (c *clientPayloadReporter) PostMsgSend(req interface{}, err error, duration
 	)
 }
 
-func (c *clientPayloadReporter) PostMsgReceive(reply interface{}, err error, duration time.Duration) {
+func (c *clientPayloadReporter) PostMsgReceive(reply any, err error, duration time.Duration) {
 	if err != nil {
 		return
 	}

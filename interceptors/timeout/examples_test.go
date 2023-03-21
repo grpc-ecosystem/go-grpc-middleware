@@ -8,10 +8,9 @@ import (
 	"log"
 	"time"
 
-	"google.golang.org/grpc"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/timeout"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
+	"google.golang.org/grpc"
 )
 
 // Initialization shows an initialization sequence with a custom client request timeout.

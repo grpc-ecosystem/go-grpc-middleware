@@ -10,15 +10,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 type recoveryAssertService struct {
@@ -91,7 +90,7 @@ func (s *RecoverySuite) TestStream_PanickingReceive() {
 
 func TestRecoveryOverrideSuite(t *testing.T) {
 	opts := []recovery.Option{
-		recovery.WithRecoveryHandler(func(p interface{}) (err error) {
+		recovery.WithRecoveryHandler(func(p any) (err error) {
 			return status.Errorf(codes.Unknown, "panic triggered: %v", p)
 		}),
 	}

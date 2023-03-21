@@ -7,9 +7,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type reporter struct {
@@ -42,7 +41,7 @@ func (r *reporter) PostCall(err error, rpcDuration time.Duration) {
 	}
 }
 
-func (r *reporter) PostMsgSend(_ interface{}, _ error, sendDuration time.Duration) {
+func (r *reporter) PostMsgSend(_ any, _ error, sendDuration time.Duration) {
 	switch r.kind {
 	case KindServer:
 		r.incrementWithExemplar(r.serverMetrics.serverStreamMsgSent, string(r.typ), r.service, r.method)
@@ -54,7 +53,7 @@ func (r *reporter) PostMsgSend(_ interface{}, _ error, sendDuration time.Duratio
 	}
 }
 
-func (r *reporter) PostMsgReceive(_ interface{}, _ error, recvDuration time.Duration) {
+func (r *reporter) PostMsgReceive(_ any, _ error, recvDuration time.Duration) {
 	switch r.kind {
 	case KindServer:
 		r.incrementWithExemplar(r.serverMetrics.serverStreamMsgReceived, string(r.typ), r.service, r.method)

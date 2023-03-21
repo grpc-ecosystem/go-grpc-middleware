@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -24,8 +25,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 func TestServerInterceptorSuite(t *testing.T) {

@@ -6,9 +6,8 @@ package logging
 import (
 	"context"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	"google.golang.org/protobuf/proto"
 )
 
 // Decision defines rules for enabling start and end of logging.

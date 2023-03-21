@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
@@ -43,7 +42,7 @@ func (l *Logger) Log(lvl logging.Level, msg string) {
 
 // With adds fields to the logger.
 func (l *Logger) With(fields ...string) logging.Logger {
-	vals := make([]interface{}, 0, len(fields))
+	vals := make([]any, 0, len(fields))
 	for _, v := range fields {
 		vals = append(vals, v)
 	}

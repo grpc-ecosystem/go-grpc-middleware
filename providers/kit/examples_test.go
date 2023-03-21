@@ -10,9 +10,8 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/grpc-ecosystem/go-grpc-middleware/providers/kit"
-	"google.golang.org/grpc"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -99,7 +98,7 @@ func ExampleServerPayloadLoggingDecider() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
 	logger := log.NewNopLogger()
 	// Expect payload from  "/blah.foo.healthcheck/Check" call to be logged.
-	payloadDecider := func(ctx context.Context, fullMethodName string, servingObject interface{}) logging.PayloadDecision {
+	payloadDecider := func(ctx context.Context, fullMethodName string, servingObject any) logging.PayloadDecision {
 		// return fullMethodName == "/blah.foo.healthcheck/Check"
 		// TODO Fix
 		return 0

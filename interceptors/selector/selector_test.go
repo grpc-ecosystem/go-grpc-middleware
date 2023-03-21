@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
-
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -40,12 +39,12 @@ const svcMethod = "/v1beta1.SomeService/NeedsAuth"
 
 func TestUnaryServerInterceptor(t *testing.T) {
 	interceptor := UnaryServerInterceptor(
-		func(context.Context, interface{}, *grpc.UnaryServerInfo, grpc.UnaryHandler) (interface{}, error) {
+		func(context.Context, any, *grpc.UnaryServerInfo, grpc.UnaryHandler) (any, error) {
 			return nil, errors.New("always error")
 		}, allow([]string{svcMethod}),
 	)
 
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return "good", nil
 	}
 
@@ -70,13 +69,13 @@ func TestUnaryServerInterceptor(t *testing.T) {
 
 func TestStreamServerInterceptor(t *testing.T) {
 	interceptor := StreamServerInterceptor(
-		func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			return errors.New("always error")
 		},
 		allow([]string{svcMethod}),
 	)
 
-	handler := func(srv interface{}, stream grpc.ServerStream) error {
+	handler := func(srv any, stream grpc.ServerStream) error {
 		return nil
 	}
 

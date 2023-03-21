@@ -6,9 +6,8 @@ package logrus
 import (
 	"fmt"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/sirupsen/logrus"
 )
 
 // Compatibility check.
@@ -42,7 +41,7 @@ func (l *Logger) Log(lvl logging.Level, msg string) {
 
 // With implements logging.Logger interface.
 func (l *Logger) With(fields ...string) logging.Logger {
-	vals := make(map[string]interface{}, len(fields)/2)
+	vals := make(map[string]any, len(fields)/2)
 	for i := 0; i < len(fields); i += 2 {
 		vals[fields[i]] = fields[i+1]
 	}

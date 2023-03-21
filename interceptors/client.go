@@ -15,7 +15,7 @@ import (
 
 // UnaryClientInterceptor is a gRPC client-side interceptor that provides reporting for Unary RPCs.
 func UnaryClientInterceptor(reportable ClientReportable) grpc.UnaryClientInterceptor {
-	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		r := newReport(NewClientCallMeta(method, nil, req))
 		reporter, newCtx := reportable.ClientReporter(ctx, r.callMeta)
 
@@ -50,14 +50,14 @@ type monitoredClientStream struct {
 	reporter  Reporter
 }
 
-func (s *monitoredClientStream) SendMsg(m interface{}) error {
+func (s *monitoredClientStream) SendMsg(m any) error {
 	start := time.Now()
 	err := s.ClientStream.SendMsg(m)
 	s.reporter.PostMsgSend(m, err, time.Since(start))
 	return err
 }
 
-func (s *monitoredClientStream) RecvMsg(m interface{}) error {
+func (s *monitoredClientStream) RecvMsg(m any) error {
 	start := time.Now()
 	err := s.ClientStream.RecvMsg(m)
 	s.reporter.PostMsgReceive(m, err, time.Since(start))

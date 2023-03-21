@@ -10,10 +10,9 @@ import (
 	"time"
 
 	grpczerolog "github.com/grpc-ecosystem/go-grpc-middleware/providers/zerolog"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
 var (
@@ -88,7 +87,7 @@ func ExampleServerPayloadLoggingDecider() {
 	// Logger is used, allowing pre-definition of certain fields by the user.
 	logger := zerolog.New(os.Stderr)
 	// Expect payload from  "/blah.foo.healthcheck/Check" call to be logged.
-	payloadDecider := func(ctx context.Context, fullMethodName string, servingObject interface{}) logging.PayloadDecision {
+	payloadDecider := func(ctx context.Context, fullMethodName string, servingObject any) logging.PayloadDecision {
 		if fullMethodName == "/blah.foo.healthcheck/Check" {
 			return logging.LogPayloadRequestAndResponse
 		}

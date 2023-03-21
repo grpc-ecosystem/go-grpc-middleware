@@ -16,7 +16,7 @@ This repository offers ready-to-use middlewares that implements gRPC interceptor
 
 Additional great feature of interceptors is the fact we can chain those. For example below you can find example server side chain of interceptors with full observabiliy correlation, auth and panic recovery:
 
-```go mdox-exec="sed -n '117,133p' examples/server/main.go"
+```go mdox-exec="sed -n '116,132p' examples/server/main.go"
 	grpcSrv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			// Order matters e.g. tracing interceptor have to create span first for the later exemplars to work.
