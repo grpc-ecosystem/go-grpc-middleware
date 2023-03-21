@@ -11,34 +11,47 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
+type Logger struct {
+}
+
+func (l *Logger) Log(lvl logging.Level, msg string) {}
+
+func (l *Logger) With(fields ...string) logging.Logger {
+	return &Logger{}
+}
+
 func TestValidateWrapper(t *testing.T) {
-	assert.NoError(t, validate(testpb.GoodPing, false))
-	assert.Error(t, validate(testpb.BadPing, false))
-	assert.NoError(t, validate(testpb.GoodPing, true))
-	assert.Error(t, validate(testpb.BadPing, true))
+	assert.NoError(t, validate(testpb.GoodPing, false, &Logger{}))
+	assert.Error(t, validate(testpb.BadPing, false, &Logger{}))
+	assert.NoError(t, validate(testpb.GoodPing, true, &Logger{}))
+	assert.Error(t, validate(testpb.BadPing, true, &Logger{}))
 
-	assert.NoError(t, validate(testpb.GoodPingError, false))
-	assert.Error(t, validate(testpb.BadPingError, false))
-	assert.NoError(t, validate(testpb.GoodPingError, true))
-	assert.Error(t, validate(testpb.BadPingError, true))
+	assert.NoError(t, validate(testpb.GoodPingError, false, &Logger{}))
+	assert.Error(t, validate(testpb.BadPingError, false, &Logger{}))
+	assert.NoError(t, validate(testpb.GoodPingError, true, &Logger{}))
+	assert.Error(t, validate(testpb.BadPingError, true, &Logger{}))
 
-	assert.NoError(t, validate(testpb.GoodPingResponse, false))
-	assert.NoError(t, validate(testpb.GoodPingResponse, true))
-	assert.Error(t, validate(testpb.BadPingResponse, false))
-	assert.Error(t, validate(testpb.BadPingResponse, true))
+	assert.NoError(t, validate(testpb.GoodPingResponse, false, &Logger{}))
+	assert.NoError(t, validate(testpb.GoodPingResponse, true, &Logger{}))
+	assert.Error(t, validate(testpb.BadPingResponse, false, &Logger{}))
+	assert.Error(t, validate(testpb.BadPingResponse, true, &Logger{}))
 }
 
 func TestValidatorTestSuite(t *testing.T) {
 	s := &ValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ServerOpts: []grpc.ServerOption{
-				grpc.StreamInterceptor(StreamServerInterceptor(false)),
-				grpc.UnaryInterceptor(UnaryServerInterceptor(false)),
+				grpc.StreamInterceptor(StreamServerInterceptor(false, &Logger{})),
+				grpc.UnaryInterceptor(UnaryServerInterceptor(false, &Logger{})),
 			},
 		},
 	}
@@ -46,8 +59,8 @@ func TestValidatorTestSuite(t *testing.T) {
 	sAll := &ValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ServerOpts: []grpc.ServerOption{
-				grpc.StreamInterceptor(StreamServerInterceptor(true)),
-				grpc.UnaryInterceptor(UnaryServerInterceptor(true)),
+				grpc.StreamInterceptor(StreamServerInterceptor(true, &Logger{})),
+				grpc.UnaryInterceptor(UnaryServerInterceptor(true, &Logger{})),
 			},
 		},
 	}
@@ -56,7 +69,7 @@ func TestValidatorTestSuite(t *testing.T) {
 	cs := &ClientValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ClientOpts: []grpc.DialOption{
-				grpc.WithUnaryInterceptor(UnaryClientInterceptor(false)),
+				grpc.WithUnaryInterceptor(UnaryClientInterceptor(false, &Logger{})),
 			},
 		},
 	}
@@ -64,7 +77,7 @@ func TestValidatorTestSuite(t *testing.T) {
 	csAll := &ClientValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ClientOpts: []grpc.DialOption{
-				grpc.WithUnaryInterceptor(UnaryClientInterceptor(true)),
+				grpc.WithUnaryInterceptor(UnaryClientInterceptor(true, &Logger{})),
 			},
 		},
 	}

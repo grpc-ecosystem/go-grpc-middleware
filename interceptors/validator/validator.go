@@ -9,6 +9,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
 // The validateAller interface at protoc-gen-validate main branch.
@@ -28,20 +30,23 @@ type validatorLegacy interface {
 	Validate() error
 }
 
-func validate(req any, all bool) error {
+func validate(req interface{}, all bool, l logging.Logger) error {
 	if all {
 		switch v := req.(type) {
 		case validateAller:
 			if err := v.ValidateAll(); err != nil {
+				l.Log(logging.ERROR, err.Error())
 				return status.Error(codes.InvalidArgument, err.Error())
 			}
 		case validator:
 			if err := v.Validate(true); err != nil {
+				l.Log(logging.ERROR, err.Error())
 				return status.Error(codes.InvalidArgument, err.Error())
 			}
 		case validatorLegacy:
 			// Fallback to legacy validator
 			if err := v.Validate(); err != nil {
+				l.Log(logging.ERROR, err.Error())
 				return status.Error(codes.InvalidArgument, err.Error())
 			}
 		}
@@ -50,10 +55,12 @@ func validate(req any, all bool) error {
 	switch v := req.(type) {
 	case validatorLegacy:
 		if err := v.Validate(); err != nil {
+			l.Log(logging.ERROR, err.Error())
 			return status.Error(codes.InvalidArgument, err.Error())
 		}
 	case validator:
 		if err := v.Validate(false); err != nil {
+			l.Log(logging.ERROR, err.Error())
 			return status.Error(codes.InvalidArgument, err.Error())
 		}
 	}
@@ -67,9 +74,9 @@ func validate(req any, all bool) error {
 // returns ALL validation error as a wrapped multi-error.
 // Note that generated codes prior to protoc-gen-validate v0.6.0 do not provide an all-validation
 // interface. In this case the interceptor fallbacks to legacy validation and `all` is ignored.
-func UnaryServerInterceptor(all bool) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		if err := validate(req, all); err != nil {
+func UnaryServerInterceptor(all bool, logger logging.Logger) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		if err := validate(req, all, logger); err != nil {
 			return nil, err
 		}
 		return handler(ctx, req)
@@ -83,9 +90,9 @@ func UnaryServerInterceptor(all bool) grpc.UnaryServerInterceptor {
 // returns ALL validation error as a wrapped multi-error.
 // Note that generated codes prior to protoc-gen-validate v0.6.0 do not provide an all-validation
 // interface. In this case the interceptor fallbacks to legacy validation and `all` is ignored.
-func UnaryClientInterceptor(all bool) grpc.UnaryClientInterceptor {
-	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		if err := validate(req, all); err != nil {
+func UnaryClientInterceptor(all bool, logger logging.Logger) grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		if err := validate(req, all, logger); err != nil {
 			return err
 		}
 		return invoker(ctx, method, req, reply, cc, opts...)
@@ -102,11 +109,12 @@ func UnaryClientInterceptor(all bool) grpc.UnaryClientInterceptor {
 // type of the RPC. For `ServerStream` (1:m) requests, it will happen before reaching any userspace
 // handlers. For `ClientStream` (n:1) or `BidiStream` (n:m) RPCs, the messages will be rejected on
 // calls to `stream.Recv()`.
-func StreamServerInterceptor(all bool) grpc.StreamServerInterceptor {
-	return func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+func StreamServerInterceptor(all bool, logger logging.Logger) grpc.StreamServerInterceptor {
+	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		wrapper := &recvWrapper{
 			all:          all,
 			ServerStream: stream,
+			Logger:       logger,
 		}
 		return handler(srv, wrapper)
 	}
@@ -115,13 +123,14 @@ func StreamServerInterceptor(all bool) grpc.StreamServerInterceptor {
 type recvWrapper struct {
 	all bool
 	grpc.ServerStream
+	logging.Logger
 }
 
 func (s *recvWrapper) RecvMsg(m any) error {
 	if err := s.ServerStream.RecvMsg(m); err != nil {
 		return err
 	}
-	if err := validate(m, s.all); err != nil {
+	if err := validate(m, s.all, s.Logger); err != nil {
 		return err
 	}
 	return nil
