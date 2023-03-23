@@ -11,13 +11,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 type mockReport struct {
@@ -100,13 +100,13 @@ func (m *mockReportable) PostCall(err error, _ time.Duration) {
 	m.curr.postCalls = append(m.curr.postCalls, err)
 }
 
-func (m *mockReportable) PostMsgSend(_ interface{}, err error, _ time.Duration) {
+func (m *mockReportable) PostMsgSend(_ any, err error, _ time.Duration) {
 	m.m.Lock()
 	defer m.m.Unlock()
 	m.curr.postMsgSends = append(m.curr.postMsgSends, err)
 }
 
-func (m *mockReportable) PostMsgReceive(_ interface{}, err error, _ time.Duration) {
+func (m *mockReportable) PostMsgReceive(_ any, err error, _ time.Duration) {
 	m.m.Lock()
 	defer m.m.Unlock()
 	m.curr.postMsgReceives = append(m.curr.postMsgReceives, err)
@@ -152,7 +152,7 @@ func (s *ClientInterceptorTestSuite) SetupSuite() {
 	require.NoError(s.T(), err, "must be able to allocate a port for serverListener")
 
 	s.server = grpc.NewServer()
-	testpb.RegisterTestServiceServer(s.server, &testpb.TestPingService{T: s.T()})
+	testpb.RegisterTestServiceServer(s.server, &testpb.TestPingService{})
 
 	go func() {
 		defer close(s.stopped)
@@ -166,7 +166,7 @@ func (s *ClientInterceptorTestSuite) SetupSuite() {
 	s.clientConn, err = grpc.DialContext(
 		ctx,
 		s.serverListener.Addr().String(),
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 		grpc.WithUnaryInterceptor(UnaryClientInterceptor(s.mock)),
 		grpc.WithStreamInterceptor(StreamClientInterceptor(s.mock)),

@@ -1,11 +1,7 @@
 // Copyright (c) The go-grpc-middleware Authors.
 // Licensed under the Apache License 2.0.
 
-/*
-Backoff Helper Utilities
-
-Implements common backoff features.
-*/
+// Package backoffutils implements common backoff features.
 package backoffutils
 
 import (

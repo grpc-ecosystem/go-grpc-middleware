@@ -38,7 +38,7 @@ func TestUnaryServerInterceptor_RateLimitPass(t *testing.T) {
 	ctx := context.WithValue(context.Background(), ctxLimitKey, false)
 
 	interceptor := UnaryServerInterceptor(limiter)
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return nil, errors.New(errMsgFake)
 	}
 	info := &grpc.UnaryServerInfo{
@@ -54,7 +54,7 @@ func TestStreamServerInterceptor_RateLimitPass(t *testing.T) {
 	ctx := context.WithValue(context.Background(), ctxLimitKey, false)
 
 	interceptor := StreamServerInterceptor(limiter)
-	handler := func(srv interface{}, stream grpc.ServerStream) error {
+	handler := func(srv any, stream grpc.ServerStream) error {
 		return errors.New(errMsgFake)
 	}
 	info := &grpc.StreamServerInfo{
@@ -69,7 +69,7 @@ func TestUnaryServerInterceptor_RateLimitFail(t *testing.T) {
 	ctx := context.WithValue(context.Background(), ctxLimitKey, true)
 
 	interceptor := UnaryServerInterceptor(limiter)
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return nil, errors.New(errMsgFake)
 	}
 	info := &grpc.UnaryServerInfo{

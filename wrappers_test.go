@@ -30,15 +30,15 @@ func TestWrapServerStream(t *testing.T) {
 type fakeServerStream struct {
 	grpc.ServerStream
 	ctx         context.Context
-	recvMessage interface{}
-	sentMessage interface{}
+	recvMessage any
+	sentMessage any
 }
 
 func (f *fakeServerStream) Context() context.Context {
 	return f.ctx
 }
 
-func (f *fakeServerStream) SendMsg(m interface{}) error {
+func (f *fakeServerStream) SendMsg(m any) error {
 	if f.sentMessage != nil {
 		return status.Errorf(codes.AlreadyExists, "fakeServerStream only takes one message, sorry")
 	}
@@ -46,7 +46,7 @@ func (f *fakeServerStream) SendMsg(m interface{}) error {
 	return nil
 }
 
-func (f *fakeServerStream) RecvMsg(m interface{}) error {
+func (f *fakeServerStream) RecvMsg(m any) error {
 	if f.recvMessage == nil {
 		return status.Errorf(codes.NotFound, "fakeServerStream has no message, sorry")
 	}

@@ -4,9 +4,11 @@
 package logging
 
 import (
+	"context"
 	"fmt"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -28,6 +30,7 @@ type options struct {
 	codeFunc          ErrorToCode
 	durationFieldFunc DurationToFields
 	timestampFormat   string
+	fieldsFromCtxFn   fieldsFromCtxFn
 }
 
 type Option func(*options)
@@ -64,11 +67,11 @@ func DefaultErrorToCode(err error) codes.Code {
 }
 
 // Decider function defines rules for suppressing any interceptor logs.
-type Decider func(fullMethodName string, err error) Decision
+type Decider func(c interceptors.CallMeta, err error) Decision
 
 // DefaultDeciderMethod is the default implementation of decider to see if you should log the call
 // by default this if always true so all calls are logged.
-func DefaultDeciderMethod(_ string, _ error) Decision {
+func DefaultDeciderMethod(_ interceptors.CallMeta, _ error) Decision {
 	return LogStartAndFinishCall
 }
 
@@ -105,6 +108,15 @@ func DefaultClientCodeToLevel(code codes.Code) Level {
 		return WARNING
 	default:
 		return INFO
+	}
+}
+
+type fieldsFromCtxFn func(ctx context.Context) Fields
+
+// WithFieldsFromContext allows adding extra fields to all log messages per given request.
+func WithFieldsFromContext(f fieldsFromCtxFn) Option {
+	return func(o *options) {
+		o.fieldsFromCtxFn = f
 	}
 }
 

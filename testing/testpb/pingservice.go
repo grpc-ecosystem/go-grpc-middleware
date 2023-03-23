@@ -10,7 +10,6 @@ package testpb
 import (
 	"context"
 	"io"
-	"testing"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -18,17 +17,16 @@ import (
 
 const (
 	// ListResponseCount is the expected number of responses to PingList
-	ListResponseCount   = 100
-	TestServiceFullName = "testing.testpb.v1.TestService"
+	ListResponseCount = 100
 )
+
+var TestServiceFullName = _TestService_serviceDesc.ServiceName
 
 // Interface implementation assert.
 var _ TestServiceServer = &TestPingService{}
 
 type TestPingService struct {
 	UnimplementedTestServiceServer
-
-	T *testing.T
 }
 
 func (s *TestPingService) PingEmpty(_ context.Context, _ *PingEmptyRequest) (*PingEmptyResponse, error) {

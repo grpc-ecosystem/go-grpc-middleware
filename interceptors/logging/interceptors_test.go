@@ -8,22 +8,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"path"
 	"runtime"
 	"sort"
 	"strings"
 	"sync"
 	"testing"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 type testDisposableFields map[string]string
@@ -167,6 +165,11 @@ type loggingClientServerSuite struct {
 	*baseLoggingSuite
 }
 
+func customFields(_ context.Context) logging.Fields {
+	// Add custom fields, one new and one that should be ignored as it duplicates the standard field.
+	return logging.Fields{"custom-field", "yolo", logging.ServiceFieldKey, "something different"}
+}
+
 func TestSuite(t *testing.T) {
 	if strings.HasPrefix(runtime.Version(), "go1.7") {
 		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
@@ -177,50 +180,23 @@ func TestSuite(t *testing.T) {
 		&baseLoggingSuite{
 			logger: newMockLogger(),
 			InterceptorTestSuite: &testpb.InterceptorTestSuite{
-				TestService: &testpb.TestPingService{T: t},
+				TestService: &testpb.TestPingService{},
 			},
 		},
 	}
 	s.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
 		grpc.WithChainUnaryInterceptor(
-			addCustomFieldsUnaryClientInterceptor(),
-			logging.UnaryClientInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel)),
+			logging.UnaryClientInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel), logging.WithFieldsFromContext(customFields)),
 		),
 		grpc.WithChainStreamInterceptor(
-			addCustomFieldsStreamClientInterceptor(),
-			logging.StreamClientInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel)),
+			logging.StreamClientInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel), logging.WithFieldsFromContext(customFields)),
 		),
 	}
 	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
-		grpc.ChainStreamInterceptor(
-			addCustomFieldsStreamServerInterceptor(),
-			logging.StreamServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel))),
-		grpc.ChainUnaryInterceptor(
-			addCustomFieldsUnaryServerInterceptor(),
-			logging.UnaryServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel))),
+		grpc.StreamInterceptor(logging.StreamServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel), logging.WithFieldsFromContext(customFields))),
+		grpc.UnaryInterceptor(logging.UnaryServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel), logging.WithFieldsFromContext(customFields))),
 	}
 	suite.Run(t, s)
-}
-
-var addCustomFields = interceptors.CommonReportableFunc(func(ctx context.Context, _ interceptors.CallMeta, _ bool) (interceptors.Reporter, context.Context) {
-	// Add custom fields, one new and one that should be ignored as it duplicates the standard field.
-	return interceptors.NoopReporter{}, logging.InjectFields(ctx, logging.Fields{"custom-field", "yolo", logging.ServiceFieldKey, "something different"})
-})
-
-func addCustomFieldsUnaryClientInterceptor() grpc.UnaryClientInterceptor {
-	return interceptors.UnaryClientInterceptor(addCustomFields)
-}
-
-func addCustomFieldsStreamClientInterceptor() grpc.StreamClientInterceptor {
-	return interceptors.StreamClientInterceptor(addCustomFields)
-}
-
-func addCustomFieldsUnaryServerInterceptor() grpc.UnaryServerInterceptor {
-	return interceptors.UnaryServerInterceptor(addCustomFields)
-}
-
-func addCustomFieldsStreamServerInterceptor() grpc.StreamServerInterceptor {
-	return interceptors.StreamServerInterceptor(addCustomFields)
 }
 
 func assertStandardFields(t *testing.T, kind string, f testDisposableFields, method string, typ interceptors.GRPCType) testDisposableFields {
@@ -396,7 +372,7 @@ func TestCustomDurationSuite(t *testing.T) {
 		baseLoggingSuite: &baseLoggingSuite{
 			logger: newMockLogger(),
 			InterceptorTestSuite: &testpb.InterceptorTestSuite{
-				TestService: &testpb.TestPingService{T: t},
+				TestService: &testpb.TestPingService{},
 			},
 		},
 	}
@@ -503,8 +479,8 @@ func TestCustomDeciderSuite(t *testing.T) {
 		t.Skip("Skipping due to json.RawMessage incompatibility with go1.7")
 		return
 	}
-	opts := logging.WithDecider(func(method string, _ error) logging.Decision {
-		if method == path.Join("/", testpb.TestServiceFullName, "PingError") {
+	opts := logging.WithDecider(func(c interceptors.CallMeta, _ error) logging.Decision {
+		if c.Service == testpb.TestServiceFullName && c.Method == "PingError" {
 			return logging.LogStartAndFinishCall
 		}
 		return logging.NoLogCall
@@ -514,7 +490,7 @@ func TestCustomDeciderSuite(t *testing.T) {
 		baseLoggingSuite: &baseLoggingSuite{
 			logger: newMockLogger(),
 			InterceptorTestSuite: &testpb.InterceptorTestSuite{
-				TestService: &testpb.TestPingService{T: t},
+				TestService: &testpb.TestPingService{},
 			},
 		},
 	}

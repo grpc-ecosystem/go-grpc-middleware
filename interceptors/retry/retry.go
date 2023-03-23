@@ -10,17 +10,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"golang.org/x/net/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	grpcMetadata "google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 )
 
 const (
-	AttemptMetadataKey = "x-retry-attempty"
+	AttemptMetadataKey = "x-retry-attempt"
 )
 
 // UnaryClientInterceptor returns a new retrying unary client interceptor.
@@ -29,7 +28,7 @@ const (
 // changed through options (e.g. WithMax) on creation of the interceptor or on call (through grpc.CallOptions).
 func UnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterceptor {
 	intOpts := reuseOrNewWithCallOptions(defaultOptions, optFuncs)
-	return func(parentCtx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	return func(parentCtx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		grpcOpts, retryOpts := filterCallOptions(opts)
 		callOpts := reuseOrNewWithCallOptions(intOpts, retryOpts)
 		// short circuit for simplicity, and avoiding allocations.
@@ -136,8 +135,8 @@ func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientIntercepto
 // a new ClientStream according to the retry policy.
 type serverStreamingRetryingStream struct {
 	grpc.ClientStream
-	bufferedSends []interface{} // single message that the client can sen
-	wasClosedSend bool          // indicates that CloseSend was closed
+	bufferedSends []any // single message that the client can sen
+	wasClosedSend bool  // indicates that CloseSend was closed
 	parentCtx     context.Context
 	callOpts      *options
 	streamerCall  func(ctx context.Context) (grpc.ClientStream, error)
@@ -156,7 +155,7 @@ func (s *serverStreamingRetryingStream) getStream() grpc.ClientStream {
 	return s.ClientStream
 }
 
-func (s *serverStreamingRetryingStream) SendMsg(m interface{}) error {
+func (s *serverStreamingRetryingStream) SendMsg(m any) error {
 	s.mu.Lock()
 	s.bufferedSends = append(s.bufferedSends, m)
 	s.mu.Unlock()
@@ -178,7 +177,7 @@ func (s *serverStreamingRetryingStream) Trailer() grpcMetadata.MD {
 	return s.getStream().Trailer()
 }
 
-func (s *serverStreamingRetryingStream) RecvMsg(m interface{}) error {
+func (s *serverStreamingRetryingStream) RecvMsg(m any) error {
 	attemptRetry, lastErr := s.receiveMsgAndIndicateRetry(m)
 	if !attemptRetry {
 		return lastErr // success or hard failure
@@ -210,7 +209,7 @@ func (s *serverStreamingRetryingStream) RecvMsg(m interface{}) error {
 	return lastErr
 }
 
-func (s *serverStreamingRetryingStream) receiveMsgAndIndicateRetry(m interface{}) (bool, error) {
+func (s *serverStreamingRetryingStream) receiveMsgAndIndicateRetry(m any) (bool, error) {
 	err := s.getStream().RecvMsg(m)
 	if err == nil || err == io.EOF {
 		return false, err
@@ -313,7 +312,7 @@ func contextErrToGrpcErr(err error) error {
 	}
 }
 
-func logTrace(ctx context.Context, format string, a ...interface{}) {
+func logTrace(ctx context.Context, format string, a ...any) {
 	tr, ok := trace.FromContext(ctx)
 	if !ok {
 		return

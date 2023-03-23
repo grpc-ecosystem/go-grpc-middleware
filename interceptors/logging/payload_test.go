@@ -10,15 +10,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 type loggingPayloadSuite struct {
@@ -26,10 +25,10 @@ type loggingPayloadSuite struct {
 }
 
 func TestPayloadSuite(t *testing.T) {
-	alwaysLoggingDeciderServer := func(context.Context, string, interface{}) logging.PayloadDecision {
+	alwaysLoggingDeciderServer := func(context.Context, interceptors.CallMeta) logging.PayloadDecision {
 		return logging.LogPayloadRequestAndResponse
 	}
-	alwaysLoggingDeciderClient := func(context.Context, string) logging.PayloadDecision {
+	alwaysLoggingDeciderClient := func(context.Context, interceptors.CallMeta) logging.PayloadDecision {
 		return logging.LogPayloadRequestAndResponse
 	}
 
@@ -37,7 +36,7 @@ func TestPayloadSuite(t *testing.T) {
 		baseLoggingSuite: &baseLoggingSuite{
 			logger: newMockLogger(),
 			InterceptorTestSuite: &testpb.InterceptorTestSuite{
-				TestService: &testpb.TestPingService{T: t},
+				TestService: &testpb.TestPingService{},
 			},
 		},
 	}

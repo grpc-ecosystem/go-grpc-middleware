@@ -6,9 +6,8 @@ package phuslog
 import (
 	"fmt"
 
-	"github.com/phuslu/log"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/phuslu/log"
 )
 
 // Compatibility check.
@@ -42,7 +41,7 @@ func (l *Logger) Log(lvl logging.Level, msg string) {
 
 // With implements the logging.Logger interface.
 func (l *Logger) With(fields ...string) logging.Logger {
-	vals := make([]interface{}, len(fields))
+	vals := make([]any, len(fields))
 	for i := 0; i < len(fields); i++ {
 		vals[i] = fields[i]
 	}

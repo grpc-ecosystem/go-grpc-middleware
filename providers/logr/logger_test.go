@@ -7,17 +7,16 @@ import (
 	"testing"
 
 	grpclogr "github.com/grpc-ecosystem/go-grpc-middleware/providers/logr/v2"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/klog/v2/ktesting"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
 type (
 	Entry struct {
 		Message    string
 		Verbosity  int
-		WithKVList []interface{}
+		WithKVList []any
 	}
 )
 
@@ -48,7 +47,7 @@ func TestLogger_Log(t *testing.T) {
 		{
 			Message:    "debug message",
 			Verbosity:  4,
-			WithKVList: []interface{}{"key-1", "value-1"},
+			WithKVList: []any{"key-1", "value-1"},
 		},
 		{
 			Message:   "some info message",
@@ -57,7 +56,7 @@ func TestLogger_Log(t *testing.T) {
 		{
 			Message:    "warn",
 			Verbosity:  1,
-			WithKVList: []interface{}{"key-1", "value-1", "key-2", "value-2", "key-3", "value-3"},
+			WithKVList: []any{"key-1", "value-1", "key-2", "value-2", "key-3", "value-3"},
 		},
 		{
 			Message:   "error",

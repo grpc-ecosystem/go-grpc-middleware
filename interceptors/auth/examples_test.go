@@ -7,13 +7,12 @@ import (
 	"context"
 	"log"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	pb "google.golang.org/grpc/examples/helloworld/helloworld"
-	"google.golang.org/grpc/status"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var tokenInfoKey struct{}
@@ -44,7 +43,7 @@ func exampleAuthFunc(ctx context.Context) (context.Context, error) {
 	return context.WithValue(ctx, tokenInfoKey, tokenInfo), nil
 }
 
-// Simple example of server initialization code
+// Simple example of server initialization code.
 func Example_serverConfig() {
 	_ = grpc.NewServer(
 		grpc.StreamInterceptor(auth.StreamServerInterceptor(exampleAuthFunc)),
@@ -53,25 +52,25 @@ func Example_serverConfig() {
 }
 
 type gRPCServerAuthenticated struct {
-	pb.UnimplementedGreeterServer
+	testpb.UnimplementedTestServiceServer
 }
 
-// SayHello only can be called by client when authenticated by exampleAuthFunc
-func (g gRPCServerAuthenticated) SayHello(ctx context.Context, request *pb.HelloRequest) (*pb.HelloReply, error) {
-	return &pb.HelloReply{Message: "pong authenticated"}, nil
+// Ping only can be called by client when authenticated by exampleAuthFunc.
+func (s *gRPCServerAuthenticated) Ping(_ context.Context, ping *testpb.PingRequest) (*testpb.PingResponse, error) {
+	return &testpb.PingResponse{Value: ping.Value, Counter: 0}, nil
 }
 
 type gRPCServerUnauthenticated struct {
-	pb.UnimplementedGreeterServer
+	testpb.UnimplementedTestServiceServer
 }
 
-// SayHello can be called by client without being authenticated by exampleAuthFunc as AuthFuncOverride is called instead
-func (g *gRPCServerUnauthenticated) SayHello(ctx context.Context, request *pb.HelloRequest) (*pb.HelloReply, error) {
-	return &pb.HelloReply{Message: "pong unauthenticated"}, nil
+// Ping can be called by client without being authenticated by exampleAuthFunc as AuthFuncOverride is called instead.
+func (s *gRPCServerUnauthenticated) Ping(_ context.Context, _ *testpb.PingRequest) (*testpb.PingResponse, error) {
+	return nil, status.Error(codes.Unauthenticated, "no access")
 }
 
-// AuthFuncOverride is called instead of exampleAuthFunc
-func (g *gRPCServerUnauthenticated) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+// AuthFuncOverride is called instead of exampleAuthFunc.
+func (s *gRPCServerUnauthenticated) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	log.Println("client is calling method:", fullMethodName)
 	return ctx, nil
 }
@@ -86,8 +85,8 @@ func Example_serverConfigWithAuthOverride() {
 	overrideActive := true
 
 	if overrideActive {
-		pb.RegisterGreeterServer(server, &gRPCServerUnauthenticated{})
+		testpb.RegisterTestServiceServer(server, &gRPCServerUnauthenticated{})
 	} else {
-		pb.RegisterGreeterServer(server, &gRPCServerAuthenticated{})
+		testpb.RegisterTestServiceServer(server, &gRPCServerAuthenticated{})
 	}
 }

@@ -12,6 +12,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 func TestPingServiceOnWire(t *testing.T) {
@@ -20,7 +23,7 @@ func TestPingServiceOnWire(t *testing.T) {
 	require.NoError(t, err, "must be able to allocate a port for serverListener")
 
 	server := grpc.NewServer()
-	RegisterTestServiceServer(server, &TestPingService{T: t})
+	RegisterTestServiceServer(server, &TestPingService{})
 
 	go func() {
 		defer close(stopped)
@@ -38,7 +41,7 @@ func TestPingServiceOnWire(t *testing.T) {
 	clientConn, err := grpc.DialContext(
 		ctx,
 		serverListener.Addr().String(),
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 	)
 	require.NoError(t, err, "must not error on client Dial")
@@ -59,8 +62,12 @@ func TestPingServiceOnWire(t *testing.T) {
 	require.Equal(t, "24", r2.Value)
 	require.Equal(t, int32(0), r2.Counter)
 
-	_, err = testClient.PingError(context.Background(), &PingErrorRequest{Value: "24"})
+	_, err = testClient.PingError(context.Background(), &PingErrorRequest{
+		ErrorCodeReturned: uint32(codes.Internal),
+		Value:             "24",
+	})
 	require.Error(t, err)
+	require.Equal(t, codes.Internal, status.Code(err))
 
 	l, err := testClient.PingList(context.Background(), &PingListRequest{Value: "24"})
 	require.NoError(t, err)

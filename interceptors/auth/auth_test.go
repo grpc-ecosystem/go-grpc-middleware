@@ -9,6 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -18,10 +21,6 @@ import (
 	"google.golang.org/grpc/credentials/oauth"
 	grpcMetadata "google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 var authedMarker struct{}
@@ -74,7 +73,7 @@ func TestAuthTestSuite(t *testing.T) {
 	authFunc := buildDummyAuthFunction("bearer", commonAuthToken)
 	s := &AuthTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
-			TestService: &assertingPingService{&testpb.TestPingService{T: t}, t},
+			TestService: &assertingPingService{&testpb.TestPingService{}, t},
 			ServerOpts: []grpc.ServerOption{
 				grpc.StreamInterceptor(auth.StreamServerInterceptor(authFunc)),
 				grpc.UnaryInterceptor(auth.UnaryServerInterceptor(authFunc)),
@@ -160,7 +159,7 @@ func TestAuthOverrideTestSuite(t *testing.T) {
 	authFunc := buildDummyAuthFunction("bearer", commonAuthToken)
 	s := &AuthOverrideTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
-			TestService: &authOverrideTestService{&assertingPingService{&testpb.TestPingService{T: t}, t}, t},
+			TestService: &authOverrideTestService{&assertingPingService{&testpb.TestPingService{}, t}, t},
 			ServerOpts: []grpc.ServerOption{
 				grpc.StreamInterceptor(auth.StreamServerInterceptor(authFunc)),
 				grpc.UnaryInterceptor(auth.UnaryServerInterceptor(authFunc)),

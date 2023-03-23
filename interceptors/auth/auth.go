@@ -6,9 +6,8 @@ package auth
 import (
 	"context"
 
-	"google.golang.org/grpc"
-
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
+	"google.golang.org/grpc"
 )
 
 // AuthFunc is the pluggable function that performs authentication.
@@ -34,7 +33,7 @@ type ServiceAuthFuncOverride interface {
 
 // UnaryServerInterceptor returns a new unary server interceptors that performs per-request auth.
 func UnaryServerInterceptor(authFunc AuthFunc) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		var newCtx context.Context
 		var err error
 		if overrideSrv, ok := info.Server.(ServiceAuthFuncOverride); ok {
@@ -51,7 +50,7 @@ func UnaryServerInterceptor(authFunc AuthFunc) grpc.UnaryServerInterceptor {
 
 // StreamServerInterceptor returns a new unary server interceptors that performs per-request auth.
 func StreamServerInterceptor(authFunc AuthFunc) grpc.StreamServerInterceptor {
-	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		var newCtx context.Context
 		var err error
 		if overrideSrv, ok := srv.(ServiceAuthFuncOverride); ok {

@@ -6,9 +6,8 @@ package logging
 import (
 	"context"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	"google.golang.org/protobuf/proto"
 )
 
 // Decision defines rules for enabling start and end of logging.
@@ -42,7 +41,7 @@ var (
 	fieldsCtxMarkerKey = &fieldsCtxMarker{}
 )
 
-// Fields represents logging fields. It has to have even number of elements (pairs).
+// Fields represents logging fields. It has to have an even number of elements (pairs).
 type Fields []string
 
 func newCommonFields(kind string, c interceptors.CallMeta) Fields {
@@ -136,17 +135,16 @@ const (
 
 // ServerPayloadLoggingDecider is a user-provided function for deciding whether to log the server-side
 // request/response payloads
-type ServerPayloadLoggingDecider func(ctx context.Context, fullMethodName string, servingObject interface{}) PayloadDecision
+type ServerPayloadLoggingDecider func(ctx context.Context, c interceptors.CallMeta) PayloadDecision
 
 // ClientPayloadLoggingDecider is a user-provided function for deciding whether to log the client-side
 // request/response payloads
-type ClientPayloadLoggingDecider func(ctx context.Context, fullMethodName string) PayloadDecision
+type ClientPayloadLoggingDecider func(ctx context.Context, c interceptors.CallMeta) PayloadDecision
 
 // ExtractFields returns logging.Fields object from the Context.
 // Logging interceptor adds fields into context when used.
 // If there are no fields in the context, returns an empty Fields value.
-//
-// It's useful for server implementations to use this method to instantiate request logger for consistent fields (e.g request-id/tracing-id).
+// Extracted fields are useful to construct your own logger that has fields from gRPC interceptors.
 func ExtractFields(ctx context.Context) Fields {
 	t, ok := ctx.Value(fieldsCtxMarkerKey).(Fields)
 	if !ok {
@@ -158,6 +156,7 @@ func ExtractFields(ctx context.Context) Fields {
 }
 
 // InjectFields allows adding Fields to any existing Fields that will be used by the logging interceptor.
+// NOTE: Those overrides overlapping fields from logging.WithFieldsFromContext.
 func InjectFields(ctx context.Context, f Fields) context.Context {
 	return context.WithValue(ctx, fieldsCtxMarkerKey, ExtractFields(ctx).AppendUnique(f))
 }

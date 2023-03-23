@@ -10,15 +10,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 var (
@@ -91,7 +89,7 @@ func (s *failingService) PingStream(stream testpb.TestService_PingStreamServer) 
 
 func TestRetrySuite(t *testing.T) {
 	service := &failingService{
-		TestServiceServer: &testpb.TestPingService{T: t},
+		TestServiceServer: &testpb.TestPingService{},
 	}
 	unaryInterceptor := UnaryClientInterceptor(
 		WithCodes(retriableErrors...),
@@ -347,7 +345,7 @@ type trackedInterceptor struct {
 	called int
 }
 
-func (ti *trackedInterceptor) UnaryClientInterceptor(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+func (ti *trackedInterceptor) UnaryClientInterceptor(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 	ti.called++
 	return invoker(ctx, method, req, reply, cc, opts...)
 }
@@ -359,7 +357,7 @@ func (ti *trackedInterceptor) StreamClientInterceptor(ctx context.Context, desc 
 
 func TestChainedRetrySuite(t *testing.T) {
 	service := &failingService{
-		TestServiceServer: &testpb.TestPingService{T: t},
+		TestServiceServer: &testpb.TestPingService{},
 	}
 	preRetryInterceptor := &trackedInterceptor{}
 	postRetryInterceptor := &trackedInterceptor{}
@@ -370,8 +368,16 @@ func TestChainedRetrySuite(t *testing.T) {
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			TestService: service,
 			ClientOpts: []grpc.DialOption{
-				grpc.WithUnaryInterceptor(middleware.ChainUnaryClient(preRetryInterceptor.UnaryClientInterceptor, UnaryClientInterceptor(), postRetryInterceptor.UnaryClientInterceptor)),
-				grpc.WithStreamInterceptor(middleware.ChainStreamClient(preRetryInterceptor.StreamClientInterceptor, StreamClientInterceptor(), postRetryInterceptor.StreamClientInterceptor)),
+				grpc.WithChainUnaryInterceptor(
+					preRetryInterceptor.UnaryClientInterceptor,
+					UnaryClientInterceptor(),
+					postRetryInterceptor.UnaryClientInterceptor,
+				),
+				grpc.WithChainStreamInterceptor(
+					preRetryInterceptor.StreamClientInterceptor,
+					StreamClientInterceptor(),
+					postRetryInterceptor.StreamClientInterceptor,
+				),
 			},
 		},
 	}

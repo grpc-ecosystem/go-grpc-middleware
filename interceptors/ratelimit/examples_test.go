@@ -6,9 +6,8 @@ package ratelimit_test
 import (
 	"context"
 
-	"google.golang.org/grpc"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/ratelimit"
+	"google.golang.org/grpc"
 )
 
 // alwaysPassLimiter is an example limiter which implements Limiter interface.
@@ -16,6 +15,18 @@ import (
 type alwaysPassLimiter struct{}
 
 func (*alwaysPassLimiter) Limit(_ context.Context) error {
+	// Example rate limiter could be implemented using e.g. github.com/juju/ratelimit
+	//	// Take one token per request. This call doesn't block.
+	//	tokenRes := l.tokenBucket.TakeAvailable(1)
+	//
+	//	// When rate limit reached, return specific error for the clients.
+	//	if tokenRes == 0 {
+	//		return fmt.Errorf("APP-XXX: reached Rate-Limiting %d", l.tokenBucket.Available())
+	//	}
+	//
+	//	// Rate limit isn't reached.
+	//	return nil
+	//}
 	return nil
 }
 

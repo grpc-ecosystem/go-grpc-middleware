@@ -3,7 +3,8 @@ include .bingo/Variables.mk
 SHELL=/bin/bash
 
 PROVIDER_MODULES ?= $(shell find $(PWD)/providers/  -name "go.mod" | grep -v ".bingo" | xargs dirname)
-MODULES          ?= $(PROVIDER_MODULES) $(PWD)/
+MODULES          ?= $(PROVIDER_MODULES) $(PWD)/ $(PWD)/examples
+GO_FILES_TO_FMT  ?= $(shell find . -path -prune -o -name '*.go' -print)
 
 GOBIN             ?= $(firstword $(subst :, ,${GOPATH}))/bin
 
@@ -37,8 +38,12 @@ all: fmt proto lint test
 
 .PHONY: fmt
 fmt: $(GOIMPORTS)
-	@echo "Running fmt for all modules: $(MODULES)"
-	@$(GOIMPORTS) -local github.com/grpc-ecosystem/go-grpc-middleware/v2 -w $(MODULES)
+	@echo ">> formatting go code"
+	@gofmt -s -w $(GO_FILES_TO_FMT)
+	@for file in $(GO_FILES_TO_FMT) ; do \
+		./goimports.sh "$${file}"; \
+	done
+	@$(GOIMPORTS) -w $(GO_FILES_TO_FMT)
 
 .PHONY: test
 test:
@@ -46,7 +51,6 @@ test:
 	for dir in $(MODULES) ; do \
 		$(MAKE) test_module DIR=$${dir} ; \
 	done
-	@./scripts/test_all.sh
 
 .PHONY: test_module
 test_module:
@@ -61,6 +65,16 @@ deps:
 		cd $${dir} && go mod tidy; \
 	done
 
+.PHONY: docs
+docs: $(MDOX) ## Generates code snippets, doc formatting and check links.
+	@echo ">> generating docs $(PATH)"
+	@$(MDOX) fmt -l --links.validate.config-file=$(MDOX_VALIDATE_CONFIG) *.md
+
+.PHONY: check-docs
+check-docs: $(MDOX) ## Generates code snippets and doc formatting and checks links.
+	@echo ">> checking docs $(PATH)"
+	@$(MDOX) fmt --check -l --links.validate.config-file=$(MDOX_VALIDATE_CONFIG) *.md
+
 .PHONY: lint
 # PROTIP:
 # Add
@@ -68,17 +82,16 @@ deps:
 #      --mem-profile-path string   Path to memory profile output file
 # to debug big allocations during linting.
 lint: ## Runs various static analysis tools against our code.
-lint: $(BUF) $(COPYRIGHT) fmt
+lint: $(BUF) $(COPYRIGHT) fmt docs
 	@echo ">> lint proto files"
 	@$(BUF) lint
 	
 	@echo "Running lint for all modules: $(MODULES)"
-	@./scripts/git-tree.sh
+	@$(call require_clean_work_tree,"before lint")
 	for dir in $(MODULES) ; do \
 		$(MAKE) lint_module DIR=$${dir} ; \
 	done
 	@$(call require_clean_work_tree,"lint and format files")
-
 	@echo ">> ensuring copyright headers"
 	@$(COPYRIGHT) $(shell go list -f "{{.Dir}}" ./... | xargs -i find "{}" -name "*.go")
 	@$(call require_clean_work_tree,"set copyright headers")
@@ -93,14 +106,14 @@ lint: $(BUF) $(COPYRIGHT) fmt
 lint_module: ## Runs various static analysis against our code.
 lint_module: $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL)
 	@echo ">> verifying modules being imported"
-	@cd $(DIR) && $(FAILLINT) -paths "errors=github.com/pkg/errors,fmt.{Print,Printf,Println}" ./...
+	@cd $(DIR) && $(FAILLINT) -paths "errors=github.com/pkg/errors,fmt.{Print,Printf,Println},github.com/golang/protobuf=google.golang.org/protobuf" ./...
 	
 	@echo ">> examining all of the Go files"
 	@cd $(DIR) && go vet -stdmethods=false ./...
 	
 	@echo ">> linting all of the Go files GOGC=${GOGC}"
 	@cd $(DIR) && $(GOLANGCI_LINT) run
-	@./scripts/git-tree.sh
+	@$(call require_clean_work_tree,"golangci lint")
 
 
 # For protoc naming matters.
