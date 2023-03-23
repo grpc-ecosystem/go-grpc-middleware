@@ -1,13 +1,12 @@
 // Copyright (c) The go-grpc-middleware Authors.
 // Licensed under the Apache License 2.0.
 
-package validator
+package validator_test
 
 import (
 	"io"
 	"testing"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

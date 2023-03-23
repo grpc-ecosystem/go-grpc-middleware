@@ -30,23 +30,31 @@ type validatorLegacy interface {
 	Validate() error
 }
 
-func validate(req interface{}, all bool, l logging.Logger) error {
-	if all {
+func log(level logging.Level, logger logging.Logger, msg string) {
+	if logger != nil {
+		logger.Log(level, msg)
+	}
+}
+
+func validate(req interface{}, d Decider, l Logger) error {
+	isFailFast := bool(d())
+	level, logger := l()
+	if isFailFast {
 		switch v := req.(type) {
 		case validateAller:
 			if err := v.ValidateAll(); err != nil {
-				l.Log(logging.ERROR, err.Error())
+				log(level, logger, err.Error())
 				return status.Error(codes.InvalidArgument, err.Error())
 			}
 		case validator:
 			if err := v.Validate(true); err != nil {
-				l.Log(logging.ERROR, err.Error())
+				log(level, logger, err.Error())
 				return status.Error(codes.InvalidArgument, err.Error())
 			}
 		case validatorLegacy:
 			// Fallback to legacy validator
 			if err := v.Validate(); err != nil {
-				l.Log(logging.ERROR, err.Error())
+				log(level, logger, err.Error())
 				return status.Error(codes.InvalidArgument, err.Error())
 			}
 		}
@@ -55,82 +63,60 @@ func validate(req interface{}, all bool, l logging.Logger) error {
 	switch v := req.(type) {
 	case validatorLegacy:
 		if err := v.Validate(); err != nil {
-			l.Log(logging.ERROR, err.Error())
+			log(level, logger, err.Error())
 			return status.Error(codes.InvalidArgument, err.Error())
 		}
 	case validator:
 		if err := v.Validate(false); err != nil {
-			l.Log(logging.ERROR, err.Error())
+			log(level, logger, err.Error())
 			return status.Error(codes.InvalidArgument, err.Error())
 		}
 	}
 	return nil
 }
 
-// UnaryServerInterceptor returns a new unary server interceptor that validates incoming messages.
-//
-// Invalid messages will be rejected with `InvalidArgument` before reaching any userspace handlers.
-// If `all` is false, the interceptor returns first validation error. Otherwise, the interceptor
-// returns ALL validation error as a wrapped multi-error.
-// Note that generated codes prior to protoc-gen-validate v0.6.0 do not provide an all-validation
-// interface. In this case the interceptor fallbacks to legacy validation and `all` is ignored.
-func UnaryServerInterceptor(all bool, logger logging.Logger) grpc.UnaryServerInterceptor {
+func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
+	o := evaluateServerOpt(opts)
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		if err := validate(req, all, logger); err != nil {
+		if err := validate(req, o.shouldFailFast, o.logger); err != nil {
 			return nil, err
 		}
 		return handler(ctx, req)
 	}
 }
 
-// UnaryClientInterceptor returns a new unary client interceptor that validates outgoing messages.
-//
-// Invalid messages will be rejected with `InvalidArgument` before sending the request to server.
-// If `all` is false, the interceptor returns first validation error. Otherwise, the interceptor
-// returns ALL validation error as a wrapped multi-error.
-// Note that generated codes prior to protoc-gen-validate v0.6.0 do not provide an all-validation
-// interface. In this case the interceptor fallbacks to legacy validation and `all` is ignored.
-func UnaryClientInterceptor(all bool, logger logging.Logger) grpc.UnaryClientInterceptor {
+func UnaryClientInterceptor(opts ...Option) grpc.UnaryClientInterceptor {
+	o := evaluateClientOpt(opts)
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		if err := validate(req, all, logger); err != nil {
+		if err := validate(req, o.shouldFailFast, o.logger); err != nil {
 			return err
 		}
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
 }
 
-// StreamServerInterceptor returns a new streaming server interceptor that validates incoming messages.
-//
-// If `all` is false, the interceptor returns first validation error. Otherwise, the interceptor
-// returns ALL validation error as a wrapped multi-error.
-// Note that generated codes prior to protoc-gen-validate v0.6.0 do not provide an all-validation
-// interface. In this case the interceptor fallbacks to legacy validation and `all` is ignored.
-// The stage at which invalid messages will be rejected with `InvalidArgument` varies based on the
-// type of the RPC. For `ServerStream` (1:m) requests, it will happen before reaching any userspace
-// handlers. For `ClientStream` (n:1) or `BidiStream` (n:m) RPCs, the messages will be rejected on
-// calls to `stream.Recv()`.
-func StreamServerInterceptor(all bool, logger logging.Logger) grpc.StreamServerInterceptor {
+func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
+	o := evaluateServerOpt(opts)
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		wrapper := &recvWrapper{
-			all:          all,
+			options:      o,
 			ServerStream: stream,
-			Logger:       logger,
 		}
+
 		return handler(srv, wrapper)
 	}
 }
 
 type recvWrapper struct {
-	all bool
+	*options
 	grpc.ServerStream
-	logging.Logger
 }
 
 func (s *recvWrapper) RecvMsg(m any) error {
 	if err := s.ServerStream.RecvMsg(m); err != nil {
 		return err
 	}
-	if err := validate(m, s.all, s.Logger); err != nil {
+	if err := validate(m, s.shouldFailFast, s.logger); err != nil {
 		return err
 	}
 	return nil
