@@ -39,9 +39,10 @@ func evaluateClientOpt(opts []Option) *options {
 	return optCopy
 }
 
-// WithLogger tells validator to log all the error.
+// WithLogger tells validator to log all the validation errors with the given log level.
 func WithLogger(level logging.Level, logger logging.Logger) Option {
 	return func(o *options) {
+		o.level = level
 		o.logger = logger
 	}
 }
