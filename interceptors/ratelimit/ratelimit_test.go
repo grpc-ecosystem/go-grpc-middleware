@@ -104,7 +104,7 @@ func TestStreamServerInterceptor_RateLimitFail(t *testing.T) {
 
 	interceptor := StreamServerInterceptor(limiter)
 	called := false
-	handler := func(srv interface{}, stream grpc.ServerStream) error {
+	handler := func(srv any, stream grpc.ServerStream) error {
 		called = true
 		return errors.New(errMsgFake)
 	}
@@ -128,7 +128,7 @@ func TestUnaryClientInterceptor_RateLimitPass(t *testing.T) {
 	ctx := context.WithValue(context.Background(), ctxKeyShouldLimit, false)
 
 	interceptor := UnaryClientInterceptor(limiter)
-	invoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
+	invoker := func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
 		return errors.New(errMsgFake)
 	}
 	err := interceptor(ctx, "FakeMethod", nil, nil, nil, invoker)
@@ -153,7 +153,7 @@ func TestUnaryClientInterceptor_RateLimitFail(t *testing.T) {
 
 	interceptor := UnaryClientInterceptor(limiter)
 	called := false
-	invoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
+	invoker := func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
 		called = true
 		return errors.New(errMsgFake)
 	}
