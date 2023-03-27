@@ -214,6 +214,8 @@ func DefaultMessageProducer(ctx context.Context, format string, level logrus.Lev
 	}
 	entry := ctxlogrus.Extract(ctx).WithContext(ctx).WithFields(fields)
 	switch level {
+	case logrus.TraceLevel:
+		entry.Tracef(format)
 	case logrus.DebugLevel:
 		entry.Debugf(format)
 	case logrus.InfoLevel:
