@@ -111,5 +111,4 @@ func TestDefaultMessageProducer(t *testing.T) {
 			tc.verify(t, lastEntry)
 		})
 	}
-
 }
