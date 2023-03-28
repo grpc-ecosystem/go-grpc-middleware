@@ -4,7 +4,7 @@
 /*
 `grpc_recovery` are interceptors that recover from gRPC handler panics.
 
-Server Side Recovery Middleware
+# Server Side Recovery Middleware
 
 By default a panic will be converted into a gRPC error with `code.Internal`.
 
