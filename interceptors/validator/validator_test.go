@@ -6,10 +6,9 @@ package validator
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
+	"github.com/stretchr/testify/assert"
 )
 
 type TestLogger struct{}
