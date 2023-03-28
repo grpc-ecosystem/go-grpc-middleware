@@ -30,25 +30,14 @@ func TestDefaultMessageProducer(t *testing.T) {
 		code   codes.Code
 		err    error
 		fields logrus.Fields
-
-		verify func(*testing.T, *logrus.Entry)
 	}{
 		{
 			label:  "should emit info message without error",
 			format: "test",
 			level:  logrus.InfoLevel,
 			code:   codes.OK,
-			fields: logrus.Fields{},
-			verify: func(t *testing.T, e *logrus.Entry) {
-				t.Helper()
-
-				require.NotNil(t, e)
-
-				assert.Equal(t, "test", e.Message)
-				assert.Equal(t, logrus.Fields{
-					"foo": "bar",
-				}, e.Data)
-				assert.Equal(t, logrus.InfoLevel, e.Level)
+			fields: logrus.Fields{
+				"foo": "bar",
 			},
 		},
 		{
@@ -57,18 +46,9 @@ func TestDefaultMessageProducer(t *testing.T) {
 			level:  logrus.InfoLevel,
 			code:   codes.NotFound,
 			err:    errNotFound,
-			fields: logrus.Fields{},
-			verify: func(t *testing.T, e *logrus.Entry) {
-				t.Helper()
-
-				require.NotNil(t, e)
-
-				assert.Equal(t, "test", e.Message)
-				assert.Equal(t, logrus.Fields{
-					"foo":   "bar",
-					"error": errNotFound,
-				}, e.Data)
-				assert.Equal(t, logrus.InfoLevel, e.Level)
+			fields: logrus.Fields{
+				"foo":           "bar",
+				logrus.ErrorKey: errNotFound,
 			},
 		},
 		{
@@ -76,17 +56,8 @@ func TestDefaultMessageProducer(t *testing.T) {
 			format: "test",
 			level:  logrus.TraceLevel,
 			code:   codes.OK,
-			fields: logrus.Fields{},
-			verify: func(t *testing.T, e *logrus.Entry) {
-				t.Helper()
-
-				require.NotNil(t, e)
-
-				assert.Equal(t, "test", e.Message)
-				assert.Equal(t, logrus.Fields{
-					"foo": "bar",
-				}, e.Data)
-				assert.Equal(t, logrus.TraceLevel, e.Level)
+			fields: logrus.Fields{
+				"foo": "bar",
 			},
 		},
 	}
@@ -104,11 +75,15 @@ func TestDefaultMessageProducer(t *testing.T) {
 
 			ctx := ctxlogrus.ToContext(context.Background(), logrusEntry)
 
-			DefaultMessageProducer(ctx, tc.format, tc.level, tc.code, tc.err, tc.fields)
+			DefaultMessageProducer(ctx, tc.format, tc.level, tc.code, tc.err, logrus.Fields{})
 
 			lastEntry := hook.LastEntry()
 
-			tc.verify(t, lastEntry)
+			require.NotNil(t, lastEntry)
+
+			assert.Equal(t, "test", lastEntry.Message)
+			assert.Equal(t, tc.fields, lastEntry.Data)
+			assert.Equal(t, tc.level, lastEntry.Level)
 		})
 	}
 }
