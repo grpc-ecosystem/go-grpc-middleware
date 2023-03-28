@@ -4,7 +4,7 @@
 /*
 `grpc_opentracing` adds OpenTracing
 
-# OpenTracing Interceptors
+OpenTracing Interceptors
 
 These are both client-side and server-side interceptors for OpenTracing. They are a provider-agnostic, with backends
 such as Zipkin, or Google Stackdriver Trace.
@@ -17,5 +17,6 @@ All server-side spans are tagged with grpc_ctxtags information.
 For more information see:
 http://opentracing.io/documentation/
 https://github.com/opentracing/specification/blob/master/semantic_conventions.md
+
 */
 package grpc_opentracing

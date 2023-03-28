@@ -17,6 +17,7 @@ the full request/response payload needs to be written with care, this can signif
 
 ZAP can also be made as a backend for gRPC library internals. For that use `ReplaceGrpcLoggerV2`.
 
+
 *Server Interceptor*
 Below is a JSON formatted example of a log that would be logged by the server interceptor:
 
@@ -66,6 +67,7 @@ Below is a JSON formatted example of a log that would be logged by the payload i
 	}
 
 Note - due to implementation ZAP differs from Logrus in the "grpc.request.content" object by having an inner "msg" object.
+
 
 Please see examples and tests for examples of use.
 Please see settable_test.go for canonical integration through "zaptest" with golang testing infrastructure.

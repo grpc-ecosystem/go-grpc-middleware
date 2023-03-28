@@ -86,4 +86,5 @@ func TestDefaultMessageProducer(t *testing.T) {
 			assert.Equal(t, tc.level, lastEntry.Level)
 		})
 	}
+
 }
