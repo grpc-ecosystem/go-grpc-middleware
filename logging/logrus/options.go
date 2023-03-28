@@ -212,19 +212,6 @@ func DefaultMessageProducer(ctx context.Context, format string, level logrus.Lev
 	if err != nil {
 		fields[logrus.ErrorKey] = err
 	}
-	entry := ctxlogrus.Extract(ctx).WithContext(ctx).WithFields(fields)
-	switch level {
-	case logrus.DebugLevel:
-		entry.Debugf(format)
-	case logrus.InfoLevel:
-		entry.Infof(format)
-	case logrus.WarnLevel:
-		entry.Warningf(format)
-	case logrus.ErrorLevel:
-		entry.Errorf(format)
-	case logrus.FatalLevel:
-		entry.Fatalf(format)
-	case logrus.PanicLevel:
-		entry.Panicf(format)
-	}
+
+	ctxlogrus.Extract(ctx).WithContext(ctx).WithFields(fields).Logf(level, format)
 }
