@@ -5,25 +5,15 @@ package validator
 
 import "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 
-var (
-	defaultOptions = &options{
-		level:          "",
-		logger:         nil,
-		shouldFailFast: false,
-	}
-)
-
 type options struct {
 	level          logging.Level
 	logger         logging.Logger
 	shouldFailFast bool
 }
-
 type Option func(*options)
 
 func evaluateServerOpt(opts []Option) *options {
 	optCopy := &options{}
-	*optCopy = *defaultOptions
 	for _, o := range opts {
 		o(optCopy)
 	}
@@ -32,7 +22,6 @@ func evaluateServerOpt(opts []Option) *options {
 
 func evaluateClientOpt(opts []Option) *options {
 	optCopy := &options{}
-	*optCopy = *defaultOptions
 	for _, o := range opts {
 		o(optCopy)
 	}

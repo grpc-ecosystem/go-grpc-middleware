@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/grpc-ecosystem/go-grpc-middleware/providers/kit"
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
@@ -42,6 +42,26 @@ const (
 	grpcAddr  = ":8080"
 	httpAddr  = ":8081"
 )
+
+// interceptorLogger adapts go-kit logger to interceptor logger.
+// This code is simple enough to be copied and not imported.
+func interceptorLogger(l log.Logger) logging.Logger {
+	return logging.LoggerFunc(func(_ context.Context, lvl logging.Level, msg string, fields ...any) {
+		largs := append([]any{"msg", msg}, fields...)
+		switch lvl {
+		case logging.LevelDebug:
+			_ = level.Debug(l).Log(largs...)
+		case logging.LevelInfo:
+			_ = level.Info(l).Log(largs...)
+		case logging.LevelWarn:
+			_ = level.Warn(l).Log(largs...)
+		case logging.LevelError:
+			_ = level.Error(l).Log(largs...)
+		default:
+			panic(fmt.Sprintf("unknown level %v", lvl))
+		}
+	})
+}
 
 func main() {
 	// Setup logging.
@@ -118,14 +138,14 @@ func main() {
 			// Order matters e.g. tracing interceptor have to create span first for the later exemplars to work.
 			otelgrpc.UnaryServerInterceptor(),
 			srvMetrics.UnaryServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
-			logging.UnaryServerInterceptor(kit.InterceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID)),
+			logging.UnaryServerInterceptor(interceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID)),
 			selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFn), selector.MatchFunc(allButHealthZ)),
 			recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
 		),
 		grpc.ChainStreamInterceptor(
 			otelgrpc.StreamServerInterceptor(),
 			srvMetrics.StreamServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
-			logging.StreamServerInterceptor(kit.InterceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID)),
+			logging.StreamServerInterceptor(interceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID)),
 			selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFn), selector.MatchFunc(allButHealthZ)),
 			recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
 		),

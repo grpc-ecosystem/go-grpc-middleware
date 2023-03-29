@@ -4,10 +4,11 @@
 package validator
 
 import (
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"context"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // The validateAller interface at protoc-gen-validate main branch.
@@ -29,7 +30,8 @@ type validatorLegacy interface {
 
 func log(level logging.Level, logger logging.Logger, msg string) {
 	if logger != nil {
-		logger.Log(level, msg)
+		// TODO(bwplotka): Fix in separate PR.
+		logger.Log(context.TODO(), level, msg)
 	}
 }
 
