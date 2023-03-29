@@ -19,8 +19,8 @@ func UnaryClientInterceptor(entry *logrus.Entry, opts ...Option) grpc.UnaryClien
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		fields := newClientLoggerFields(ctx, method)
 		startTime := time.Now()
-		err := invoker(ctx, method, req, reply, cc, opts...)
 		newCtx := ctxlogrus.ToContext(ctx, entry.WithFields(fields))
+		err := invoker(newCtx, method, req, reply, cc, opts...)
 		logFinalClientLine(newCtx, o, startTime, err, "finished client unary call")
 		return err
 	}
@@ -32,8 +32,8 @@ func StreamClientInterceptor(entry *logrus.Entry, opts ...Option) grpc.StreamCli
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		fields := newClientLoggerFields(ctx, method)
 		startTime := time.Now()
-		clientStream, err := streamer(ctx, desc, cc, method, opts...)
 		newCtx := ctxlogrus.ToContext(ctx, entry.WithFields(fields))
+		clientStream, err := streamer(newCtx, desc, cc, method, opts...)
 		logFinalClientLine(newCtx, o, startTime, err, "finished client streaming call")
 		return clientStream, err
 	}
