@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"syscall"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/grpc-ecosystem/go-grpc-middleware/providers/kit"
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/timeout"
@@ -38,6 +38,25 @@ const (
 	targetGRPCAddr = "localhost:8080"
 )
 
+// interceptorLogger adapts go-kit logger to interceptor logger.
+// This code is simple enough to be copied and not imported.
+func interceptorLogger(l log.Logger) logging.Logger {
+	return logging.LoggerFunc(func(_ context.Context, lvl logging.Level, msg string, fields ...any) {
+		largs := append([]any{"msg", msg}, fields...)
+		switch lvl {
+		case logging.LevelDebug:
+			_ = level.Debug(l).Log(largs...)
+		case logging.LevelInfo:
+			_ = level.Info(l).Log(largs...)
+		case logging.LevelWarn:
+			_ = level.Warn(l).Log(largs...)
+		case logging.LevelError:
+			_ = level.Error(l).Log(largs...)
+		default:
+			panic(fmt.Sprintf("unknown level %v", lvl))
+		}
+	})
+}
 func main() {
 	// Setup logging.
 	logger := log.NewLogfmtLogger(os.Stderr)
@@ -85,11 +104,11 @@ func main() {
 			timeout.UnaryClientInterceptor(500*time.Millisecond),
 			otelgrpc.UnaryClientInterceptor(),
 			clMetrics.UnaryClientInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
-			logging.UnaryClientInterceptor(kit.InterceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID))),
+			logging.UnaryClientInterceptor(interceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID))),
 		grpc.WithChainStreamInterceptor(
 			otelgrpc.StreamClientInterceptor(),
 			clMetrics.StreamClientInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
-			logging.StreamClientInterceptor(kit.InterceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID))),
+			logging.StreamClientInterceptor(interceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID))),
 	)
 	if err != nil {
 		level.Error(logger).Log("err", err)

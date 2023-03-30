@@ -12,6 +12,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/protobuf/proto"
 )
 
 type reporter struct {
@@ -22,49 +23,114 @@ type reporter struct {
 	startCallLogged bool
 
 	opts   *options
+	fields Fields
 	logger Logger
 }
 
-func (c *reporter) logMessage(logger Logger, err error, msg string, duration time.Duration) {
-	code := c.opts.codeFunc(err)
-	logger = logger.With("grpc.code", code.String())
-	if err != nil {
-		logger = logger.With("grpc.error", fmt.Sprintf("%v", err))
-	}
-	logger.With(c.opts.durationFieldFunc(duration)...).Log(c.opts.levelFunc(code), msg)
-}
-
 func (c *reporter) PostCall(err error, duration time.Duration) {
-	switch c.opts.shouldLog(c.CallMeta, err) {
-	case LogFinishCall, LogStartAndFinishCall:
-		if err == io.EOF {
-			err = nil
+	if !has(c.opts.loggableEvents, FinishCall) {
+		return
+	}
+	if err == io.EOF {
+		err = nil
+	}
+
+	code := c.opts.codeFunc(err)
+	fields := c.fields.WithUnique(ExtractFields(c.ctx))
+	fields = fields.AppendUnique(Fields{"grpc.code", code.String()})
+	if err != nil {
+		fields = fields.AppendUnique(Fields{"grpc.error", fmt.Sprintf("%v", err)})
+	}
+	c.logger.Log(c.ctx, c.opts.levelFunc(code), "finished call", fields.AppendUnique(c.opts.durationFieldFunc(duration))...)
+}
+
+func (c *reporter) PostMsgSend(payload any, err error, duration time.Duration) {
+	logLvl := c.opts.levelFunc(c.opts.codeFunc(err))
+	fields := c.fields.WithUnique(ExtractFields(c.ctx))
+	if err != nil {
+		fields = fields.AppendUnique(Fields{"grpc.error", fmt.Sprintf("%v", err)})
+	}
+	if !c.startCallLogged && has(c.opts.loggableEvents, StartCall) {
+		c.startCallLogged = true
+		c.logger.Log(c.ctx, logLvl, "started call", fields.AppendUnique(c.opts.durationFieldFunc(duration))...)
+	}
+
+	if err != nil || !has(c.opts.loggableEvents, PayloadSent) {
+		return
+	}
+	if c.CallMeta.IsClient {
+		p, ok := payload.(proto.Message)
+		if !ok {
+			c.logger.Log(
+				c.ctx,
+				LevelError,
+				"payload is not a google.golang.org/protobuf/proto.Message; programmatic error?",
+				fields.AppendUnique(Fields{"grpc.request.type", fmt.Sprintf("%T", payload)}),
+			)
+			return
 		}
-		c.logMessage(c.logger, err, "finished call", duration)
-	default:
-		return
+
+		fields = fields.AppendUnique(Fields{"grpc.send.duration", duration.String(), "grpc.request.content", p})
+		c.logger.Log(c.ctx, logLvl, "request sent", fields...)
+	} else {
+		p, ok := payload.(proto.Message)
+		if !ok {
+			c.logger.Log(
+				c.ctx,
+				LevelError,
+				"payload is not a google.golang.org/protobuf/proto.Message; programmatic error?",
+				fields.AppendUnique(Fields{"grpc.response.type", fmt.Sprintf("%T", payload)}),
+			)
+			return
+		}
+
+		fields = fields.AppendUnique(Fields{"grpc.send.duration", duration.String(), "grpc.response.content", p})
+		c.logger.Log(c.ctx, logLvl, "response sent", fields...)
 	}
 }
 
-func (c *reporter) PostMsgSend(_ any, err error, duration time.Duration) {
-	if c.startCallLogged {
-		return
+func (c *reporter) PostMsgReceive(payload any, err error, duration time.Duration) {
+	logLvl := c.opts.levelFunc(c.opts.codeFunc(err))
+	fields := c.fields.WithUnique(ExtractFields(c.ctx))
+	if err != nil {
+		fields = fields.AppendUnique(Fields{"grpc.error", fmt.Sprintf("%v", err)})
 	}
-	switch c.opts.shouldLog(c.CallMeta, err) {
-	case LogStartAndFinishCall:
+	if !c.startCallLogged && has(c.opts.loggableEvents, StartCall) {
 		c.startCallLogged = true
-		c.logMessage(c.logger, err, "started call", duration)
+		c.logger.Log(c.ctx, logLvl, "started call", fields.AppendUnique(c.opts.durationFieldFunc(duration))...)
 	}
-}
 
-func (c *reporter) PostMsgReceive(_ any, err error, duration time.Duration) {
-	if c.startCallLogged {
+	if err != nil || !has(c.opts.loggableEvents, PayloadReceived) {
 		return
 	}
-	switch c.opts.shouldLog(c.CallMeta, err) {
-	case LogStartAndFinishCall:
-		c.startCallLogged = true
-		c.logMessage(c.logger, err, "started call", duration)
+	if !c.CallMeta.IsClient {
+		p, ok := payload.(proto.Message)
+		if !ok {
+			c.logger.Log(
+				c.ctx,
+				LevelError,
+				"payload is not a google.golang.org/protobuf/proto.Message; programmatic error?",
+				fields.AppendUnique(Fields{"grpc.request.type", fmt.Sprintf("%T", payload)}),
+			)
+			return
+		}
+
+		fields = fields.AppendUnique(Fields{"grpc.recv.duration", duration.String(), "grpc.request.content", p})
+		c.logger.Log(c.ctx, logLvl, "request received", fields...)
+	} else {
+		p, ok := payload.(proto.Message)
+		if !ok {
+			c.logger.Log(
+				c.ctx,
+				LevelError,
+				"payload is not a google.golang.org/protobuf/proto.Message; programmatic error?",
+				fields.AppendUnique(Fields{"grpc.response.type", fmt.Sprintf("%T", payload)}),
+			)
+			return
+		}
+
+		fields = fields.AppendUnique(Fields{"grpc.recv.duration", duration.String(), "grpc.response.content", p})
+		c.logger.Log(c.ctx, logLvl, "response received", fields...)
 	}
 }
 
@@ -75,7 +141,7 @@ func reportable(logger Logger, opts *options) interceptors.CommonReportableFunc 
 			kind = KindClientFieldValue
 		}
 
-		fields := newCommonFields(kind, c)
+		fields := ExtractFields(ctx).WithUnique(newCommonFields(kind, c))
 		if !c.IsClient {
 			if peer, ok := peer.FromContext(ctx); ok {
 				fields = append(fields, "peer.address", peer.Addr.String())
@@ -84,18 +150,18 @@ func reportable(logger Logger, opts *options) interceptors.CommonReportableFunc 
 		if opts.fieldsFromCtxFn != nil {
 			fields = fields.AppendUnique(opts.fieldsFromCtxFn(ctx))
 		}
-		fields = fields.AppendUnique(ExtractFields(ctx))
 
-		singleUseFields := []string{"grpc.start_time", time.Now().Format(opts.timestampFormat)}
+		singleUseFields := Fields{"grpc.start_time", time.Now().Format(opts.timestampFormat)}
 		if d, ok := ctx.Deadline(); ok {
-			singleUseFields = append(singleUseFields, "grpc.request.deadline", d.Format(opts.timestampFormat))
+			singleUseFields = singleUseFields.AppendUnique(Fields{"grpc.request.deadline", d.Format(opts.timestampFormat)})
 		}
 		return &reporter{
 			CallMeta:        c,
 			ctx:             ctx,
 			startCallLogged: false,
 			opts:            opts,
-			logger:          logger.With(fields...).With(singleUseFields...),
+			fields:          fields.WithUnique(singleUseFields),
+			logger:          logger,
 			kind:            kind,
 		}, InjectFields(ctx, fields)
 	}

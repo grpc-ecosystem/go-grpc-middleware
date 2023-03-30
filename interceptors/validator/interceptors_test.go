@@ -4,6 +4,7 @@
 package validator_test
 
 import (
+	"context"
 	"io"
 	"testing"
 
@@ -20,11 +21,7 @@ import (
 
 type TestLogger struct{}
 
-func (l *TestLogger) Log(lvl logging.Level, msg string) {}
-
-func (l *TestLogger) With(fields ...string) logging.Logger {
-	return &TestLogger{}
-}
+func (l *TestLogger) Log(ctx context.Context, level logging.Level, msg string, fields ...any) {}
 
 type ValidatorTestSuite struct {
 	*testpb.InterceptorTestSuite
@@ -120,8 +117,8 @@ func TestValidatorTestSuite(t *testing.T) {
 	sWithWithLoggerArgs := &ValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ServerOpts: []grpc.ServerOption{
-				grpc.StreamInterceptor(validator.StreamServerInterceptor(validator.WithLogger(logging.DEBUG, &TestLogger{}))),
-				grpc.UnaryInterceptor(validator.UnaryServerInterceptor(validator.WithLogger(logging.DEBUG, &TestLogger{}))),
+				grpc.StreamInterceptor(validator.StreamServerInterceptor(validator.WithLogger(logging.LevelDebug, &TestLogger{}))),
+				grpc.UnaryInterceptor(validator.UnaryServerInterceptor(validator.WithLogger(logging.LevelDebug, &TestLogger{}))),
 			},
 		},
 	}
@@ -130,8 +127,8 @@ func TestValidatorTestSuite(t *testing.T) {
 	sAll := &ValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ServerOpts: []grpc.ServerOption{
-				grpc.StreamInterceptor(validator.StreamServerInterceptor(validator.WithFailFast(), validator.WithLogger(logging.DEBUG, &TestLogger{}))),
-				grpc.UnaryInterceptor(validator.UnaryServerInterceptor(validator.WithFailFast(), validator.WithLogger(logging.DEBUG, &TestLogger{}))),
+				grpc.StreamInterceptor(validator.StreamServerInterceptor(validator.WithFailFast(), validator.WithLogger(logging.LevelDebug, &TestLogger{}))),
+				grpc.UnaryInterceptor(validator.UnaryServerInterceptor(validator.WithFailFast(), validator.WithLogger(logging.LevelDebug, &TestLogger{}))),
 			},
 		},
 	}
@@ -158,7 +155,7 @@ func TestValidatorTestSuite(t *testing.T) {
 	csWithWithLoggerArgs := &ClientValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ServerOpts: []grpc.ServerOption{
-				grpc.UnaryInterceptor(validator.UnaryServerInterceptor(validator.WithLogger(logging.DEBUG, &TestLogger{}))),
+				grpc.UnaryInterceptor(validator.UnaryServerInterceptor(validator.WithLogger(logging.LevelDebug, &TestLogger{}))),
 			},
 		},
 	}

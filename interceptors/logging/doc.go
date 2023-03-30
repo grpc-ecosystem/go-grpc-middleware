@@ -25,11 +25,12 @@ https://github.com/opentracing/specification/blob/master/semantic_conventions.md
 
 Implementations:
 
-* providers/logrus
-* providers/zap
 * providers/kit
-* providers/zerolog
-* providers/phuslog
 * providers/logr
+* providers/logrus
+* providers/phuslog
+* providers/slog
+* providers/zap
+* providers/zerolog
 */
 package logging

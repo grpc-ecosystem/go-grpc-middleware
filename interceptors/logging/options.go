@@ -8,14 +8,42 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+// LoggableEvent defines the events a log line can be added on.
+type LoggableEvent uint
+
+const (
+	// StartCall is a loggable event representing start of the gRPC call.
+	StartCall LoggableEvent = iota
+	// FinishCall is a loggable event representing finish of the gRPC call.
+	FinishCall
+	// PayloadReceived is a loggable event representing received request (server) or response (client).
+	// Log line for this event also includes (potentially big) proto.Message of that payload in
+	// "grpc.request.content" (server) or "grpc.response.content" (client) field.
+	// NOTE: This can get quite verbose, especially for streaming calls, use with caution (e.g. debug only purposes).
+	PayloadReceived
+	// PayloadSent is a loggable event representing sent response (server) or request (client).
+	// Log line for this event also includes (potentially big) proto.Message of that payload in
+	// "grpc.response.content" (server) or "grpc.request.content" (client) field.
+	// NOTE: This can get quite verbose, especially for streaming calls, use with caution (e.g. debug only purposes).
+	PayloadSent
+)
+
+func has(events []LoggableEvent, event LoggableEvent) bool {
+	for _, e := range events {
+		if e == event {
+			return true
+		}
+	}
+	return false
+}
+
 var (
 	defaultOptions = &options{
-		shouldLog:         DefaultDeciderMethod,
+		loggableEvents:    []LoggableEvent{StartCall, FinishCall},
 		codeFunc:          DefaultErrorToCode,
 		durationFieldFunc: DefaultDurationToFields,
 		// levelFunc depends if it's client or server.
@@ -26,7 +54,7 @@ var (
 
 type options struct {
 	levelFunc         CodeToLevel
-	shouldLog         Decider
+	loggableEvents    []LoggableEvent
 	codeFunc          ErrorToCode
 	durationFieldFunc DurationToFields
 	timestampFormat   string
@@ -66,15 +94,6 @@ func DefaultErrorToCode(err error) codes.Code {
 	return status.Code(err)
 }
 
-// Decider function defines rules for suppressing any interceptor logs.
-type Decider func(c interceptors.CallMeta, err error) Decision
-
-// DefaultDeciderMethod is the default implementation of decider to see if you should log the call
-// by default this if always true so all calls are logged.
-func DefaultDeciderMethod(_ interceptors.CallMeta, _ error) Decision {
-	return LogStartAndFinishCall
-}
-
 // CodeToLevel function defines the mapping between gRPC return codes and interceptor log level.
 type CodeToLevel func(code codes.Code) Level
 
@@ -82,17 +101,17 @@ type CodeToLevel func(code codes.Code) Level
 func DefaultServerCodeToLevel(code codes.Code) Level {
 	switch code {
 	case codes.OK, codes.NotFound, codes.Canceled, codes.AlreadyExists, codes.InvalidArgument, codes.Unauthenticated:
-		return INFO
+		return LevelInfo
 
 	case codes.DeadlineExceeded, codes.PermissionDenied, codes.ResourceExhausted, codes.FailedPrecondition, codes.Aborted,
 		codes.OutOfRange, codes.Unavailable:
-		return WARNING
+		return LevelWarn
 
 	case codes.Unknown, codes.Unimplemented, codes.Internal, codes.DataLoss:
-		return ERROR
+		return LevelError
 
 	default:
-		return ERROR
+		return LevelError
 	}
 }
 
@@ -101,13 +120,13 @@ func DefaultClientCodeToLevel(code codes.Code) Level {
 	switch code {
 	case codes.OK, codes.Canceled, codes.InvalidArgument, codes.NotFound, codes.AlreadyExists, codes.ResourceExhausted,
 		codes.FailedPrecondition, codes.Aborted, codes.OutOfRange:
-		return DEBUG
+		return LevelDebug
 	case codes.Unknown, codes.DeadlineExceeded, codes.PermissionDenied, codes.Unauthenticated:
-		return INFO
+		return LevelInfo
 	case codes.Unimplemented, codes.Internal, codes.Unavailable, codes.DataLoss:
-		return WARNING
+		return LevelWarn
 	default:
-		return INFO
+		return LevelInfo
 	}
 }
 
@@ -120,10 +139,10 @@ func WithFieldsFromContext(f fieldsFromCtxFn) Option {
 	}
 }
 
-// WithDecider customizes the function for deciding if the gRPC interceptor logs should log.
-func WithDecider(f Decider) Option {
+// WithLogOnEvents customizes on what events the gRPC interceptor should log on.
+func WithLogOnEvents(events ...LoggableEvent) Option {
 	return func(o *options) {
-		o.shouldLog = f
+		o.loggableEvents = events
 	}
 }
 
