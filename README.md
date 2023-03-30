@@ -55,6 +55,7 @@ All paths should work with `go get <path>`.
   * [`github.com/grpc-ecosystem/go-grpc-middleware/providers/logrus`](providers/logrus) - adapter for [logrus](https://github.com/sirupsen/logrus).
   * [`github.com/grpc-ecosystem/go-grpc-middleware/providers/kit`](providers/kit) - adapter for [go-kit/log](https://github.com/go-kit/log).
   * [`github.com/grpc-ecosystem/go-grpc-middleware/providers/phuslog`](providers/phuslog) - adapter for [phuslog](https://github.com/phuslu/log)
+  * [`github.com/grpc-ecosystem/go-grpc-middleware/providers/slog`](providers/slog) - adapter for [slog](https://pkg.go.dev/golang.org/x/exp/slog).
   * [`github.com/grpc-ecosystem/go-grpc-middleware/providers/zap`](providers/zap) - adapter for [zap](https://github.com/uber-go/zap).
   * [`github.com/grpc-ecosystem/go-grpc-middleware/providers/zerolog`](providers/zerolog) - adapter for [zerolog](https://github.com/rs/zerolog).
 * Tracing:
