@@ -3,16 +3,17 @@
 
 package validator
 
-import "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+import (
+	"context"
+)
 
 type options struct {
-	level          logging.Level
-	logger         logging.Logger
-	shouldFailFast bool
+	shouldFailFast      bool
+	onValidationErrFunc OnValidationErr
 }
 type Option func(*options)
 
-func evaluateServerOpt(opts []Option) *options {
+func evaluateOpts(opts []Option) *options {
 	optCopy := &options{}
 	for _, o := range opts {
 		o(optCopy)
@@ -20,23 +21,17 @@ func evaluateServerOpt(opts []Option) *options {
 	return optCopy
 }
 
-func evaluateClientOpt(opts []Option) *options {
-	optCopy := &options{}
-	for _, o := range opts {
-		o(optCopy)
-	}
-	return optCopy
-}
+type OnValidationErr func(ctx context.Context, err error)
 
-// WithLogger tells validator to log all the validation errors with the given log level.
-func WithLogger(level logging.Level, logger logging.Logger) Option {
+// WithOnValidationErrFunc registers function that will be invoked on validation error(s).
+func WithOnValidationErrFunc(onValidationErrFunc OnValidationErr) Option {
 	return func(o *options) {
-		o.level = level
-		o.logger = logger
+		o.onValidationErrFunc = onValidationErrFunc
 	}
 }
 
 // WithFailFast tells validator to immediately stop doing further validation after first validation error.
+// This option is ignored if message is only supporting validator.validatorLegacy interface.
 func WithFailFast() Option {
 	return func(o *options) {
 		o.shouldFailFast = true

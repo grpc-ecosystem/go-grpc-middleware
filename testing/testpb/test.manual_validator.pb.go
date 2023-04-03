@@ -36,7 +36,7 @@ func (x *PingStreamRequest) Validate(bool) error {
 	return nil
 }
 
-// Implements the legacy validation interface from protoc-gen-validate.
+// Validate implements the legacy validation interface from protoc-gen-validate.
 func (x *PingResponse) Validate() error {
 	if x.Counter > math.MaxInt16 {
 		return errors.New("ping allocation exceeded")
@@ -44,7 +44,7 @@ func (x *PingResponse) Validate() error {
 	return nil
 }
 
-// Implements the new ValidateAll interface from protoc-gen-validate.
+// ValidateAll implements the new ValidateAll interface from protoc-gen-validate.
 func (x *PingResponse) ValidateAll() error {
 	if x.Counter > math.MaxInt16 {
 		return errors.New("ping allocation exceeded")
