@@ -178,40 +178,6 @@ func (s *RetrySuite) TestUnary_OverrideFromDialOpts() {
 	require.EqualValues(s.T(), 5, s.srv.requestCount(), "five requests should have been made")
 }
 
-func (s *RetrySuite) TestUnary_PerCallDeadline_Succeeds() {
-	s.T().Skip("TODO(bwplotka): Mock time & unskip, this is too flaky on GH Actions.")
-
-	// This tests 5 requests, with first 4 sleeping for 10 millisecond, and the retry logic firing
-	// a retry call with a 5 millisecond deadline. The 5th one doesn't sleep and succeeds.
-	deadlinePerCall := 5 * time.Millisecond
-	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
-	out, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing, WithPerRetryTimeout(deadlinePerCall),
-		WithMax(5))
-	require.NoError(s.T(), err, "the fifth invocation should succeed")
-	require.NotNil(s.T(), out, "Pong must be not nil")
-	require.EqualValues(s.T(), 5, s.srv.requestCount(), "five requests should have been made")
-}
-
-func (s *RetrySuite) TestUnary_PerCallDeadline_FailsOnParent() {
-	s.T().Skip("TODO(bwplotka): Mock time & unskip, this is too flaky on GH Actions.")
-
-	// This tests that the parent context (passed to the invocation) takes precedence over retries.
-	// The parent context has 150 milliseconds of deadline.
-	// Each failed call sleeps for 100milliseconds, and there is 5 milliseconds between each one.
-	// This means that unlike in TestUnary_PerCallDeadline_Succeeds, the fifth successful call won't
-	// be made.
-	parentDeadline := 150 * time.Millisecond
-	deadlinePerCall := 50 * time.Millisecond
-	// All 0-4 requests should have 10 millisecond sleeps and deadline, while the last one works.
-	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
-	ctx, cancel := context.WithTimeout(context.TODO(), parentDeadline)
-	defer cancel()
-	_, err := s.Client.Ping(ctx, testpb.GoodPing, WithPerRetryTimeout(deadlinePerCall),
-		WithMax(5))
-	require.Error(s.T(), err, "the retries must fail due to context deadline exceeded")
-	require.Equal(s.T(), codes.DeadlineExceeded, status.Code(err), "failre code must be a gRPC error of Deadline class")
-}
-
 func (s *RetrySuite) TestUnary_OnRetryCallbackCalled() {
 	retryCallbackCount := 0
 
@@ -241,41 +207,6 @@ func (s *RetrySuite) TestServerStream_OverrideFromContext() {
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
 	s.assertPingListWasCorrect(stream)
 	require.EqualValues(s.T(), 5, s.srv.requestCount(), "three requests should have been made")
-}
-
-func (s *RetrySuite) TestServerStream_PerCallDeadline_Succeeds() {
-	s.T().Skip("TODO(bwplotka): Mock time & unskip, this is too flaky on GH Actions.")
-
-	// This tests 5 requests, with first 4 sleeping for 100 millisecond, and the retry logic firing
-	// a retry call with a 50 millisecond deadline. The 5th one doesn't sleep and succeeds.
-	deadlinePerCall := 100 * time.Millisecond
-	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
-	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList, WithPerRetryTimeout(deadlinePerCall),
-		WithMax(5))
-	require.NoError(s.T(), err, "establishing the connection must always succeed")
-	s.assertPingListWasCorrect(stream)
-	require.EqualValues(s.T(), 5, s.srv.requestCount(), "three requests should have been made")
-}
-
-func (s *RetrySuite) TestServerStream_PerCallDeadline_FailsOnParent() {
-	s.T().Skip("TODO(bwplotka): Mock time & unskip, this is too flaky on GH Actions.")
-
-	// This tests that the parent context (passed to the invocation) takes precedence over retries.
-	// The parent context has 150 milliseconds of deadline.
-	// Each failed call sleeps for 50milliseconds, and there is 25 milliseconds between each one.
-	// This means that unlike in TestServerStream_PerCallDeadline_Succeeds, the fifth successful call won't
-	// be made.
-	parentDeadline := 150 * time.Millisecond
-	deadlinePerCall := 50 * time.Millisecond
-	// All 0-4 requests should have 10 millisecond sleeps and deadline, while the last one works.
-	s.srv.resetFailingConfiguration(5, codes.NotFound, 2*deadlinePerCall)
-	parentCtx, cancel := context.WithTimeout(context.TODO(), parentDeadline)
-	defer cancel()
-	stream, err := s.Client.PingList(parentCtx, testpb.GoodPingList, WithPerRetryTimeout(deadlinePerCall),
-		WithMax(5))
-	require.NoError(s.T(), err, "establishing the connection must always succeed")
-	_, err = stream.Recv()
-	require.Equal(s.T(), codes.DeadlineExceeded, status.Code(err), "failre code must be a gRPC error of Deadline class")
 }
 
 func (s *RetrySuite) TestServerStream_OnRetryCallbackCalled() {

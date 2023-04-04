@@ -4,13 +4,14 @@
 package retry
 
 import (
+	"context"
 	"math/rand"
 	"time"
 )
 
 // BackoffLinear is very simple: it waits for a fixed period of time between calls.
 func BackoffLinear(waitBetween time.Duration) BackoffFunc {
-	return func(attempt uint) time.Duration {
+	return func(ctx context.Context, attempt uint) time.Duration {
 		return waitBetween
 	}
 }
@@ -31,7 +32,7 @@ func exponentBase2(a uint) uint {
 // BackoffLinearWithJitter waits a set period of time, allowing for jitter (fractional adjustment).
 // For example waitBetween=1s and jitter=0.10 can generate waits between 900ms and 1100ms.
 func BackoffLinearWithJitter(waitBetween time.Duration, jitterFraction float64) BackoffFunc {
-	return func(attempt uint) time.Duration {
+	return func(ctx context.Context, attempt uint) time.Duration {
 		return jitterUp(waitBetween, jitterFraction)
 	}
 }
@@ -40,7 +41,7 @@ func BackoffLinearWithJitter(waitBetween time.Duration, jitterFraction float64) 
 // The scalar is multiplied times 2 raised to the current attempt. So the first
 // retry with a scalar of 100ms is 100ms, while the 5th attempt would be 1.6s.
 func BackoffExponential(scalar time.Duration) BackoffFunc {
-	return func(attempt uint) time.Duration {
+	return func(ctx context.Context, attempt uint) time.Duration {
 		return scalar * time.Duration(exponentBase2(attempt))
 	}
 }
@@ -48,7 +49,7 @@ func BackoffExponential(scalar time.Duration) BackoffFunc {
 // BackoffExponentialWithJitter creates an exponential backoff like
 // BackoffExponential does, but adds jitter.
 func BackoffExponentialWithJitter(scalar time.Duration, jitterFraction float64) BackoffFunc {
-	return func(attempt uint) time.Duration {
+	return func(ctx context.Context, attempt uint) time.Duration {
 		return jitterUp(scalar*time.Duration(exponentBase2(attempt)), jitterFraction)
 	}
 }

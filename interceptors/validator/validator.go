@@ -27,7 +27,7 @@ type validatorLegacy interface {
 	Validate() error
 }
 
-func validate(ctx context.Context, reqOrRes interface{}, shouldFailFast bool, onValidationErrFunc OnValidationErr) (err error) {
+func validate(ctx context.Context, reqOrRes interface{}, shouldFailFast bool, onValidationErrCallback OnValidationErrCallback) (err error) {
 	if shouldFailFast {
 		switch v := reqOrRes.(type) {
 		case validatorLegacy:
@@ -50,8 +50,8 @@ func validate(ctx context.Context, reqOrRes interface{}, shouldFailFast bool, on
 		return nil
 	}
 
-	if onValidationErrFunc != nil {
-		onValidationErrFunc(ctx, err)
+	if onValidationErrCallback != nil {
+		onValidationErrCallback(ctx, err)
 	}
 	return status.Error(codes.InvalidArgument, err.Error())
 }
