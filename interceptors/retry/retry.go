@@ -5,8 +5,8 @@ package retry
 
 import (
 	"context"
+	"fmt"
 	"io"
-	"strconv"
 	"sync"
 	"time"
 
@@ -228,9 +228,7 @@ func (s *serverStreamingRetryingStream) receiveMsgAndIndicateRetry(m any) (bool,
 	return isRetriable(err, s.callOpts), err
 }
 
-func (s *serverStreamingRetryingStream) reestablishStreamAndResendBuffer(
-	callCtx context.Context,
-) (grpc.ClientStream, error) {
+func (s *serverStreamingRetryingStream) reestablishStreamAndResendBuffer(callCtx context.Context) (grpc.ClientStream, error) {
 	s.mu.RLock()
 	bufferedSends := s.bufferedSends
 	s.mu.RUnlock()
@@ -306,11 +304,11 @@ func perCallContext(parentCtx context.Context, callOpts *options, attempt uint) 
 func contextErrToGrpcErr(err error) error {
 	switch err {
 	case context.DeadlineExceeded:
-		return status.Error(codes.DeadlineExceeded, err.Error())
+		return status.Errorf(codes.DeadlineExceeded, err.Error())
 	case context.Canceled:
-		return status.Error(codes.Canceled, err.Error())
+		return status.Errorf(codes.Canceled, err.Error())
 	default:
-		return status.Error(codes.Unknown, err.Error())
+		return status.Errorf(codes.Unknown, err.Error())
 	}
 }
 

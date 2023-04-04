@@ -39,7 +39,7 @@ func ExtractOutgoing(ctx context.Context) MD {
 
 // Clone performs a *deep* copy of the grpcMetadata.MD.
 //
-// You can specify the lower-case copiedKeys to only copy certain allow-listed keys. If no keys are explicitly allow-listed
+// You can specify the lower-case copiedKeys to only copy certain whitelisted keys. If no keys are explicitly whitelisted
 // all keys get copied.
 func (m MD) Clone(copiedKeys ...string) MD {
 	newMd := MD(grpcMetadata.Pairs())

@@ -28,18 +28,12 @@ func (s *recoveryAssertService) Ping(ctx context.Context, ping *testpb.PingReque
 	if ping.Value == "panic" {
 		panic("very bad thing happened")
 	}
-	if ping.Value == "nilpanic" {
-		panic(nil)
-	}
 	return s.TestServiceServer.Ping(ctx, ping)
 }
 
 func (s *recoveryAssertService) PingList(ping *testpb.PingListRequest, stream testpb.TestService_PingListServer) error {
 	if ping.Value == "panic" {
 		panic("very bad thing happened")
-	}
-	if ping.Value == "nilpanic" {
-		panic(nil)
 	}
 	return s.TestServiceServer.PingList(ping, stream)
 }
@@ -76,13 +70,6 @@ func (s *RecoverySuite) TestUnary_PanickingRequest() {
 	assert.Contains(s.T(), status.Convert(err).Message(), "recovery.recoverFrom", "must include stack trace")
 }
 
-func (s *RecoverySuite) TestUnary_NilPanickingRequest() {
-	_, err := s.Client.Ping(s.SimpleCtx(), nilPanicPing)
-	require.Error(s.T(), err, "there must be an error")
-	assert.Equal(s.T(), codes.Internal, status.Code(err), "must error with internal")
-	assert.Equal(s.T(), "<nil>", status.Convert(err).Message(), "must error with <nil>")
-}
-
 func (s *RecoverySuite) TestStream_SuccessfulReceive() {
 	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
@@ -99,15 +86,6 @@ func (s *RecoverySuite) TestStream_PanickingReceive() {
 	assert.Equal(s.T(), codes.Unknown, status.Code(err), "must error with unknown")
 	assert.Contains(s.T(), status.Convert(err).Message(), "panic caught", "must error with message")
 	assert.Contains(s.T(), status.Convert(err).Message(), "recovery.recoverFrom", "must include stack trace")
-}
-
-func (s *RecoverySuite) TestStream_NilPanickingReceive() {
-	stream, err := s.Client.PingList(s.SimpleCtx(), nilPanicPing)
-	require.NoError(s.T(), err, "should not fail on establishing the stream")
-	_, err = stream.Recv()
-	require.Error(s.T(), err, "there must be an error")
-	assert.Equal(s.T(), codes.Internal, status.Code(err), "must error with internal")
-	assert.Equal(s.T(), "<nil>", status.Convert(err).Message(), "must error with <nil>")
 }
 
 func TestRecoveryOverrideSuite(t *testing.T) {

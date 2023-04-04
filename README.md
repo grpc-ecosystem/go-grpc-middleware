@@ -4,13 +4,6 @@
 
 This repository holds [gRPC Go](https://github.com/grpc/grpc-go) Middlewares: interceptors, helpers and utilities.
 
-## ⚠️  Status
-
-Version [v2](https://github.com/grpc-ecosystem/go-grpc-middleware/tree/v2) is about to be released, with migration guide, which will replace v1. Try v2 and give us feedback! 
-
-Version v1 is currently in deprecation mode, which means only critical and safety bug fixes will be merged.
-
-
 ## Middleware
 
 [gRPC Go](https://github.com/grpc/grpc-go) has support for "interceptors", i.e. [middleware](https://medium.com/@matryer/writing-middleware-in-golang-and-how-go-makes-it-so-much-fun-4375c1246e81#.gv7tdlghs) that is executed either on the gRPC Server before the request is passed onto the user's application logic, or on the gRPC client either around the user call. It is a perfect way to implement common patterns: auth, logging, tracing, metrics, validation, retries, rate limiting and more, which can be a great generic building blocks that make it easy to build multiple microservices easily.

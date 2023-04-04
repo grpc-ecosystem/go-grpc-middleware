@@ -71,6 +71,5 @@ func (s *recvWrapper) RecvMsg(m any) error {
 	if err := validate(s.Context(), m, s.shouldFailFast, s.onValidationErrCallback); err != nil {
 		return err
 	}
-
 	return nil
 }
