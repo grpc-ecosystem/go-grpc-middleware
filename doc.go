@@ -1,8 +1,10 @@
-// Copyright 2016 Michal Witkowski. All Rights Reserved.
-// See LICENSE for licensing terms.
+// Copyright (c) The go-grpc-middleware Authors.
+// Licensed under the Apache License 2.0.
 
 /*
-`grpc_middleware` is a collection of gRPC middleware packages: interceptors, helpers and tools.
+Package middleware
+
+`middleware` is a collection of gRPC middleware packages: interceptors, helpers and tools.
 
 # Middleware
 
@@ -15,15 +17,12 @@ functions for chaining said interceptors, metadata convenience methods and more.
 
 # Chaining
 
-By default, gRPC doesn't allow one to have more than one interceptor either on the client nor on
-the server side. `grpc_middleware` provides convenient chaining methods
-
 Simple way of turning a multiple interceptors into a single interceptor. Here's an example for
 server chaining:
 
 	myServer := grpc.NewServer(
-	    grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(loggingStream, monitoringStream, authStream)),
-	    grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(loggingUnary, monitoringUnary, authUnary)),
+	    grpc.ChainStreamInterceptor(loggingStream, monitoringStream, authStream)),
+	    grpc.ChainUnaryInterceptor(loggingUnary, monitoringUnary, authUnary),
 	)
 
 These interceptors will be executed from left to right: logging, monitoring and auth.
@@ -32,10 +31,10 @@ Here's an example for client side chaining:
 
 	clientConn, err = grpc.Dial(
 	    address,
-	        grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(monitoringClientUnary, retryUnary)),
-	        grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(monitoringClientStream, retryStream)),
+	        grpc.WithUnaryInterceptor(middleware.ChainUnaryClient(monitoringClientUnary, retryUnary)),
+	        grpc.WithStreamInterceptor(middleware.ChainStreamClient(monitoringClientStream, retryStream)),
 	)
-	client = pb_testproto.NewTestServiceClient(clientConn)
+	client = testpb.NewTestServiceClient(clientConn)
 	resp, err := client.PingEmpty(s.ctx, &myservice.Request{Msg: "hello"})
 
 These interceptors will be executed from left to right: monitoring and then retry logic.
@@ -51,7 +50,7 @@ to the handling function.
 
 For example, a client side interceptor example for auth looks like:
 
-	func FakeAuthUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	func FakeAuthUnaryInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	   newCtx := context.WithValue(ctx, "user_id", "john@example.com")
 	   return handler(newCtx, req)
 	}
@@ -60,10 +59,10 @@ Unfortunately, it's not as easy for streaming RPCs. These have the `context.Cont
 the `grpc.ServerStream` object. To pass values through context, a wrapper (`WrappedServerStream`) is
 needed. For example:
 
-	func FakeAuthStreamingInterceptor(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	   newStream := grpc_middleware.WrapServerStream(stream)
+	func FakeAuthStreamingInterceptor(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	   newStream := middleware.WrapServerStream(stream)
 	   newStream.WrappedContext = context.WithValue(ctx, "user_id", "john@example.com")
 	   return handler(srv, newStream)
 	}
 */
-package grpc_middleware
+package middleware

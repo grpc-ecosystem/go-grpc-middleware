@@ -1,27 +1,50 @@
 # Configuration for probot-stale - https://github.com/probot/stale
 
-# Number of days of inactivity before an Issue becomes stale
-daysUntilStale: 60
+# Only issues or pull requests with all of these labels are check if stale. Defaults to `[]` (disabled)
+onlyLabels: []
 
-# Number of days of inactivity before a stale Issue is closed.
-# Set to false to disable. If disabled, issues still need to be closed manually, but will remain marked as stale.
-daysUntilClose: 7
-
-# Issues with these labels will never be considered stale. Set to `[]` to disable
+# Issues or Pull Requests with these labels will never be considered stale. Set to `[]` to disable.
+# We want stale bot to notify us that something is stale so we can revisit it.
+# If one issue is marked as 'reminder' by the reminder bot, we don't mark it as 'stale' again.
 exemptLabels:
-  - bug
-  - docs improvement
-  - help wanted
+  # This label is hardcoded on remind bot (https://probot.github.io/apps/reminders/) and is used by remind bot when
+  # issue is being reminded.
+  - reminder
 
+# Set to true to ignore issues in a project (defaults to false)
+exemptProjects: false
+# Set to true to ignore issues in a milestone (defaults to false)
+exemptMilestones: false
+# Set to true to ignore issues with an assignee (defaults to false)
+exemptAssignees: false
 # Label to use when marking as stale
 staleLabel: stale
 
-issues:
-  # Comment to post when marking Issues as stale.
+pull:
+  daysUntilClose: 14
+  daysUntilStale: 30
   markComment: >
-    This issue has been automatically marked as stale because it has not had any
-    recent activity. It will be closed in 7 days if no further activity occurs.
-  # Comment to post when closing a stale Issue.
+    Hello 👋 Looks like there was no activity on this amazing PR for the last month.
+
+    **Do you mind updating us on the status?** Is there anything we can help with? If you plan to still work on it, just comment on this PR or push a commit. Thanks! 🤗
+
+    If there is no activity for the next 2 weeks, this PR will be closed (we can always reopen a PR if you get back to this!).
+  #unmarkComment: No need for unmark comment.
   closeComment: >
-    This issue has been automatically closed because it has not had any recent
-    activity. If you have a question or comment, please open a new issue.
+    Closing for now as promised, let us know if you need this to be reopened! 🤗
+
+issues:
+  daysUntilClose: 14
+  daysUntilStale: 60
+  markComment: >
+    Hello 👋 Looks like there was no activity on this issue for the last 2 months.
+
+    **Do you mind updating us on the status?** Is this still reproducible or needed? If yes, just comment on this PR or push a commit. Thanks! 🤗
+
+    If there is no activity for the next 2 weeks, this issue will be closed (we can always reopen an issue if requested!).
+  #unmarkComment: No need for unmark comment.
+  closeComment: >
+    Closing for now as promised, let us know if you need this to be reopened! 🤗
+
+# Limit the number of actions per hour, from 1-30. Default is 30
+limitPerRun: 30
