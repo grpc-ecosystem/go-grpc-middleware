@@ -8,8 +8,8 @@ import (
 )
 
 type options struct {
-	shouldFailFast      bool
-	onValidationErrFunc OnValidationErr
+	shouldFailFast          bool
+	onValidationErrCallback OnValidationErrCallback
 }
 type Option func(*options)
 
@@ -21,12 +21,12 @@ func evaluateOpts(opts []Option) *options {
 	return optCopy
 }
 
-type OnValidationErr func(ctx context.Context, err error)
+type OnValidationErrCallback func(ctx context.Context, err error)
 
-// WithOnValidationErrFunc registers function that will be invoked on validation error(s).
-func WithOnValidationErrFunc(onValidationErrFunc OnValidationErr) Option {
+// WithOnValidationErrCallback registers function that will be invoked on validation error(s).
+func WithOnValidationErrCallback(onValidationErrCallback OnValidationErrCallback) Option {
 	return func(o *options) {
-		o.onValidationErrFunc = onValidationErrFunc
+		o.onValidationErrCallback = onValidationErrCallback
 	}
 }
 

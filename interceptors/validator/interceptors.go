@@ -17,7 +17,7 @@ import (
 func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 	o := evaluateOpts(opts)
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		if err := validate(ctx, req, o.shouldFailFast, o.onValidationErrFunc); err != nil {
+		if err := validate(ctx, req, o.shouldFailFast, o.onValidationErrCallback); err != nil {
 			return nil, err
 		}
 		return handler(ctx, req)
@@ -32,7 +32,7 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 func UnaryClientInterceptor(opts ...Option) grpc.UnaryClientInterceptor {
 	o := evaluateOpts(opts)
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		if err := validate(ctx, req, o.shouldFailFast, o.onValidationErrFunc); err != nil {
+		if err := validate(ctx, req, o.shouldFailFast, o.onValidationErrCallback); err != nil {
 			return err
 		}
 		return invoker(ctx, method, req, reply, cc, opts...)
@@ -68,7 +68,7 @@ func (s *recvWrapper) RecvMsg(m any) error {
 	if err := s.ServerStream.RecvMsg(m); err != nil {
 		return err
 	}
-	if err := validate(s.Context(), m, s.shouldFailFast, s.onValidationErrFunc); err != nil {
+	if err := validate(s.Context(), m, s.shouldFailFast, s.onValidationErrCallback); err != nil {
 		return err
 	}
 	return nil
