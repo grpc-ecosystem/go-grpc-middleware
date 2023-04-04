@@ -16,7 +16,7 @@ func (p *PingRequest) Validate() error {
 }
 
 // Implements the new validation interface from protoc-gen-validate.
-func (p *PingResponse) Validate(bool) error {
+func (p *PingResponse) ValidateAll() error {
 	if p.Counter > math.MaxInt16 {
 		return errors.New("ping allocation exceeded")
 	}

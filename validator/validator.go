@@ -11,25 +11,25 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// The validate interface starting with protoc-gen-validate v0.6.0.
-// See https://github.com/envoyproxy/protoc-gen-validate/pull/455.
+// The validate interface starting with protoc-gen-validate v0.6.2.
+// See https://github.com/envoyproxy/protoc-gen-validate/pull/468.
 type validator interface {
-	Validate(all bool) error
+	ValidateAll() error
 }
 
-// The validate interface prior to protoc-gen-validate v0.6.0.
+// The validate interface prior to protoc-gen-validate v0.6.2.
 type validatorLegacy interface {
 	Validate() error
 }
 
 func validate(req interface{}) error {
 	switch v := req.(type) {
-	case validatorLegacy:
-		if err := v.Validate(); err != nil {
+	case validator:
+		if err := v.ValidateAll(); err != nil {
 			return status.Error(codes.InvalidArgument, err.Error())
 		}
-	case validator:
-		if err := v.Validate(false); err != nil {
+	case validatorLegacy:
+		if err := v.Validate(); err != nil {
 			return status.Error(codes.InvalidArgument, err.Error())
 		}
 	}
