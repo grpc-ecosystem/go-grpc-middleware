@@ -6,7 +6,6 @@ package validator
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -28,51 +27,31 @@ type validatorLegacy interface {
 	Validate() error
 }
 
-func log(level logging.Level, logger logging.Logger, msg string) {
-	if logger != nil {
-		// TODO(bwplotka): Fix in separate PR.
-		logger.Log(context.TODO(), level, msg)
-	}
-}
-
-func validate(req interface{}, shouldFailFast bool, level logging.Level, logger logging.Logger) error {
-	// shouldFailFast tells validator to immediately stop doing further validation after first validation error.
+func validate(ctx context.Context, reqOrRes interface{}, shouldFailFast bool, onValidationErrFunc OnValidationErr) (err error) {
 	if shouldFailFast {
-		switch v := req.(type) {
+		switch v := reqOrRes.(type) {
 		case validatorLegacy:
-			if err := v.Validate(); err != nil {
-				log(level, logger, err.Error())
-				return status.Error(codes.InvalidArgument, err.Error())
-			}
+			err = v.Validate()
 		case validator:
-			if err := v.Validate(false); err != nil {
-				log(level, logger, err.Error())
-				return status.Error(codes.InvalidArgument, err.Error())
-			}
+			err = v.Validate(false)
 		}
+	} else {
+		switch v := reqOrRes.(type) {
+		case validateAller:
+			err = v.ValidateAll()
+		case validator:
+			err = v.Validate(true)
+		case validatorLegacy:
+			err = v.Validate()
+		}
+	}
 
+	if err == nil {
 		return nil
 	}
 
-	// shouldNotFailFast tells validator to continue doing further validation even if after a validation error.
-	switch v := req.(type) {
-	case validateAller:
-		if err := v.ValidateAll(); err != nil {
-			log(level, logger, err.Error())
-			return status.Error(codes.InvalidArgument, err.Error())
-		}
-	case validator:
-		if err := v.Validate(true); err != nil {
-			log(level, logger, err.Error())
-			return status.Error(codes.InvalidArgument, err.Error())
-		}
-	case validatorLegacy:
-		// Fallback to legacy validator
-		if err := v.Validate(); err != nil {
-			log(level, logger, err.Error())
-			return status.Error(codes.InvalidArgument, err.Error())
-		}
+	if onValidationErrFunc != nil {
+		onValidationErrFunc(ctx, err)
 	}
-
-	return nil
+	return status.Error(codes.InvalidArgument, err.Error())
 }
