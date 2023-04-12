@@ -17,10 +17,10 @@ import (
 func InterceptorLogger(l *zap.Logger) logging.Logger {
 	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
 		f := make([]zap.Field, 0, len(fields)/2)
+		iter := logging.Fields(fields).Iterator()
 		for i := 0; i < len(fields); i += 2 {
-			i := logging.Fields(fields).Iterator()
-			if i.Next() {
-				k, v := i.At()
+			if iter.Next() {
+				k, v := iter.At()
 				f = append(f, zap.Any(k, v))
 			}
 		}
