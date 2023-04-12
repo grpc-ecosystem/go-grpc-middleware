@@ -1,0 +1,13 @@
+---
+
+run:
+  deadline: 5m
+
+output:
+  sort-results: true
+
+linters-settings:
+  errcheck:
+    exclude: errcheck_excludes.txt
+  gofumpt:
+    extra-rules: true

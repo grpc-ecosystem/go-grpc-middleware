@@ -1,5 +1,5 @@
-// Copyright 2016 Michal Witkowski. All Rights Reserved.
-// See LICENSE for licensing terms.
+// Copyright (c) The go-grpc-middleware Authors.
+// Licensed under the Apache License 2.0.
 
 package backoffutils_test
 
@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/backoffutils"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/util/backoffutils"
 	"github.com/stretchr/testify/assert"
 )
 

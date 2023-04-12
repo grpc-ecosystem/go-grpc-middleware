@@ -1,7 +1,7 @@
-// Copyright 2016 Michal Witkowski. All Rights Reserved.
-// See LICENSE for licensing terms.
+// Copyright (c) The go-grpc-middleware Authors.
+// Licensed under the Apache License 2.0.
 
-package grpc_middleware
+package middleware
 
 import (
 	"context"
@@ -13,27 +13,32 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var (
+	someKey struct{}
+	other   struct{}
+)
+
 func TestWrapServerStream(t *testing.T) {
-	ctx := context.WithValue(context.TODO(), "something", 1)
+	ctx := context.WithValue(context.TODO(), someKey, 1)
 	fake := &fakeServerStream{ctx: ctx}
 	wrapped := WrapServerStream(fake)
-	assert.NotNil(t, wrapped.Context().Value("something"), "values from fake must propagate to wrapper")
-	wrapped.WrappedContext = context.WithValue(wrapped.Context(), "other", 2)
-	assert.NotNil(t, wrapped.Context().Value("other"), "values from wrapper must be set")
+	assert.NotNil(t, wrapped.Context().Value(someKey), "values from fake must propagate to wrapper")
+	wrapped.WrappedContext = context.WithValue(wrapped.Context(), other, 2)
+	assert.NotNil(t, wrapped.Context().Value(other), "values from wrapper must be set")
 }
 
 type fakeServerStream struct {
 	grpc.ServerStream
 	ctx         context.Context
-	recvMessage interface{}
-	sentMessage interface{}
+	recvMessage any
+	sentMessage any
 }
 
 func (f *fakeServerStream) Context() context.Context {
 	return f.ctx
 }
 
-func (f *fakeServerStream) SendMsg(m interface{}) error {
+func (f *fakeServerStream) SendMsg(m any) error {
 	if f.sentMessage != nil {
 		return status.Errorf(codes.AlreadyExists, "fakeServerStream only takes one message, sorry")
 	}
@@ -41,13 +46,9 @@ func (f *fakeServerStream) SendMsg(m interface{}) error {
 	return nil
 }
 
-func (f *fakeServerStream) RecvMsg(m interface{}) error {
+func (f *fakeServerStream) RecvMsg(m any) error {
 	if f.recvMessage == nil {
 		return status.Errorf(codes.NotFound, "fakeServerStream has no message, sorry")
 	}
 	return nil
-}
-
-type fakeClientStream struct {
-	grpc.ClientStream
 }
