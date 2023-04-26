@@ -17,7 +17,7 @@ import (
 // This code is simple enough to be copied and not imported.
 func InterceptorLogger(l zerolog.Logger) logging.Logger {
 	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
-		l = l.With().Fields(fields).Logger()
+		l := l.With().Fields(fields).Logger()
 
 		switch lvl {
 		case logging.LevelDebug:
