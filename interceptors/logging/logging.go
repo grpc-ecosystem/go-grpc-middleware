@@ -7,19 +7,6 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
-	"google.golang.org/protobuf/proto"
-)
-
-// Decision defines rules for enabling start and end of logging.
-type Decision int
-
-const (
-	// NoLogCall - Logging is disabled.
-	NoLogCall Decision = iota
-	// LogFinishCall - Only finish logs of request is enabled.
-	LogFinishCall
-	// LogStartAndFinishCall - Logging of start and end of request is enabled.
-	LogStartAndFinishCall
 )
 
 var (
@@ -41,9 +28,6 @@ var (
 	fieldsCtxMarkerKey = &fieldsCtxMarker{}
 )
 
-// Fields represents logging fields. It has to have an even number of elements (pairs).
-type Fields []string
-
 func newCommonFields(kind string, c interceptors.CallMeta) Fields {
 	return Fields{
 		SystemTag[0], SystemTag[1],
@@ -54,16 +38,16 @@ func newCommonFields(kind string, c interceptors.CallMeta) Fields {
 	}
 }
 
-// Iter returns FieldsIterator.
-func (f Fields) Iter() FieldsIterator {
+// Fields loosely represents key value pairs that adds context to log lines. The key has to be type of string, whereas
+// value can be an arbitrary object.
+type Fields []any
+
+// Iterator returns iterator that allows iterating over pair of elements representing field.
+// If number of elements is uneven, last element won't be included will be assumed as key with empty string value.
+// If key is not string, At will panic.
+func (f Fields) Iterator() *iter {
 	// We start from -2 as we iterate over two items per iteration and first iteration will advance iterator to 0.
 	return &iter{i: -2, f: f}
-}
-
-// FieldsIterator is an interface allowing to iterate over fields.
-type FieldsIterator interface {
-	Next() bool
-	At() (k, v string)
 }
 
 type iter struct {
@@ -80,26 +64,29 @@ func (i *iter) Next() bool {
 	return i.i < len(i.f)
 }
 
-func (i *iter) At() (k, v string) {
+func (i *iter) At() (k string, v any) {
 	if i.i < 0 || i.i >= len(i.f) {
 		return "", ""
 	}
 
 	if i.i+1 == len(i.f) {
 		// Non even number of elements, add empty string.
-		return i.f[i.i], ""
+		return i.f[i.i].(string), ""
 	}
-	return i.f[i.i], i.f[i.i+1]
+	return i.f[i.i].(string), i.f[i.i+1]
 }
 
-// AppendUnique returns fields which is the union of all keys. Any keys that already exist in the log fields will take precedence over duplicates in add.
-func (f Fields) AppendUnique(add Fields) Fields {
+// WithUnique returns copy of fields which is the union of all unique keys.
+// Any duplicates in the added or current fields will be deduplicated where first occurrence takes precedence.
+func (f Fields) WithUnique(add Fields) Fields {
 	if len(add) == 0 {
-		return f
+		n := make(Fields, len(f), len(f))
+		copy(n, f)
+		return n
 	}
 
-	existing := map[string]struct{}{}
-	i := f.Iter()
+	existing := map[any]struct{}{}
+	i := f.Iterator()
 	for i.Next() {
 		k, _ := i.At()
 		existing[k] = struct{}{}
@@ -108,7 +95,7 @@ func (f Fields) AppendUnique(add Fields) Fields {
 	n := make(Fields, len(f), len(f)+len(add))
 	copy(n, f)
 
-	a := add.Iter()
+	a := add.Iterator()
 	for a.Next() {
 		k, v := a.At()
 		if _, ok := existing[k]; ok {
@@ -119,70 +106,69 @@ func (f Fields) AppendUnique(add Fields) Fields {
 	return n
 }
 
-// PayloadDecision defines rules for enabling payload logging of request and responses.
-type PayloadDecision int
+// AppendUnique appends (can reuse array!) fields which does not occur in existing fields slice.
+func (f Fields) AppendUnique(add Fields) Fields {
+	if len(add) == 0 {
+		return f
+	}
 
-const (
-	// NoPayloadLogging - Payload logging is disabled.
-	NoPayloadLogging PayloadDecision = iota
-	// LogPayloadRequest - Only logging of requests is enabled.
-	LogPayloadRequest
-	// LogPayloadResponse - Only logging of responses is enabled.
-	LogPayloadResponse
-	// LogPayloadRequestAndResponse - Logging of both requests and responses is enabled.
-	LogPayloadRequestAndResponse
-)
+	a := add.Iterator()
+NextAddField:
+	for a.Next() {
+		k, v := a.At()
+		i := f.Iterator()
+		for i.Next() {
+			fk, _ := i.At()
+			if fk == k {
+				continue NextAddField
+			}
+		}
+		f = append(f, k, v)
+	}
+	return f
+}
 
-// ServerPayloadLoggingDecider is a user-provided function for deciding whether to log the server-side
-// request/response payloads
-type ServerPayloadLoggingDecider func(ctx context.Context, c interceptors.CallMeta) PayloadDecision
-
-// ClientPayloadLoggingDecider is a user-provided function for deciding whether to log the client-side
-// request/response payloads
-type ClientPayloadLoggingDecider func(ctx context.Context, c interceptors.CallMeta) PayloadDecision
-
-// ExtractFields returns logging.Fields object from the Context.
+// ExtractFields returns logging fields from the context.
 // Logging interceptor adds fields into context when used.
 // If there are no fields in the context, returns an empty Fields value.
 // Extracted fields are useful to construct your own logger that has fields from gRPC interceptors.
 func ExtractFields(ctx context.Context) Fields {
 	t, ok := ctx.Value(fieldsCtxMarkerKey).(Fields)
 	if !ok {
-		return Fields{}
+		return nil
 	}
 	n := make(Fields, len(t))
 	copy(n, t)
 	return n
 }
 
-// InjectFields allows adding Fields to any existing Fields that will be used by the logging interceptor.
-// NOTE: Those overrides overlapping fields from logging.WithFieldsFromContext.
+// InjectFields allows adding fields to any existing Fields that will be used by the logging interceptor.
+// For explicitness, in case of duplicates, first field occurrence wins (immutability of fields). This also
+// applies to all fields created by logging middleware. It uses labels from this context as a base, so fields like "grpc.service"
+// can be overridden if your you add custom middleware that injects "grpc.service" before logging middleware injects those.
+// Don't overuse overriding to avoid surprises.
 func InjectFields(ctx context.Context, f Fields) context.Context {
-	return context.WithValue(ctx, fieldsCtxMarkerKey, ExtractFields(ctx).AppendUnique(f))
+	return context.WithValue(ctx, fieldsCtxMarkerKey, ExtractFields(ctx).WithUnique(f))
 }
 
-// JsonPBMarshaler is a marshaler that serializes protobuf messages.
-type JsonPBMarshaler interface {
-	Marshal(pb proto.Message) ([]byte, error)
+// InjectLogField is like InjectFields, just for one field.
+func InjectLogField(ctx context.Context, key string, val any) context.Context {
+	return InjectFields(ctx, Fields{key, val})
 }
 
-// Logger is unified interface that we used for all our interceptors. Official implementations are available under
-// provider/ directory as separate modules.
+// Logger requires Log method, similar to experimental slog, allowing logging interceptor to be interoperable. Official
+// adapters for popular loggers are in `provider/` directory (separate modules). It's totally ok to copy simple function
+// implementation over.
+// TODO(bwplotka): Once slog is official, we could use slog method directly. Currently level is copied over, so we don't
+// depend on experimental module.
+// interface used for all our interceptors.
 type Logger interface {
-	// Log logs the fields for given log level. We can assume users (middleware library) will put fields in pairs and
-	// those will be unique.
-	Log(Level, string)
-	// With returns Logger with given fields appended. We can assume users (middleware library) will put fields in pairs
-	// and those will be unique.
-	With(fields ...string) Logger
+	Log(ctx context.Context, level Level, msg string, fields ...any)
 }
 
-// Level represents logging level.
-type Level string
+// LoggerFunc is a function that also implements Logger interface.
+type LoggerFunc func(ctx context.Context, level Level, msg string, fields ...any)
 
-const (
-	DEBUG   = Level("debug")
-	INFO    = Level("info")
-	WARNING = Level("warning")
-	ERROR   = Level("error")
-)
+func (f LoggerFunc) Log(ctx context.Context, level Level, msg string, fields ...any) {
+	f(ctx, level, msg, fields...)
+}

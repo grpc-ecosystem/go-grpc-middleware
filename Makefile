@@ -85,17 +85,18 @@ lint: ## Runs various static analysis tools against our code.
 lint: $(BUF) $(COPYRIGHT) fmt docs
 	@echo ">> lint proto files"
 	@$(BUF) lint
-	
+
+	@echo ">> ensuring copyright headers"
+	@$(COPYRIGHT) $(shell go list -f "{{.Dir}}" ./... | xargs -i find "{}" -name "*.go")
+	@$(call require_clean_work_tree,"set copyright headers")
+	@echo ">> ensured all .go files have copyright headers"
+
 	@echo "Running lint for all modules: $(MODULES)"
 	@$(call require_clean_work_tree,"before lint")
 	for dir in $(MODULES) ; do \
 		$(MAKE) lint_module DIR=$${dir} ; \
 	done
 	@$(call require_clean_work_tree,"lint and format files")
-	@echo ">> ensuring copyright headers"
-	@$(COPYRIGHT) $(shell go list -f "{{.Dir}}" ./... | xargs -i find "{}" -name "*.go")
-	@$(call require_clean_work_tree,"set copyright headers")
-	@echo ">> ensured all .go files have copyright headers"
 
 .PHONY: lint_module
 # PROTIP:

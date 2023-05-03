@@ -23,9 +23,7 @@ var (
 		perCallTimeout: 0, // disabled
 		includeHeader:  true,
 		codes:          DefaultRetriableCodes,
-		backoffFunc: BackoffFuncContext(func(ctx context.Context, attempt uint) time.Duration {
-			return BackoffLinearWithJitter(50*time.Millisecond /*jitter*/, 0.10)(attempt)
-		}),
+		backoffFunc:    BackoffLinearWithJitter(50*time.Millisecond /*jitter*/, 0.10),
 		onRetryCallback: OnRetryCallback(func(ctx context.Context, attempt uint, err error) {
 			logTrace(ctx, "grpc_retry attempt: %d, backoff for %v", attempt, err)
 		}),
@@ -37,16 +35,8 @@ var (
 // They are called with an identifier of the attempt, and should return a time the system client should
 // hold off for. If the time returned is longer than the `context.Context.Deadline` of the request
 // the deadline of the request takes precedence and the wait will be interrupted before proceeding
-// with the next iteration.
-type BackoffFunc func(attempt uint) time.Duration
-
-// BackoffFuncContext denotes a family of functions that control the backoff duration between call retries.
-//
-// They are called with an identifier of the attempt, and should return a time the system client should
-// hold off for. If the time returned is longer than the `context.Context.Deadline` of the request
-// the deadline of the request takes precedence and the wait will be interrupted before proceeding
 // with the next iteration. The context can be used to extract request scoped metadata and context values.
-type BackoffFuncContext func(ctx context.Context, attempt uint) time.Duration
+type BackoffFunc func(ctx context.Context, attempt uint) time.Duration
 
 // OnRetryCallback is the type of function called when a retry occurs.
 type OnRetryCallback func(ctx context.Context, attempt uint, err error)
@@ -67,15 +57,6 @@ func WithMax(maxRetries uint) CallOption {
 
 // WithBackoff sets the `BackoffFunc` used to control time between retries.
 func WithBackoff(bf BackoffFunc) CallOption {
-	return CallOption{applyFunc: func(o *options) {
-		o.backoffFunc = BackoffFuncContext(func(ctx context.Context, attempt uint) time.Duration {
-			return bf(attempt)
-		})
-	}}
-}
-
-// WithBackoffContext sets the `BackoffFuncContext` used to control time between retries.
-func WithBackoffContext(bf BackoffFuncContext) CallOption {
 	return CallOption{applyFunc: func(o *options) {
 		o.backoffFunc = bf
 	}}
@@ -124,7 +105,7 @@ type options struct {
 	perCallTimeout  time.Duration
 	includeHeader   bool
 	codes           []codes.Code
-	backoffFunc     BackoffFuncContext
+	backoffFunc     BackoffFunc
 	onRetryCallback OnRetryCallback
 }
 

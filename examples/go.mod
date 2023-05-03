@@ -4,7 +4,6 @@ go 1.19
 
 require (
 	github.com/go-kit/log v0.2.1
-	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit v1.0.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0
 	github.com/oklog/run v1.1.0
@@ -44,7 +43,6 @@ require (
 )
 
 replace (
-	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit => ../providers/kit
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus => ../providers/prometheus
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 => ../
 )

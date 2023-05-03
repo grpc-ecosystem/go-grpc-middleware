@@ -4,10 +4,10 @@
 package validator_test
 
 import (
+	"context"
 	"io"
 	"testing"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/validator"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/stretchr/testify/assert"
@@ -17,14 +17,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
-
-type TestLogger struct{}
-
-func (l *TestLogger) Log(lvl logging.Level, msg string) {}
-
-func (l *TestLogger) With(fields ...string) logging.Logger {
-	return &TestLogger{}
-}
 
 type ValidatorTestSuite struct {
 	*testpb.InterceptorTestSuite
@@ -107,7 +99,7 @@ func TestValidatorTestSuite(t *testing.T) {
 	}
 	suite.Run(t, sWithNoArgs)
 
-	sWithWithFailFastArgs := &ValidatorTestSuite{
+	sWithFailFastArgs := &ValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ServerOpts: []grpc.ServerOption{
 				grpc.StreamInterceptor(validator.StreamServerInterceptor(validator.WithFailFast())),
@@ -115,27 +107,34 @@ func TestValidatorTestSuite(t *testing.T) {
 			},
 		},
 	}
-	suite.Run(t, sWithWithFailFastArgs)
+	suite.Run(t, sWithFailFastArgs)
 
-	sWithWithLoggerArgs := &ValidatorTestSuite{
+	var gotErrMsgs []string
+	onErr := func(ctx context.Context, err error) {
+		gotErrMsgs = append(gotErrMsgs, err.Error())
+	}
+	sWithOnErrFuncArgs := &ValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ServerOpts: []grpc.ServerOption{
-				grpc.StreamInterceptor(validator.StreamServerInterceptor(validator.WithLogger(logging.DEBUG, &TestLogger{}))),
-				grpc.UnaryInterceptor(validator.UnaryServerInterceptor(validator.WithLogger(logging.DEBUG, &TestLogger{}))),
+				grpc.StreamInterceptor(validator.StreamServerInterceptor(validator.WithOnValidationErrCallback(onErr))),
+				grpc.UnaryInterceptor(validator.UnaryServerInterceptor(validator.WithOnValidationErrCallback(onErr))),
 			},
 		},
 	}
-	suite.Run(t, sWithWithLoggerArgs)
+	suite.Run(t, sWithOnErrFuncArgs)
+	require.Equal(t, []string{"cannot sleep for more than 10s", "cannot sleep for more than 10s", "cannot sleep for more than 10s"}, gotErrMsgs)
 
+	gotErrMsgs = gotErrMsgs[:0]
 	sAll := &ValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ServerOpts: []grpc.ServerOption{
-				grpc.StreamInterceptor(validator.StreamServerInterceptor(validator.WithFailFast(), validator.WithLogger(logging.DEBUG, &TestLogger{}))),
-				grpc.UnaryInterceptor(validator.UnaryServerInterceptor(validator.WithFailFast(), validator.WithLogger(logging.DEBUG, &TestLogger{}))),
+				grpc.StreamInterceptor(validator.StreamServerInterceptor(validator.WithFailFast(), validator.WithOnValidationErrCallback(onErr))),
+				grpc.UnaryInterceptor(validator.UnaryServerInterceptor(validator.WithFailFast(), validator.WithOnValidationErrCallback(onErr))),
 			},
 		},
 	}
 	suite.Run(t, sAll)
+	require.Equal(t, []string{"cannot sleep for more than 10s", "cannot sleep for more than 10s", "cannot sleep for more than 10s"}, gotErrMsgs)
 
 	csWithNoArgs := &ClientValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
@@ -146,30 +145,34 @@ func TestValidatorTestSuite(t *testing.T) {
 	}
 	suite.Run(t, csWithNoArgs)
 
-	csWithWithFailFastArgs := &ClientValidatorTestSuite{
+	csWithFailFastArgs := &ClientValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ServerOpts: []grpc.ServerOption{
 				grpc.UnaryInterceptor(validator.UnaryServerInterceptor(validator.WithFailFast())),
 			},
 		},
 	}
-	suite.Run(t, csWithWithFailFastArgs)
+	suite.Run(t, csWithFailFastArgs)
 
-	csWithWithLoggerArgs := &ClientValidatorTestSuite{
+	gotErrMsgs = gotErrMsgs[:0]
+	csWithOnErrFuncArgs := &ClientValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ServerOpts: []grpc.ServerOption{
-				grpc.UnaryInterceptor(validator.UnaryServerInterceptor(validator.WithLogger(logging.DEBUG, &TestLogger{}))),
+				grpc.UnaryInterceptor(validator.UnaryServerInterceptor(validator.WithOnValidationErrCallback(onErr))),
 			},
 		},
 	}
-	suite.Run(t, csWithWithLoggerArgs)
+	suite.Run(t, csWithOnErrFuncArgs)
+	require.Equal(t, []string{"cannot sleep for more than 10s"}, gotErrMsgs)
 
+	gotErrMsgs = gotErrMsgs[:0]
 	csAll := &ClientValidatorTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
 			ClientOpts: []grpc.DialOption{
-				grpc.WithUnaryInterceptor(validator.UnaryClientInterceptor(validator.WithFailFast())),
+				grpc.WithUnaryInterceptor(validator.UnaryClientInterceptor(validator.WithFailFast(), validator.WithOnValidationErrCallback(onErr))),
 			},
 		},
 	}
 	suite.Run(t, csAll)
+	require.Equal(t, []string{"cannot sleep for more than 10s"}, gotErrMsgs)
 }

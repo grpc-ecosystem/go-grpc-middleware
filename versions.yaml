@@ -10,13 +10,3 @@ module-sets:
     version: v1.0.0
     modules:
       - github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus
-  v0-providers:
-    version: v0.1.0
-    modules:
-      # We can promote provider to stable version, once they have tests, and we can see at least few users using those.
-      - github.com/grpc-ecosystem/go-grpc-middleware/providers/kit
-      - github.com/grpc-ecosystem/go-grpc-middleware/providers/logr
-      - github.com/grpc-ecosystem/go-grpc-middleware/providers/logrus
-      - github.com/grpc-ecosystem/go-grpc-middleware/providers/phuslog
-      - github.com/grpc-ecosystem/go-grpc-middleware/providers/zap
-      - github.com/grpc-ecosystem/go-grpc-middleware/providers/zerolog
