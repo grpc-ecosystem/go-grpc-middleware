@@ -4,12 +4,20 @@
 package kit_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"runtime"
+	"strings"
+	"testing"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 )
 
@@ -67,4 +75,50 @@ func ExampleInterceptorLogger() {
 		),
 	)
 	// Output:
+}
+
+type kitExampleTestSuite struct {
+	*testpb.InterceptorTestSuite
+	logBuffer *bytes.Buffer
+}
+
+func TestSuite(t *testing.T) {
+	if strings.HasPrefix(runtime.Version(), "go1.7") {
+		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
+		return
+	}
+
+	buffer := &bytes.Buffer{}
+	logger := InterceptorLogger(log.NewLogfmtLogger(buffer))
+
+	s := &kitExampleTestSuite{
+		InterceptorTestSuite: &testpb.InterceptorTestSuite{
+			TestService: &testpb.TestPingService{},
+		},
+		logBuffer: buffer,
+	}
+
+	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
+		grpc.StreamInterceptor(logging.StreamServerInterceptor(logger)),
+		grpc.UnaryInterceptor(logging.UnaryServerInterceptor(logger)),
+	}
+
+	suite.Run(t, s)
+}
+
+func (s *kitExampleTestSuite) TestPing() {
+	ctx := context.Background()
+	_, err := s.Client.Ping(ctx, testpb.GoodPing)
+	assert.NoError(s.T(), err, "there must be not be an on a successful call")
+	logStr := s.logBuffer.String()
+	require.Contains(s.T(), logStr, "level=info")
+	require.Contains(s.T(), logStr, "msg=\"started call\"")
+	require.Contains(s.T(), logStr, "protocol=grpc")
+	require.Contains(s.T(), logStr, "grpc.component=server")
+	require.Contains(s.T(), logStr, "grpc.service=testing.testpb.v1.TestService")
+	require.Contains(s.T(), logStr, "grpc.method=Ping")
+	require.Contains(s.T(), logStr, "grpc.method_type=unary")
+	require.Contains(s.T(), logStr, "start_time=")
+	require.Contains(s.T(), logStr, "grpc.time_ms=")
+
 }
