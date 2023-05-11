@@ -25,7 +25,7 @@ const (
 // This code is simple enough to be copied and not imported.
 func InterceptorLogger(l logr.Logger) logging.Logger {
 	return logging.LoggerFunc(func(_ context.Context, lvl logging.Level, msg string, fields ...any) {
-		l = l.WithValues(fields...)
+		l := l.WithValues(fields...)
 		switch lvl {
 		case logging.LevelDebug:
 			l.V(debugVerbosity).Info(msg)

@@ -22,7 +22,7 @@ func InterceptorLogger(l logrus.FieldLogger) logging.Logger {
 			k, v := i.At()
 			f[k] = v
 		}
-		l = l.WithFields(f)
+		l := l.WithFields(f)
 
 		switch lvl {
 		case logging.LevelDebug:
