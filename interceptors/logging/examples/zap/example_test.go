@@ -17,24 +17,35 @@ import (
 func InterceptorLogger(l *zap.Logger) logging.Logger {
 	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
 		f := make([]zap.Field, 0, len(fields)/2)
+		
 		for i := 0; i < len(fields); i += 2 {
-			i := logging.Fields(fields).Iterator()
-			if i.Next() {
-				k, v := i.At()
-				f = append(f, zap.Any(k, v))
+			key := fields[i]
+			value := fields[i+1]
+
+			switch v := value.(type) {
+			case string:
+				f = append(f, zap.String(key.(string), v))
+			case int:
+				f = append(f, zap.Int(key.(string), v))
+			case bool:
+				f = append(f, zap.Bool(key.(string), v))
+			default:
+				f = append(f, zap.Any(key.(string), v))
 			}
 		}
-		l = l.WithOptions(zap.AddCallerSkip(1)).With(f...)
+		
+		
+		logger = l.WithOptions(zap.AddCallerSkip(1)).With(f...)
 
 		switch lvl {
 		case logging.LevelDebug:
-			l.Debug(msg)
+			logger.Debug(msg)
 		case logging.LevelInfo:
-			l.Info(msg)
+			logger.Info(msg)
 		case logging.LevelWarn:
-			l.Warn(msg)
+			logger.Warn(msg)
 		case logging.LevelError:
-			l.Error(msg)
+			logger.Error(msg)
 		default:
 			panic(fmt.Sprintf("unknown level %v", lvl))
 		}
