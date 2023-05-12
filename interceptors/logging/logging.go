@@ -80,7 +80,7 @@ func (i *iter) At() (k string, v any) {
 // Any duplicates in the added or current fields will be deduplicated where first occurrence takes precedence.
 func (f Fields) WithUnique(add Fields) Fields {
 	if len(add) == 0 {
-		n := make(Fields, len(f), len(f))
+		n := make(Fields, len(f))
 		copy(n, f)
 		return n
 	}
