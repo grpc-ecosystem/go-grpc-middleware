@@ -53,6 +53,22 @@ func WithHistogramBuckets(buckets []float64) HistogramOption {
 	return func(o *prometheus.HistogramOpts) { o.Buckets = buckets }
 }
 
+// WithHistogramOpts allows you to specify HistogramOpts but makes sure the correct name and label is used.
+// This function is helpful when specifying more than just the buckets, like using NativeHistograms.
+func WithHistogramOpts(opts *prometheus.HistogramOpts) HistogramOption {
+	// TODO: This isn't ideal either if new fields are added to prometheus.HistogramOpts.
+	// Maybe we can change the interface to accept abitrary HistogramOpts and
+	// only make sure to overwrite the necessary fields (name, labels).
+	return func(o *prometheus.HistogramOpts) {
+		o.Buckets = opts.Buckets
+		o.NativeHistogramBucketFactor = opts.NativeHistogramBucketFactor
+		o.NativeHistogramZeroThreshold = opts.NativeHistogramZeroThreshold
+		o.NativeHistogramMaxBucketNumber = opts.NativeHistogramMaxBucketNumber
+		o.NativeHistogramMinResetDuration = opts.NativeHistogramMinResetDuration
+		o.NativeHistogramMaxZeroThreshold = opts.NativeHistogramMaxZeroThreshold
+	}
+}
+
 // WithHistogramConstLabels allows you to add custom ConstLabels to
 // histograms metrics.
 func WithHistogramConstLabels(labels prometheus.Labels) HistogramOption {
