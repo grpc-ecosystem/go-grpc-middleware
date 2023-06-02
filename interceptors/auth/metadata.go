@@ -26,12 +26,12 @@ func AuthFromMD(ctx context.Context, expectedScheme string) (string, error) {
 	if val == "" {
 		return "", status.Errorf(codes.Unauthenticated, "Request unauthenticated with "+expectedScheme)
 	}
-	splits := strings.SplitN(val, " ", 2)
-	if len(splits) < 2 {
+	scheme, token, found := strings.Cut(val, " ")
+	if !found {
 		return "", status.Errorf(codes.Unauthenticated, "Bad authorization string")
 	}
-	if !strings.EqualFold(splits[0], expectedScheme) {
+	if !strings.EqualFold(scheme, expectedScheme) {
 		return "", status.Errorf(codes.Unauthenticated, "Request unauthenticated with "+expectedScheme)
 	}
-	return splits[1], nil
+	return token, nil
 }
