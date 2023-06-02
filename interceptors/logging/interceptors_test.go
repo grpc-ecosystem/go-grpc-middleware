@@ -349,7 +349,7 @@ func (s *loggingClientServerSuite) TestPingError_WithCustomLevels() {
 				AssertFieldNotEmpty(t, "grpc.start_time").
 				AssertFieldNotEmpty(t, "grpc.request.deadline").
 				AssertField(t, "grpc.code", tcase.code.String()).
-				AssertField(t, "grpc.error", fmt.Sprintf("rpc error: code = %s desc = Userspace error.", tcase.code.String())).
+				AssertField(t, "grpc.error", fmt.Sprintf("rpc error: code = %s desc = Userspace error", tcase.code.String())).
 				AssertFieldNotEmpty(t, "grpc.time_ms").AssertNoMoreTags(t)
 
 			clientFinishCallLogLine := lines[0]
@@ -360,7 +360,7 @@ func (s *loggingClientServerSuite) TestPingError_WithCustomLevels() {
 				AssertFieldNotEmpty(t, "grpc.start_time").
 				AssertFieldNotEmpty(t, "grpc.request.deadline").
 				AssertField(t, "grpc.code", tcase.code.String()).
-				AssertField(t, "grpc.error", fmt.Sprintf("rpc error: code = %s desc = Userspace error.", tcase.code.String())).
+				AssertField(t, "grpc.error", fmt.Sprintf("rpc error: code = %s desc = Userspace error", tcase.code.String())).
 				AssertFieldNotEmpty(t, "grpc.time_ms").AssertNoMoreTags(t)
 		})
 	}

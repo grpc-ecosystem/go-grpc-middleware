@@ -111,7 +111,7 @@ func main() {
 		}
 		// TODO: This is example only, perform proper Oauth/OIDC verification!
 		if token != "yolo" {
-			return nil, status.Errorf(codes.Unauthenticated, "invalid auth token")
+			return nil, status.Error(codes.Unauthenticated, "invalid auth token")
 		}
 		// NOTE: You can also pass the token in the context for further interceptors or gRPC service code.
 		return ctx, nil

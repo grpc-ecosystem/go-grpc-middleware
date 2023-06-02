@@ -218,8 +218,8 @@ func (s *ClientInterceptorTestSuite) TestUnaryReporting() {
 	require.Error(s.T(), err)
 	s.mock.Equal(s.T(), []*mockReport{{
 		CallMeta:        CallMeta{Typ: Unary, Service: testpb.TestServiceFullName, Method: "PingError"},
-		postCalls:       []error{status.Errorf(codes.FailedPrecondition, "Userspace error.")},
-		postMsgReceives: []error{status.Errorf(codes.FailedPrecondition, "Userspace error.")},
+		postCalls:       []error{status.Error(codes.FailedPrecondition, "Userspace error")},
+		postMsgReceives: []error{status.Error(codes.FailedPrecondition, "Userspace error")},
 		postMsgSends:    []error{nil},
 	}})
 }
@@ -288,8 +288,8 @@ func (s *ClientInterceptorTestSuite) TestListReporting() {
 
 	s.mock.Equal(s.T(), []*mockReport{{
 		CallMeta:        CallMeta{Typ: ServerStream, Service: testpb.TestServiceFullName, Method: "PingList"},
-		postCalls:       []error{status.Errorf(codes.FailedPrecondition, "foobar"), status.Errorf(codes.FailedPrecondition, "foobar")},
-		postMsgReceives: []error{status.Errorf(codes.FailedPrecondition, "foobar"), status.Errorf(codes.FailedPrecondition, "foobar")},
+		postCalls:       []error{status.Error(codes.FailedPrecondition, "foobar"), status.Error(codes.FailedPrecondition, "foobar")},
+		postMsgReceives: []error{status.Error(codes.FailedPrecondition, "foobar"), status.Error(codes.FailedPrecondition, "foobar")},
 		postMsgSends:    []error{nil},
 	}})
 }
