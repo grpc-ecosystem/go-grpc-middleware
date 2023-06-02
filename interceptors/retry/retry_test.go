@@ -63,7 +63,7 @@ func (s *failingService) maybeFailRequest() error {
 		return nil
 	}
 	time.Sleep(reqSleep)
-	return status.Errorf(reqError, "maybeFailRequest: failing it")
+	return status.Error(reqError, "maybeFailRequest: failing it")
 }
 
 func (s *failingService) Ping(ctx context.Context, ping *testpb.PingRequest) (*testpb.PingResponse, error) {

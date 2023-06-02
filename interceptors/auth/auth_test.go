@@ -39,7 +39,7 @@ func buildDummyAuthFunction(expectedScheme string, expectedToken string) func(ct
 			return nil, err
 		}
 		if token != expectedToken {
-			return nil, status.Errorf(codes.PermissionDenied, "buildDummyAuthFunction bad token")
+			return nil, status.Error(codes.PermissionDenied, "buildDummyAuthFunction bad token")
 		}
 		return context.WithValue(ctx, authedMarker, "marker_exists"), nil
 	}

@@ -40,7 +40,7 @@ func (f *fakeServerStream) Context() context.Context {
 
 func (f *fakeServerStream) SendMsg(m any) error {
 	if f.sentMessage != nil {
-		return status.Errorf(codes.AlreadyExists, "fakeServerStream only takes one message, sorry")
+		return status.Error(codes.AlreadyExists, "fakeServerStream only takes one message, sorry")
 	}
 	f.sentMessage = m
 	return nil
@@ -48,7 +48,7 @@ func (f *fakeServerStream) SendMsg(m any) error {
 
 func (f *fakeServerStream) RecvMsg(m any) error {
 	if f.recvMessage == nil {
-		return status.Errorf(codes.NotFound, "fakeServerStream has no message, sorry")
+		return status.Error(codes.NotFound, "fakeServerStream has no message, sorry")
 	}
 	return nil
 }

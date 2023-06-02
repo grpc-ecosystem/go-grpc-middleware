@@ -24,14 +24,14 @@ var (
 func AuthFromMD(ctx context.Context, expectedScheme string) (string, error) {
 	val := metadata.ExtractIncoming(ctx).Get(headerAuthorize)
 	if val == "" {
-		return "", status.Errorf(codes.Unauthenticated, "Request unauthenticated with "+expectedScheme)
+		return "", status.Error(codes.Unauthenticated, "Request unauthenticated with "+expectedScheme)
 	}
 	scheme, token, found := strings.Cut(val, " ")
 	if !found {
-		return "", status.Errorf(codes.Unauthenticated, "Bad authorization string")
+		return "", status.Error(codes.Unauthenticated, "Bad authorization string")
 	}
 	if !strings.EqualFold(scheme, expectedScheme) {
-		return "", status.Errorf(codes.Unauthenticated, "Request unauthenticated with "+expectedScheme)
+		return "", status.Error(codes.Unauthenticated, "Request unauthenticated with "+expectedScheme)
 	}
 	return token, nil
 }

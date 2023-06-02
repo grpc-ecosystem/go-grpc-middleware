@@ -40,12 +40,12 @@ func (s *TestPingService) Ping(_ context.Context, ping *PingRequest) (*PingRespo
 
 func (s *TestPingService) PingError(_ context.Context, ping *PingErrorRequest) (*PingErrorResponse, error) {
 	code := codes.Code(ping.ErrorCodeReturned)
-	return nil, status.Errorf(code, "Userspace error.")
+	return nil, status.Error(code, "Userspace error")
 }
 
 func (s *TestPingService) PingList(ping *PingListRequest, stream TestService_PingListServer) error {
 	if ping.ErrorCodeReturned != 0 {
-		return status.Errorf(codes.Code(ping.ErrorCodeReturned), "foobar")
+		return status.Error(codes.Code(ping.ErrorCodeReturned), "foobar")
 	}
 
 	// Send user trailers and headers.
