@@ -18,7 +18,7 @@ func InterceptorLogger(l logrus.FieldLogger) logging.Logger {
 	return logging.LoggerFunc(func(_ context.Context, lvl logging.Level, msg string, fields ...any) {
 		f := make(map[string]any, len(fields)/2)
 		i := logging.Fields(fields).Iterator()
-		if i.Next() {
+		for i.Next() {
 			k, v := i.At()
 			f[k] = v
 		}
