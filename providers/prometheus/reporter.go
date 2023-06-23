@@ -22,7 +22,7 @@ type reporter struct {
 
 func (r *reporter) PostCall(err error, rpcDuration time.Duration) {
 	// get status code from error
-	status, _ := FromError(err)
+	status := FromError(err)
 	code := status.Code()
 
 	// perform handling of metrics from code

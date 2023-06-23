@@ -143,6 +143,18 @@ func (s *ServerInterceptorTestSuite) TestStreamingIncrementsMetrics() {
 		s.serverMetrics.serverHandledHistogram.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 }
 
+func (s *ServerInterceptorTestSuite) TestContextCancelledTreatedAsStatus() {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	stream, _ := s.Client.PingStream(ctx)
+	stream.Send(&testpb.PingStreamRequest{})
+	cancel()
+
+	requireValueWithRetry(s.SimpleCtx(), s.T(), 1,
+		s.serverMetrics.serverHandledCounter.WithLabelValues("bidi_stream", testpb.TestServiceFullName, "PingStream", "Canceled"))
+}
+
 // fetchPrometheusLines does mocked HTTP GET request against real prometheus handler to get the same view that Prometheus
 // would have while scraping this endpoint.
 // Order of matching label vales does not matter.
