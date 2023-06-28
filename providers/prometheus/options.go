@@ -9,11 +9,15 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// FromError returns a grpc status if error code is a valid grpc status.
-func FromError(err error) (s *status.Status, ok bool) {
-	return status.FromError(err)
-
-	// TODO: @yashrsharma44 - discuss if we require more error handling from the previous package
+// FromError returns a grpc status. If the error code is neither a valid grpc status nor a context error, codes.Unknown
+// will be set.
+func FromError(err error) *status.Status {
+	s, ok := status.FromError(err)
+	// Mirror what the grpc server itself does, i.e. also convert context errors to status
+	if !ok {
+		s = status.FromContextError(err)
+	}
+	return s
 }
 
 // A CounterOption lets you add options to Counter metrics using With* funcs.
