@@ -44,27 +44,34 @@ This list covers known interceptors that users use for their Go microservices (b
 All paths should work with `go get <path>`.
 
 #### Auth
+
 * [`github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth`](interceptors/auth) - a customizable via `AuthFunc` piece of auth middleware.
 * (external) [`google.golang.org/grpc/authz`](https://github.com/grpc/grpc-go/blob/master/authz/grpc_authz_server_interceptors.go) - more complex, customizable via auth polices (RBAC like), piece of auth middleware.
 
 #### Observability
-* Metrics with [`github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus`⚡](providers/prometheus) - Prometheus client-side and server-side monitoring middleware. Supports exemplars. Moved from deprecated now [`go-grpc-prometheus`](https://github.com/grpc-ecosystem/go-grpc-prometheus). It's a separate module, so core module has limited number of dependencies.
+
+* Metrics:
+  * [`github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus`⚡](providers/prometheus) - Prometheus client-side and server-side monitoring middleware. Supports exemplars. Moved from deprecated now [`go-grpc-prometheus`](https://github.com/grpc-ecosystem/go-grpc-prometheus).
+  * (external) [`go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc`](https://go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc) - official OpenTelemetry interceptors (metric and tracing).
 * Logging with [`github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging`](interceptors/logging) - a customizable logging middleware offering extended per request logging. It requires logging adapter, see examples in [`interceptors/logging/examples`](interceptors/logging/examples) for `go-kit`, `log`, `logr`, `logrus`, `slog`, `zap` and `zerolog`.
 * Tracing:
-  * (external) [`go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc`](https://go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc) - official OpenTelemetry tracing interceptors as used in [example](examples).
+  * (external) [`go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc`](https://go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc) - official OpenTelemetry interceptors (metric and tracing) as used in [example](examples).
   * (external) [`github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing`](https://pkg.go.dev/github.com/grpc-ecosystem/go-grpc-middleware@v1.4.0/tracing/opentracing) - deprecated [OpenTracing](http://opentracing.io/) client-side and server-side interceptors if you still need it!
 
 #### Client
+
 * [`github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry`](interceptors/retry) - a generic gRPC response code retry mechanism, client-side middleware.
   * NOTE: grpc-go has native retries too with advanced policies (https://github.com/grpc/grpc-go/blob/v1.54.0/examples/features/retry/client/main.go)
 * [`github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/timeout`](interceptors/timeout) - a generic gRPC request timeout, client-side middleware.
 
 #### Server
+
 * [`github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/validator`](interceptors/validator) - codegen inbound message validation from `.proto` options.
 * [`github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery`](interceptors/recovery) - turn panics into gRPC errors (make sure to use those as "last" interceptor, so panic does not skip other interceptors).
 * [`github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/ratelimit`](interceptors/ratelimit) - grpc rate limiting by your own limiter.
 
 #### Filtering Interceptor
+
 * [`github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector`](interceptors/selector) - allow users to select given one or more interceptors in certain condition like matching service method.
 
 ## Prerequisites
