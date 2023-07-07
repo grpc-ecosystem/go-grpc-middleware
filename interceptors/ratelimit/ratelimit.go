@@ -37,3 +37,30 @@ func StreamServerInterceptor(limiter Limiter) grpc.StreamServerInterceptor {
 		return handler(srv, stream)
 	}
 }
+
+// UnaryClientInterceptor returns a new unary client interceptor that performs rate limiting on the request on the
+// client side.
+// This can be helpful for clients that want to limit the number of requests they send in a given time, potentially
+// saving cost.
+func UnaryClientInterceptor(limiter Limiter) grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn,
+		invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		if err := limiter.Limit(ctx); err != nil {
+			return status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_ratelimit middleware, please retry later. %s", method, err)
+		}
+		return invoker(ctx, method, req, reply, cc, opts...)
+	}
+}
+
+// StreamClientInterceptor returns a new stream client interceptor that performs rate limiting on the request on the
+// client side.
+// This can be helpful for clients that want to limit the number of requests they send in a given time, potentially
+// saving cost.
+func StreamClientInterceptor(limiter Limiter) grpc.StreamClientInterceptor {
+	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+		if err := limiter.Limit(ctx); err != nil {
+			return nil, status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_ratelimit middleware, please retry later. %s", method, err)
+		}
+		return streamer(ctx, desc, cc, method, opts...)
+	}
+}

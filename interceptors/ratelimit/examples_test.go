@@ -26,21 +26,58 @@ func (*alwaysPassLimiter) Limit(_ context.Context) error {
 	//
 	//	// Rate limit isn't reached.
 	//	return nil
-	//}
+	// }
 	return nil
 }
 
-// Simple example of server initialization code.
-func Example() {
+// Simple example of a unary server initialization code.
+func ExampleUnaryServerInterceptor() {
 	// Create unary/stream rateLimiters, based on token bucket here.
-	// You can implement your own ratelimiter for the interface.
+	// You can implement your own rate-limiter for the interface.
 	limiter := &alwaysPassLimiter{}
 	_ = grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			ratelimit.UnaryServerInterceptor(limiter),
 		),
+	)
+}
+
+// Simple example of a streaming server initialization code.
+func ExampleStreamServerInterceptor() {
+	// Create unary/stream rateLimiters, based on token bucket here.
+	// You can implement your own rate-limiter for the interface.
+	limiter := &alwaysPassLimiter{}
+	_ = grpc.NewServer(
 		grpc.ChainStreamInterceptor(
 			ratelimit.StreamServerInterceptor(limiter),
+		),
+	)
+}
+
+// Simple example of a unary client initialization code.
+func ExampleUnaryClientInterceptor() {
+	// Create stream rateLimiter, based on token bucket here.
+	// You can implement your own rate-limiter for the interface.
+	limiter := &alwaysPassLimiter{}
+	_, _ = grpc.DialContext(
+		context.Background(),
+		":8080",
+		grpc.WithUnaryInterceptor(
+			ratelimit.UnaryClientInterceptor(limiter),
+		),
+	)
+}
+
+// Simple example of a streaming client initialization code.
+func ExampleStreamClientInterceptor() {
+	// Create stream rateLimiter, based on token bucket here.
+	// You can implement your own rate-limiter for the interface.
+	limiter := &alwaysPassLimiter{}
+	_, _ = grpc.DialContext(
+		context.Background(),
+		":8080",
+		grpc.WithChainStreamInterceptor(
+			ratelimit.StreamClientInterceptor(limiter),
 		),
 	)
 }
