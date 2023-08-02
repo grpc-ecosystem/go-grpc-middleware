@@ -19,7 +19,6 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -563,7 +562,7 @@ func (s *loggingPayloadSuite) TestPingStream_LogsAllRequestsAndResponses() {
 		if got >= 4*messagesExpected {
 			return nil
 		}
-		return errors.Errorf("not enough log lines, waiting; got: %v", got)
+		return fmt.Errorf("not enough log lines, waiting; got: %v", got)
 	}))
 	s.assertPayloadLogLinesForMessage(s.logger.o.Lines(), "PingStream", interceptors.BidiStream)
 }

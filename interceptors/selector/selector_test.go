@@ -5,10 +5,10 @@ package selector
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 )
