@@ -3,9 +3,8 @@
 package testpb
 
 import (
+	"errors"
 	"math"
-
-	"github.com/pkg/errors"
 )
 
 func (x *PingRequest) Validate(bool) error {
