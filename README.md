@@ -69,6 +69,7 @@ All paths should work with `go get <path>`.
 * [`github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/validator`](interceptors/validator) - codegen inbound message validation from `.proto` options.
 * [`github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery`](interceptors/recovery) - turn panics into gRPC errors (make sure to use those as "last" interceptor, so panic does not skip other interceptors).
 * [`github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/ratelimit`](interceptors/ratelimit) - grpc rate limiting by your own limiter.
+* [`github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate`](interceptors/protovalidate) - message validation from `.proto` options via [protovalidate-go](https://github.com/bufbuild/protovalidate)
 
 #### Filtering Interceptor
 

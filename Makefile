@@ -134,3 +134,12 @@ proto: $(BUF) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) $(PROTO_TEST_DIR)/test.prot
 		--go_out=$(PROTO_TEST_DIR)/../ \
 		--go-grpc_out=$(PROTO_TEST_DIR)/../ \
 	    $(PROTO_TEST_DIR)/*.proto
+
+.PHONY: buf.gen
+buf.gen:
+	@docker run \
+       --volume ".:/workspace" \
+       --workdir /workspace \
+       bufbuild/buf:1.26.1 generate \
+       --template /workspace/testing/testvalidate/testvalidate.buf.gen.yaml \
+       --path /workspace/testing/testvalidate/v1

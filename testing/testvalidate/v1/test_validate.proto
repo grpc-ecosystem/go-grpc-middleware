@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package testing.testvalidate.v1;
+
+option go_package = "github.com/grpc-ecosystem/go-grpc-middleware/testing/testvalidate/v1;testvalidatev1";
+
+import "buf/validate/validate.proto";
+
+service TestValidateService {
+  rpc Send(SendRequest) returns (SendResponse) {}
+  rpc SendStream(SendStreamRequest) returns (stream SendStreamResponse) {}
+}
+
+message SendRequest {
+  string message = 1 [(buf.validate.field).string.email = true];
+}
+
+message SendResponse {}
+
+message SendStreamRequest {
+  string message = 1 [(buf.validate.field).string.email = true];
+}
+
+message SendStreamResponse {}
