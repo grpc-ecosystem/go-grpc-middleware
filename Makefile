@@ -1,6 +1,6 @@
 include .bingo/Variables.mk
 
-SHELL=/bin/bash
+SHELL=/usr/bin/env bash
 
 PROVIDER_MODULES ?= $(shell find $(PWD)/providers/  -name "go.mod" | grep -v ".bingo" | xargs dirname)
 MODULES          ?= $(PROVIDER_MODULES) $(PWD)/ $(PWD)/examples

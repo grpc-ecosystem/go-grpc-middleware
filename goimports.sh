@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Taken from https://gist.github.com/soniah/c11633551c6dd84dab66cad20453cfa8
 # remove all blank lines in go 'imports' statements, as goimports doesn't do it.
