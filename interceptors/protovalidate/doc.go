@@ -15,33 +15,32 @@ It supports two ways of work:
 
 Example of a service:
 
-		syntax = "proto3";
-		package cloud.instance.v1;
+	syntax = "proto3";
+	package cloud.instance.v1;
 
-		import "buf/validate/validate.proto";
-		import "validate/validate.proto";
+	import "buf/validate/validate.proto";
+	import "validate/validate.proto";
 
-		service InstanceService {
-	 	  // GetInstance is an example of request that uses a new constraints
-		  rpc GetInstance(GetInstanceRequest) returns (GetInstanceResponse) {}
+	service InstanceService {
+	 // GetInstance is an example of request that uses a new constraints
+	 rpc GetInstance(GetInstanceRequest) returns (GetInstanceResponse) {}
 
-		  // Legacy is an example of request that uses protoc-gen-validate constraints
-		  // their support enabled in protovalidate library constructor
-		  rpc Legacy(LegacyRequest) returns (LegacyResponse) {}
-		}
+	 // Legacy is an example of request that uses protoc-gen-validate constraints
+	 // their support enabled in protovalidate library constructor
+	 rpc Legacy(LegacyRequest) returns (LegacyResponse) {}
+	}
 
-		message GetInstanceRequest {
-		  string instance_id = 1 [(buf.validate.field).string.uuid = true];
-		}
+	message GetInstanceRequest {
+	 string instance_id = 1 [(buf.validate.field).string.uuid = true];
+	}
 
-		message GetInstanceResponse {}
+	message GetInstanceResponse {}
 
+	message LegacyRequest {
+	 string email = 1 [(validate.rules).string.email = true]; // https://github.com/bufbuild/protoc-gen-validate
+	}
 
-		message LegacyRequest {
-		  string email = 1 [(validate.rules).string.email = true]; // https://github.com/bufbuild/protoc-gen-validate
-		}
-
-		message LegacyResponse {}
+	message LegacyResponse {}
 
 Please consult https://github.com/bufbuild/protovalidate for details and other parameters of customization.
 */

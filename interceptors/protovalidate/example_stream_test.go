@@ -4,11 +4,12 @@
 package protovalidate_test
 
 import (
+	"net"
+
 	"github.com/bufbuild/protovalidate-go"
 	protovalidate_middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	testvalidatev1 "github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testvalidate/v1"
 	"google.golang.org/grpc"
-	"net"
 )
 
 type StreamService struct {

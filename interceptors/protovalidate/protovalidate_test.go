@@ -5,6 +5,10 @@ package protovalidate_test
 
 import (
 	"context"
+	"log"
+	"net"
+	"testing"
+
 	"github.com/bufbuild/protovalidate-go"
 	protovalidate_middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testvalidate"
@@ -15,9 +19,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
-	"log"
-	"net"
-	"testing"
 )
 
 func TestUnaryServerInterceptor(t *testing.T) {
