@@ -137,6 +137,6 @@ proto: $(BUF) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) $(PROTO_TEST_DIR)/test.prot
 
 .PHONY: buf.gen
 buf.gen:
-	@go run github.com/bufbuild/buf/cmd/buf@v1.26.1 generate \
+	@$(BUF) generate \
            --template ./testing/testvalidate/testvalidate.buf.gen.yaml \
            --path ./testing/testvalidate/v1
