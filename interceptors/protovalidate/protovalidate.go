@@ -14,6 +14,8 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// Option interface is currently empty and serves as a placeholder for potential future implementations.
+// It allows adding new options without breaking existing code.
 type Option interface {
 	unimplemented()
 }
