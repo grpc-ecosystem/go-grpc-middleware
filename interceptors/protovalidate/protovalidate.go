@@ -14,8 +14,14 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// Option interface is currently empty and serves as a placeholder for potential future implementations.
+// It allows adding new options without breaking existing code.
+type Option interface {
+	unimplemented()
+}
+
 // UnaryServerInterceptor returns a new unary server interceptor that validates incoming messages.
-func UnaryServerInterceptor(validator *protovalidate.Validator) grpc.UnaryServerInterceptor {
+func UnaryServerInterceptor(validator *protovalidate.Validator, opts ...Option) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req interface{},
@@ -36,7 +42,7 @@ func UnaryServerInterceptor(validator *protovalidate.Validator) grpc.UnaryServer
 }
 
 // StreamServerInterceptor returns a new streaming server interceptor that validates incoming messages.
-func StreamServerInterceptor(validator *protovalidate.Validator) grpc.StreamServerInterceptor {
+func StreamServerInterceptor(validator *protovalidate.Validator, opts ...Option) grpc.StreamServerInterceptor {
 	return func(
 		srv interface{},
 		stream grpc.ServerStream,
