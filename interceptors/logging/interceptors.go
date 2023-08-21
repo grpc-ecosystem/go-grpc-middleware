@@ -141,7 +141,7 @@ func reportable(logger Logger, opts *options) interceptors.CommonReportableFunc 
 			kind = KindClientFieldValue
 		}
 
-		fields := ExtractFields(ctx).WithUnique(newCommonFields(kind, c))
+		fields := newCommonFields(kind, c).WithUnique(ExtractFields(ctx))
 		if !c.IsClient {
 			if peer, ok := peer.FromContext(ctx); ok {
 				fields = append(fields, "peer.address", peer.Addr.String())

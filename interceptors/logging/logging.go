@@ -129,8 +129,9 @@ NextAddField:
 }
 
 // ExtractFields returns logging fields from the context.
-// Logging interceptor adds fields into context when used.
-// If there are no fields in the context, returns an empty Fields value.
+// Fields can be added from the context using InjectFields. For example logging interceptor adds some (base) fields
+// into context when used.
+// If there are no fields in the context, it returns an empty Fields value.
 // Extracted fields are useful to construct your own logger that has fields from gRPC interceptors.
 func ExtractFields(ctx context.Context) Fields {
 	t, ok := ctx.Value(fieldsCtxMarkerKey).(Fields)
@@ -142,13 +143,14 @@ func ExtractFields(ctx context.Context) Fields {
 	return n
 }
 
-// InjectFields allows adding fields to any existing Fields that will be used by the logging interceptor.
-// For explicitness, in case of duplicates, first field occurrence wins (immutability of fields). This also
-// applies to all fields created by logging middleware. It uses labels from this context as a base, so fields like "grpc.service"
-// can be overridden if your you add custom middleware that injects "grpc.service" before logging middleware injects those.
-// Don't overuse overriding to avoid surprises.
+// InjectFields allows adding fields to any existing Fields that will be used by the logging interceptor or can be
+// extracted further in ExtractFields.
+// For explicitness, in case of duplicates, the newest field occurrence wins. This allows nested components to update
+// popular fields like grpc.component (e.g. server invoking gRPC client).
+//
+// Don't overuse mutation of fields to avoid surprises.
 func InjectFields(ctx context.Context, f Fields) context.Context {
-	return context.WithValue(ctx, fieldsCtxMarkerKey, ExtractFields(ctx).WithUnique(f))
+	return context.WithValue(ctx, fieldsCtxMarkerKey, f.WithUnique(ExtractFields(ctx)))
 }
 
 // InjectLogField is like InjectFields, just for one field.
