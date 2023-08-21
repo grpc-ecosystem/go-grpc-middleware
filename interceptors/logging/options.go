@@ -132,7 +132,7 @@ func DefaultClientCodeToLevel(code codes.Code) Level {
 
 type fieldsFromCtxFn func(ctx context.Context) Fields
 
-// WithFieldsFromContext allows adding extra fields to all log messages per given request.
+// WithFieldsFromContext allows overriding existing or adding extra fields to all log messages per given request.
 func WithFieldsFromContext(f fieldsFromCtxFn) Option {
 	return func(o *options) {
 		o.fieldsFromCtxFn = f
