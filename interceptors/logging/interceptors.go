@@ -141,6 +141,7 @@ func reportable(logger Logger, opts *options) interceptors.CommonReportableFunc 
 			kind = KindClientFieldValue
 		}
 
+		// Field dups from context override the common fields.
 		fields := newCommonFields(kind, c).WithUnique(ExtractFields(ctx))
 		if !c.IsClient {
 			if peer, ok := peer.FromContext(ctx); ok {
@@ -148,7 +149,8 @@ func reportable(logger Logger, opts *options) interceptors.CommonReportableFunc 
 			}
 		}
 		if opts.fieldsFromCtxFn != nil {
-			fields = fields.AppendUnique(opts.fieldsFromCtxFn(ctx))
+			// fieldsFromCtxFn dups override the existing fields.
+			fields = opts.fieldsFromCtxFn(ctx).AppendUnique(fields)
 		}
 
 		singleUseFields := Fields{"grpc.start_time", time.Now().Format(opts.timestampFormat)}
