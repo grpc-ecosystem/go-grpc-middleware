@@ -129,7 +129,7 @@ proto: $(BUF) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) $(PROTO_TEST_DIR)/test.prot
 	@cp $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_CURRENT)
 	@cp $(PROTOC_GEN_GO_GRPC) $(PROTOC_GEN_GO_GRPC_CURRENT)
 	@echo ">> generating $(PROTO_TEST_DIR)"
-	@PATH=$(GOBIN):$(TMP_GOPATH) $(BUF) protoc \
+	@PATH=$(GOBIN):$(TMP_GOPATH) $(BUF) alpha protoc \
 		-I $(PROTO_TEST_DIR) \
 		--go_out=$(PROTO_TEST_DIR)/../ \
 		--go-grpc_out=$(PROTO_TEST_DIR)/../ \
