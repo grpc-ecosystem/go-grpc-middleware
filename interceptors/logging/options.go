@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -53,12 +54,12 @@ var (
 )
 
 type options struct {
-	levelFunc         CodeToLevel
-	loggableEvents    []LoggableEvent
-	codeFunc          ErrorToCode
-	durationFieldFunc DurationToFields
-	timestampFormat   string
-	fieldsFromCtxFn   fieldsFromCtxFn
+	levelFunc               CodeToLevel
+	loggableEvents          []LoggableEvent
+	codeFunc                ErrorToCode
+	durationFieldFunc       DurationToFields
+	timestampFormat         string
+	fieldsFromCtxCallMetaFn fieldsFromCtxCallMetaFn
 }
 
 type Option func(*options)
@@ -130,12 +131,24 @@ func DefaultClientCodeToLevel(code codes.Code) Level {
 	}
 }
 
-type fieldsFromCtxFn func(ctx context.Context) Fields
+type (
+	fieldsFromCtxFn         func(ctx context.Context) Fields
+	fieldsFromCtxCallMetaFn func(ctx context.Context, c interceptors.CallMeta) Fields
+)
 
-// WithFieldsFromContext allows overriding existing or adding extra fields to all log messages per given request.
+// WithFieldsFromContext allows overriding existing or adding extra fields to all log messages per given context
 func WithFieldsFromContext(f fieldsFromCtxFn) Option {
 	return func(o *options) {
-		o.fieldsFromCtxFn = f
+		o.fieldsFromCtxCallMetaFn = func(ctx context.Context, _ interceptors.CallMeta) Fields {
+			return f(ctx)
+		}
+	}
+}
+
+// WithFieldsFromContextAndCallMeta allows overriding existing or adding extra fields to all log messages per given context and interceptor.CallMeta
+func WithFieldsFromContextAndCallMeta(f fieldsFromCtxCallMetaFn) Option {
+	return func(o *options) {
+		o.fieldsFromCtxCallMetaFn = f
 	}
 }
 

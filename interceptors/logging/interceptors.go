@@ -148,9 +148,9 @@ func reportable(logger Logger, opts *options) interceptors.CommonReportableFunc 
 				fields = append(fields, "peer.address", peer.Addr.String())
 			}
 		}
-		if opts.fieldsFromCtxFn != nil {
+		if opts.fieldsFromCtxCallMetaFn != nil {
 			// fieldsFromCtxFn dups override the existing fields.
-			fields = opts.fieldsFromCtxFn(ctx).AppendUnique(fields)
+			fields = opts.fieldsFromCtxCallMetaFn(ctx, c).AppendUnique(fields)
 		}
 
 		singleUseFields := Fields{"grpc.start_time", time.Now().Format(opts.timestampFormat)}

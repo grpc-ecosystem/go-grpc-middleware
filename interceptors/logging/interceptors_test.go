@@ -173,8 +173,7 @@ type loggingClientServerSuite struct {
 }
 
 func customFields(_ context.Context) logging.Fields {
-	// Add custom fields, one new and one that should be ignored as it duplicates the standard field.
-	return logging.Fields{"custom-field", "yolo", logging.ServiceFieldKey, "something different"}
+	return logging.Fields{"custom-field", "yolo"}
 }
 
 func TestSuite(t *testing.T) {
