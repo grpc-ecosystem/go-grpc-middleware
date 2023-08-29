@@ -65,7 +65,7 @@ func (c *reporter) PostMsgSend(payload any, err error, duration time.Duration) {
 				c.ctx,
 				LevelError,
 				"payload is not a google.golang.org/protobuf/proto.Message; programmatic error?",
-				fields.AppendUnique(Fields{"grpc.request.type", fmt.Sprintf("%T", payload)}),
+				fields.AppendUnique(Fields{"grpc.request.type", fmt.Sprintf("%T", payload)})...,
 			)
 			return
 		}
@@ -79,7 +79,7 @@ func (c *reporter) PostMsgSend(payload any, err error, duration time.Duration) {
 				c.ctx,
 				LevelError,
 				"payload is not a google.golang.org/protobuf/proto.Message; programmatic error?",
-				fields.AppendUnique(Fields{"grpc.response.type", fmt.Sprintf("%T", payload)}),
+				fields.AppendUnique(Fields{"grpc.response.type", fmt.Sprintf("%T", payload)})...,
 			)
 			return
 		}
@@ -110,7 +110,7 @@ func (c *reporter) PostMsgReceive(payload any, err error, duration time.Duration
 				c.ctx,
 				LevelError,
 				"payload is not a google.golang.org/protobuf/proto.Message; programmatic error?",
-				fields.AppendUnique(Fields{"grpc.request.type", fmt.Sprintf("%T", payload)}),
+				fields.AppendUnique(Fields{"grpc.request.type", fmt.Sprintf("%T", payload)})...,
 			)
 			return
 		}
@@ -124,7 +124,7 @@ func (c *reporter) PostMsgReceive(payload any, err error, duration time.Duration
 				c.ctx,
 				LevelError,
 				"payload is not a google.golang.org/protobuf/proto.Message; programmatic error?",
-				fields.AppendUnique(Fields{"grpc.response.type", fmt.Sprintf("%T", payload)}),
+				fields.AppendUnique(Fields{"grpc.response.type", fmt.Sprintf("%T", payload)})...,
 			)
 			return
 		}
