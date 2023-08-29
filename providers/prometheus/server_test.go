@@ -148,7 +148,8 @@ func (s *ServerInterceptorTestSuite) TestContextCancelledTreatedAsStatus() {
 	defer cancel()
 
 	stream, _ := s.Client.PingStream(ctx)
-	stream.Send(&testpb.PingStreamRequest{})
+	err := stream.Send(&testpb.PingStreamRequest{})
+	require.NoError(s.T(), err)
 	cancel()
 
 	requireValueWithRetry(s.SimpleCtx(), s.T(), 1,

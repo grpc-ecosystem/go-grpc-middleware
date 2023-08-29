@@ -125,6 +125,7 @@ func TestStreamServerInterceptor(t *testing.T) {
 		)
 
 		out, err := client.SendStream(context.Background(), testvalidate.BadStreamRequest)
+		assert.Nil(t, err)
 
 		_, err = out.Recv()
 		assert.Error(t, err)
