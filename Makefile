@@ -3,7 +3,7 @@ include .bingo/Variables.mk
 SHELL=/usr/bin/env bash
 
 PROVIDER_MODULES ?= $(shell find $(PWD)/providers/  -name "go.mod" | grep -v ".bingo" | xargs dirname)
-MODULES          ?= $(PROVIDER_MODULES) $(PWD)/ $(PWD)/examples
+MODULES          ?= $(PROVIDER_MODULES) $(PWD) $(PWD)/examples
 GO_FILES_TO_FMT  ?= $(shell find . -path -prune -o -name '*.go' -print)
 
 GOBIN             ?= $(firstword $(subst :, ,${GOPATH}))/bin
@@ -48,14 +48,12 @@ fmt: $(GOIMPORTS)
 .PHONY: test
 test:
 	@echo "Running tests for all modules: $(MODULES)"
-	for dir in $(MODULES) ; do \
-		$(MAKE) test_module DIR=$${dir} ; \
-	done
+	$(MAKE) $(MODULES:%=test_module_%)
 
-.PHONY: test_module
-test_module:
-	@echo "Running tests for dir: $(DIR)"
-	cd $(DIR) && go test -v -race ./...
+.PHONY: test_module_%
+$(MODULES:%=test_module_%): test_module_%:
+	@echo "Running tests for dir: $*"
+	cd $* && go test -v -race ./...
 
 .PHONY: deps
 deps:
@@ -93,27 +91,25 @@ lint: $(BUF) $(COPYRIGHT) fmt docs
 
 	@echo "Running lint for all modules: $(MODULES)"
 	@$(call require_clean_work_tree,"before lint")
-	for dir in $(MODULES) ; do \
-		$(MAKE) lint_module DIR=$${dir} ; \
-	done
+	$(MAKE) $(MODULES:%=lint_module_%)
 	@$(call require_clean_work_tree,"lint and format files")
 
-.PHONY: lint_module
+.PHONY: lint_module_%
 # PROTIP:
 # Add
 #      --cpu-profile-path string   Path to CPU profile output file
 #      --mem-profile-path string   Path to memory profile output file
 # to debug big allocations during linting.
-lint_module: ## Runs various static analysis against our code.
-lint_module: $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL)
+lint_module_%: ## Runs various static analysis against our code.
+$(MODULES:%=lint_module_%): lint_module_%: $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL)
 	@echo ">> verifying modules being imported"
-	@cd $(DIR) && $(FAILLINT) -paths "fmt.{Print,Printf,Println},github.com/golang/protobuf=google.golang.org/protobuf" ./...
+	@cd $* && $(FAILLINT) -paths "fmt.{Print,Printf,Println},github.com/golang/protobuf=google.golang.org/protobuf" ./...
 	
 	@echo ">> examining all of the Go files"
-	@cd $(DIR) && go vet -stdmethods=false ./...
+	@cd $* && go vet -stdmethods=false ./...
 	
 	@echo ">> linting all of the Go files GOGC=${GOGC}"
-	@cd $(DIR) && $(GOLANGCI_LINT) run
+	@cd $* && $(GOLANGCI_LINT) run
 	@$(call require_clean_work_tree,"golangci lint")
 
 
