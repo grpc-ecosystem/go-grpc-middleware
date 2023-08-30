@@ -6,9 +6,17 @@ package zap_test
 import (
 	"context"
 	"fmt"
+	"runtime"
+	"strings"
+	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 	"google.golang.org/grpc"
 )
 
@@ -17,34 +25,22 @@ import (
 func InterceptorLogger(l *zap.Logger) logging.Logger {
 	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
 		f := make([]zap.Field, 0, len(fields)/2)
-
-		for i := 0; i < len(fields); i += 2 {
-			key := fields[i]
-			value := fields[i+1]
-
-			switch v := value.(type) {
-			case string:
-				f = append(f, zap.String(key.(string), v))
-			case int:
-				f = append(f, zap.Int(key.(string), v))
-			case bool:
-				f = append(f, zap.Bool(key.(string), v))
-			default:
-				f = append(f, zap.Any(key.(string), v))
-			}
+		iter := logging.Fields(fields).Iterator()
+		for iter.Next() {
+			k, v := iter.At()
+			f = append(f, zap.Any(k, v))
 		}
-
-		logger := l.WithOptions(zap.AddCallerSkip(1)).With(f...)
+		l := l.WithOptions(zap.AddCallerSkip(1)).With(f...)
 
 		switch lvl {
 		case logging.LevelDebug:
-			logger.Debug(msg)
+			l.Debug(msg)
 		case logging.LevelInfo:
-			logger.Info(msg)
+			l.Info(msg)
 		case logging.LevelWarn:
-			logger.Warn(msg)
+			l.Warn(msg)
 		case logging.LevelError:
-			logger.Error(msg)
+			l.Error(msg)
 		default:
 			panic(fmt.Sprintf("unknown level %v", lvl))
 		}
@@ -85,4 +81,51 @@ func ExampleInterceptorLogger() {
 		),
 	)
 	// Output:
+}
+
+type zapExampleTestSuite struct {
+	*testpb.InterceptorTestSuite
+	observedLogs *observer.ObservedLogs
+}
+
+func TestSuite(t *testing.T) {
+	if strings.HasPrefix(runtime.Version(), "go1.7") {
+		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
+		return
+	}
+	observedZapCore, observedLogs := observer.New(zap.DebugLevel)
+	logger := InterceptorLogger(zap.New(observedZapCore))
+	s := &zapExampleTestSuite{
+		InterceptorTestSuite: &testpb.InterceptorTestSuite{
+			TestService: &testpb.TestPingService{},
+		},
+		observedLogs: observedLogs,
+	}
+
+	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
+		grpc.StreamInterceptor(logging.StreamServerInterceptor(logger)),
+		grpc.UnaryInterceptor(logging.UnaryServerInterceptor(logger)),
+	}
+
+	suite.Run(t, s)
+}
+
+func (s *zapExampleTestSuite) TestPing() {
+	ctx := context.Background()
+	_, err := s.Client.Ping(ctx, testpb.GoodPing)
+	assert.NoError(s.T(), err, "there must be not be an on a successful call")
+	require.Equal(s.T(), 2, s.observedLogs.Len())
+	line := s.observedLogs.All()[0]
+
+	contextMap := line.ContextMap()
+	require.Equal(s.T(), zap.InfoLevel, line.Level)
+	require.Equal(s.T(), "started call", line.Entry.Message)
+
+	require.Equal(s.T(), "Ping", contextMap["grpc.method"])
+	require.Equal(s.T(), "grpc", contextMap["protocol"])
+	require.Equal(s.T(), "server", contextMap["grpc.component"])
+
+	require.Contains(s.T(), contextMap["peer.address"], "127.0.0.1")
+	require.NotEmpty(s.T(), contextMap["grpc.start_time"])
+	require.NotEmpty(s.T(), contextMap["grpc.time_ms"])
 }

@@ -4,12 +4,21 @@
 package zerolog_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"runtime"
+	"strings"
+	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/rs/zerolog"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 )
 
@@ -68,4 +77,50 @@ func ExampleInterceptorLogger() {
 		),
 	)
 	// Output:
+}
+
+type zerologExampleTestSuite struct {
+	*testpb.InterceptorTestSuite
+	logBuffer *bytes.Buffer
+}
+
+func TestSuite(t *testing.T) {
+	if strings.HasPrefix(runtime.Version(), "go1.7") {
+		t.Skipf("Skipping due to json.RawMessage incompatibility with go1.7")
+		return
+	}
+	buffer := &bytes.Buffer{}
+	logger := InterceptorLogger(zerolog.New(buffer))
+	s := &zerologExampleTestSuite{
+		InterceptorTestSuite: &testpb.InterceptorTestSuite{
+			TestService: &testpb.TestPingService{},
+		},
+		logBuffer: buffer,
+	}
+
+	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
+		grpc.StreamInterceptor(logging.StreamServerInterceptor(logger, logging.WithLogOnEvents(logging.StartCall))),
+		grpc.UnaryInterceptor(logging.UnaryServerInterceptor(logger, logging.WithLogOnEvents(logging.StartCall))),
+	}
+
+	suite.Run(t, s)
+}
+
+func (s *zerologExampleTestSuite) TestPing() {
+	ctx := context.Background()
+	_, err := s.Client.Ping(ctx, testpb.GoodPing)
+	assert.NoError(s.T(), err, "there must be not be an on a successful call")
+	var logMap map[string]interface{}
+	err = json.Unmarshal(s.logBuffer.Bytes(), &logMap)
+	require.NoError(s.T(), err)
+
+	require.Equal(s.T(), "started call", logMap["message"])
+	require.Equal(s.T(), "grpc", logMap["protocol"])
+	require.Equal(s.T(), "server", logMap["grpc.component"])
+	require.Equal(s.T(), "testing.testpb.v1.TestService", logMap["grpc.service"])
+	require.Equal(s.T(), "Ping", logMap["grpc.method"])
+	require.Equal(s.T(), "unary", logMap["grpc.method_type"])
+	require.Contains(s.T(), logMap["peer.address"], "127.0.0.1")
+	require.NotEmpty(s.T(), logMap["grpc.start_time"])
+	require.NotEmpty(s.T(), logMap["grpc.time_ms"])
 }
