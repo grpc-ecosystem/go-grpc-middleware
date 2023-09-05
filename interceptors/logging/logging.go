@@ -39,13 +39,7 @@ func newCommonFields(kind string, c interceptors.CallMeta) Fields {
 }
 
 func customCommonFields(kind string, c interceptors.CallMeta, customFields []string) Fields {
-	commonFields := Fields{
-		SystemTag[0], SystemTag[1],
-		ComponentFieldKey, kind,
-		ServiceFieldKey, c.Service,
-		MethodFieldKey, c.Method,
-		MethodTypeFieldKey, string(c.Typ),
-	}
+	commonFields := newCommonFields(kind, c)
 
 	newFields := Fields{}
 	for _, key := range customFields {
