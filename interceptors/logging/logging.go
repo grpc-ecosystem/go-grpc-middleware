@@ -38,6 +38,28 @@ func newCommonFields(kind string, c interceptors.CallMeta) Fields {
 	}
 }
 
+func customCommonFields(kind string, c interceptors.CallMeta, customFields []string) Fields {
+	commonFields := Fields{
+		SystemTag[0], SystemTag[1],
+		ComponentFieldKey, kind,
+		ServiceFieldKey, c.Service,
+		MethodFieldKey, c.Method,
+		MethodTypeFieldKey, string(c.Typ),
+	}
+
+	newFields := Fields{}
+	for _, key := range customFields {
+		commonFieldIterator := commonFields.Iterator()
+		for commonFieldIterator.Next() {
+			ck, cv := commonFieldIterator.At()
+			if ck == key {
+				newFields = append(newFields, ck, cv)
+			}
+		}
+	}
+	return newFields
+}
+
 // Fields loosely represents key value pairs that adds context to log lines. The key has to be type of string, whereas
 // value can be an arbitrary object.
 type Fields []any

@@ -50,6 +50,7 @@ var (
 		// levelFunc depends if it's client or server.
 		levelFunc:       nil,
 		timestampFormat: time.RFC3339,
+		grpcLogFields:   nil,
 	}
 )
 
@@ -60,6 +61,7 @@ type options struct {
 	durationFieldFunc       DurationToFields
 	timestampFormat         string
 	fieldsFromCtxCallMetaFn fieldsFromCtxCallMetaFn
+	grpcLogFields           AddGrpcLogFields
 }
 
 type Option func(*options)
@@ -202,5 +204,23 @@ func durationToMilliseconds(duration time.Duration) float32 {
 func WithTimestampFormat(format string) Option {
 	return func(o *options) {
 		o.timestampFormat = format
+	}
+}
+
+// AddGrpcLogFields customizes the function for adding gRPC fields to the log entry from the below list.
+//
+//	-SystemTag[0],
+//	-ComponentFieldKey,
+//	-ServiceFieldKey,
+//	-MethodFieldKey,
+//	-MethodTypeFieldKey,
+//
+// If not provided default fields will be used.
+type AddGrpcLogFields func() []string
+
+// WithAddGrpcLogFields customizes the function for adding gRPC fields to the log entry.
+func WithGrpcLogFields(f AddGrpcLogFields) Option {
+	return func(o *options) {
+		o.grpcLogFields = f
 	}
 }
