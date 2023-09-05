@@ -654,12 +654,12 @@ func TestCustomGrpcLogFieldsSuite(t *testing.T) {
 		},
 	}
 	s.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
-		grpc.WithUnaryInterceptor(logging.UnaryClientInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel), logging.WithGrpcLogFields(addGrpcLogFields))),
-		grpc.WithStreamInterceptor(logging.StreamClientInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel), logging.WithGrpcLogFields(addGrpcLogFields))),
+		grpc.WithUnaryInterceptor(logging.UnaryClientInterceptor(s.logger, logging.WithGrpcLogFields(addGrpcLogFields))),
+		grpc.WithStreamInterceptor(logging.StreamClientInterceptor(s.logger, logging.WithGrpcLogFields(addGrpcLogFields))),
 	}
 	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
-		grpc.StreamInterceptor(logging.StreamServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel), logging.WithGrpcLogFields(addGrpcLogFields))),
-		grpc.UnaryInterceptor(logging.UnaryServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel), logging.WithGrpcLogFields(addGrpcLogFields))),
+		grpc.StreamInterceptor(logging.StreamServerInterceptor(s.logger, logging.WithGrpcLogFields(addGrpcLogFields))),
+		grpc.UnaryInterceptor(logging.UnaryServerInterceptor(s.logger, logging.WithGrpcLogFields(addGrpcLogFields))),
 	}
 	suite.Run(t, s)
 }
@@ -684,7 +684,7 @@ func (s *loggingCustomGrpcLogFieldsSuite) TestCustomGrpcLogFieldsWithPing() {
 		AssertField(s.T(), logging.ServiceFieldKey, testpb.TestServiceFullName).AssertNoMoreTags(s.T())
 
 	serverStartCallLogLine := lines[3]
-	assert.Equal(s.T(), logging.LevelDebug, serverStartCallLogLine.lvl)
+	assert.Equal(s.T(), logging.LevelInfo, serverStartCallLogLine.lvl)
 	assert.Equal(s.T(), "started call", serverStartCallLogLine.msg)
 	serverStartCallFields := serverStartCallLogLine.fields
 	serverStartCallFields.AssertFieldNotEmpty(s.T(), "peer.address").
@@ -695,7 +695,7 @@ func (s *loggingCustomGrpcLogFieldsSuite) TestCustomGrpcLogFieldsWithPing() {
 		AssertField(s.T(), logging.ServiceFieldKey, testpb.TestServiceFullName).AssertNoMoreTags(s.T())
 
 	serverFinishCallLogLine := lines[0]
-	assert.Equal(s.T(), logging.LevelDebug, serverFinishCallLogLine.lvl)
+	assert.Equal(s.T(), logging.LevelInfo, serverFinishCallLogLine.lvl)
 	assert.Equal(s.T(), "finished call", serverFinishCallLogLine.msg)
 	serverFinishCallFields := serverFinishCallLogLine.fields
 	serverFinishCallFields.AssertFieldNotEmpty(s.T(), "peer.address").
@@ -744,7 +744,7 @@ func (s *loggingCustomGrpcLogFieldsSuite) TestCustomGrpcLogFieldsWithPingList() 
 		AssertField(s.T(), logging.ServiceFieldKey, testpb.TestServiceFullName).AssertNoMoreTags(s.T())
 
 	serverStartCallLogLine := lines[3]
-	assert.Equal(s.T(), logging.LevelDebug, serverStartCallLogLine.lvl)
+	assert.Equal(s.T(), logging.LevelInfo, serverStartCallLogLine.lvl)
 	assert.Equal(s.T(), "started call", serverStartCallLogLine.msg)
 	serverStartCallFields := serverStartCallLogLine.fields
 	serverStartCallFields.AssertFieldNotEmpty(s.T(), "peer.address").
@@ -755,7 +755,7 @@ func (s *loggingCustomGrpcLogFieldsSuite) TestCustomGrpcLogFieldsWithPingList() 
 		AssertField(s.T(), logging.ServiceFieldKey, testpb.TestServiceFullName).AssertNoMoreTags(s.T())
 
 	serverFinishCallLogLine := lines[0]
-	assert.Equal(s.T(), logging.LevelDebug, serverFinishCallLogLine.lvl)
+	assert.Equal(s.T(), logging.LevelInfo, serverFinishCallLogLine.lvl)
 	assert.Equal(s.T(), "finished call", serverFinishCallLogLine.msg)
 	serverFinishCallFields := serverFinishCallLogLine.fields
 	serverFinishCallFields.AssertFieldNotEmpty(s.T(), "peer.address").
