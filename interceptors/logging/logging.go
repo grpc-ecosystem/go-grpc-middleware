@@ -41,14 +41,17 @@ func newCommonFields(kind string, c interceptors.CallMeta) Fields {
 func customCommonFields(kind string, c interceptors.CallMeta, customFields []string) Fields {
 	commonFields := newCommonFields(kind, c)
 
+	existing := map[any]any{}
+	i := commonFields.Iterator()
+	for i.Next() {
+		k, v := i.At()
+		existing[k] = v
+	}
+
 	newFields := Fields{}
 	for _, key := range customFields {
-		commonFieldIterator := commonFields.Iterator()
-		for commonFieldIterator.Next() {
-			ck, cv := commonFieldIterator.At()
-			if ck == key {
-				newFields = append(newFields, ck, cv)
-			}
+		if _, ok := existing[key]; ok {
+			newFields = append(newFields, key, existing[key])
 		}
 	}
 	return newFields
