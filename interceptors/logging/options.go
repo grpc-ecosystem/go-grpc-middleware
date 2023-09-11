@@ -61,7 +61,7 @@ type options struct {
 	durationFieldFunc       DurationToFields
 	timestampFormat         string
 	fieldsFromCtxCallMetaFn fieldsFromCtxCallMetaFn
-	grpcLogFields           AddGrpcLogFields
+	grpcLogFields           []string
 }
 
 type Option func(*options)
@@ -207,20 +207,9 @@ func WithTimestampFormat(format string) Option {
 	}
 }
 
-// AddGrpcLogFields customizes the function for adding gRPC fields to the log entry from the below list.
-//
-//	-SystemTag[0],
-//	-ComponentFieldKey,
-//	-ServiceFieldKey,
-//	-MethodFieldKey,
-//	-MethodTypeFieldKey,
-//
-// If not provided default fields will be used.
-type AddGrpcLogFields func() []string
-
 // WithAddGrpcLogFields customizes the function for adding gRPC fields to the log entry.
-func WithGrpcLogFields(f AddGrpcLogFields) Option {
+func WithGrpcLogFields(enableGrpcLogFields ...string) Option {
 	return func(o *options) {
-		o.grpcLogFields = f
+		o.grpcLogFields = enableGrpcLogFields
 	}
 }

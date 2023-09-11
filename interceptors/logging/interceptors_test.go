@@ -630,12 +630,6 @@ func (s *loggingPayloadSuite) assertPayloadLogLinesForMessage(lines LogLines, me
 	}
 }
 
-func addGrpcLogFields() []string {
-	return []string{
-		logging.MethodFieldKey, logging.ServiceFieldKey, "should-not-be-added",
-	}
-}
-
 type loggingCustomGrpcLogFieldsSuite struct {
 	*baseLoggingSuite
 }
@@ -654,12 +648,12 @@ func TestCustomGrpcLogFieldsSuite(t *testing.T) {
 		},
 	}
 	s.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
-		grpc.WithUnaryInterceptor(logging.UnaryClientInterceptor(s.logger, logging.WithGrpcLogFields(addGrpcLogFields))),
-		grpc.WithStreamInterceptor(logging.StreamClientInterceptor(s.logger, logging.WithGrpcLogFields(addGrpcLogFields))),
+		grpc.WithUnaryInterceptor(logging.UnaryClientInterceptor(s.logger, logging.WithGrpcLogFields(logging.MethodFieldKey, logging.ServiceFieldKey, "custom-field-should-not-be-added"))),
+		grpc.WithStreamInterceptor(logging.StreamClientInterceptor(s.logger, logging.WithGrpcLogFields(logging.MethodFieldKey, logging.ServiceFieldKey, "custom-field-should-not-be-added"))),
 	}
 	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
-		grpc.StreamInterceptor(logging.StreamServerInterceptor(s.logger, logging.WithGrpcLogFields(addGrpcLogFields))),
-		grpc.UnaryInterceptor(logging.UnaryServerInterceptor(s.logger, logging.WithGrpcLogFields(addGrpcLogFields))),
+		grpc.StreamInterceptor(logging.StreamServerInterceptor(s.logger, logging.WithGrpcLogFields(logging.MethodFieldKey, logging.ServiceFieldKey, "custom-field-should-not-be-added"))),
+		grpc.UnaryInterceptor(logging.UnaryServerInterceptor(s.logger, logging.WithGrpcLogFields(logging.MethodFieldKey, logging.ServiceFieldKey, "custom-field-should-not-be-added"))),
 	}
 	suite.Run(t, s)
 }
