@@ -48,9 +48,9 @@ var (
 		codeFunc:          DefaultErrorToCode,
 		durationFieldFunc: DefaultDurationToFields,
 		// levelFunc depends if it's client or server.
-		levelFunc:       nil,
-		timestampFormat: time.RFC3339,
-		grpcLogFields:   nil,
+		levelFunc:            nil,
+		timestampFormat:      time.RFC3339,
+		disableGrpcLogFields: nil,
 	}
 )
 
@@ -61,7 +61,7 @@ type options struct {
 	durationFieldFunc       DurationToFields
 	timestampFormat         string
 	fieldsFromCtxCallMetaFn fieldsFromCtxCallMetaFn
-	grpcLogFields           []string
+	disableGrpcLogFields    []string
 }
 
 type Option func(*options)
@@ -207,9 +207,9 @@ func WithTimestampFormat(format string) Option {
 	}
 }
 
-// WithAddGrpcLogFields customizes the function for adding gRPC fields to the log entry.
-func WithGrpcLogFields(enableGrpcLogFields ...string) Option {
+// WithDisableLoggingFields disables logging of gRPC fields provided.
+func WithDisableLoggingFields(disableGrpcLogFields ...string) Option {
 	return func(o *options) {
-		o.grpcLogFields = enableGrpcLogFields
+		o.disableGrpcLogFields = disableGrpcLogFields
 	}
 }

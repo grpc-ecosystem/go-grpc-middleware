@@ -38,7 +38,8 @@ func newCommonFields(kind string, c interceptors.CallMeta) Fields {
 	}
 }
 
-func customCommonFields(kind string, c interceptors.CallMeta, customFields []string) Fields {
+// disableCommonLoggingFields returns copy of common fields with disabled fields removed.
+func disableCommonLoggingFields(kind string, c interceptors.CallMeta, disableFields []string) Fields {
 	commonFields := newCommonFields(kind, c)
 
 	existing := map[any]any{}
@@ -48,11 +49,15 @@ func customCommonFields(kind string, c interceptors.CallMeta, customFields []str
 		existing[k] = v
 	}
 
-	newFields := Fields{}
-	for _, key := range customFields {
+	for _, key := range disableFields {
 		if _, ok := existing[key]; ok {
-			newFields = append(newFields, key, existing[key])
+			delete(existing, key)
 		}
+	}
+
+	newFields := make(Fields, 0, len(existing))
+	for k, v := range existing {
+		newFields = append(newFields, k, v)
 	}
 	return newFields
 }

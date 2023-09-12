@@ -142,8 +142,8 @@ func reportable(logger Logger, opts *options) interceptors.CommonReportableFunc 
 		}
 
 		fields := Fields{}
-		if opts.grpcLogFields != nil {
-			fields = fields.WithUnique(customCommonFields(kind, c, opts.grpcLogFields))
+		if opts.disableGrpcLogFields != nil {
+			fields = disableCommonLoggingFields(kind, c, opts.disableGrpcLogFields)
 		} else {
 			// Field dups from context override the common fields.
 			fields = newCommonFields(kind, c)
