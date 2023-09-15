@@ -39,6 +39,13 @@ func WithConstLabels(labels prometheus.Labels) CounterOption {
 	}
 }
 
+// WithSubsystem allows you to add Subsytem to Counter metrics.
+func WithSubsystem(subsystem string) CounterOption {
+	return func(o *prometheus.CounterOpts) {
+		o.Subsystem = subsystem
+	}
+}
+
 // A HistogramOption lets you add options to Histogram metrics using With*
 // funcs.
 type HistogramOption func(*prometheus.HistogramOpts)
@@ -78,6 +85,13 @@ func WithHistogramOpts(opts *prometheus.HistogramOpts) HistogramOption {
 func WithHistogramConstLabels(labels prometheus.Labels) HistogramOption {
 	return func(o *prometheus.HistogramOpts) {
 		o.ConstLabels = labels
+	}
+}
+
+// WithHistogramSubsystem allows you to add Subsytem to histograms metrics.
+func WithHistogramSubsystem(subsystem string) HistogramOption {
+	return func(o *prometheus.HistogramOpts) {
+		o.Subsystem = subsystem
 	}
 }
 
