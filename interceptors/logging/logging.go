@@ -38,7 +38,14 @@ func newCommonFields(kind string, c interceptors.CallMeta) Fields {
 	}
 }
 
-// disableCommonLoggingFields returns copy of common fields with disabled fields removed.
+// disableCommonLoggingFields returns copy of fields with disabled fields removed from the following
+// default list.
+//
+//	-SystemTag[0],
+//	-ComponentFieldKey,
+//	-ServiceFieldKey,
+//	-MethodFieldKey,
+//	-MethodTypeFieldKey,
 func disableCommonLoggingFields(kind string, c interceptors.CallMeta, disableFields []string) Fields {
 	commonFields := newCommonFields(kind, c)
 
@@ -50,9 +57,7 @@ func disableCommonLoggingFields(kind string, c interceptors.CallMeta, disableFie
 	}
 
 	for _, key := range disableFields {
-		if _, ok := existing[key]; ok {
-			delete(existing, key)
-		}
+		delete(existing, key)
 	}
 
 	newFields := make(Fields, 0, len(existing))
