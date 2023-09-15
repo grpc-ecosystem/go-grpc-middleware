@@ -38,7 +38,7 @@ func newCommonFields(kind string, c interceptors.CallMeta) Fields {
 	}
 }
 
-// disableCommonLoggingFields returns copy of fields with disabled fields removed from the following
+// disableCommonLoggingFields returns copy of newCommonFields with disabled fields removed from the following
 // default list.
 //
 //	-SystemTag[0],
