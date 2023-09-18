@@ -48,23 +48,10 @@ func newCommonFields(kind string, c interceptors.CallMeta) Fields {
 //	-MethodTypeFieldKey,
 func disableCommonLoggingFields(kind string, c interceptors.CallMeta, disableFields []string) Fields {
 	commonFields := newCommonFields(kind, c)
-
-	existing := map[any]any{}
-	i := commonFields.Iterator()
-	for i.Next() {
-		k, v := i.At()
-		existing[k] = v
-	}
-
 	for _, key := range disableFields {
-		delete(existing, key)
+		commonFields.Delete(key)
 	}
-
-	newFields := make(Fields, 0, len(existing))
-	for k, v := range existing {
-		newFields = append(newFields, k, v)
-	}
-	return newFields
+	return commonFields
 }
 
 // Fields loosely represents key value pairs that adds context to log lines. The key has to be type of string, whereas
@@ -103,6 +90,18 @@ func (i *iter) At() (k string, v any) {
 		return i.f[i.i].(string), ""
 	}
 	return i.f[i.i].(string), i.f[i.i+1]
+}
+
+func (f *Fields) Delete(key string) {
+	i := f.Iterator()
+	for i.Next() {
+		k, _ := i.At()
+		if k != key {
+			continue
+		}
+		*f = append((*f)[:i.i], (*f)[i.i+2:]...)
+		return
+	}
 }
 
 // WithUnique returns copy of fields which is the union of all unique keys.
