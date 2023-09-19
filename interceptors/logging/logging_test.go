@@ -39,3 +39,13 @@ func TestFieldsInjectExtractFromContext(t *testing.T) {
 	f = ExtractFields(c3)
 	require.Equal(t, Fields{"a", "changed", "b", "2"}, f)
 }
+
+func TestFieldsDelete(t *testing.T) {
+	f := Fields{"a", "1", "b", "2"}
+	f.Delete("a")
+	require.Equal(t, Fields{"b", "2"}, f)
+	f.Delete("b")
+	require.Equal(t, Fields{}, f)
+	f.Delete("c")
+	require.Equal(t, Fields{}, f)
+}
