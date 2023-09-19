@@ -94,10 +94,8 @@ func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientIntercepto
 			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 				return nil, err
 			}
-			callCtx, cancel := perCallContext(parentCtx, callOpts, 0)
-			defer cancel() // Clean up potential resources.
 			var newStreamer grpc.ClientStream
-			newStreamer, lastErr = streamer(callCtx, desc, cc, method, grpcOpts...)
+			newStreamer, lastErr = streamer(parentCtx, desc, cc, method, grpcOpts...)
 			if lastErr == nil {
 				retryingStreamer := &serverStreamingRetryingStream{
 					ClientStream: newStreamer,
@@ -188,9 +186,7 @@ func (s *serverStreamingRetryingStream) RecvMsg(m any) error {
 			return err
 		}
 		s.callOpts.onRetryCallback(s.parentCtx, attempt, lastErr)
-		// TODO(bwplotka): Close cancel as it might leak some resources.
-		callCtx, _ := perCallContext(s.parentCtx, s.callOpts, attempt) //nolint
-		newStream, err := s.reestablishStreamAndResendBuffer(callCtx)
+		newStream, err := s.reestablishStreamAndResendBuffer(s.parentCtx)
 		if err != nil {
 			// Retry dial and transport errors of establishing stream as grpc doesn't retry.
 			if isRetriable(err, s.callOpts) {
