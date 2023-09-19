@@ -142,7 +142,12 @@ func reportable(logger Logger, opts *options) interceptors.CommonReportableFunc 
 		}
 
 		// Field dups from context override the common fields.
-		fields := newCommonFields(kind, c).WithUnique(ExtractFields(ctx))
+		fields := newCommonFields(kind, c)
+		if opts.disableGrpcLogFields != nil {
+			fields = disableCommonLoggingFields(kind, c, opts.disableGrpcLogFields)
+		}
+		fields = fields.WithUnique(ExtractFields(ctx))
+
 		if !c.IsClient {
 			if peer, ok := peer.FromContext(ctx); ok {
 				fields = append(fields, "peer.address", peer.Addr.String())

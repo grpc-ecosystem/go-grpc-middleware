@@ -38,6 +38,21 @@ func newCommonFields(kind string, c interceptors.CallMeta) Fields {
 	}
 }
 
+// disableCommonLoggingFields returns copy of newCommonFields with disabled fields removed from the following
+// default list. The following are the default logging fields:
+//   - SystemTag[0]
+//   - ComponentFieldKey
+//   - ServiceFieldKey
+//   - MethodFieldKey
+//   - MethodTypeFieldKey
+func disableCommonLoggingFields(kind string, c interceptors.CallMeta, disableFields []string) Fields {
+	commonFields := newCommonFields(kind, c)
+	for _, key := range disableFields {
+		commonFields.Delete(key)
+	}
+	return commonFields
+}
+
 // Fields loosely represents key value pairs that adds context to log lines. The key has to be type of string, whereas
 // value can be an arbitrary object.
 type Fields []any
@@ -74,6 +89,18 @@ func (i *iter) At() (k string, v any) {
 		return i.f[i.i].(string), ""
 	}
 	return i.f[i.i].(string), i.f[i.i+1]
+}
+
+func (f *Fields) Delete(key string) {
+	i := f.Iterator()
+	for i.Next() {
+		k, _ := i.At()
+		if k != key {
+			continue
+		}
+		*f = append((*f)[:i.i], (*f)[i.i+2:]...)
+		return
+	}
 }
 
 // WithUnique returns copy of fields which is the union of all unique keys.

@@ -48,8 +48,9 @@ var (
 		codeFunc:          DefaultErrorToCode,
 		durationFieldFunc: DefaultDurationToFields,
 		// levelFunc depends if it's client or server.
-		levelFunc:       nil,
-		timestampFormat: time.RFC3339,
+		levelFunc:            nil,
+		timestampFormat:      time.RFC3339,
+		disableGrpcLogFields: nil,
 	}
 )
 
@@ -60,6 +61,7 @@ type options struct {
 	durationFieldFunc       DurationToFields
 	timestampFormat         string
 	fieldsFromCtxCallMetaFn fieldsFromCtxCallMetaFn
+	disableGrpcLogFields    []string
 }
 
 type Option func(*options)
@@ -202,5 +204,12 @@ func durationToMilliseconds(duration time.Duration) float32 {
 func WithTimestampFormat(format string) Option {
 	return func(o *options) {
 		o.timestampFormat = format
+	}
+}
+
+// WithDisableLoggingFields disables logging of gRPC fields provided.
+func WithDisableLoggingFields(disableGrpcLogFields ...string) Option {
+	return func(o *options) {
+		o.disableGrpcLogFields = disableGrpcLogFields
 	}
 }
