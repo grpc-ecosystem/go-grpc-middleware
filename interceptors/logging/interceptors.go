@@ -136,6 +136,9 @@ func (c *reporter) PostMsgReceive(payload any, err error, duration time.Duration
 
 func reportable(logger Logger, opts *options) interceptors.CommonReportableFunc {
 	return func(ctx context.Context, c interceptors.CallMeta) (interceptors.Reporter, context.Context) {
+		if !opts.shouldReport(c.FullMethod()) {
+			return interceptors.NoopReporter{}, ctx
+		}
 		kind := KindServerFieldValue
 		if c.IsClient {
 			kind = KindClientFieldValue
