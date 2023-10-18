@@ -3,7 +3,7 @@ module github.com/grpc-ecosystem/go-grpc-middleware/v2
 go 1.19
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20230802163732-1c33ebd9ecfa.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20231017183020-0de7443d03cf.1
 	github.com/bufbuild/protovalidate-go v0.2.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/net v0.14.0
