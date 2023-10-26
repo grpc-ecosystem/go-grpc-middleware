@@ -21,7 +21,7 @@ Simple way of turning a multiple interceptors into a single interceptor. Here's 
 server chaining:
 
 	myServer := grpc.NewServer(
-	    grpc.ChainStreamInterceptor(loggingStream, monitoringStream, authStream)),
+	    grpc.ChainStreamInterceptor(loggingStream, monitoringStream, authStream),
 	    grpc.ChainUnaryInterceptor(loggingUnary, monitoringUnary, authUnary),
 	)
 
@@ -31,8 +31,8 @@ Here's an example for client side chaining:
 
 	clientConn, err = grpc.Dial(
 	    address,
-	        grpc.WithUnaryInterceptor(middleware.ChainUnaryClient(monitoringClientUnary, retryUnary)),
-	        grpc.WithStreamInterceptor(middleware.ChainStreamClient(monitoringClientStream, retryStream)),
+	        grpc.WithChainUnaryInterceptor(monitoringClientUnary, retryUnary),
+	        grpc.WithChainStreamInterceptor(monitoringClientStream, retryStream),
 	)
 	client = testpb.NewTestServiceClient(clientConn)
 	resp, err := client.PingEmpty(s.ctx, &myservice.Request{Msg: "hello"})
