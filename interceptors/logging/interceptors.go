@@ -71,6 +71,7 @@ func (c *reporter) PostMsgSend(payload any, err error, duration time.Duration) {
 		}
 
 		fields = fields.AppendUnique(Fields{"grpc.send.duration", duration.String(), "grpc.request.content", p})
+		fields = fields.AppendUnique(c.opts.durationFieldFunc(duration))
 		c.logger.Log(c.ctx, logLvl, "request sent", fields...)
 	} else {
 		p, ok := payload.(proto.Message)
@@ -85,6 +86,7 @@ func (c *reporter) PostMsgSend(payload any, err error, duration time.Duration) {
 		}
 
 		fields = fields.AppendUnique(Fields{"grpc.send.duration", duration.String(), "grpc.response.content", p})
+		fields = fields.AppendUnique(c.opts.durationFieldFunc(duration))
 		c.logger.Log(c.ctx, logLvl, "response sent", fields...)
 	}
 }
@@ -116,6 +118,7 @@ func (c *reporter) PostMsgReceive(payload any, err error, duration time.Duration
 		}
 
 		fields = fields.AppendUnique(Fields{"grpc.recv.duration", duration.String(), "grpc.request.content", p})
+		fields = fields.AppendUnique(c.opts.durationFieldFunc(duration))
 		c.logger.Log(c.ctx, logLvl, "request received", fields...)
 	} else {
 		p, ok := payload.(proto.Message)
@@ -130,6 +133,7 @@ func (c *reporter) PostMsgReceive(payload any, err error, duration time.Duration
 		}
 
 		fields = fields.AppendUnique(Fields{"grpc.recv.duration", duration.String(), "grpc.response.content", p})
+		fields = fields.AppendUnique(c.opts.durationFieldFunc(duration))
 		c.logger.Log(c.ctx, logLvl, "response received", fields...)
 	}
 }

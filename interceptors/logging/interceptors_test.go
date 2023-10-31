@@ -537,6 +537,7 @@ func (s *loggingPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
 
 	clientRequestFields.AssertFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertFieldNotEmpty(s.T(), "grpc.send.duration").
+		AssertFieldNotEmpty(s.T(), "grpc.time_ms").
 		AssertField(s.T(), "grpc.request.content", `{"value":"something","errorCodeReturned":4}`).
 		AssertFieldNotEmpty(s.T(), "grpc.request.deadline").AssertNoMoreTags(s.T())
 }
@@ -580,6 +581,7 @@ func (s *loggingPayloadSuite) assertPayloadLogLinesForMessage(lines LogLines, me
 		clientRequestFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientRequestLogLine.fields, method, typ)
 		clientRequestFields.AssertFieldNotEmpty(s.T(), "grpc.start_time").
 			AssertFieldNotEmpty(s.T(), "grpc.send.duration").
+			AssertFieldNotEmpty(s.T(), "grpc.time_ms").
 			AssertField(s.T(), "grpc.request.content", `{"value":"something","sleepTimeMs":9999}`).
 			AssertFieldNotEmpty(s.T(), "grpc.request.deadline").AssertNoMoreTags(s.T())
 	}
@@ -591,6 +593,7 @@ func (s *loggingPayloadSuite) assertPayloadLogLinesForMessage(lines LogLines, me
 		clientResponseFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientResponseLogLine.fields, method, typ)
 		clientResponseFields = clientResponseFields.AssertFieldNotEmpty(s.T(), "grpc.start_time").
 			AssertFieldNotEmpty(s.T(), "grpc.recv.duration").
+			AssertFieldNotEmpty(s.T(), "grpc.time_ms").
 			AssertFieldNotEmpty(s.T(), "grpc.request.deadline")
 		if i-curr == 0 {
 			clientResponseFields = clientResponseFields.AssertField(s.T(), "grpc.response.content", `{"value":"something"}`)
@@ -609,6 +612,7 @@ func (s *loggingPayloadSuite) assertPayloadLogLinesForMessage(lines LogLines, me
 			AssertFieldNotEmpty(s.T(), "grpc.start_time").
 			AssertFieldNotEmpty(s.T(), "grpc.recv.duration").
 			AssertFieldNotEmpty(s.T(), "grpc.request.deadline").
+			AssertFieldNotEmpty(s.T(), "grpc.time_ms").
 			AssertField(s.T(), "grpc.request.content", `{"value":"something","sleepTimeMs":9999}`).AssertNoMoreTags(s.T())
 	}
 	curr += repetitions
@@ -620,6 +624,7 @@ func (s *loggingPayloadSuite) assertPayloadLogLinesForMessage(lines LogLines, me
 		serverResponseFields = serverResponseFields.AssertFieldNotEmpty(s.T(), "peer.address").
 			AssertFieldNotEmpty(s.T(), "grpc.start_time").
 			AssertFieldNotEmpty(s.T(), "grpc.send.duration").
+			AssertFieldNotEmpty(s.T(), "grpc.time_ms").
 			AssertFieldNotEmpty(s.T(), "grpc.request.deadline")
 		if i-curr == 0 {
 			serverResponseFields = serverResponseFields.AssertField(s.T(), "grpc.response.content", `{"value":"something"}`)
