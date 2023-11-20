@@ -208,6 +208,14 @@ func WithTimestampFormat(format string) Option {
 }
 
 // WithDisableLoggingFields disables logging of gRPC fields provided.
+// The following are the default logging fields:
+//   - SystemTag[0]
+//   - ComponentFieldKey
+//   - ServiceFieldKey
+//   - MethodFieldKey
+//   - MethodTypeFieldKey
+//
+// Usage example - WithDisableLoggingFields(logging.MethodFieldKey, logging.MethodTypeFieldKey)
 func WithDisableLoggingFields(disableGrpcLogFields ...string) Option {
 	return func(o *options) {
 		o.disableGrpcLogFields = disableGrpcLogFields
