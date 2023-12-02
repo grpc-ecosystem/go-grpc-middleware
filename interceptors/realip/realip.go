@@ -6,6 +6,7 @@ package realip
 import (
 	"context"
 	"net"
+	"net/netip"
 	"strings"
 
 	"google.golang.org/grpc"
@@ -13,10 +14,24 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
+// X_REAL_IP, X_FORWARDED_FOR and TRUE_CLIENT_IP are header keys
+// used to extract the real client IP from the request. They represent common
+// conventions for identifying the originating IP address of a client connecting
+// through proxies or load balancers.
+const (
+	X_REAL_IP       = "x-real-ip"
+	X_FORWARDED_FOR = "x-forwarded-for"
+	TRUE_CLIENT_IP  = "true-client-ip"
+)
+
+var noIP = netip.Addr{}
+
 type realipKey struct{}
 
-func FromContext(ctx context.Context) (net.IP, bool) {
-	ip, ok := ctx.Value(realipKey{}).(net.IP)
+// FromContext extracts the real client IP from the context.
+// It returns the IP and a boolean indicating if it was present.
+func FromContext(ctx context.Context) (netip.Addr, bool) {
+	ip, ok := ctx.Value(realipKey{}).(netip.Addr)
 	return ip, ok
 }
 
@@ -28,7 +43,7 @@ func remotePeer(ctx context.Context) net.Addr {
 	return pr.Addr
 }
 
-func ipInNets(ip net.IP, nets []net.IPNet) bool {
+func ipInNets(ip netip.Addr, nets []netip.Prefix) bool {
 	for _, n := range nets {
 		if n.Contains(ip) {
 			return true
@@ -50,31 +65,31 @@ func getHeader(ctx context.Context, key string) string {
 	return md[key][0]
 }
 
-func ipFromHeaders(ctx context.Context, headers []string) net.IP {
+func ipFromHeaders(ctx context.Context, headers []string) netip.Addr {
 	for _, header := range headers {
 		a := strings.Split(getHeader(ctx, header), ",")
 		h := strings.TrimSpace(a[len(a)-1])
-		if ip := net.ParseIP(h); ip != nil {
+		ip, err := netip.ParseAddr(h)
+		if err == nil {
 			return ip
 		}
 	}
-	return nil
+	return noIP
 }
 
-func getRemoteIP(ctx context.Context, trustedPeers []net.IPNet, headers []string) net.IP {
+func getRemoteIP(ctx context.Context, trustedPeers []netip.Prefix, headers []string) netip.Addr {
 	pr := remotePeer(ctx)
 	if pr == nil {
-		return nil
+		return noIP
 	}
-	strIp, _, err := net.SplitHostPort(pr.String())
+	ip, err := netip.ParseAddr(strings.Split(pr.String(), ":")[0])
 	if err != nil {
-		return nil
+		return noIP
 	}
-	ip := net.ParseIP(strIp)
 	if len(trustedPeers) == 0 || !ipInNets(ip, trustedPeers) {
 		return ip
 	}
-	if ip := ipFromHeaders(ctx, headers); ip != nil {
+	if ip := ipFromHeaders(ctx, headers); ip != noIP {
 		return ip
 	}
 	// No ip from the headers, return the peer ip.
@@ -90,22 +105,26 @@ func (s *serverStream) Context() context.Context {
 	return s.ctx
 }
 
-// UnaryServerInterceptor returns a new unary server interceptors that performs request rate limiting.
-func UnaryServerInterceptor(trustedPeers []net.IPNet, headers []string) grpc.UnaryServerInterceptor {
+// UnaryServerInterceptor returns a new unary server interceptor that extracts the real client IP from request headers.
+// It checks if the request comes from a trusted peer, and if so, extracts the IP from the configured headers.
+// The real IP is added to the request context.
+func UnaryServerInterceptor(trustedPeers []netip.Prefix, headers []string) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		ip := getRemoteIP(ctx, trustedPeers, headers)
-		if ip != nil {
+		if ip != noIP {
 			ctx = context.WithValue(ctx, realipKey{}, ip)
 		}
 		return handler(ctx, req)
 	}
 }
 
-// StreamServerInterceptor returns a new stream server interceptor that performs rate limiting on the request.
-func StreamServerInterceptor(trustedPeers []net.IPNet, headers []string) grpc.StreamServerInterceptor {
+// StreamServerInterceptor returns a new stream server interceptor that extracts the real client IP from request headers.
+// It checks if the request comes from a trusted peer, and if so, extracts the IP from the configured headers.
+// The real IP is added to the request context.
+func StreamServerInterceptor(trustedPeers []netip.Prefix, headers []string) grpc.StreamServerInterceptor {
 	return func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		ip := getRemoteIP(stream.Context(), trustedPeers, headers)
-		if ip != nil {
+		if ip != noIP {
 			return handler(srv, &serverStream{
 				ServerStream: stream,
 				ctx:          context.WithValue(stream.Context(), realipKey{}, ip),

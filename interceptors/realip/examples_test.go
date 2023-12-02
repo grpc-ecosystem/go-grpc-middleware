@@ -4,7 +4,7 @@
 package realip_test
 
 import (
-	"net"
+	"net/netip"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/realip"
 	"google.golang.org/grpc"
@@ -14,11 +14,11 @@ import (
 func ExampleUnaryServerInterceptor() {
 	// Define list of trusted peers from which we accept forwarded-for and
 	// real-ip headers.
-	trustedPeers := []net.IPNet{
-		{IP: net.IPv4(127, 0, 0, 1), Mask: net.IPv4Mask(255, 255, 255, 255)},
+	trustedPeers := []netip.Prefix{
+		netip.MustParsePrefix("127.0.0.1/32"),
 	}
 	// Define headers to look for in the incoming request.
-	headers := []string{"x-forwarded-for", "x-real-ip"}
+	headers := []string{realip.X_FORWARDED_FOR, realip.X_REAL_IP}
 	_ = grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			realip.UnaryServerInterceptor(trustedPeers, headers),
@@ -30,11 +30,11 @@ func ExampleUnaryServerInterceptor() {
 func ExampleStreamServerInterceptor() {
 	// Define list of trusted peers from which we accept forwarded-for and
 	// real-ip headers.
-	trustedPeers := []net.IPNet{
-		{IP: net.IPv4(127, 0, 0, 1), Mask: net.IPv4Mask(255, 255, 255, 255)},
+	trustedPeers := []netip.Prefix{
+		netip.MustParsePrefix("127.0.0.1/32"),
 	}
 	// Define headers to look for in the incoming request.
-	headers := []string{"x-forwarded-for", "x-real-ip"}
+	headers := []string{realip.X_FORWARDED_FOR, realip.X_REAL_IP}
 	_ = grpc.NewServer(
 		grpc.ChainStreamInterceptor(
 			realip.StreamServerInterceptor(trustedPeers, headers),
