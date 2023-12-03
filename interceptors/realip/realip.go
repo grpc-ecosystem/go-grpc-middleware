@@ -14,14 +14,14 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
-// X_REAL_IP, X_FORWARDED_FOR and TRUE_CLIENT_IP are header keys
+// XRealIp, XForwardedFor and TrueClientIp are header keys
 // used to extract the real client IP from the request. They represent common
 // conventions for identifying the originating IP address of a client connecting
 // through proxies or load balancers.
 const (
-	X_REAL_IP       = "x-real-ip"
-	X_FORWARDED_FOR = "x-forwarded-for"
-	TRUE_CLIENT_IP  = "true-client-ip"
+	XRealIp       = "x-real-ip"
+	XForwardedFor = "x-forwarded-for"
+	TrueClientIp  = "true-client-ip"
 )
 
 var noIP = netip.Addr{}
@@ -82,6 +82,7 @@ func getRemoteIP(ctx context.Context, trustedPeers []netip.Prefix, headers []str
 	if pr == nil {
 		return noIP
 	}
+
 	ip, err := netip.ParseAddr(strings.Split(pr.String(), ":")[0])
 	if err != nil {
 		return noIP

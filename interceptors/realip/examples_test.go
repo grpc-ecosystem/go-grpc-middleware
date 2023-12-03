@@ -18,7 +18,7 @@ func ExampleUnaryServerInterceptor() {
 		netip.MustParsePrefix("127.0.0.1/32"),
 	}
 	// Define headers to look for in the incoming request.
-	headers := []string{realip.X_FORWARDED_FOR, realip.X_REAL_IP}
+	headers := []string{realip.XForwardedFor, realip.XRealIp}
 	_ = grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			realip.UnaryServerInterceptor(trustedPeers, headers),
@@ -34,7 +34,7 @@ func ExampleStreamServerInterceptor() {
 		netip.MustParsePrefix("127.0.0.1/32"),
 	}
 	// Define headers to look for in the incoming request.
-	headers := []string{realip.X_FORWARDED_FOR, realip.X_REAL_IP}
+	headers := []string{realip.XForwardedFor, realip.XRealIp}
 	_ = grpc.NewServer(
 		grpc.ChainStreamInterceptor(
 			realip.StreamServerInterceptor(trustedPeers, headers),

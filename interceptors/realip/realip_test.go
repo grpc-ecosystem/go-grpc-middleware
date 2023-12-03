@@ -118,9 +118,9 @@ func TestInterceptor(t *testing.T) {
 		tc := testCase{
 			// Test that if there is no peer, we don't get an IP.
 			trustedPeers: localnet,
-			headerKeys:   []string{X_FORWARDED_FOR},
+			headerKeys:   []string{XForwardedFor},
 			inputHeaders: map[string]string{
-				X_FORWARDED_FOR: localhost.String(),
+				XForwardedFor: localhost.String(),
 			},
 			peer:       nil,
 			expectedIP: netip.Addr{},
@@ -138,9 +138,9 @@ func TestInterceptor(t *testing.T) {
 			// Test that if the remote peer is trusted and the header contains
 			// a comma separated list of valid IPs, we get right most one.
 			trustedPeers: localnet,
-			headerKeys:   []string{X_FORWARDED_FOR},
+			headerKeys:   []string{XForwardedFor},
 			inputHeaders: map[string]string{
-				X_FORWARDED_FOR: fmt.Sprintf("%s,%s", localhost.String(), publicIP.String()),
+				XForwardedFor: fmt.Sprintf("%s,%s", localhost.String(), publicIP.String()),
 			},
 			peer:       localhostPeer(),
 			expectedIP: publicIP,
@@ -157,9 +157,9 @@ func TestInterceptor(t *testing.T) {
 			// Test that if the remote peer is trusted and the header contains
 			// a single valid IP, we get that IP.
 			trustedPeers: localnet,
-			headerKeys:   []string{X_REAL_IP},
+			headerKeys:   []string{XRealIp},
 			inputHeaders: map[string]string{
-				X_REAL_IP: privateIP.String(),
+				XRealIp: privateIP.String(),
 			},
 			peer:       localhostPeer(),
 			expectedIP: privateIP,
@@ -176,9 +176,9 @@ func TestInterceptor(t *testing.T) {
 			// Test that if the trusted peers list is larger than 1 network and
 			// the remote peer is in the third network, we get the right IP.
 			trustedPeers: privatenet,
-			headerKeys:   []string{TRUE_CLIENT_IP},
+			headerKeys:   []string{TrueClientIp},
 			inputHeaders: map[string]string{
-				TRUE_CLIENT_IP: publicIP.String(),
+				TrueClientIp: publicIP.String(),
 			},
 			peer:       privatePeer(),
 			expectedIP: publicIP,
@@ -195,9 +195,9 @@ func TestInterceptor(t *testing.T) {
 			// Test that if the remote peer is not trusted and the header
 			// contains a single valid IP, we get that the peer IP.
 			trustedPeers: localnet,
-			headerKeys:   []string{X_REAL_IP},
+			headerKeys:   []string{XRealIp},
 			inputHeaders: map[string]string{
-				X_REAL_IP: privateIP.String(),
+				XRealIp: privateIP.String(),
 			},
 			peer:       publicPeer(),
 			expectedIP: publicIP,
@@ -215,10 +215,10 @@ func TestInterceptor(t *testing.T) {
 			// provided, the interceptor reads the IP from the first header in
 			// the list.
 			trustedPeers: localnet,
-			headerKeys:   []string{X_REAL_IP, TRUE_CLIENT_IP},
+			headerKeys:   []string{XRealIp, TrueClientIp},
 			inputHeaders: map[string]string{
-				X_REAL_IP:      privateIP.String(),
-				TRUE_CLIENT_IP: publicIP.String(),
+				XRealIp:      privateIP.String(),
+				TrueClientIp: publicIP.String(),
 			},
 			peer:       localhostPeer(),
 			expectedIP: privateIP,
@@ -236,9 +236,9 @@ func TestInterceptor(t *testing.T) {
 			// configured, but only one is provided, the interceptor reads the
 			// IP from the provided header.
 			trustedPeers: localnet,
-			headerKeys:   []string{X_REAL_IP, TRUE_CLIENT_IP, X_FORWARDED_FOR},
+			headerKeys:   []string{XRealIp, TrueClientIp, XForwardedFor},
 			inputHeaders: map[string]string{
-				TRUE_CLIENT_IP: publicIP.String(),
+				TrueClientIp: publicIP.String(),
 			},
 			peer:       localhostPeer(),
 			expectedIP: publicIP,
@@ -258,7 +258,7 @@ func TestInterceptor(t *testing.T) {
 			// This indicates that the proxy is not configured to forward the
 			// IP. Using the peer IP is better than nothing.
 			trustedPeers: localnet,
-			headerKeys:   []string{X_REAL_IP, TRUE_CLIENT_IP, X_FORWARDED_FOR},
+			headerKeys:   []string{XRealIp, TrueClientIp, XForwardedFor},
 			peer:         localhostPeer(),
 			expectedIP:   localhost,
 		}
@@ -275,8 +275,8 @@ func TestInterceptor(t *testing.T) {
 			// provided, the interceptor reads the IP from peer.
 			trustedPeers: nil,
 			inputHeaders: map[string]string{
-				X_REAL_IP:      privateIP.String(),
-				TRUE_CLIENT_IP: localhost.String(),
+				XRealIp:      privateIP.String(),
+				TrueClientIp: localhost.String(),
 			},
 			peer:       publicPeer(),
 			expectedIP: publicIP,
@@ -297,9 +297,9 @@ func TestInterceptor(t *testing.T) {
 			// This is because the peer is untrusted, and as such we cannot
 			// trust the headers.
 			trustedPeers: nil,
-			headerKeys:   []string{X_REAL_IP, TRUE_CLIENT_IP, X_FORWARDED_FOR},
+			headerKeys:   []string{XRealIp, TrueClientIp, XForwardedFor},
 			inputHeaders: map[string]string{
-				TRUE_CLIENT_IP: publicIP.String(),
+				TrueClientIp: publicIP.String(),
 			},
 			peer:       publicPeer(),
 			expectedIP: publicIP,
@@ -317,9 +317,9 @@ func TestInterceptor(t *testing.T) {
 			// contain malformed IP addresses, the interceptor reads the IP
 			// from the peer.
 			trustedPeers: localnet,
-			headerKeys:   []string{X_REAL_IP, TRUE_CLIENT_IP, X_FORWARDED_FOR},
+			headerKeys:   []string{XRealIp, TrueClientIp, XForwardedFor},
 			inputHeaders: map[string]string{
-				TRUE_CLIENT_IP: "malformed",
+				TrueClientIp: "malformed",
 			},
 			peer:       localhostPeer(),
 			expectedIP: localhost,
@@ -334,7 +334,7 @@ func TestInterceptor(t *testing.T) {
 	t.Run("unix", func(t *testing.T) {
 		tc := testCase{
 			trustedPeers: localnet,
-			headerKeys:   []string{X_REAL_IP},
+			headerKeys:   []string{XRealIp},
 			peer: &peer.Peer{
 				Addr: &net.UnixAddr{Name: "unix", Net: "unix"},
 			},
@@ -351,7 +351,7 @@ func TestInterceptor(t *testing.T) {
 		tc := testCase{
 			// Test that header casing is ignored.
 			trustedPeers: localnet,
-			headerKeys:   []string{X_REAL_IP},
+			headerKeys:   []string{XRealIp},
 			inputHeaders: map[string]string{
 				"X-Real-IP": privateIP.String(),
 			},
