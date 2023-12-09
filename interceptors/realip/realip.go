@@ -19,9 +19,9 @@ import (
 // conventions for identifying the originating IP address of a client connecting
 // through proxies or load balancers.
 const (
-	XRealIp       = "x-real-ip"
-	XForwardedFor = "x-forwarded-for"
-	TrueClientIp  = "true-client-ip"
+	XRealIp       = "X-Real-IP"
+	XForwardedFor = "X-Forwarded-For"
+	TrueClientIp  = "True-Client-IP"
 )
 
 var noIP = netip.Addr{}
