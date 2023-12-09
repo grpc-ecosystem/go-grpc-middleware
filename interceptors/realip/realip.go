@@ -58,11 +58,11 @@ func getHeader(ctx context.Context, key string) string {
 		return ""
 	}
 
-	if md[key] == nil {
+	if md[strings.ToLower(key)] == nil {
 		return ""
 	}
 
-	return md[key][0]
+	return md[strings.ToLower(key)][0]
 }
 
 func ipFromHeaders(ctx context.Context, headers []string) netip.Addr {
