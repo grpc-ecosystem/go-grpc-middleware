@@ -50,6 +50,20 @@ func TestUnaryServerInterceptor(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, codes.InvalidArgument, status.Code(err))
 	})
+
+	interceptor = protovalidate_middleware.UnaryServerInterceptor(validator,
+		protovalidate_middleware.WithIgnoreMessages(testvalidate.BadUnaryRequest.ProtoReflect().Type()),
+	)
+
+	t.Run("invalid_email_ignored", func(t *testing.T) {
+		info := &grpc.UnaryServerInfo{
+			FullMethod: "FakeMethod",
+		}
+
+		resp, err := interceptor(context.TODO(), testvalidate.BadUnaryRequest, info, handler)
+		assert.Nil(t, err)
+		assert.Equal(t, resp, "good")
+	})
 }
 
 type server struct {
