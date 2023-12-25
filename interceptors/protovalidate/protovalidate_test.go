@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 func TestUnaryServerInterceptor(t *testing.T) {
@@ -83,7 +84,7 @@ func (g *server) SendStream(
 
 const bufSize = 1024 * 1024
 
-func startGrpcServer(t *testing.T) *grpc.ClientConn {
+func startGrpcServer(t *testing.T, ignoreMessages ...protoreflect.MessageType) *grpc.ClientConn {
 	lis := bufconn.Listen(bufSize)
 
 	validator, err := protovalidate.New()
@@ -91,7 +92,9 @@ func startGrpcServer(t *testing.T) *grpc.ClientConn {
 
 	s := grpc.NewServer(
 		grpc.StreamInterceptor(
-			protovalidate_middleware.StreamServerInterceptor(validator),
+			protovalidate_middleware.StreamServerInterceptor(validator,
+				protovalidate_middleware.WithIgnoreMessages(ignoreMessages...),
+			),
 		),
 	)
 	testvalidatev1.RegisterTestValidateServiceServer(s, &server{})
@@ -144,5 +147,17 @@ func TestStreamServerInterceptor(t *testing.T) {
 		_, err = out.Recv()
 		assert.Error(t, err)
 		assert.Equal(t, codes.InvalidArgument, status.Code(err))
+	})
+
+	t.Run("invalid_email_ignored", func(t *testing.T) {
+		client := testvalidatev1.NewTestValidateServiceClient(
+			startGrpcServer(t, testvalidate.BadStreamRequest.ProtoReflect().Type()),
+		)
+
+		out, err := client.SendStream(context.Background(), testvalidate.BadStreamRequest)
+		assert.Nil(t, err)
+
+		_, err = out.Recv()
+		assert.Nil(t, err)
 	})
 }

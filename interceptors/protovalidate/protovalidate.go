@@ -52,6 +52,7 @@ func StreamServerInterceptor(validator *protovalidate.Validator, opts ...Option)
 		wrapped := wrapServerStream(stream)
 		wrapped.wrappedContext = ctx
 		wrapped.validator = validator
+		wrapped.options = evaluateOpts(opts)
 
 		return handler(srv, wrapped)
 	}
@@ -62,7 +63,11 @@ func (w *wrappedServerStream) RecvMsg(m interface{}) error {
 		return err
 	}
 
-	if err := w.validator.Validate(m.(proto.Message)); err != nil {
+	msg := m.(proto.Message)
+	if w.options.shouldIgnoreMessage(msg.ProtoReflect().Type()) {
+		return nil
+	}
+	if err := w.validator.Validate(msg); err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -76,6 +81,7 @@ type wrappedServerStream struct {
 	wrappedContext context.Context
 
 	validator *protovalidate.Validator
+	options   *options
 }
 
 // Context returns the wrapper's WrappedContext, overwriting the nested grpc.ServerStream.Context()
