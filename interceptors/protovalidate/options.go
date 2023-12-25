@@ -15,6 +15,7 @@ type options struct {
 	ignoreMessages []protoreflect.MessageType
 }
 
+// An Option lets you add options to protovalidate interceptors using With* funcs.
 type Option func(*options)
 
 func evaluateOpts(opts []Option) *options {
@@ -25,8 +26,8 @@ func evaluateOpts(opts []Option) *options {
 	return optCopy
 }
 
-// WithIgnoreMessages sets the messages that should be ignored as they are not yet ready
-// for validation at the stage this middleware operates
+// WithIgnoreMessages sets the messages that should be ignored by the validator. Use with
+// caution and ensure validation is performed elsewhere.
 func WithIgnoreMessages(msgs ...protoreflect.MessageType) Option {
 	return func(o *options) {
 		o.ignoreMessages = msgs
