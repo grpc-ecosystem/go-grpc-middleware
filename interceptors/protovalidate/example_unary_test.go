@@ -30,7 +30,11 @@ func ExampleUnaryServerInterceptor() {
 	var (
 		srv = grpc.NewServer(
 			grpc.UnaryInterceptor(
-				protovalidate_middleware.UnaryServerInterceptor(validator),
+				protovalidate_middleware.UnaryServerInterceptor(validator,
+					protovalidate_middleware.WithIgnoreMessages(
+						(&testvalidatev1.SendRequest{}).ProtoReflect().Type(),
+					),
+				),
 			),
 		)
 		svc = &UnaryService{}
