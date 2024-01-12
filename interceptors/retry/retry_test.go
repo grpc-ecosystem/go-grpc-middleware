@@ -6,6 +6,7 @@ package retry
 import (
 	"context"
 	"io"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -178,6 +179,16 @@ func (s *RetrySuite) TestUnary_OverrideFromDialOpts() {
 	require.EqualValues(s.T(), 5, s.srv.requestCount(), "five requests should have been made")
 }
 
+func (s *RetrySuite) TestUnary_OverrideFromDialOpts2() {
+	s.srv.resetFailingConfiguration(5, codes.ResourceExhausted, noSleep) // default is 3 and retriable_errors
+	out, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing, WithRetriable(func(err error) bool {
+		return strings.Contains(err.Error(), "maybeFailRequest")
+	}), WithMax(5))
+	require.NoError(s.T(), err, "the fifth invocation should succeed")
+	require.NotNil(s.T(), out, "Pong must be not nil")
+	require.EqualValues(s.T(), 5, s.srv.requestCount(), "five requests should have been made")
+}
+
 func (s *RetrySuite) TestUnary_OnRetryCallbackCalled() {
 	retryCallbackCount := 0
 
@@ -204,6 +215,16 @@ func (s *RetrySuite) TestServerStream_SucceedsOnRetriableError() {
 func (s *RetrySuite) TestServerStream_OverrideFromContext() {
 	s.srv.resetFailingConfiguration(5, codes.ResourceExhausted, noSleep) // default is 3 and retriable_errors
 	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList, WithCodes(codes.ResourceExhausted), WithMax(5))
+	require.NoError(s.T(), err, "establishing the connection must always succeed")
+	s.assertPingListWasCorrect(stream)
+	require.EqualValues(s.T(), 5, s.srv.requestCount(), "three requests should have been made")
+}
+
+func (s *RetrySuite) TestServerStream_OverrideFromContext2() {
+	s.srv.resetFailingConfiguration(5, codes.ResourceExhausted, noSleep) // default is 3 and retriable_errors
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList, WithRetriable(func(err error) bool {
+		return strings.Contains(err.Error(), "maybeFailRequest")
+	}), WithMax(5))
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
 	s.assertPingListWasCorrect(stream)
 	require.EqualValues(s.T(), 5, s.srv.requestCount(), "three requests should have been made")

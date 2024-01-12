@@ -41,6 +41,9 @@ type BackoffFunc func(ctx context.Context, attempt uint) time.Duration
 // OnRetryCallback is the type of function called when a retry occurs.
 type OnRetryCallback func(ctx context.Context, attempt uint, err error)
 
+// RetriableFunc denotes a family of functions that control which error should be retried.
+type RetriableFunc func(err error) bool
+
 // Disable disables the retry behaviour on this call, or this interceptor.
 //
 // Its semantically the same to `WithMax`
@@ -100,6 +103,13 @@ func WithPerRetryTimeout(timeout time.Duration) CallOption {
 	}}
 }
 
+// WithRetriable sets which error should be retried.
+func WithRetriable(retriableFunc RetriableFunc) CallOption {
+	return CallOption{applyFunc: func(o *options) {
+		o.retriableFunc = retriableFunc
+	}}
+}
+
 type options struct {
 	max             uint
 	perCallTimeout  time.Duration
@@ -107,6 +117,7 @@ type options struct {
 	codes           []codes.Code
 	backoffFunc     BackoffFunc
 	onRetryCallback OnRetryCallback
+	retriableFunc   RetriableFunc
 }
 
 // CallOption is a grpc.CallOption that is local to grpc_retry.
