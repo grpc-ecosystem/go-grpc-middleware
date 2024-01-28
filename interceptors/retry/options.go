@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -22,11 +23,11 @@ var (
 		max:            0, // disabled
 		perCallTimeout: 0, // disabled
 		includeHeader:  true,
-		codes:          DefaultRetriableCodes,
 		backoffFunc:    BackoffLinearWithJitter(50*time.Millisecond /*jitter*/, 0.10),
 		onRetryCallback: OnRetryCallback(func(ctx context.Context, attempt uint, err error) {
 			logTrace(ctx, "grpc_retry attempt: %d, backoff for %v", attempt, err)
 		}),
+		retriableFunc: newRetriableFuncForCodes(DefaultRetriableCodes),
 	}
 )
 
@@ -81,7 +82,7 @@ func WithOnRetryCallback(fn OnRetryCallback) CallOption {
 // You cannot automatically retry on Cancelled and Deadline, please use `WithPerRetryTimeout` for these.
 func WithCodes(retryCodes ...codes.Code) CallOption {
 	return CallOption{applyFunc: func(o *options) {
-		o.codes = retryCodes
+		o.retriableFunc = newRetriableFuncForCodes(retryCodes)
 	}}
 }
 
@@ -114,7 +115,6 @@ type options struct {
 	max             uint
 	perCallTimeout  time.Duration
 	includeHeader   bool
-	codes           []codes.Code
 	backoffFunc     BackoffFunc
 	onRetryCallback OnRetryCallback
 	retriableFunc   RetriableFunc
@@ -147,4 +147,21 @@ func filterCallOptions(callOptions []grpc.CallOption) (grpcOptions []grpc.CallOp
 		}
 	}
 	return grpcOptions, retryOptions
+}
+
+// newRetriableFuncForCodes returns retriable function for specific Codes.
+func newRetriableFuncForCodes(codes []codes.Code) func(err error) bool {
+	return func(err error) bool {
+		errCode := status.Code(err)
+		if isContextError(err) {
+			// context errors are not retriable based on user settings.
+			return false
+		}
+		for _, code := range codes {
+			if code == errCode {
+				return true
+			}
+		}
+		return false
+	}
 }
