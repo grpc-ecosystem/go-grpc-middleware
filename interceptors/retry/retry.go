@@ -267,15 +267,8 @@ func waitRetryBackoff(attempt uint, parentCtx context.Context, callOpts *options
 }
 
 func isRetriable(err error, callOpts *options) bool {
-	errCode := status.Code(err)
-	if isContextError(err) {
-		// context errors are not retriable based on user settings.
-		return false
-	}
-	for _, code := range callOpts.codes {
-		if code == errCode {
-			return true
-		}
+	if callOpts.retriableFunc != nil {
+		return callOpts.retriableFunc(err)
 	}
 	return false
 }
