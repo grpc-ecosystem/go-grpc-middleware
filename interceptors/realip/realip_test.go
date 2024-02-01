@@ -89,8 +89,6 @@ func testUnaryServerInterceptor(t *testing.T, c testCase) {
 	interceptor := UnaryServerInterceptor(c.trustedPeers, c.headerKeys)
 	handler := func(ctx context.Context, req any) (any, error) {
 		ip, _ := FromContext(ctx)
-		fmt.Println(ip)
-		fmt.Println(c.expectedIP)
 
 		assert.Equal(t, c.expectedIP, ip)
 		return nil, nil
