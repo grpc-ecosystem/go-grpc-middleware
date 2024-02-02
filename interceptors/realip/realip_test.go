@@ -19,23 +19,36 @@ import (
 var (
 	localnet []netip.Prefix = []netip.Prefix{
 		netip.MustParsePrefix("127.0.0.1/8"),
+		netip.MustParsePrefix("::1/128"),
 	}
 
 	privatenet []netip.Prefix = []netip.Prefix{
 		netip.MustParsePrefix("10.0.0.0/8"),
 		netip.MustParsePrefix("172.16.0.0/12"),
 		netip.MustParsePrefix("192.168.0.0/16"),
+		netip.MustParsePrefix("2002:c0a8::/32"),
 	}
 
-	privateIP netip.Addr = netip.MustParseAddr("192.168.0.1")
-	publicIP  netip.Addr = netip.MustParseAddr("8.8.8.8")
-	localhost netip.Addr = netip.MustParseAddr("127.0.0.1")
+	privateIP  netip.Addr = netip.MustParseAddr("192.168.0.1")
+	privateIP6 netip.Addr = netip.MustParseAddr("::ffff:c0a8:1")
+	publicIP   netip.Addr = netip.MustParseAddr("8.8.8.8")
+	publicIP6  netip.Addr = netip.MustParseAddr("::ffff:808:808")
+	localhost  netip.Addr = netip.MustParseAddr("127.0.0.1")
+	localhost6 netip.Addr = netip.MustParseAddr("::1")
 )
 
 func localhostPeer() *peer.Peer {
 	return &peer.Peer{
 		Addr: &net.TCPAddr{
 			IP: net.ParseIP(localhost.String()),
+		},
+	}
+}
+
+func localhost6Peer() *peer.Peer {
+	return &peer.Peer{
+		Addr: &net.TCPAddr{
+			IP: net.ParseIP(localhost6.String()),
 		},
 	}
 }
@@ -52,6 +65,14 @@ func privatePeer() *peer.Peer {
 	return &peer.Peer{
 		Addr: &net.TCPAddr{
 			IP: net.ParseIP(privateIP.String()),
+		},
+	}
+}
+
+func private6Peer() *peer.Peer {
+	return &peer.Peer{
+		Addr: &net.TCPAddr{
+			IP: net.ParseIP(privateIP6.String()),
 		},
 	}
 }
@@ -323,6 +344,37 @@ func TestInterceptor(t *testing.T) {
 			},
 			peer:       localhostPeer(),
 			expectedIP: localhost,
+		}
+		t.Run("unary", func(t *testing.T) {
+			testUnaryServerInterceptor(t, tc)
+		})
+		t.Run("stream", func(t *testing.T) {
+			testStreamServerInterceptor(t, tc)
+		})
+	})
+	t.Run("ipv6 from grpc peer", func(t *testing.T) {
+		tc := testCase{
+			trustedPeers: localnet,
+			headerKeys:   []string{},
+			peer:         localhost6Peer(),
+			expectedIP:   localhost6,
+		}
+		t.Run("unary", func(t *testing.T) {
+			testUnaryServerInterceptor(t, tc)
+		})
+		t.Run("stream", func(t *testing.T) {
+			testStreamServerInterceptor(t, tc)
+		})
+	})
+	t.Run("ipv6 from header", func(t *testing.T) {
+		tc := testCase{
+			trustedPeers: privatenet,
+			headerKeys:   []string{XForwardedFor},
+			inputHeaders: map[string]string{
+				XForwardedFor: publicIP6.String(),
+			},
+			peer:       private6Peer(),
+			expectedIP: publicIP6,
 		}
 		t.Run("unary", func(t *testing.T) {
 			testUnaryServerInterceptor(t, tc)

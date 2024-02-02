@@ -83,10 +83,12 @@ func getRemoteIP(ctx context.Context, trustedPeers []netip.Prefix, headers []str
 		return noIP
 	}
 
-	ip, err := netip.ParseAddr(strings.Split(pr.String(), ":")[0])
+	addrPort, err := netip.ParseAddrPort(pr.String())
 	if err != nil {
 		return noIP
 	}
+	ip := addrPort.Addr()
+
 	if len(trustedPeers) == 0 || !ipInNets(ip, trustedPeers) {
 		return ip
 	}
