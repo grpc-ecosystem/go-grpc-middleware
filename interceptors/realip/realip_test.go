@@ -78,15 +78,26 @@ func private6Peer() *peer.Peer {
 }
 
 type testCase struct {
-	trustedPeers []netip.Prefix
-	headerKeys   []string
-	inputHeaders map[string]string
-	peer         *peer.Peer
-	expectedIP   netip.Addr
+	trustedPeers   []netip.Prefix
+	trustedProxies []netip.Prefix
+	proxiesCount   uint
+	headerKeys     []string
+	inputHeaders   map[string]string
+	peer           *peer.Peer
+	expectedIP     netip.Addr
+}
+
+func (c testCase) optsFromTesCase() Opts {
+	return Opts{
+		TrustedPeers:        c.trustedPeers,
+		TrustedProxies:      c.trustedProxies,
+		TrustedProxiesCount: c.proxiesCount,
+		Headers:             c.headerKeys,
+	}
 }
 
 func testUnaryServerInterceptor(t *testing.T, c testCase) {
-	interceptor := UnaryServerInterceptor(c.trustedPeers, c.headerKeys)
+	interceptor := UnaryServerInterceptorOpts(c.optsFromTesCase())
 	handler := func(ctx context.Context, req any) (any, error) {
 		ip, _ := FromContext(ctx)
 
@@ -111,7 +122,7 @@ func testUnaryServerInterceptor(t *testing.T, c testCase) {
 }
 
 func testStreamServerInterceptor(t *testing.T, c testCase) {
-	interceptor := StreamServerInterceptor(c.trustedPeers, c.headerKeys)
+	interceptor := StreamServerInterceptorOpts(c.optsFromTesCase())
 	handler := func(srv any, stream grpc.ServerStream) error {
 		ip, _ := FromContext(stream.Context())
 
@@ -153,7 +164,6 @@ func TestInterceptor(t *testing.T) {
 			testStreamServerInterceptor(t, tc)
 		})
 	})
-
 	t.Run("trusted peer header csv", func(t *testing.T) {
 		tc := testCase{
 			// Test that if the remote peer is trusted and the header contains
@@ -165,6 +175,89 @@ func TestInterceptor(t *testing.T) {
 			},
 			peer:       localhostPeer(),
 			expectedIP: publicIP,
+		}
+		t.Run("unary", func(t *testing.T) {
+			testUnaryServerInterceptor(t, tc)
+		})
+		t.Run("stream", func(t *testing.T) {
+			testStreamServerInterceptor(t, tc)
+		})
+	})
+	t.Run("trusted proxy list with XForwardedFor", func(t *testing.T) {
+		tc := testCase{
+			// Test that if the remote peer is trusted and the header contains
+			// a comma separated list of valid IPs,
+			// we get the first going from right to left that is not in local net
+			trustedPeers:   localnet,
+			trustedProxies: localnet,
+			headerKeys:     []string{XForwardedFor},
+			inputHeaders: map[string]string{
+				XForwardedFor: fmt.Sprintf("%s,%s", publicIP.String(), localhost.String()),
+			},
+			peer:       localhostPeer(),
+			expectedIP: publicIP,
+		}
+		t.Run("unary", func(t *testing.T) {
+			testUnaryServerInterceptor(t, tc)
+		})
+		t.Run("stream", func(t *testing.T) {
+			testStreamServerInterceptor(t, tc)
+		})
+	})
+	t.Run("trusted proxy list private net with XForwardedFor", func(t *testing.T) {
+		tc := testCase{
+			// Test that if the remote peer is trusted and the header contains
+			// a comma separated list of valid IPs,
+			// we get the first going from right to left that is not in private net
+			trustedPeers:   localnet,
+			trustedProxies: privatenet,
+			headerKeys:     []string{XForwardedFor},
+			inputHeaders: map[string]string{
+				XForwardedFor: fmt.Sprintf("%s,%s", publicIP.String(), localhost.String()),
+			},
+			peer:       localhostPeer(),
+			expectedIP: localhost,
+		}
+		t.Run("unary", func(t *testing.T) {
+			testUnaryServerInterceptor(t, tc)
+		})
+		t.Run("stream", func(t *testing.T) {
+			testStreamServerInterceptor(t, tc)
+		})
+	})
+	t.Run("trusted proxy count with XForwardedFor", func(t *testing.T) {
+		tc := testCase{
+			// Test that if the remote peer is trusted and the header contains
+			// a comma separated list of valid IPs, we get right most one -1 proxiesCount.
+			trustedPeers: localnet,
+			proxiesCount: 1,
+			headerKeys:   []string{XForwardedFor},
+			inputHeaders: map[string]string{
+				XForwardedFor: fmt.Sprintf("%s,%s", publicIP.String(), localhost.String()),
+			},
+			peer:       localhostPeer(),
+			expectedIP: publicIP,
+		}
+		t.Run("unary", func(t *testing.T) {
+			testUnaryServerInterceptor(t, tc)
+		})
+		t.Run("stream", func(t *testing.T) {
+			testStreamServerInterceptor(t, tc)
+		})
+	})
+	t.Run("wrong trusted proxy count with XForwardedFor", func(t *testing.T) {
+		tc := testCase{
+			// Test that if the remote peer is trusted and the header contains
+			// a comma separated list of valid IPs,
+			// we get peer ip as the proxiesCount is wrongly configured
+			trustedPeers: localnet,
+			proxiesCount: 10,
+			headerKeys:   []string{XForwardedFor},
+			inputHeaders: map[string]string{
+				XForwardedFor: fmt.Sprintf("%s,%s", publicIP.String(), localhost.String()),
+			},
+			peer:       localhostPeer(),
+			expectedIP: localhost,
 		}
 		t.Run("unary", func(t *testing.T) {
 			testUnaryServerInterceptor(t, tc)
