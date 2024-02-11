@@ -9,15 +9,12 @@ import "net/netip"
 type options struct {
 	// trustedPeers is a list of trusted peers network prefixes.
 	trustedPeers []netip.Prefix
-
 	// trustedProxies is a list of trusted proxies network prefixes.
 	// The first rightmost non-matching IP when going through X-Forwarded-For is considered the client IP.
 	trustedProxies []netip.Prefix
-
 	// trustedProxiesCount specifies the number of proxies in front that may append X-Forwarded-For.
 	// It defaults to 0.
 	trustedProxiesCount uint
-
 	// headers specifies the headers to use in real IP extraction when the request is from a trusted peer.
 	headers []string
 }
