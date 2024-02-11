@@ -87,17 +87,17 @@ type testCase struct {
 	expectedIP     netip.Addr
 }
 
-func (c testCase) optsFromTesCase() Opts {
-	return Opts{
-		TrustedPeers:        c.trustedPeers,
-		TrustedProxies:      c.trustedProxies,
-		TrustedProxiesCount: c.proxiesCount,
-		Headers:             c.headerKeys,
+func (c testCase) optsFromTesCase() []Option {
+	return []Option{
+		WithTrustedPeers(c.trustedPeers),
+		WithTrustedProxies(c.trustedProxies),
+		WithTrustedProxiesCount(c.proxiesCount),
+		WithHeaders(c.headerKeys),
 	}
 }
 
 func testUnaryServerInterceptor(t *testing.T, c testCase) {
-	interceptor := UnaryServerInterceptorOpts(c.optsFromTesCase())
+	interceptor := UnaryServerInterceptorOpts(c.optsFromTesCase()...)
 	handler := func(ctx context.Context, req any) (any, error) {
 		ip, _ := FromContext(ctx)
 
@@ -122,7 +122,7 @@ func testUnaryServerInterceptor(t *testing.T, c testCase) {
 }
 
 func testStreamServerInterceptor(t *testing.T, c testCase) {
-	interceptor := StreamServerInterceptorOpts(c.optsFromTesCase())
+	interceptor := StreamServerInterceptorOpts(c.optsFromTesCase()...)
 	handler := func(srv any, stream grpc.ServerStream) error {
 		ip, _ := FromContext(stream.Context())
 

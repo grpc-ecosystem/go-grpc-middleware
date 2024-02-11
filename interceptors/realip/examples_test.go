@@ -22,11 +22,14 @@ func ExampleUnaryServerInterceptorOpts() {
 	// Consider that there is one proxy in front,
 	// so the real client ip will be rightmost - 1 in the csv list of X-Forwarded-For
 	// Optionally you can specify TrustedProxies
-	trustedProxyCnt := uint(1)
-	opts := realip.Opts{TrustedPeers: trustedPeers, Headers: headers, TrustedProxiesCount: trustedProxyCnt}
+	opts := []realip.Option{
+		realip.WithTrustedPeers(trustedPeers),
+		realip.WithHeaders(headers),
+		realip.WithTrustedProxiesCount(1),
+	}
 	_ = grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			realip.UnaryServerInterceptorOpts(opts),
+			realip.UnaryServerInterceptorOpts(opts...),
 		),
 	)
 }
@@ -43,11 +46,14 @@ func ExampleStreamServerInterceptorOpts() {
 	// Consider that there is one proxy in front,
 	// so the real client ip will be rightmost - 1 in the csv list of X-Forwarded-For
 	// Optionally you can specify TrustedProxies
-	trustedProxyCnt := uint(1)
-	opts := realip.Opts{TrustedPeers: trustedPeers, Headers: headers, TrustedProxiesCount: trustedProxyCnt}
+	opts := []realip.Option{
+		realip.WithTrustedPeers(trustedPeers),
+		realip.WithHeaders(headers),
+		realip.WithTrustedProxiesCount(1),
+	}
 	_ = grpc.NewServer(
 		grpc.ChainStreamInterceptor(
-			realip.StreamServerInterceptorOpts(opts),
+			realip.StreamServerInterceptorOpts(opts...),
 		),
 	)
 }
