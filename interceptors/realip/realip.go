@@ -65,10 +65,32 @@ func getHeader(ctx context.Context, key string) string {
 	return md[strings.ToLower(key)][0]
 }
 
-func ipFromHeaders(ctx context.Context, headers []string) netip.Addr {
+func ipFromXForwardedFoR(trustedProxies []netip.Prefix, ips []string, idx int) netip.Addr {
+	for i := idx; i >= 0; i-- {
+		h := strings.TrimSpace(ips[i])
+		ip, err := netip.ParseAddr(h)
+		if err != nil {
+			return noIP
+		}
+		if !ipInNets(ip, trustedProxies) {
+			return ip
+		}
+	}
+	return noIP
+}
+
+func ipFromHeaders(ctx context.Context, headers []string, trustedProxies []netip.Prefix, trustedProxyCnt uint) netip.Addr {
 	for _, header := range headers {
 		a := strings.Split(getHeader(ctx, header), ",")
-		h := strings.TrimSpace(a[len(a)-1])
+		idx := len(a) - 1
+		if header == XForwardedFor {
+			idx = idx - int(trustedProxyCnt)
+			if idx < 0 {
+				continue
+			}
+			return ipFromXForwardedFoR(trustedProxies, a, idx)
+		}
+		h := strings.TrimSpace(a[idx])
 		ip, err := netip.ParseAddr(h)
 		if err == nil {
 			return ip
@@ -77,7 +99,7 @@ func ipFromHeaders(ctx context.Context, headers []string) netip.Addr {
 	return noIP
 }
 
-func getRemoteIP(ctx context.Context, trustedPeers []netip.Prefix, headers []string) netip.Addr {
+func getRemoteIP(ctx context.Context, trustedPeers, trustedProxies []netip.Prefix, headers []string, proxyCnt uint) netip.Addr {
 	pr := remotePeer(ctx)
 	if pr == nil {
 		return noIP
@@ -92,7 +114,7 @@ func getRemoteIP(ctx context.Context, trustedPeers []netip.Prefix, headers []str
 	if len(trustedPeers) == 0 || !ipInNets(ip, trustedPeers) {
 		return ip
 	}
-	if ip := ipFromHeaders(ctx, headers); ip != noIP {
+	if ip := ipFromHeaders(ctx, headers, trustedProxies, proxyCnt); ip != noIP {
 		return ip
 	}
 	// No ip from the headers, return the peer ip.
@@ -111,9 +133,27 @@ func (s *serverStream) Context() context.Context {
 // UnaryServerInterceptor returns a new unary server interceptor that extracts the real client IP from request headers.
 // It checks if the request comes from a trusted peer, and if so, extracts the IP from the configured headers.
 // The real IP is added to the request context.
+// See UnaryServerInterceptorOpts as it allows to configure trusted proxy ips list and count that should work better with Google LB
 func UnaryServerInterceptor(trustedPeers []netip.Prefix, headers []string) grpc.UnaryServerInterceptor {
+	return UnaryServerInterceptorOpts(WithTrustedPeers(trustedPeers), WithHeaders(headers))
+}
+
+// StreamServerInterceptor returns a new stream server interceptor that extracts the real client IP from request headers.
+// It checks if the request comes from a trusted peer, and if so, extracts the IP from the configured headers.
+// The real IP is added to the request context.
+// See UnaryServerInterceptorOpts as it allows to configure trusted proxy ips list and count that should work better with Google LB
+func StreamServerInterceptor(trustedPeers []netip.Prefix, headers []string) grpc.StreamServerInterceptor {
+	return StreamServerInterceptorOpts(WithTrustedPeers(trustedPeers), WithHeaders(headers))
+}
+
+// UnaryServerInterceptorOpts returns a new unary server interceptor that extracts the real client IP from request headers.
+// It checks if the request comes from a trusted peer, validates headers against trusted proxies list and trusted proxies count
+// then it extracts the IP from the configured headers.
+// The real IP is added to the request context.
+func UnaryServerInterceptorOpts(opts ...Option) grpc.UnaryServerInterceptor {
+	o := evaluateOpts(opts)
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		ip := getRemoteIP(ctx, trustedPeers, headers)
+		ip := getRemoteIP(ctx, o.trustedPeers, o.trustedProxies, o.headers, o.trustedProxiesCount)
 		if ip != noIP {
 			ctx = context.WithValue(ctx, realipKey{}, ip)
 		}
@@ -121,12 +161,14 @@ func UnaryServerInterceptor(trustedPeers []netip.Prefix, headers []string) grpc.
 	}
 }
 
-// StreamServerInterceptor returns a new stream server interceptor that extracts the real client IP from request headers.
-// It checks if the request comes from a trusted peer, and if so, extracts the IP from the configured headers.
+// StreamServerInterceptorOpts returns a new stream server interceptor that extracts the real client IP from request headers.
+// It checks if the request comes from a trusted peer, validates headers against trusted proxies list and trusted proxies count
+// then it extracts the IP from the configured headers.
 // The real IP is added to the request context.
-func StreamServerInterceptor(trustedPeers []netip.Prefix, headers []string) grpc.StreamServerInterceptor {
+func StreamServerInterceptorOpts(opts ...Option) grpc.StreamServerInterceptor {
+	o := evaluateOpts(opts)
 	return func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		ip := getRemoteIP(stream.Context(), trustedPeers, headers)
+		ip := getRemoteIP(stream.Context(), o.trustedPeers, o.trustedProxies, o.headers, o.trustedProxiesCount)
 		if ip != noIP {
 			return handler(srv, &serverStream{
 				ServerStream: stream,

@@ -36,19 +36,33 @@ the real IP from the request headers. If the peer address is not found to be
 within one of the trusted networks, the peer address will be returned as the
 real IP.
 
-"trusted" in this context means that the peer is configured to overwrite the
+"trusted peer" in this context means that the peer is configured to overwrite the
 header value with the real IP. This is typically done by a proxy or load
 balancer that is configured to forward the real IP of the client in a header
 value. Alternatively, the peer may be configured to append the real IP to the
 header value. In this case, the middleware will use the last, rightmost, IP
 address in the header as the real IP. Most load balancers, such as NGINX, AWS
-ELB, and Google Cloud Load Balancer, are configured to append the real IP to
-the header value as their default action.
+ELB, are configured to append the real IP to the header value as their default action.
+However, Google Cloud Load Balancer for `X-Forwarded-For` follows the pattern:
+`<client-ip>,<load-balancer-ip>`. Hence we need to have an ability to exact the
+real ip from the header ignoring the LB/proxy IPs.
 
-To mitigate the risk of a denial of service by proxy of a malicious header,
-the middleware validates that the header value contains a valid IP address. Only
-if a valid IP address is found will the middleware use that value as the real
-IP.
+### Supported Methods for Extracting Real IP:
+
+This is based on
+[Selecting an IP address](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For#selecting_an_ip_address).
+
+ 1. Trusted Proxy Count
+
+With this method, the count of reverse proxies between the internet and the server is configured.
+The middleware searches the `X-Forwarded-For` IP list from the rightmost by that count.
+
+ 2. Trusted Proxy List
+
+Alternatively, you can configure a list of trusted reverse proxies by specifying their
+IPs or IP ranges. The middleware will then search the `X-Forwarded-For` IP list from
+the rightmost, skipping all addresses that are on the trusted proxy list.
+The first non-matching address is considered the target address.
 
 # Individual IP addresses as trusted peers
 
