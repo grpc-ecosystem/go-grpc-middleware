@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"golang.org/x/net/trace"
 	"google.golang.org/grpc"
@@ -20,6 +21,7 @@ import (
 
 const (
 	AttemptMetadataKey = "x-retry-attempt"
+	IdempotencyKey     = "x-retry-idempotency-key"
 )
 
 // UnaryClientInterceptor returns a new retrying unary client interceptor.
@@ -36,11 +38,12 @@ func UnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterceptor 
 			return invoker(parentCtx, method, req, reply, cc, grpcOpts...)
 		}
 		var lastErr error
+		idempotencyKey := uuid.NewString()
 		for attempt := uint(0); attempt < callOpts.max; attempt++ {
 			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 				return err
 			}
-			callCtx, cancel := perCallContext(parentCtx, callOpts, attempt)
+			callCtx, cancel := perCallContext(parentCtx, callOpts, attempt, idempotencyKey)
 			defer cancel() // Clean up potential resources.
 			lastErr = invoker(callCtx, method, req, reply, cc, grpcOpts...)
 			// TODO(mwitkow): Maybe dial and transport errors should be retriable?
@@ -278,15 +281,18 @@ func isContextError(err error) bool {
 	return code == codes.DeadlineExceeded || code == codes.Canceled
 }
 
-func perCallContext(parentCtx context.Context, callOpts *options, attempt uint) (context.Context, context.CancelFunc) {
+func perCallContext(parentCtx context.Context, callOpts *options, attempt uint, idempotencyKey string) (context.Context, context.CancelFunc) {
 	cancel := context.CancelFunc(func() {})
 
 	ctx := parentCtx
 	if callOpts.perCallTimeout != 0 {
 		ctx, cancel = context.WithTimeout(ctx, callOpts.perCallTimeout)
 	}
-	if attempt > 0 && callOpts.includeHeader {
-		mdClone := metadata.ExtractOutgoing(ctx).Clone().Set(AttemptMetadataKey, fmt.Sprintf("%d", attempt))
+	if callOpts.includeHeader {
+		mdClone := metadata.ExtractOutgoing(ctx).Clone().Set(IdempotencyKey, idempotencyKey)
+		if attempt > 0 {
+			mdClone.Set(AttemptMetadataKey, fmt.Sprintf("%d", attempt))
+		}
 		ctx = mdClone.ToOutgoing(ctx)
 	}
 	return ctx, cancel
