@@ -3,7 +3,7 @@ include .bingo/Variables.mk
 SHELL=/usr/bin/env bash
 
 PROVIDER_MODULES ?= $(shell find $(PWD)/providers/  -name "go.mod" | grep -v ".bingo" | xargs dirname)
-MODULES          ?= $(PROVIDER_MODULES) $(PWD)
+MODULES          ?= $(PROVIDER_MODULES) $(PWD) $(PWD)/examples
 GO_FILES_TO_FMT  ?= $(shell find . -path -prune -o -name '*.go' -print)
 
 GOBIN             ?= $(firstword $(subst :, ,${GOPATH}))/bin
