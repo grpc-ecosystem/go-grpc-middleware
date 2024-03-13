@@ -37,11 +37,11 @@ func UnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterceptor 
 		}
 		var lastErr error
 		for attempt := uint(0); attempt < callOpts.max; attempt++ {
-			if attempt > 0 {
-				callOpts.onRetryCallback(parentCtx, attempt, lastErr)
-			}
 			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 				return err
+			}
+			if attempt > 0 {
+				callOpts.onRetryCallback(parentCtx, attempt, lastErr)
 			}
 			callCtx, cancel := perCallContext(parentCtx, callOpts, attempt)
 			defer cancel() // Clean up potential resources.
@@ -93,11 +93,11 @@ func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientIntercepto
 
 		var lastErr error
 		for attempt := uint(0); attempt < callOpts.max; attempt++ {
-			if attempt > 0 {
-				callOpts.onRetryCallback(parentCtx, attempt, lastErr)
-			}
 			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 				return nil, err
+			}
+			if attempt > 0 {
+				callOpts.onRetryCallback(parentCtx, attempt, lastErr)
 			}
 			var newStreamer grpc.ClientStream
 			newStreamer, lastErr = streamer(parentCtx, desc, cc, method, grpcOpts...)
