@@ -204,6 +204,21 @@ func (s *RetrySuite) TestUnary_OnRetryCallbackCalled() {
 	require.EqualValues(s.T(), 2, retryCallbackCount, "two retry callbacks should be called")
 }
 
+func (s *RetrySuite) TestUnary_OnRetryCallbackNotCalledOnNonRetriableError() {
+	retryCallbackCount := 0
+
+	s.srv.resetFailingConfiguration(3, codes.Internal, noSleep) // see retriable_errors
+	out, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing,
+		WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
+			retryCallbackCount++
+		}),
+	)
+
+	require.Error(s.T(), err, "should result in an error")
+	require.Nil(s.T(), out, "out should be nil")
+	require.EqualValues(s.T(), 0, retryCallbackCount, "no retry callbacks should be called")
+}
+
 func (s *RetrySuite) TestServerStream_SucceedsOnRetriableError() {
 	s.srv.resetFailingConfiguration(3, codes.DataLoss, noSleep) // see retriable_errors
 	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList)
