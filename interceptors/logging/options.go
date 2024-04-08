@@ -138,7 +138,11 @@ type (
 	fieldsFromCtxCallMetaFn func(ctx context.Context, c interceptors.CallMeta) Fields
 )
 
-// WithFieldsFromContext allows overriding existing or adding extra fields to all log messages per given context
+// WithFieldsFromContext allows overriding existing or adding extra fields to all log messages per given context.
+// If called multiple times, it overwrites the existing FieldsFromContext/WithFieldsFromContextAndCallMeta function.
+// If you need to use multiple FieldsFromContext functions then you should combine them in a wrapper fieldsFromCtxFn.
+// Only one of WithFieldsFromContextAndCallMeta or WithFieldsFromContext should
+// be used, using both will result in the last one overwriting the previous.
 func WithFieldsFromContext(f fieldsFromCtxFn) Option {
 	return func(o *options) {
 		o.fieldsFromCtxCallMetaFn = func(ctx context.Context, _ interceptors.CallMeta) Fields {
@@ -148,6 +152,10 @@ func WithFieldsFromContext(f fieldsFromCtxFn) Option {
 }
 
 // WithFieldsFromContextAndCallMeta allows overriding existing or adding extra fields to all log messages per given context and interceptor.CallMeta
+// If called multiple times, it overwrites the existing FieldsFromContext/WithFieldsFromContextAndCallMeta function.
+// If you need to use multiple WithFieldsFromContextAndCallMeta functions then you should combine them in a wrapper fieldsFromCtxCallMetaFn.
+// Only one of WithFieldsFromContextAndCallMeta or WithFieldsFromContext should
+// be used, using both will result in the last one overwriting the previous.
 func WithFieldsFromContextAndCallMeta(f fieldsFromCtxCallMetaFn) Option {
 	return func(o *options) {
 		o.fieldsFromCtxCallMetaFn = f
