@@ -41,6 +41,10 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 	if err != nil {
 		fields = fields.AppendUnique(Fields{"grpc.error", fmt.Sprintf("%v", err)})
 	}
+	if c.opts.fieldsFromCtxCallMetaFn != nil {
+		// fieldsFromCtxFn dups override the existing fields.
+		fields = c.opts.fieldsFromCtxCallMetaFn(c.ctx, c.CallMeta).AppendUnique(fields)
+	}
 	c.logger.Log(c.ctx, c.opts.levelFunc(code), "finished call", fields.AppendUnique(c.opts.durationFieldFunc(duration))...)
 }
 
@@ -49,6 +53,10 @@ func (c *reporter) PostMsgSend(payload any, err error, duration time.Duration) {
 	fields := c.fields.WithUnique(ExtractFields(c.ctx))
 	if err != nil {
 		fields = fields.AppendUnique(Fields{"grpc.error", fmt.Sprintf("%v", err)})
+	}
+	if c.opts.fieldsFromCtxCallMetaFn != nil {
+		// fieldsFromCtxFn dups override the existing fields.
+		fields = c.opts.fieldsFromCtxCallMetaFn(c.ctx, c.CallMeta).AppendUnique(fields)
 	}
 	if !c.startCallLogged && has(c.opts.loggableEvents, StartCall) {
 		c.startCallLogged = true
@@ -96,6 +104,10 @@ func (c *reporter) PostMsgReceive(payload any, err error, duration time.Duration
 	fields := c.fields.WithUnique(ExtractFields(c.ctx))
 	if err != nil {
 		fields = fields.AppendUnique(Fields{"grpc.error", fmt.Sprintf("%v", err)})
+	}
+	if c.opts.fieldsFromCtxCallMetaFn != nil {
+		// fieldsFromCtxFn dups override the existing fields.
+		fields = c.opts.fieldsFromCtxCallMetaFn(c.ctx, c.CallMeta).AppendUnique(fields)
 	}
 	if !c.startCallLogged && has(c.opts.loggableEvents, StartCall) {
 		c.startCallLogged = true

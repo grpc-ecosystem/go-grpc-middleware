@@ -136,8 +136,33 @@ func (s *InterceptorTestSuite) ServerAddr() string {
 	return s.serverAddr
 }
 
+type ctxTestNumber struct{}
+
+var (
+	ctxTestNumberKey = &ctxTestNumber{}
+	zero             = 0
+)
+
+func ExtractCtxTestNumber(ctx context.Context) *int {
+	if v, ok := ctx.Value(ctxTestNumberKey).(*int); ok {
+		return v
+	}
+	return &zero
+}
+
+// UnaryServerInterceptor returns a new unary server interceptors that adds query information logging.
+func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		// newCtx := newContext(ctx, log, opts)
+		newCtx := ctx
+		resp, err := handler(newCtx, req)
+		return resp, err
+	}
+}
+
 func (s *InterceptorTestSuite) SimpleCtx() context.Context {
 	ctx, cancel := context.WithTimeout(context.TODO(), 2*time.Second)
+	ctx = context.WithValue(ctx, ctxTestNumberKey, 1)
 	s.cancels = append(s.cancels, cancel)
 	return ctx
 }

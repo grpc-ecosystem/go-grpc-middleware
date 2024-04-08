@@ -33,7 +33,12 @@ func (s *TestPingService) PingEmpty(_ context.Context, _ *PingEmptyRequest) (*Pi
 	return &PingEmptyResponse{}, nil
 }
 
-func (s *TestPingService) Ping(_ context.Context, ping *PingRequest) (*PingResponse, error) {
+func (s *TestPingService) Ping(ctx context.Context, ping *PingRequest) (*PingResponse, error) {
+	// Modify the ctx value to verify the logger sees the value updated from the initial value
+	n := ExtractCtxTestNumber(ctx)
+	if n != nil {
+		*n = 42
+	}
 	// Send user trailers and headers.
 	return &PingResponse{Value: ping.Value, Counter: 0}, nil
 }
