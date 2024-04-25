@@ -15,7 +15,8 @@ The middleware takes a user-customizable `AuthFunc`, which can be customized to 
 auth information from the request. The extracted information can be put in the `context.Context` of
 handlers downstream for retrieval.
 
-It also allows for per-service implementation overrides of `AuthFunc`. See `ServiceAuthFuncOverride`.
+It also allows for per-service implementation overrides of `AuthFunc`. See `ServiceAuthFuncOverride`. In addition,
+it supports partial per service override of the `AuthFunc` by using `ErrNoAuthOverrideMatch`.
 
 Please see examples for simple examples of use.
 */

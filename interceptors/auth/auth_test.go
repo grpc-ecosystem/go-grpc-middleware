@@ -147,11 +147,17 @@ func (s *AuthTestSuite) TestStream_PassesWithPerRpcCredentials() {
 
 type authOverrideTestService struct {
 	testpb.TestServiceServer
-	T *testing.T
+	T                       *testing.T
+	OverrideNoMatchingError bool
 }
 
 func (s *authOverrideTestService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	assert.NotEmpty(s.T, fullMethodName, "method name of caller is passed around")
+
+	if s.OverrideNoMatchingError {
+		return nil, auth.ErrNoAuthOverrideMatch
+	}
+
 	return buildDummyAuthFunction("bearer", overrideAuthToken)(ctx)
 }
 
@@ -159,7 +165,11 @@ func TestAuthOverrideTestSuite(t *testing.T) {
 	authFunc := buildDummyAuthFunction("bearer", commonAuthToken)
 	s := &AuthOverrideTestSuite{
 		InterceptorTestSuite: &testpb.InterceptorTestSuite{
-			TestService: &authOverrideTestService{&assertingPingService{&testpb.TestPingService{}, t}, t},
+			TestService: &authOverrideTestService{
+				&assertingPingService{&testpb.TestPingService{}, t},
+				t,
+				false,
+			},
 			ServerOpts: []grpc.ServerOption{
 				grpc.StreamInterceptor(auth.StreamServerInterceptor(authFunc)),
 				grpc.UnaryInterceptor(auth.UnaryServerInterceptor(authFunc)),
@@ -169,17 +179,46 @@ func TestAuthOverrideTestSuite(t *testing.T) {
 	suite.Run(t, s)
 }
 
+func TestAuthOverrideNotMatchingErrTestSuite(t *testing.T) {
+	authFunc := buildDummyAuthFunction("bearer", commonAuthToken)
+	s := &AuthOverrideTestSuite{
+		InterceptorTestSuite: &testpb.InterceptorTestSuite{
+			TestService: &authOverrideTestService{
+				&assertingPingService{&testpb.TestPingService{}, t},
+				t,
+				true,
+			},
+			ServerOpts: []grpc.ServerOption{
+				grpc.StreamInterceptor(auth.StreamServerInterceptor(authFunc)),
+				grpc.UnaryInterceptor(auth.UnaryServerInterceptor(authFunc)),
+			},
+		},
+		WithOverrideNoMatchError: true,
+	}
+	suite.Run(t, s)
+}
+
 type AuthOverrideTestSuite struct {
 	*testpb.InterceptorTestSuite
+	WithOverrideNoMatchError bool
 }
 
 func (s *AuthOverrideTestSuite) TestUnary_PassesAuth() {
-	_, err := s.Client.Ping(ctxWithToken(s.SimpleCtx(), "bearer", overrideAuthToken), testpb.GoodPing)
+	selectedToken := overrideAuthToken
+	if s.WithOverrideNoMatchError {
+		selectedToken = commonAuthToken
+	}
+	_, err := s.Client.Ping(ctxWithToken(s.SimpleCtx(), "bearer", selectedToken), testpb.GoodPing)
 	require.NoError(s.T(), err, "no error must occur")
 }
 
 func (s *AuthOverrideTestSuite) TestStream_PassesAuth() {
-	stream, err := s.Client.PingList(ctxWithToken(s.SimpleCtx(), "Bearer", overrideAuthToken), testpb.GoodPingList)
+	selectedToken := overrideAuthToken
+	if s.WithOverrideNoMatchError {
+		selectedToken = commonAuthToken
+	}
+
+	stream, err := s.Client.PingList(ctxWithToken(s.SimpleCtx(), "Bearer", selectedToken), testpb.GoodPingList)
 	require.NoError(s.T(), err, "should not fail on establishing the stream")
 	pong, err := stream.Recv()
 	require.NoError(s.T(), err, "no error must occur")

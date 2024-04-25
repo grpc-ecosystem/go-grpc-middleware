@@ -5,10 +5,17 @@ package auth
 
 import (
 	"context"
+	"errors"
 
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"google.golang.org/grpc"
 )
+
+// ErrNoAuthOverrideMatch is to support partial AuthFuncOverride implementations.
+// If your service implements AuthFuncOverride and returns this error, we would
+// proceed the authentication using the configured AuthFunc and ignore the error.
+// Any other error would be returned directly by the interceptor.
+var ErrNoAuthOverrideMatch = errors.New("no AuthFuncOverride match")
 
 // AuthFunc is the pluggable function that performs authentication.
 //
@@ -37,11 +44,16 @@ func UnaryServerInterceptor(authFunc AuthFunc) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		var newCtx context.Context
 		var err error
-		if overrideSrv, ok := info.Server.(ServiceAuthFuncOverride); ok {
+
+		overrideSrv, ok := info.Server.(ServiceAuthFuncOverride)
+		if ok {
 			newCtx, err = overrideSrv.AuthFuncOverride(ctx, info.FullMethod)
-		} else {
+		}
+
+		if !ok || errors.Is(err, ErrNoAuthOverrideMatch) {
 			newCtx, err = authFunc(ctx)
 		}
+
 		if err != nil {
 			return nil, err
 		}
@@ -55,11 +67,16 @@ func StreamServerInterceptor(authFunc AuthFunc) grpc.StreamServerInterceptor {
 	return func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		var newCtx context.Context
 		var err error
-		if overrideSrv, ok := srv.(ServiceAuthFuncOverride); ok {
+
+		overrideSrv, ok := srv.(ServiceAuthFuncOverride)
+		if ok {
 			newCtx, err = overrideSrv.AuthFuncOverride(stream.Context(), info.FullMethod)
-		} else {
+		}
+
+		if !ok || errors.Is(err, ErrNoAuthOverrideMatch) {
 			newCtx, err = authFunc(stream.Context())
 		}
+
 		if err != nil {
 			return err
 		}
