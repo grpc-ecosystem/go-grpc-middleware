@@ -42,7 +42,7 @@ func WithServerHandlingTimeHistogram(opts ...HistogramOption) ServerMetricsOptio
 				Help:    "Histogram of response latency (seconds) of gRPC that had been application-level handled by the server.",
 				Buckets: prometheus.DefBuckets,
 			}),
-			[]string{"grpc_type", "grpc_service", "grpc_method"},
+			[]string{"grpc_type", "grpc_service", "grpc_method", "grpc_code"},
 		)
 	}
 }

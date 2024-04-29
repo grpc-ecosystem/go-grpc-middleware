@@ -100,7 +100,9 @@ func (m *ServerMetrics) preRegisterMethod(serviceName string, mInfo *grpc.Method
 	_, _ = m.serverStreamMsgReceived.GetMetricWithLabelValues(methodType, serviceName, methodName)
 	_, _ = m.serverStreamMsgSent.GetMetricWithLabelValues(methodType, serviceName, methodName)
 	if m.serverHandledHistogram != nil {
-		_, _ = m.serverHandledHistogram.GetMetricWithLabelValues(methodType, serviceName, methodName)
+		for _, code := range interceptors.AllCodes {
+			_, _ = m.serverHandledHistogram.GetMetricWithLabelValues(methodType, serviceName, methodName, code.String())
+		}
 	}
 	for _, code := range interceptors.AllCodes {
 		_, _ = m.serverHandledCounter.GetMetricWithLabelValues(methodType, serviceName, methodName, code.String())
