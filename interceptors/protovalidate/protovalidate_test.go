@@ -5,6 +5,7 @@ package protovalidate_test
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"testing"
@@ -19,12 +20,15 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
+
+func customErrorConverter(err error) error {
+	return fmt.Errorf("my custom wrapper: %w", err)
+}
 
 func TestUnaryServerInterceptor(t *testing.T) {
 	validator, err := protovalidate.New()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	interceptor := protovalidate_middleware.UnaryServerInterceptor(validator)
 
@@ -38,7 +42,7 @@ func TestUnaryServerInterceptor(t *testing.T) {
 		}
 
 		resp, err := interceptor(context.TODO(), testvalidate.GoodUnaryRequest, info, handler)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, resp, "good")
 	})
 
@@ -62,8 +66,23 @@ func TestUnaryServerInterceptor(t *testing.T) {
 		}
 
 		resp, err := interceptor(context.TODO(), testvalidate.BadUnaryRequest, info, handler)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, resp, "good")
+	})
+
+	interceptor = protovalidate_middleware.UnaryServerInterceptor(validator,
+		protovalidate_middleware.WithErrorConverter(customErrorConverter),
+	)
+
+	t.Run("custom_error_converter", func(t *testing.T) {
+		info := &grpc.UnaryServerInfo{
+			FullMethod: "FakeMethod",
+		}
+
+		_, err = interceptor(context.TODO(), testvalidate.BadUnaryRequest, info, handler)
+		assert.Error(t, err)
+		assert.Equal(t, codes.Unknown, status.Code(err))
+		assert.EqualError(t, err, "my custom wrapper: validation error:\n - message: value must be a valid email address [string.email]")
 	})
 }
 
@@ -84,7 +103,7 @@ func (g *server) SendStream(
 
 const bufSize = 1024 * 1024
 
-func startGrpcServer(t *testing.T, ignoreMessages ...protoreflect.MessageType) *grpc.ClientConn {
+func startGrpcServer(t *testing.T, opts ...protovalidate_middleware.Option) *grpc.ClientConn {
 	lis := bufconn.Listen(bufSize)
 
 	validator, err := protovalidate.New()
@@ -92,9 +111,7 @@ func startGrpcServer(t *testing.T, ignoreMessages ...protoreflect.MessageType) *
 
 	s := grpc.NewServer(
 		grpc.StreamInterceptor(
-			protovalidate_middleware.StreamServerInterceptor(validator,
-				protovalidate_middleware.WithIgnoreMessages(ignoreMessages...),
-			),
+			protovalidate_middleware.StreamServerInterceptor(validator, opts...),
 		),
 	)
 	testvalidatev1.RegisterTestValidateServiceServer(s, &server{})
@@ -133,7 +150,7 @@ func TestStreamServerInterceptor(t *testing.T) {
 		)
 
 		_, err := client.SendStream(context.Background(), testvalidate.GoodStreamRequest)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("invalid_email", func(t *testing.T) {
@@ -151,13 +168,31 @@ func TestStreamServerInterceptor(t *testing.T) {
 
 	t.Run("invalid_email_ignored", func(t *testing.T) {
 		client := testvalidatev1.NewTestValidateServiceClient(
-			startGrpcServer(t, testvalidate.BadStreamRequest.ProtoReflect().Type()),
+			startGrpcServer(
+				t,
+				protovalidate_middleware.WithIgnoreMessages(testvalidate.BadStreamRequest.ProtoReflect().Type()),
+			),
 		)
 
 		out, err := client.SendStream(context.Background(), testvalidate.BadStreamRequest)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
 		_, err = out.Recv()
-		assert.Nil(t, err)
+		assert.NoError(t, err)
+	})
+
+	t.Run("custom_error_converter", func(t *testing.T) {
+		client := testvalidatev1.NewTestValidateServiceClient(
+			startGrpcServer(t, protovalidate_middleware.WithErrorConverter(customErrorConverter)),
+		)
+
+		out, err := client.SendStream(context.Background(), testvalidate.BadStreamRequest)
+		assert.NoError(t, err)
+
+		_, err = out.Recv()
+		assert.Error(t, err)
+		st, _ := status.FromError(err)
+		assert.Equal(t, codes.Unknown, st.Code())
+		assert.Equal(t, "my custom wrapper: validation error:\n - message: value must be a valid email address [string.email]", st.Message())
 	})
 }
