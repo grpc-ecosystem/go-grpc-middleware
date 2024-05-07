@@ -10,6 +10,8 @@ import (
 	protovalidate_middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	testvalidatev1 "github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testvalidate/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type StreamService struct {
@@ -32,7 +34,13 @@ func ExampleStreamServerInterceptor() {
 				protovalidate_middleware.StreamServerInterceptor(validator,
 					protovalidate_middleware.WithIgnoreMessages(
 						(&testvalidatev1.SendStreamRequest{}).ProtoReflect().Type(),
-					)),
+					),
+					protovalidate_middleware.WithErrorConverter(
+						func(err error) error {
+							return status.Error(codes.InvalidArgument, err.Error())
+						},
+					),
+				),
 			),
 		)
 		svc = &StreamService{}

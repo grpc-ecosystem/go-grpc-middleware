@@ -11,6 +11,8 @@ import (
 	protovalidate_middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	testvalidatev1 "github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testvalidate/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type UnaryService struct {
@@ -33,6 +35,11 @@ func ExampleUnaryServerInterceptor() {
 				protovalidate_middleware.UnaryServerInterceptor(validator,
 					protovalidate_middleware.WithIgnoreMessages(
 						(&testvalidatev1.SendRequest{}).ProtoReflect().Type(),
+					),
+					protovalidate_middleware.WithErrorConverter(
+						func(err error) error {
+							return status.Error(codes.InvalidArgument, err.Error())
+						},
 					),
 				),
 			),
