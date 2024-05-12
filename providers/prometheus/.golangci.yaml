@@ -1,0 +1,23 @@
+---
+
+run:
+  deadline: 5m
+
+output:
+  sort-results: true
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - gofumpt
+    - goimports
+    - whitespace
+
+linters-settings:
+  errcheck:
+    exclude: errcheck_excludes.txt
+  gofumpt:
+    extra-rules: true
+  goimports:
+    local-prefixes: github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus
