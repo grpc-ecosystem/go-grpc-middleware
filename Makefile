@@ -37,7 +37,7 @@ endef
 all: fmt proto lint test
 
 .PHONY: fmt
-fmt: $(GOIMPORTS)
+fmt: $(GOLANGCI_LINT)
 	@echo ">> formatting go code"
 	@$(GOLANGCI_LINT) run --fix ./...
 
