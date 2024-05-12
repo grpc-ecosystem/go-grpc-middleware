@@ -7,14 +7,13 @@ import (
 	"context"
 	"strings"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 )
 
-var (
-	headerAuthorize = "authorization"
-)
+var headerAuthorize = "authorization"
 
 // AuthFromMD is a helper function for extracting the :authorization header from the gRPC metadata of the request.
 //

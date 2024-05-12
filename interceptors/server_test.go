@@ -11,13 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 func TestServerInterceptorSuite(t *testing.T) {
@@ -76,7 +77,6 @@ func (s *ServerInterceptorTestSuite) TearDownSuite() {
 		s.server.Stop()
 		s.T().Logf("stopped grpc.Server at: %v", s.serverListener.Addr().String())
 		_ = s.serverListener.Close()
-
 	}
 	if s.clientConn != nil {
 		_ = s.clientConn.Close()

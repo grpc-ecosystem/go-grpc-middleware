@@ -9,9 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -21,6 +18,10 @@ import (
 	"google.golang.org/grpc/credentials/oauth"
 	grpcMetadata "google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 var authedMarker struct{}
@@ -32,7 +33,7 @@ var (
 
 // TODO(mwitkow): Add auth from metadata client dialer, which requires TLS.
 
-func buildDummyAuthFunction(expectedScheme string, expectedToken string) func(ctx context.Context) (context.Context, error) {
+func buildDummyAuthFunction(expectedScheme, expectedToken string) func(ctx context.Context) (context.Context, error) {
 	return func(ctx context.Context) (context.Context, error) {
 		token, err := auth.AuthFromMD(ctx, expectedScheme)
 		if err != nil {
@@ -64,7 +65,7 @@ func (s *assertingPingService) PingList(ping *testpb.PingListRequest, stream tes
 	return s.TestServiceServer.PingList(ping, stream)
 }
 
-func ctxWithToken(ctx context.Context, scheme string, token string) context.Context {
+func ctxWithToken(ctx context.Context, scheme, token string) context.Context {
 	md := grpcMetadata.Pairs("authorization", fmt.Sprintf("%s %v", scheme, token))
 	return metadata.MD(md).ToOutgoing(ctx)
 }

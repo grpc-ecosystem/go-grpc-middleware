@@ -39,11 +39,7 @@ all: fmt proto lint test
 .PHONY: fmt
 fmt: $(GOIMPORTS)
 	@echo ">> formatting go code"
-	@gofmt -s -w $(GO_FILES_TO_FMT)
-	@for file in $(GO_FILES_TO_FMT) ; do \
-		./goimports.sh "$${file}"; \
-	done
-	@$(GOIMPORTS) -w $(GO_FILES_TO_FMT)
+	@$(GOLANGCI_LINT) run --fix ./...
 
 .PHONY: test
 test:

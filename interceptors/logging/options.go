@@ -8,9 +8,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
 
 // LoggableEvent defines the events a log line can be added on.
@@ -42,17 +43,15 @@ func has(events []LoggableEvent, event LoggableEvent) bool {
 	return false
 }
 
-var (
-	defaultOptions = &options{
-		loggableEvents:    []LoggableEvent{StartCall, FinishCall},
-		codeFunc:          DefaultErrorToCode,
-		durationFieldFunc: DefaultDurationToFields,
-		// levelFunc depends if it's client or server.
-		levelFunc:            nil,
-		timestampFormat:      time.RFC3339,
-		disableGrpcLogFields: nil,
-	}
-)
+var defaultOptions = &options{
+	loggableEvents:    []LoggableEvent{StartCall, FinishCall},
+	codeFunc:          DefaultErrorToCode,
+	durationFieldFunc: DefaultDurationToFields,
+	// levelFunc depends if it's client or server.
+	levelFunc:            nil,
+	timestampFormat:      time.RFC3339,
+	disableGrpcLogFields: nil,
+}
 
 type options struct {
 	levelFunc               CodeToLevel
