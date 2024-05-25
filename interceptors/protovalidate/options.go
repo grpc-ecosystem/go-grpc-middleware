@@ -26,8 +26,11 @@ func evaluateOpts(opts []Option) *options {
 	return optCopy
 }
 
-// WithIgnoreMessages sets the messages that should be ignored by the validator. Use with
-// caution and ensure validation is performed elsewhere.
+// WithIgnoreMessages sets the messages that should be ignored by the
+// validator. Message types are matched using their fully-qualified Protobuf
+// names.
+//
+// Use with caution and ensure validation is performed elsewhere.
 func WithIgnoreMessages(msgs ...protoreflect.MessageType) Option {
 	names := make([]protoreflect.FullName, 0, len(msgs))
 	for _, msg := range msgs {
