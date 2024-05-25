@@ -29,7 +29,7 @@ func UnaryServerInterceptor(validator *protovalidate.Validator, opts ...Option) 
 				break
 			}
 			if err = validator.Validate(msg); err != nil {
-				return nil, status.Error(codes.InvalidArgument, err.Error())
+				return nil, validationErrToStatus(err).Err()
 			}
 		default:
 			return nil, errors.New("unsupported message type")
@@ -63,12 +63,15 @@ func (w *wrappedServerStream) RecvMsg(m interface{}) error {
 		return err
 	}
 
-	msg := m.(proto.Message)
+	msg, ok := m.(proto.Message)
+	if !ok {
+		return errors.New("unsupported message type")
+	}
 	if w.options.shouldIgnoreMessage(msg.ProtoReflect().Type()) {
 		return nil
 	}
 	if err := w.validator.Validate(msg); err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
+		return validationErrToStatus(err).Err()
 	}
 
 	return nil
@@ -92,4 +95,18 @@ func (w *wrappedServerStream) Context() context.Context {
 // wrapServerStream returns a ServerStream that has the ability to overwrite context.
 func wrapServerStream(stream grpc.ServerStream) *wrappedServerStream {
 	return &wrappedServerStream{ServerStream: stream, wrappedContext: stream.Context()}
+}
+
+func validationErrToStatus(err error) *status.Status {
+	// Message is invalid.
+	if valErr := new(protovalidate.ValidationError); errors.As(err, &valErr) {
+		st := status.New(codes.InvalidArgument, err.Error())
+		ds, detErr := st.WithDetails(valErr.ToProto())
+		if detErr != nil {
+			return st
+		}
+		return ds
+	}
+	// CEL expression doesn't compile or type-check.
+	return status.New(codes.Unknown, err.Error())
 }
