@@ -70,12 +70,15 @@ func TestUnaryServerInterceptor(t *testing.T) {
 
 type server struct {
 	testvalidatev1.UnimplementedTestValidateServiceServer
+
+	called *bool
 }
 
 func (g *server) SendStream(
 	_ *testvalidatev1.SendStreamRequest,
 	stream testvalidatev1.TestValidateService_SendStreamServer,
 ) error {
+	*g.called = true
 	if err := stream.Send(&testvalidatev1.SendStreamResponse{}); err != nil {
 		return err
 	}
@@ -85,7 +88,7 @@ func (g *server) SendStream(
 
 const bufSize = 1024 * 1024
 
-func startGrpcServer(t *testing.T, ignoreMessages ...protoreflect.MessageType) *grpc.ClientConn {
+func startGrpcServer(t *testing.T, called *bool, ignoreMessages ...protoreflect.MessageType) *grpc.ClientConn {
 	lis := bufconn.Listen(bufSize)
 
 	validator, err := protovalidate.New()
@@ -98,7 +101,7 @@ func startGrpcServer(t *testing.T, ignoreMessages ...protoreflect.MessageType) *
 			),
 		),
 	)
-	testvalidatev1.RegisterTestValidateServiceServer(s, &server{})
+	testvalidatev1.RegisterTestValidateServiceServer(s, &server{called: called})
 	go func() {
 		if err = s.Serve(lis); err != nil {
 			log.Fatalf("Server exited with error: %v", err)
@@ -129,17 +132,24 @@ func startGrpcServer(t *testing.T, ignoreMessages ...protoreflect.MessageType) *
 
 func TestStreamServerInterceptor(t *testing.T) {
 	t.Run("valid_email", func(t *testing.T) {
+		called := proto.Bool(false)
 		client := testvalidatev1.NewTestValidateServiceClient(
-			startGrpcServer(t),
+			startGrpcServer(t, called),
 		)
 
-		_, err := client.SendStream(context.Background(), testvalidate.GoodStreamRequest)
+		out, err := client.SendStream(context.Background(), testvalidate.GoodStreamRequest)
 		assert.Nil(t, err)
+
+		_, err = out.Recv()
+		t.Log(err)
+		assert.Nil(t, err)
+		assert.True(t, *called)
 	})
 
 	t.Run("invalid_email", func(t *testing.T) {
+		called := proto.Bool(false)
 		client := testvalidatev1.NewTestValidateServiceClient(
-			startGrpcServer(t),
+			startGrpcServer(t, called),
 		)
 
 		out, err := client.SendStream(context.Background(), testvalidate.BadStreamRequest)
@@ -151,11 +161,13 @@ func TestStreamServerInterceptor(t *testing.T) {
 			ConstraintId: "string.email",
 			Message:      "value must be a valid email address",
 		}, err)
+		assert.False(t, *called)
 	})
 
 	t.Run("invalid_email_ignored", func(t *testing.T) {
+		called := proto.Bool(false)
 		client := testvalidatev1.NewTestValidateServiceClient(
-			startGrpcServer(t, testvalidate.BadStreamRequest.ProtoReflect().Type()),
+			startGrpcServer(t, called, testvalidate.BadStreamRequest.ProtoReflect().Type()),
 		)
 
 		out, err := client.SendStream(context.Background(), testvalidate.BadStreamRequest)
@@ -163,6 +175,7 @@ func TestStreamServerInterceptor(t *testing.T) {
 
 		_, err = out.Recv()
 		assert.Nil(t, err)
+		assert.True(t, *called)
 	})
 }
 
