@@ -9,16 +9,19 @@ import (
 	"net"
 	"testing"
 
+	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/protovalidate-go"
 	protovalidate_middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testvalidate"
 	testvalidatev1 "github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testvalidate/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -41,8 +44,11 @@ func TestUnaryServerInterceptor(t *testing.T) {
 
 	t.Run("invalid_email", func(t *testing.T) {
 		_, err = interceptor(context.TODO(), testvalidate.BadUnaryRequest, info, handler)
-		assert.Error(t, err)
-		assert.Equal(t, codes.InvalidArgument, status.Code(err))
+		assertEqualViolation(t, &validate.Violation{
+			FieldPath:    "message",
+			ConstraintId: "string.email",
+			Message:      "value must be a valid email address",
+		}, err)
 	})
 
 	t.Run("not_protobuf", func(t *testing.T) {
@@ -140,8 +146,11 @@ func TestStreamServerInterceptor(t *testing.T) {
 		assert.Nil(t, err)
 
 		_, err = out.Recv()
-		assert.Error(t, err)
-		assert.Equal(t, codes.InvalidArgument, status.Code(err))
+		assertEqualViolation(t, &validate.Violation{
+			FieldPath:    "message",
+			ConstraintId: "string.email",
+			Message:      "value must be a valid email address",
+		}, err)
 	})
 
 	t.Run("invalid_email_ignored", func(t *testing.T) {
@@ -155,4 +164,20 @@ func TestStreamServerInterceptor(t *testing.T) {
 		_, err = out.Recv()
 		assert.Nil(t, err)
 	})
+}
+
+func assertEqualViolation(tb testing.TB, want *validate.Violation, got error) bool {
+	require.Error(tb, got)
+	st := status.Convert(got)
+	assert.Equal(tb, codes.InvalidArgument, st.Code())
+	details := st.Proto().GetDetails()
+	require.Len(tb, details, 1)
+	gotpb, unwrapErr := details[0].UnmarshalNew()
+	require.Nil(tb, unwrapErr)
+	violations := &validate.Violations{
+		Violations: []*validate.Violation{want},
+	}
+	tb.Logf("got: %v", gotpb)
+	tb.Logf("want: %v", violations)
+	return assert.True(tb, proto.Equal(gotpb, violations))
 }
