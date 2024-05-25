@@ -15,6 +15,7 @@ import (
 )
 
 // UnaryServerInterceptor returns a new unary server interceptor that validates incoming messages.
+// If the request is invalid, clients may access a structured representation of the validation failure as an error detail.
 func UnaryServerInterceptor(validator *protovalidate.Validator, opts ...Option) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -40,6 +41,7 @@ func UnaryServerInterceptor(validator *protovalidate.Validator, opts ...Option) 
 }
 
 // StreamServerInterceptor returns a new streaming server interceptor that validates incoming messages.
+// If the request is invalid, clients may access a structured representation of the validation failure as an error detail.
 func StreamServerInterceptor(validator *protovalidate.Validator, opts ...Option) grpc.StreamServerInterceptor {
 	return func(
 		srv interface{},
