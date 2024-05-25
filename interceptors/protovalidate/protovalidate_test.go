@@ -31,22 +31,15 @@ func TestUnaryServerInterceptor(t *testing.T) {
 	handler := func(ctx context.Context, req any) (any, error) {
 		return "good", nil
 	}
+	info := &grpc.UnaryServerInfo{FullMethod: "FakeMethod"}
 
 	t.Run("valid_email", func(t *testing.T) {
-		info := &grpc.UnaryServerInfo{
-			FullMethod: "FakeMethod",
-		}
-
 		resp, err := interceptor(context.TODO(), testvalidate.GoodUnaryRequest, info, handler)
 		assert.Nil(t, err)
 		assert.Equal(t, resp, "good")
 	})
 
 	t.Run("invalid_email", func(t *testing.T) {
-		info := &grpc.UnaryServerInfo{
-			FullMethod: "FakeMethod",
-		}
-
 		_, err = interceptor(context.TODO(), testvalidate.BadUnaryRequest, info, handler)
 		assert.Error(t, err)
 		assert.Equal(t, codes.InvalidArgument, status.Code(err))
@@ -57,10 +50,6 @@ func TestUnaryServerInterceptor(t *testing.T) {
 	)
 
 	t.Run("invalid_email_ignored", func(t *testing.T) {
-		info := &grpc.UnaryServerInfo{
-			FullMethod: "FakeMethod",
-		}
-
 		resp, err := interceptor(context.TODO(), testvalidate.BadUnaryRequest, info, handler)
 		assert.Nil(t, err)
 		assert.Equal(t, resp, "good")
