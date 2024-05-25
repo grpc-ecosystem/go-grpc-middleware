@@ -45,6 +45,12 @@ func TestUnaryServerInterceptor(t *testing.T) {
 		assert.Equal(t, codes.InvalidArgument, status.Code(err))
 	})
 
+	t.Run("not_protobuf", func(t *testing.T) {
+		_, err = interceptor(context.Background(), "not protobuf", info, handler)
+		assert.Error(t, err)
+		assert.Equal(t, codes.Unknown, status.Code(err))
+	})
+
 	interceptor = protovalidate_middleware.UnaryServerInterceptor(validator,
 		protovalidate_middleware.WithIgnoreMessages(testvalidate.BadUnaryRequest.ProtoReflect().Type()),
 	)

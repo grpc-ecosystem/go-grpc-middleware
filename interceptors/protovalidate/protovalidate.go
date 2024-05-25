@@ -63,7 +63,10 @@ func (w *wrappedServerStream) RecvMsg(m interface{}) error {
 		return err
 	}
 
-	msg := m.(proto.Message)
+	msg, ok := m.(proto.Message)
+	if !ok {
+		return errors.New("unsupported message type")
+	}
 	if w.options.shouldIgnoreMessage(msg.ProtoReflect().Type()) {
 		return nil
 	}
