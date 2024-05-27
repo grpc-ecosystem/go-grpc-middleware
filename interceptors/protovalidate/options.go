@@ -12,7 +12,7 @@ import (
 )
 
 type options struct {
-	ignoreMessages []protoreflect.MessageType
+	ignoreMessages []protoreflect.FullName
 }
 
 // An Option lets you add options to protovalidate interceptors using With* funcs.
@@ -26,16 +26,24 @@ func evaluateOpts(opts []Option) *options {
 	return optCopy
 }
 
-// WithIgnoreMessages sets the messages that should be ignored by the validator. Use with
-// caution and ensure validation is performed elsewhere.
+// WithIgnoreMessages sets the messages that should be ignored by the
+// validator. Message types are matched using their fully-qualified Protobuf
+// names.
+//
+// Use with caution and ensure validation is performed elsewhere.
 func WithIgnoreMessages(msgs ...protoreflect.MessageType) Option {
+	names := make([]protoreflect.FullName, 0, len(msgs))
+	for _, msg := range msgs {
+		names = append(names, msg.Descriptor().FullName())
+	}
+	slices.Sort(names)
 	return func(o *options) {
-		o.ignoreMessages = msgs
+		o.ignoreMessages = names
 	}
 }
 
-func (o *options) shouldIgnoreMessage(m protoreflect.MessageType) bool {
-	return slices.ContainsFunc(o.ignoreMessages, func(t protoreflect.MessageType) bool {
-		return m == t
-	})
+func (o *options) shouldIgnoreMessage(fqn protoreflect.FullName) bool {
+	// Names are sorted in WithIgnoreMessages, so we can use binary search.
+	_, found := slices.BinarySearch(o.ignoreMessages, fqn)
+	return found
 }
