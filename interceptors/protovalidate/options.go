@@ -43,6 +43,7 @@ func WithIgnoreMessages(msgs ...protoreflect.MessageType) Option {
 }
 
 func (o *options) shouldIgnoreMessage(fqn protoreflect.FullName) bool {
+	// Names are sorted in WithIgnoreMessages, so we can use binary search.
 	_, found := slices.BinarySearch(o.ignoreMessages, fqn)
 	return found
 }
