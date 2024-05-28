@@ -102,7 +102,7 @@ func WithHistogramSubsystem(subsystem string) HistogramOption {
 	}
 }
 
-// WithHistogramSubsystem allows you to add a Subsystem to histograms metrics.
+// WithHistogramNamespace allows you to add a Namespace to histograms metrics.
 func WithHistogramNamespace(namespace string) HistogramOption {
 	return func(o *prometheus.HistogramOpts) {
 		o.Namespace = namespace
