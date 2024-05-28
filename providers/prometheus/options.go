@@ -46,6 +46,13 @@ func WithSubsystem(subsystem string) CounterOption {
 	}
 }
 
+// WithNamespace allows you to add a Namespace to Counter metrics.
+func WithNamespace(namespace string) CounterOption {
+	return func(o *prometheus.CounterOpts) {
+		o.Namespace = namespace
+	}
+}
+
 // A HistogramOption lets you add options to Histogram metrics using With*
 // funcs.
 type HistogramOption func(*prometheus.HistogramOpts)
@@ -92,6 +99,13 @@ func WithHistogramConstLabels(labels prometheus.Labels) HistogramOption {
 func WithHistogramSubsystem(subsystem string) HistogramOption {
 	return func(o *prometheus.HistogramOpts) {
 		o.Subsystem = subsystem
+	}
+}
+
+// WithHistogramNamespace allows you to add a Namespace to histograms metrics.
+func WithHistogramNamespace(namespace string) HistogramOption {
+	return func(o *prometheus.HistogramOpts) {
+		o.Namespace = namespace
 	}
 }
 
