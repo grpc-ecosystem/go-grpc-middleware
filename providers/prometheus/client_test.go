@@ -114,3 +114,17 @@ func (s *ClientInterceptorTestSuite) TestWithSubsystem() {
 	requireSubsystemName(s.T(), "subsystem1", clientMetrics.clientStartedCounter.WithLabelValues("unary", testpb.TestServiceFullName, "dummy"))
 	requireHistSubsystemName(s.T(), "subsystem1", clientMetrics.clientHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "dummy"))
 }
+
+func (s *ClientInterceptorTestSuite) TestWithNamespace() {
+	counterOpts := []CounterOption{
+		WithNamespace("namespace1"),
+	}
+	histOpts := []HistogramOption{
+		WithHistogramNamespace("namespace1"),
+	}
+	clientCounterOpts := WithClientCounterOptions(counterOpts...)
+	clientMetrics := NewClientMetrics(clientCounterOpts, WithClientHandlingTimeHistogram(histOpts...))
+
+	requireNamespaceName(s.T(), "namespace1", clientMetrics.clientStartedCounter.WithLabelValues("unary", testpb.TestServiceFullName, "dummy"))
+	requireHistNamespaceName(s.T(), "namespace1", clientMetrics.clientHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "dummy"))
+}

@@ -259,6 +259,18 @@ func requireSubsystemName(t *testing.T, expect string, c prometheus.Collector) {
 	t.Fail()
 }
 
+func requireNamespaceName(t *testing.T, expect string, c prometheus.Collector) {
+	t.Helper()
+	metricFullName := reflect.ValueOf(*c.(prometheus.Metric).Desc()).FieldByName("fqName").String()
+
+	if strings.Split(metricFullName, "_")[0] == expect {
+		return
+	}
+
+	t.Errorf("expected %s value to start with %s; ", metricFullName, expect)
+	t.Fail()
+}
+
 func requireValue(t *testing.T, expect int, c prometheus.Collector) {
 	t.Helper()
 	v := int(testutil.ToFloat64(c))
@@ -272,6 +284,18 @@ func requireValue(t *testing.T, expect int, c prometheus.Collector) {
 }
 
 func requireHistSubsystemName(t *testing.T, expect string, o prometheus.Observer) {
+	t.Helper()
+	metricFullName := reflect.ValueOf(*o.(prometheus.Metric).Desc()).FieldByName("fqName").String()
+
+	if strings.Split(metricFullName, "_")[0] == expect {
+		return
+	}
+
+	t.Errorf("expected %s value to start with %s; ", metricFullName, expect)
+	t.Fail()
+}
+
+func requireHistNamespaceName(t *testing.T, expect string, o prometheus.Observer) {
 	t.Helper()
 	metricFullName := reflect.ValueOf(*o.(prometheus.Metric).Desc()).FieldByName("fqName").String()
 
