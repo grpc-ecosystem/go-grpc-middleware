@@ -67,7 +67,7 @@ func (s *ServerInterceptorTestSuite) TestWithSubsystem() {
 	serverMetrics := NewServerMetrics(serverCounterOpts, WithServerHandlingTimeHistogram(histOpts...))
 
 	requireSubsystemName(s.T(), "subsystem1", serverMetrics.serverStartedCounter.WithLabelValues("unary", testpb.TestServiceFullName, "dummy"))
-	requireHistSubsystemName(s.T(), "subsystem1", serverMetrics.serverHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "dummy"))
+	requireHistSubsystemName(s.T(), "subsystem1", serverMetrics.serverHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "dummy", "OK"))
 }
 
 func (s *ServerInterceptorTestSuite) TestRegisterPresetsStuff() {
@@ -100,13 +100,13 @@ func (s *ServerInterceptorTestSuite) TestUnaryIncrementsMetrics() {
 	require.NoError(s.T(), err)
 	requireValue(s.T(), 1, s.serverMetrics.serverStartedCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty"))
 	requireValue(s.T(), 1, s.serverMetrics.serverHandledCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty", "OK"))
-	requireValueHistCount(s.T(), 1, s.serverMetrics.serverHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty"))
+	requireValueHistCount(s.T(), 1, s.serverMetrics.serverHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty", "OK"))
 
 	_, err = s.Client.PingError(s.SimpleCtx(), &testpb.PingErrorRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)})
 	require.Error(s.T(), err)
 	requireValue(s.T(), 1, s.serverMetrics.serverStartedCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingError"))
 	requireValue(s.T(), 1, s.serverMetrics.serverHandledCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingError", "FailedPrecondition"))
-	requireValueHistCount(s.T(), 1, s.serverMetrics.serverHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "PingError"))
+	requireValueHistCount(s.T(), 1, s.serverMetrics.serverHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "PingError", "FailedPrecondition"))
 }
 
 func (s *ServerInterceptorTestSuite) TestStartedStreamingIncrementsStarted() {
@@ -144,7 +144,7 @@ func (s *ServerInterceptorTestSuite) TestStreamingIncrementsMetrics() {
 	requireValueWithRetry(s.SimpleCtx(), s.T(), 1,
 		s.serverMetrics.serverStreamMsgReceived.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 	requireValueWithRetryHistCount(s.SimpleCtx(), s.T(), 1,
-		s.serverMetrics.serverHandledHistogram.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
+		s.serverMetrics.serverHandledHistogram.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList", "OK"))
 
 	_, err := s.Client.PingList(s.SimpleCtx(), &testpb.PingListRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
 	require.NoError(s.T(), err, "PingList must not fail immediately")
@@ -153,8 +153,8 @@ func (s *ServerInterceptorTestSuite) TestStreamingIncrementsMetrics() {
 		s.serverMetrics.serverStartedCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 	requireValueWithRetry(s.SimpleCtx(), s.T(), 1,
 		s.serverMetrics.serverHandledCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList", "FailedPrecondition"))
-	requireValueWithRetryHistCount(s.SimpleCtx(), s.T(), 2,
-		s.serverMetrics.serverHandledHistogram.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
+	requireValueWithRetryHistCount(s.SimpleCtx(), s.T(), 1,
+		s.serverMetrics.serverHandledHistogram.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList", "FailedPrecondition"))
 }
 
 func (s *ServerInterceptorTestSuite) TestContextCancelledTreatedAsStatus() {

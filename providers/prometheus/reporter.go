@@ -30,7 +30,7 @@ func (r *reporter) PostCall(err error, rpcDuration time.Duration) {
 	case KindServer:
 		r.incrementWithExemplar(r.serverMetrics.serverHandledCounter, string(r.typ), r.service, r.method, code.String())
 		if r.serverMetrics.serverHandledHistogram != nil {
-			r.observeWithExemplar(r.serverMetrics.serverHandledHistogram, rpcDuration.Seconds(), string(r.typ), r.service, r.method)
+			r.observeWithExemplar(r.serverMetrics.serverHandledHistogram, rpcDuration.Seconds(), string(r.typ), r.service, r.method, code.String())
 		}
 
 	case KindClient:
