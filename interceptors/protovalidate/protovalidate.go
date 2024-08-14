@@ -77,7 +77,8 @@ func validateMsg(m interface{}, validator *protovalidate.Validator, opts *option
 	if err == nil {
 		return nil
 	}
-	if valErr := new(protovalidate.ValidationError); errors.As(err, &valErr) {
+	var valErr *protovalidate.ValidationError
+	if errors.As(err, &valErr) {
 		// Message is invalid.
 		st := status.New(codes.InvalidArgument, err.Error())
 		ds, detErr := st.WithDetails(valErr.ToProto())
