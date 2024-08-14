@@ -88,5 +88,5 @@ func validateMsg(m interface{}, validator *protovalidate.Validator, opts *option
 		return ds.Err()
 	}
 	// CEL expression doesn't compile or type-check.
-	return status.Error(codes.Unknown, err.Error())
+	return status.Error(codes.Internal, err.Error())
 }
