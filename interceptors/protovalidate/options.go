@@ -7,7 +7,8 @@
 package protovalidate
 
 import (
-	"golang.org/x/exp/slices"
+	"slices"
+
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 

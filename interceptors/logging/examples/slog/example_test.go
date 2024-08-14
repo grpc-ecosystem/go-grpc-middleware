@@ -5,10 +5,10 @@ package slog_test
 
 import (
 	"context"
+	"log/slog"
 	"os"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
-	"golang.org/x/exp/slog"
 	"google.golang.org/grpc"
 )
 
@@ -21,7 +21,7 @@ func InterceptorLogger(l *slog.Logger) logging.Logger {
 }
 
 func ExampleInterceptorLogger() {
-	logger := slog.New(slog.NewTextHandler(os.Stderr))
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
 	opts := []logging.Option{
 		logging.WithLogOnEvents(logging.StartCall, logging.FinishCall),
