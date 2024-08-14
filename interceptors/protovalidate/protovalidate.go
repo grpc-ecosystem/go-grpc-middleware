@@ -35,6 +35,7 @@ func UnaryServerInterceptor(validator *protovalidate.Validator, opts ...Option) 
 // StreamServerInterceptor returns a new streaming server interceptor that validates incoming messages.
 // If the request is invalid, clients may access a structured representation of the validation failure as an error detail.
 func StreamServerInterceptor(validator *protovalidate.Validator, opts ...Option) grpc.StreamServerInterceptor {
+	o := evaluateOpts(opts)
 	return func(
 		srv interface{},
 		stream grpc.ServerStream,
@@ -44,7 +45,7 @@ func StreamServerInterceptor(validator *protovalidate.Validator, opts ...Option)
 		return handler(srv, &wrappedServerStream{
 			ServerStream: stream,
 			validator:    validator,
-			options:      evaluateOpts(opts),
+			options:      o,
 		})
 	}
 }
