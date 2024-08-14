@@ -68,7 +68,7 @@ func (w *wrappedServerStream) RecvMsg(m interface{}) error {
 func validateMsg(m interface{}, validator *protovalidate.Validator, opts *options) error {
 	msg, ok := m.(proto.Message)
 	if !ok {
-		return errors.New("unsupported message type")
+		return status.Errorf(codes.Internal, "unsupported message type: %T", m)
 	}
 	if opts.shouldIgnoreMessage(msg.ProtoReflect().Descriptor().FullName()) {
 		return nil
