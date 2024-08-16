@@ -53,8 +53,8 @@ func TestUnaryServerInterceptor(t *testing.T) {
 
 	t.Run("not_protobuf", func(t *testing.T) {
 		_, err = interceptor(context.Background(), "not protobuf", info, handler)
-		assert.Error(t, err)
-		assert.Equal(t, codes.Unknown, status.Code(err))
+		assert.EqualError(t, err, "rpc error: code = Internal desc = unsupported message type: string")
+		assert.Equal(t, codes.Internal, status.Code(err))
 	})
 
 	interceptor = protovalidate_middleware.UnaryServerInterceptor(validator,

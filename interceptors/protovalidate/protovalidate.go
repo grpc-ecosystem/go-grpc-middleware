@@ -35,6 +35,7 @@ func UnaryServerInterceptor(validator *protovalidate.Validator, opts ...Option) 
 // StreamServerInterceptor returns a new streaming server interceptor that validates incoming messages.
 // If the request is invalid, clients may access a structured representation of the validation failure as an error detail.
 func StreamServerInterceptor(validator *protovalidate.Validator, opts ...Option) grpc.StreamServerInterceptor {
+	o := evaluateOpts(opts)
 	return func(
 		srv interface{},
 		stream grpc.ServerStream,
@@ -44,7 +45,7 @@ func StreamServerInterceptor(validator *protovalidate.Validator, opts ...Option)
 		return handler(srv, &wrappedServerStream{
 			ServerStream: stream,
 			validator:    validator,
-			options:      evaluateOpts(opts),
+			options:      o,
 		})
 	}
 }
@@ -67,7 +68,7 @@ func (w *wrappedServerStream) RecvMsg(m interface{}) error {
 func validateMsg(m interface{}, validator *protovalidate.Validator, opts *options) error {
 	msg, ok := m.(proto.Message)
 	if !ok {
-		return errors.New("unsupported message type")
+		return status.Errorf(codes.Internal, "unsupported message type: %T", m)
 	}
 	if opts.shouldIgnoreMessage(msg.ProtoReflect().Descriptor().FullName()) {
 		return nil
@@ -76,7 +77,8 @@ func validateMsg(m interface{}, validator *protovalidate.Validator, opts *option
 	if err == nil {
 		return nil
 	}
-	if valErr := new(protovalidate.ValidationError); errors.As(err, &valErr) {
+	var valErr *protovalidate.ValidationError
+	if errors.As(err, &valErr) {
 		// Message is invalid.
 		st := status.New(codes.InvalidArgument, err.Error())
 		ds, detErr := st.WithDetails(valErr.ToProto())
@@ -86,5 +88,5 @@ func validateMsg(m interface{}, validator *protovalidate.Validator, opts *option
 		return ds.Err()
 	}
 	// CEL expression doesn't compile or type-check.
-	return status.Error(codes.Unknown, err.Error())
+	return status.Error(codes.Internal, err.Error())
 }

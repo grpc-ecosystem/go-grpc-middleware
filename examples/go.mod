@@ -1,6 +1,6 @@
 module github.com/grpc-ecosystem/go-grpc-middleware/examples/v2
 
-go 1.19
+go 1.21
 
 require (
 	github.com/go-kit/log v0.2.1
