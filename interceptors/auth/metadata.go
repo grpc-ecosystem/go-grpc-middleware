@@ -7,12 +7,12 @@ import (
 	"context"
 	"strings"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
-var (
+const (
 	headerAuthorize = "authorization"
 )
 
@@ -22,11 +22,11 @@ var (
 // case-insensitive format (see rfc2617, sec 1.2). If no such authorization is found, or the token
 // is of wrong scheme, an error with gRPC status `Unauthenticated` is returned.
 func AuthFromMD(ctx context.Context, expectedScheme string) (string, error) {
-	val := metadata.ExtractIncoming(ctx).Get(headerAuthorize)
-	if val == "" {
+	vals := metadata.ValueFromIncomingContext(ctx, headerAuthorize)
+	if len(vals) == 0 {
 		return "", status.Error(codes.Unauthenticated, "Request unauthenticated with "+expectedScheme)
 	}
-	scheme, token, found := strings.Cut(val, " ")
+	scheme, token, found := strings.Cut(vals[0], " ")
 	if !found {
 		return "", status.Error(codes.Unauthenticated, "Bad authorization string")
 	}
