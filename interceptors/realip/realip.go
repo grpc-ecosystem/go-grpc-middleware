@@ -53,16 +53,13 @@ func ipInNets(ip netip.Addr, nets []netip.Prefix) bool {
 }
 
 func getHeader(ctx context.Context, key string) string {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
+	vals := metadata.ValueFromIncomingContext(ctx, key)
+
+	if len(vals) == 0 {
 		return ""
 	}
 
-	if md[strings.ToLower(key)] == nil {
-		return ""
-	}
-
-	return md[strings.ToLower(key)][0]
+	return vals[0]
 }
 
 func ipFromXForwardedFoR(trustedProxies []netip.Prefix, ips []string, idx int) netip.Addr {
