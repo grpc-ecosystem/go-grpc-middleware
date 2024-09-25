@@ -29,7 +29,10 @@ func ExampleStreamServerInterceptor() {
 	var (
 		srv = grpc.NewServer(
 			grpc.StreamInterceptor(
-				protovalidate_middleware.StreamServerInterceptor(validator),
+				protovalidate_middleware.StreamServerInterceptor(validator,
+					protovalidate_middleware.WithIgnoreMessages(
+						(&testvalidatev1.SendStreamRequest{}).ProtoReflect().Type(),
+					)),
 			),
 		)
 		svc = &StreamService{}

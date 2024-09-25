@@ -100,3 +100,31 @@ func (s *ClientInterceptorTestSuite) TestStreamingIncrementsMetrics() {
 	requireValue(s.T(), 1, s.clientMetrics.clientHandledCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList", "FailedPrecondition"))
 	requireValueHistCount(s.T(), 2, s.clientMetrics.clientHandledHistogram.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 }
+
+func (s *ClientInterceptorTestSuite) TestWithSubsystem() {
+	counterOpts := []CounterOption{
+		WithSubsystem("subsystem1"),
+	}
+	histOpts := []HistogramOption{
+		WithHistogramSubsystem("subsystem1"),
+	}
+	clientCounterOpts := WithClientCounterOptions(counterOpts...)
+	clientMetrics := NewClientMetrics(clientCounterOpts, WithClientHandlingTimeHistogram(histOpts...))
+
+	requireSubsystemName(s.T(), "subsystem1", clientMetrics.clientStartedCounter.WithLabelValues("unary", testpb.TestServiceFullName, "dummy"))
+	requireHistSubsystemName(s.T(), "subsystem1", clientMetrics.clientHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "dummy"))
+}
+
+func (s *ClientInterceptorTestSuite) TestWithNamespace() {
+	counterOpts := []CounterOption{
+		WithNamespace("namespace1"),
+	}
+	histOpts := []HistogramOption{
+		WithHistogramNamespace("namespace1"),
+	}
+	clientCounterOpts := WithClientCounterOptions(counterOpts...)
+	clientMetrics := NewClientMetrics(clientCounterOpts, WithClientHandlingTimeHistogram(histOpts...))
+
+	requireNamespaceName(s.T(), "namespace1", clientMetrics.clientStartedCounter.WithLabelValues("unary", testpb.TestServiceFullName, "dummy"))
+	requireHistNamespaceName(s.T(), "namespace1", clientMetrics.clientHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "dummy"))
+}

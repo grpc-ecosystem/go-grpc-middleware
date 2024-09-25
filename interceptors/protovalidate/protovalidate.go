@@ -14,78 +14,79 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// Option interface is currently empty and serves as a placeholder for potential future implementations.
-// It allows adding new options without breaking existing code.
-type Option interface {
-	unimplemented()
-}
-
 // UnaryServerInterceptor returns a new unary server interceptor that validates incoming messages.
+// If the request is invalid, clients may access a structured representation of the validation failure as an error detail.
 func UnaryServerInterceptor(validator *protovalidate.Validator, opts ...Option) grpc.UnaryServerInterceptor {
+	o := evaluateOpts(opts)
+
 	return func(
 		ctx context.Context,
 		req interface{},
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (resp interface{}, err error) {
-		switch msg := req.(type) {
-		case proto.Message:
-			if err = validator.Validate(msg); err != nil {
-				return nil, status.Error(codes.InvalidArgument, err.Error())
-			}
-		default:
-			return nil, errors.New("unsupported message type")
+		if err := validateMsg(req, validator, o); err != nil {
+			return nil, err
 		}
-
 		return handler(ctx, req)
 	}
 }
 
 // StreamServerInterceptor returns a new streaming server interceptor that validates incoming messages.
+// If the request is invalid, clients may access a structured representation of the validation failure as an error detail.
 func StreamServerInterceptor(validator *protovalidate.Validator, opts ...Option) grpc.StreamServerInterceptor {
+	o := evaluateOpts(opts)
 	return func(
 		srv interface{},
 		stream grpc.ServerStream,
 		info *grpc.StreamServerInfo,
 		handler grpc.StreamHandler,
 	) error {
-		ctx := stream.Context()
-
-		wrapped := wrapServerStream(stream)
-		wrapped.wrappedContext = ctx
-		wrapped.validator = validator
-
-		return handler(srv, wrapped)
+		return handler(srv, &wrappedServerStream{
+			ServerStream: stream,
+			validator:    validator,
+			options:      o,
+		})
 	}
+}
+
+// wrappedServerStream is a thin wrapper around grpc.ServerStream that allows modifying context.
+type wrappedServerStream struct {
+	grpc.ServerStream
+
+	validator *protovalidate.Validator
+	options   *options
 }
 
 func (w *wrappedServerStream) RecvMsg(m interface{}) error {
 	if err := w.ServerStream.RecvMsg(m); err != nil {
 		return err
 	}
+	return validateMsg(m, w.validator, w.options)
+}
 
-	if err := w.validator.Validate(m.(proto.Message)); err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
+func validateMsg(m interface{}, validator *protovalidate.Validator, opts *options) error {
+	msg, ok := m.(proto.Message)
+	if !ok {
+		return status.Errorf(codes.Internal, "unsupported message type: %T", m)
 	}
-
-	return nil
-}
-
-// wrappedServerStream is a thin wrapper around grpc.ServerStream that allows modifying context.
-type wrappedServerStream struct {
-	grpc.ServerStream
-	// wrappedContext is the wrapper's own Context. You can assign it.
-	wrappedContext context.Context
-
-	validator *protovalidate.Validator
-}
-
-// Context returns the wrapper's WrappedContext, overwriting the nested grpc.ServerStream.Context()
-func (w *wrappedServerStream) Context() context.Context {
-	return w.wrappedContext
-}
-
-// wrapServerStream returns a ServerStream that has the ability to overwrite context.
-func wrapServerStream(stream grpc.ServerStream) *wrappedServerStream {
-	return &wrappedServerStream{ServerStream: stream, wrappedContext: stream.Context()}
+	if opts.shouldIgnoreMessage(msg.ProtoReflect().Descriptor().FullName()) {
+		return nil
+	}
+	err := validator.Validate(msg)
+	if err == nil {
+		return nil
+	}
+	var valErr *protovalidate.ValidationError
+	if errors.As(err, &valErr) {
+		// Message is invalid.
+		st := status.New(codes.InvalidArgument, err.Error())
+		ds, detErr := st.WithDetails(valErr.ToProto())
+		if detErr != nil {
+			return st.Err()
+		}
+		return ds.Err()
+	}
+	// CEL expression doesn't compile or type-check.
+	return status.Error(codes.Internal, err.Error())
 }

@@ -16,7 +16,7 @@ Feel free to copy and play with it.
 2. Run client in second terminal:
     
     ```
-    go run client/client.go
+    go run client/main.go
     ```
    
 3. You should see logs and tracing in the output of both terminals thanks to logging and otlpgrpc interceptors. To check metrics instrumented with prometheus interceptor you can curl OpenMetrics (so exemplars are included):

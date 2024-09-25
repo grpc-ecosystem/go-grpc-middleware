@@ -40,6 +40,9 @@ func UnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterceptor 
 			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 				return err
 			}
+			if attempt > 0 {
+				callOpts.onRetryCallback(parentCtx, attempt, lastErr)
+			}
 			callCtx, cancel := perCallContext(parentCtx, callOpts, attempt)
 			defer cancel() // Clean up potential resources.
 			lastErr = invoker(callCtx, method, req, reply, cc, grpcOpts...)
@@ -47,7 +50,6 @@ func UnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterceptor 
 			if lastErr == nil {
 				return nil
 			}
-			callOpts.onRetryCallback(parentCtx, attempt, lastErr)
 			if isContextError(lastErr) {
 				if parentCtx.Err() != nil {
 					logTrace(parentCtx, "grpc_retry attempt: %d, parent context error: %v", attempt, parentCtx.Err())
@@ -94,6 +96,9 @@ func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientIntercepto
 			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 				return nil, err
 			}
+			if attempt > 0 {
+				callOpts.onRetryCallback(parentCtx, attempt, lastErr)
+			}
 			var newStreamer grpc.ClientStream
 			newStreamer, lastErr = streamer(parentCtx, desc, cc, method, grpcOpts...)
 			if lastErr == nil {
@@ -107,7 +112,6 @@ func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientIntercepto
 				}
 				return retryingStreamer, nil
 			}
-			callOpts.onRetryCallback(parentCtx, attempt, lastErr)
 			if isContextError(lastErr) {
 				if parentCtx.Err() != nil {
 					logTrace(parentCtx, "grpc_retry attempt: %d, parent context error: %v", attempt, parentCtx.Err())
@@ -267,15 +271,8 @@ func waitRetryBackoff(attempt uint, parentCtx context.Context, callOpts *options
 }
 
 func isRetriable(err error, callOpts *options) bool {
-	errCode := status.Code(err)
-	if isContextError(err) {
-		// context errors are not retriable based on user settings.
-		return false
-	}
-	for _, code := range callOpts.codes {
-		if code == errCode {
-			return true
-		}
+	if callOpts.retriableFunc != nil {
+		return callOpts.retriableFunc(err)
 	}
 	return false
 }

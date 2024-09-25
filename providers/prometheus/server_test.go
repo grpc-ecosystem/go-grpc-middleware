@@ -56,6 +56,20 @@ func (s *ServerInterceptorTestSuite) SetupTest() {
 	s.serverMetrics.InitializeMetrics(s.Server)
 }
 
+func (s *ServerInterceptorTestSuite) TestWithSubsystem() {
+	counterOpts := []CounterOption{
+		WithSubsystem("subsystem1"),
+	}
+	histOpts := []HistogramOption{
+		WithHistogramSubsystem("subsystem1"),
+	}
+	serverCounterOpts := WithServerCounterOptions(counterOpts...)
+	serverMetrics := NewServerMetrics(serverCounterOpts, WithServerHandlingTimeHistogram(histOpts...))
+
+	requireSubsystemName(s.T(), "subsystem1", serverMetrics.serverStartedCounter.WithLabelValues("unary", testpb.TestServiceFullName, "dummy"))
+	requireHistSubsystemName(s.T(), "subsystem1", serverMetrics.serverHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "dummy"))
+}
+
 func (s *ServerInterceptorTestSuite) TestRegisterPresetsStuff() {
 	registry := prometheus.NewPedanticRegistry()
 	s.Require().NoError(registry.Register(s.serverMetrics))
@@ -233,6 +247,30 @@ func toFloat64HistCount(h prometheus.Observer) uint64 {
 	panic(fmt.Errorf("collected a non-histogram metric: %s", pb))
 }
 
+func requireSubsystemName(t *testing.T, expect string, c prometheus.Collector) {
+	t.Helper()
+	metricFullName := reflect.ValueOf(*c.(prometheus.Metric).Desc()).FieldByName("fqName").String()
+
+	if strings.Split(metricFullName, "_")[0] == expect {
+		return
+	}
+
+	t.Errorf("expected %s value to start with %s; ", metricFullName, expect)
+	t.Fail()
+}
+
+func requireNamespaceName(t *testing.T, expect string, c prometheus.Collector) {
+	t.Helper()
+	metricFullName := reflect.ValueOf(*c.(prometheus.Metric).Desc()).FieldByName("fqName").String()
+
+	if strings.Split(metricFullName, "_")[0] == expect {
+		return
+	}
+
+	t.Errorf("expected %s value to start with %s; ", metricFullName, expect)
+	t.Fail()
+}
+
 func requireValue(t *testing.T, expect int, c prometheus.Collector) {
 	t.Helper()
 	v := int(testutil.ToFloat64(c))
@@ -242,6 +280,30 @@ func requireValue(t *testing.T, expect int, c prometheus.Collector) {
 
 	metricFullName := reflect.ValueOf(*c.(prometheus.Metric).Desc()).FieldByName("fqName").String()
 	t.Errorf("expected %d %s value; got %d; ", expect, metricFullName, v)
+	t.Fail()
+}
+
+func requireHistSubsystemName(t *testing.T, expect string, o prometheus.Observer) {
+	t.Helper()
+	metricFullName := reflect.ValueOf(*o.(prometheus.Metric).Desc()).FieldByName("fqName").String()
+
+	if strings.Split(metricFullName, "_")[0] == expect {
+		return
+	}
+
+	t.Errorf("expected %s value to start with %s; ", metricFullName, expect)
+	t.Fail()
+}
+
+func requireHistNamespaceName(t *testing.T, expect string, o prometheus.Observer) {
+	t.Helper()
+	metricFullName := reflect.ValueOf(*o.(prometheus.Metric).Desc()).FieldByName("fqName").String()
+
+	if strings.Split(metricFullName, "_")[0] == expect {
+		return
+	}
+
+	t.Errorf("expected %s value to start with %s; ", metricFullName, expect)
 	t.Fail()
 }
 

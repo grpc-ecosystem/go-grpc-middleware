@@ -6,6 +6,7 @@ package retry
 import (
 	"context"
 	"io"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -178,6 +179,16 @@ func (s *RetrySuite) TestUnary_OverrideFromDialOpts() {
 	require.EqualValues(s.T(), 5, s.srv.requestCount(), "five requests should have been made")
 }
 
+func (s *RetrySuite) TestUnary_OverrideFromDialOpts2() {
+	s.srv.resetFailingConfiguration(5, codes.ResourceExhausted, noSleep) // default is 3 and retriable_errors
+	out, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing, WithRetriable(func(err error) bool {
+		return strings.Contains(err.Error(), "maybeFailRequest")
+	}), WithMax(5))
+	require.NoError(s.T(), err, "the fifth invocation should succeed")
+	require.NotNil(s.T(), out, "Pong must be not nil")
+	require.EqualValues(s.T(), 5, s.srv.requestCount(), "five requests should have been made")
+}
+
 func (s *RetrySuite) TestUnary_OnRetryCallbackCalled() {
 	retryCallbackCount := 0
 
@@ -193,6 +204,21 @@ func (s *RetrySuite) TestUnary_OnRetryCallbackCalled() {
 	require.EqualValues(s.T(), 2, retryCallbackCount, "two retry callbacks should be called")
 }
 
+func (s *RetrySuite) TestUnary_OnRetryCallbackNotCalledOnNonRetriableError() {
+	retryCallbackCount := 0
+
+	s.srv.resetFailingConfiguration(3, codes.Internal, noSleep) // see retriable_errors
+	out, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing,
+		WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
+			retryCallbackCount++
+		}),
+	)
+
+	require.Error(s.T(), err, "should result in an error")
+	require.Nil(s.T(), out, "out should be nil")
+	require.EqualValues(s.T(), 0, retryCallbackCount, "no retry callbacks should be called")
+}
+
 func (s *RetrySuite) TestServerStream_SucceedsOnRetriableError() {
 	s.srv.resetFailingConfiguration(3, codes.DataLoss, noSleep) // see retriable_errors
 	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList)
@@ -204,6 +230,16 @@ func (s *RetrySuite) TestServerStream_SucceedsOnRetriableError() {
 func (s *RetrySuite) TestServerStream_OverrideFromContext() {
 	s.srv.resetFailingConfiguration(5, codes.ResourceExhausted, noSleep) // default is 3 and retriable_errors
 	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList, WithCodes(codes.ResourceExhausted), WithMax(5))
+	require.NoError(s.T(), err, "establishing the connection must always succeed")
+	s.assertPingListWasCorrect(stream)
+	require.EqualValues(s.T(), 5, s.srv.requestCount(), "three requests should have been made")
+}
+
+func (s *RetrySuite) TestServerStream_OverrideFromContext2() {
+	s.srv.resetFailingConfiguration(5, codes.ResourceExhausted, noSleep) // default is 3 and retriable_errors
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList, WithRetriable(func(err error) bool {
+		return strings.Contains(err.Error(), "maybeFailRequest")
+	}), WithMax(5))
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
 	s.assertPingListWasCorrect(stream)
 	require.EqualValues(s.T(), 5, s.srv.requestCount(), "three requests should have been made")

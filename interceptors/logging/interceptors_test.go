@@ -11,6 +11,7 @@ import (
 	"io"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -179,9 +180,14 @@ type loggingClientServerSuite struct {
 	*baseLoggingSuite
 }
 
-func customFields(_ context.Context) logging.Fields {
+func customFields(ctx context.Context) logging.Fields {
+	var val string
+	n := testpb.ExtractCtxTestNumber(ctx)
+	if n != nil {
+		val = strconv.Itoa(*n)
+	}
 	// Add custom fields. The second one overrides the first one.
-	return logging.Fields{"custom-field", "foo", "custom-field", "yolo"}
+	return logging.Fields{"custom-field", "foo", "custom-field", "yolo", "custom-ctx-field", val}
 }
 
 func TestSuite(t *testing.T) {
@@ -239,6 +245,8 @@ func (s *loggingClientServerSuite) TestPing() {
 	assert.Equal(s.T(), logging.LevelDebug, serverStartCallLogLine.lvl)
 	assert.Equal(s.T(), "started call", serverStartCallLogLine.msg)
 	_ = assertStandardFields(s.T(), logging.KindServerFieldValue, serverStartCallLogLine.fields, "Ping", interceptors.Unary)
+	// This field is zero initially, but will be updated by the service, which we should see after the call is finished
+	serverStartCallLogLine.fields.AssertField(s.T(), "custom-ctx-field", "0")
 
 	serverFinishCallLogLine := lines[2]
 	assert.Equal(s.T(), logging.LevelDebug, serverFinishCallLogLine.lvl)
@@ -246,6 +254,8 @@ func (s *loggingClientServerSuite) TestPing() {
 	serverFinishCallFields := assertStandardFields(s.T(), logging.KindServerFieldValue, serverFinishCallLogLine.fields, "Ping", interceptors.Unary)
 	serverFinishCallFields.AssertFieldNotEmpty(s.T(), "peer.address").
 		AssertField(s.T(), "custom-field", "yolo").
+		// should be updated from 0 to 42
+		AssertField(s.T(), "custom-ctx-field", "42").
 		AssertFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertField(s.T(), "grpc.code", "OK").
@@ -256,6 +266,8 @@ func (s *loggingClientServerSuite) TestPing() {
 	assert.Equal(s.T(), "finished call", clientFinishCallLogLine.msg)
 	clientFinishCallFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientFinishCallLogLine.fields, "Ping", interceptors.Unary)
 	clientFinishCallFields.AssertField(s.T(), "custom-field", "yolo").
+		// should be updated from 0 to 42
+		AssertField(s.T(), "custom-ctx-field", "42").
 		AssertField(s.T(), "grpc.request.value", "something").
 		AssertFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertFieldNotEmpty(s.T(), "grpc.request.deadline").
@@ -292,6 +304,8 @@ func (s *loggingClientServerSuite) TestPingList() {
 	assert.Equal(s.T(), "finished call", serverFinishCallLogLine.msg)
 	serverFinishCallFields := assertStandardFields(s.T(), logging.KindServerFieldValue, serverFinishCallLogLine.fields, "PingList", interceptors.ServerStream)
 	serverFinishCallFields.AssertField(s.T(), "custom-field", "yolo").
+		// should be updated from 0 to 42
+		AssertField(s.T(), "custom-ctx-field", "42").
 		AssertFieldNotEmpty(s.T(), "peer.address").
 		AssertFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertFieldNotEmpty(s.T(), "grpc.request.deadline").
@@ -304,6 +318,8 @@ func (s *loggingClientServerSuite) TestPingList() {
 	clientFinishCallFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientFinishCallLogLine.fields, "PingList", interceptors.ServerStream)
 	clientFinishCallFields.AssertFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertField(s.T(), "custom-field", "yolo").
+		// should be updated from 0 to 42
+		AssertField(s.T(), "custom-ctx-field", "42").
 		AssertFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertField(s.T(), "grpc.code", "OK").
 		AssertFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
@@ -351,23 +367,27 @@ func (s *loggingClientServerSuite) TestPingError_WithCustomLevels() {
 			assert.Equal(t, "finished call", serverFinishCallLogLine.msg)
 			serverFinishCallFields := assertStandardFields(t, logging.KindServerFieldValue, serverFinishCallLogLine.fields, "PingError", interceptors.Unary)
 			serverFinishCallFields.AssertField(s.T(), "custom-field", "yolo").
+				// should be updated from 0 to 42
+				AssertField(s.T(), "custom-ctx-field", "42").
 				AssertFieldNotEmpty(t, "peer.address").
 				AssertFieldNotEmpty(t, "grpc.start_time").
 				AssertFieldNotEmpty(t, "grpc.request.deadline").
 				AssertField(t, "grpc.code", tcase.code.String()).
 				AssertField(t, "grpc.error", fmt.Sprintf("rpc error: code = %s desc = Userspace error", tcase.code.String())).
-				AssertFieldNotEmpty(t, "grpc.time_ms").AssertNoMoreTags(t)
+				AssertFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
 
 			clientFinishCallLogLine := lines[0]
 			assert.Equal(t, tcase.level, clientFinishCallLogLine.lvl)
 			assert.Equal(t, "finished call", clientFinishCallLogLine.msg)
 			clientFinishCallFields := assertStandardFields(t, logging.KindClientFieldValue, clientFinishCallLogLine.fields, "PingError", interceptors.Unary)
 			clientFinishCallFields.AssertField(s.T(), "custom-field", "yolo").
+				// should be updated from 0 to 42
+				AssertField(s.T(), "custom-ctx-field", "42").
 				AssertFieldNotEmpty(t, "grpc.start_time").
 				AssertFieldNotEmpty(t, "grpc.request.deadline").
 				AssertField(t, "grpc.code", tcase.code.String()).
 				AssertField(t, "grpc.error", fmt.Sprintf("rpc error: code = %s desc = Userspace error", tcase.code.String())).
-				AssertFieldNotEmpty(t, "grpc.time_ms").AssertNoMoreTags(t)
+				AssertFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
 		})
 	}
 }
@@ -544,6 +564,7 @@ func (s *loggingPayloadSuite) TestPingError_LogsOnlyRequestsOnError() {
 
 	clientRequestFields.AssertFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertFieldNotEmpty(s.T(), "grpc.send.duration").
+		AssertFieldNotEmpty(s.T(), "grpc.time_ms").
 		AssertField(s.T(), "grpc.request.content", `{"value":"something","errorCodeReturned":4}`).
 		AssertFieldNotEmpty(s.T(), "grpc.request.deadline").AssertNoMoreTags(s.T())
 }
@@ -587,6 +608,7 @@ func (s *loggingPayloadSuite) assertPayloadLogLinesForMessage(lines LogLines, me
 		clientRequestFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientRequestLogLine.fields, method, typ)
 		clientRequestFields.AssertFieldNotEmpty(s.T(), "grpc.start_time").
 			AssertFieldNotEmpty(s.T(), "grpc.send.duration").
+			AssertFieldNotEmpty(s.T(), "grpc.time_ms").
 			AssertField(s.T(), "grpc.request.content", `{"value":"something","sleepTimeMs":9999}`).
 			AssertFieldNotEmpty(s.T(), "grpc.request.deadline").AssertNoMoreTags(s.T())
 	}
@@ -598,6 +620,7 @@ func (s *loggingPayloadSuite) assertPayloadLogLinesForMessage(lines LogLines, me
 		clientResponseFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientResponseLogLine.fields, method, typ)
 		clientResponseFields = clientResponseFields.AssertFieldNotEmpty(s.T(), "grpc.start_time").
 			AssertFieldNotEmpty(s.T(), "grpc.recv.duration").
+			AssertFieldNotEmpty(s.T(), "grpc.time_ms").
 			AssertFieldNotEmpty(s.T(), "grpc.request.deadline")
 		if i-curr == 0 {
 			clientResponseFields = clientResponseFields.AssertField(s.T(), "grpc.response.content", `{"value":"something"}`)
@@ -616,6 +639,7 @@ func (s *loggingPayloadSuite) assertPayloadLogLinesForMessage(lines LogLines, me
 			AssertFieldNotEmpty(s.T(), "grpc.start_time").
 			AssertFieldNotEmpty(s.T(), "grpc.recv.duration").
 			AssertFieldNotEmpty(s.T(), "grpc.request.deadline").
+			AssertFieldNotEmpty(s.T(), "grpc.time_ms").
 			AssertField(s.T(), "grpc.request.content", `{"value":"something","sleepTimeMs":9999}`).AssertNoMoreTags(s.T())
 	}
 	curr += repetitions
@@ -627,6 +651,7 @@ func (s *loggingPayloadSuite) assertPayloadLogLinesForMessage(lines LogLines, me
 		serverResponseFields = serverResponseFields.AssertFieldNotEmpty(s.T(), "peer.address").
 			AssertFieldNotEmpty(s.T(), "grpc.start_time").
 			AssertFieldNotEmpty(s.T(), "grpc.send.duration").
+			AssertFieldNotEmpty(s.T(), "grpc.time_ms").
 			AssertFieldNotEmpty(s.T(), "grpc.request.deadline")
 		if i-curr == 0 {
 			serverResponseFields = serverResponseFields.AssertField(s.T(), "grpc.response.content", `{"value":"something"}`)
