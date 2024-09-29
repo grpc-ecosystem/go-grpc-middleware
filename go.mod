@@ -5,6 +5,7 @@ go 1.21
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20230802163732-1c33ebd9ecfa.1
 	github.com/bufbuild/protovalidate-go v0.2.1
+	github.com/mennanov/fmutils v0.3.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/net v0.21.0
 	golang.org/x/oauth2 v0.16.0

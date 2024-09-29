@@ -1,8 +1,10 @@
 syntax = "proto3";
 
+import "google/protobuf/field_mask.proto";
+
 package testing.testpb.v1;
 
-option go_package = ".;testpb";
+option go_package = "./;testpb";
 
 message PingEmptyRequest {
 }
@@ -14,6 +16,7 @@ message PingRequest {
   string value = 1;
   int32 sleep_time_ms = 2;
   uint32 error_code_returned = 3;
+  google.protobuf.FieldMask field_mask = 4;
 }
 
 message PingResponse {
