@@ -51,7 +51,6 @@ var (
 		levelFunc:            nil,
 		timestampFormat:      time.RFC3339,
 		disableGrpcLogFields: nil,
-		shouldReport:         DefaultDeciderMethod,
 	}
 )
 
@@ -63,7 +62,6 @@ type options struct {
 	timestampFormat         string
 	fieldsFromCtxCallMetaFn fieldsFromCtxCallMetaFn
 	disableGrpcLogFields    []string
-	shouldReport            Decider
 }
 
 type Option func(*options)
@@ -230,20 +228,4 @@ func WithDisableLoggingFields(disableGrpcLogFields ...string) Option {
 	return func(o *options) {
 		o.disableGrpcLogFields = disableGrpcLogFields
 	}
-}
-
-// Decider function defines rules for suppressing any interceptor logs
-type Decider func(fullMethodName string) bool
-
-// WithDecider customizes the function for deciding if the gRPC interceptor logs should log.
-func WithDecider(f Decider) Option {
-	return func(o *options) {
-		o.shouldReport = f
-	}
-}
-
-// DefaultDeciderMethod is the default implementation of decider to see if you should log the call
-// by default this if always true so all calls are logged
-func DefaultDeciderMethod(fullMethodName string) bool {
-	return true
 }

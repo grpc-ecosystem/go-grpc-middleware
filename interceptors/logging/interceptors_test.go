@@ -29,13 +29,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const (
-	// TODO: should import from testpb when we upgrade proto generator.
-	// It will look like Health service:
-	// https://github.com/grpc/grpc-go/blob/master/health/grpc_health_v1/health_grpc.pb.go#L39
-	TestPingFullMethodName = "/testing.testpb.v1.TestService/Ping"
-)
-
 type testDisposableFields map[string]string
 
 func (f testDisposableFields) AssertField(t *testing.T, key, value string) testDisposableFields {
@@ -805,87 +798,6 @@ func (s *loggingCustomGrpcLogFieldsSuite) TestCustomGrpcLogFieldsWithPingList() 
 		AssertField(s.T(), logging.ServiceFieldKey, testpb.TestServiceFullName).AssertNoMoreTags(s.T())
 }
 
-type loggingWithDeciderSuite struct {
-	*baseLoggingSuite
-}
-
-func TestWithDeciderSuite(t *testing.T) {
-	s := &loggingWithDeciderSuite{
-		baseLoggingSuite: &baseLoggingSuite{
-			logger: newMockLogger(),
-			InterceptorTestSuite: &testpb.InterceptorTestSuite{
-				TestService: &testpb.TestPingService{},
-			},
-		},
-	}
-	fullMethodNamesWithoutLogging := []string{TestPingFullMethodName}
-	s.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
-		grpc.WithUnaryInterceptor(logging.UnaryClientInterceptor(s.logger, logging.WithDecider(ignoreLoggingDecider(fullMethodNamesWithoutLogging)))),
-		grpc.WithStreamInterceptor(logging.StreamClientInterceptor(s.logger, logging.WithDecider(ignoreLoggingDecider(fullMethodNamesWithoutLogging)))),
-	}
-	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
-		grpc.StreamInterceptor(logging.StreamServerInterceptor(s.logger, logging.WithDecider(ignoreLoggingDecider(fullMethodNamesWithoutLogging)))),
-		grpc.UnaryInterceptor(logging.UnaryServerInterceptor(s.logger, logging.WithDecider(ignoreLoggingDecider(fullMethodNamesWithoutLogging)))),
-	}
-	suite.Run(t, s)
-}
-
-// Test that do not have logs with using withDecider. Because this method is not allowed to report logs.
-func (s *loggingWithDeciderSuite) TestDeciderWithPing() {
-	_, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing)
-	assert.NoError(s.T(), err, "there must be not be an on a successful call")
-
-	lines := s.logger.o.Lines()
-	sort.Sort(lines)
-	require.Len(s.T(), lines, 0)
-}
-
-// Test that have logs with using withDecider. Because this method is allowed to report logs.
-func (s *loggingWithDeciderSuite) TestDeciderWithPingList() {
-	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList)
-	assert.NoError(s.T(), err, "there must be not be an on a successful call")
-
-	require.NoError(s.T(), err, "should not fail on establishing the stream")
-	for {
-		_, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		require.NoError(s.T(), err, "reading stream should not fail")
-	}
-
-	lines := s.logger.o.Lines()
-	sort.Sort(lines)
-	require.Len(s.T(), lines, 4)
-
-	serverStartedCallLogLine := lines[3]
-	assert.Equal(s.T(), logging.LevelInfo, serverStartedCallLogLine.lvl)
-	assert.Equal(s.T(), "started call", serverStartedCallLogLine.msg)
-	_ = assertStandardFields(s.T(), logging.KindServerFieldValue, serverStartedCallLogLine.fields, "PingList", interceptors.ServerStream)
-
-	clientStartedCallLogLine := lines[1]
-	assert.Equal(s.T(), logging.LevelDebug, clientStartedCallLogLine.lvl)
-	assert.Equal(s.T(), "started call", clientStartedCallLogLine.msg)
-	_ = assertStandardFields(s.T(), logging.KindClientFieldValue, clientStartedCallLogLine.fields, "PingList", interceptors.ServerStream)
-
-	serverFinishCallLogLine := lines[2]
-	assert.Equal(s.T(), logging.LevelInfo, serverFinishCallLogLine.lvl)
-	assert.Equal(s.T(), "finished call", serverFinishCallLogLine.msg)
-	serverFinishCallFields := assertStandardFields(s.T(), logging.KindServerFieldValue, serverFinishCallLogLine.fields, "PingList", interceptors.ServerStream)
-	serverFinishCallFields.AssertFieldNotEmpty(s.T(), "peer.address").
-		AssertFieldNotEmpty(s.T(), "grpc.start_time").
-		AssertFieldNotEmpty(s.T(), "grpc.request.deadline").
-		AssertField(s.T(), "grpc.code", "OK")
-
-	clientFinishCallLogLine := lines[0]
-	assert.Equal(s.T(), logging.LevelDebug, clientFinishCallLogLine.lvl)
-	assert.Equal(s.T(), "finished call", clientFinishCallLogLine.msg)
-	clientFinishCallFields := assertStandardFields(s.T(), logging.KindClientFieldValue, clientFinishCallLogLine.fields, "PingList", interceptors.ServerStream)
-	clientFinishCallFields.AssertFieldNotEmpty(s.T(), "grpc.start_time").
-		AssertFieldNotEmpty(s.T(), "grpc.request.deadline").
-		AssertField(s.T(), "grpc.code", "OK")
-}
-
 // waitUntil executes f every interval seconds until timeout or no error is returned from f.
 func waitUntil(interval time.Duration, stopc <-chan struct{}, f func() error) error {
 	tick := time.NewTicker(interval)
@@ -901,16 +813,5 @@ func waitUntil(interval time.Duration, stopc <-chan struct{}, f func() error) er
 			return err
 		case <-tick.C:
 		}
-	}
-}
-
-func ignoreLoggingDecider(fullMethodNames []string) logging.Decider {
-	return func(fullMethodName string) bool {
-		for _, f := range fullMethodNames {
-			if fullMethodName == f {
-				return false
-			}
-		}
-		return true
 	}
 }

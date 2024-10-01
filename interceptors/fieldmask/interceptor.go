@@ -1,3 +1,6 @@
+// Copyright (c) The go-grpc-middleware Authors.
+// Licensed under the Apache License 2.0.
+
 package fieldmask
 
 import (
@@ -16,6 +19,12 @@ var DefaultFilterFunc FilterFunc = func(msg proto.Message, paths []string) {
 type FilterFunc func(msg proto.Message, paths []string)
 
 // UnaryServerInterceptor returns a new unary server interceptor that will decide whether to which fields should return to clients.
+//
+// Example:
+//
+//	 var unaryOpts []grpc.UnaryServerInterceptor{
+//			fieldmaskpkg.UnaryServerInterceptor(fieldmaskpkg.DefaultFilterFunc),
+//	 }
 func UnaryServerInterceptor(filterFunc FilterFunc) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		resp, err = handler(ctx, req)
