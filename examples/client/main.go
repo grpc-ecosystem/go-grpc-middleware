@@ -97,16 +97,15 @@ func main() {
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	defer func() { _ = exporter.Shutdown(context.Background()) }()
 
-	cc, err := grpc.Dial(
+	cc, err := grpc.NewClient(
 		targetGRPCAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		grpc.WithChainUnaryInterceptor(
 			timeout.UnaryClientInterceptor(500*time.Millisecond),
-			otelgrpc.UnaryClientInterceptor(),
 			clMetrics.UnaryClientInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
 			logging.UnaryClientInterceptor(interceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID))),
 		grpc.WithChainStreamInterceptor(
-			otelgrpc.StreamClientInterceptor(),
 			clMetrics.StreamClientInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
 			logging.StreamClientInterceptor(interceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID))),
 	)
