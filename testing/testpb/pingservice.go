@@ -20,7 +20,7 @@ const (
 	ListResponseCount = 100
 )
 
-var TestServiceFullName = _TestService_serviceDesc.ServiceName
+var TestServiceFullName = TestService_ServiceDesc.ServiceName
 
 // Interface implementation assert.
 var _ TestServiceServer = &TestPingService{}
@@ -79,4 +79,20 @@ func (s *TestPingService) PingStream(stream TestService_PingStreamServer) error 
 		count += 1
 	}
 	return nil
+}
+
+
+func (s *TestPingService) PingStreamSingleResponse(stream TestService_PingStreamSingleResponseServer) error {
+	count := 0
+	for {
+		_, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		count += 1
+	}
+	return stream.SendAndClose(&PingStreamResponse{Value: "single", Counter: int32(count)})
 }

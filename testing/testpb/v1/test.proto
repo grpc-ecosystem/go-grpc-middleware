@@ -65,4 +65,6 @@ service TestService {
 
   rpc PingStream(stream PingStreamRequest) returns (stream PingStreamResponse) {}
 
+  rpc PingStreamSingleResponse(stream PingStreamRequest) returns (PingStreamResponse) {}
+
 }
