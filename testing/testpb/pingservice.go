@@ -82,7 +82,7 @@ func (s *TestPingService) PingStream(stream TestService_PingStreamServer) error 
 }
 
 
-func (s *TestPingService) PingStreamSingleResponse(stream TestService_PingStreamSingleResponseServer) error {
+func (s *TestPingService) PingClientStream(stream TestService_PingClientStreamServer) error {
 	count := 0
 	for {
 		_, err := stream.Recv()
@@ -94,5 +94,5 @@ func (s *TestPingService) PingStreamSingleResponse(stream TestService_PingStream
 		}
 		count += 1
 	}
-	return stream.SendAndClose(&PingStreamResponse{Value: "single", Counter: int32(count)})
+	return stream.SendAndClose(&PingClientStreamResponse{Counter: int32(count)})
 }

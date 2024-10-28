@@ -54,6 +54,16 @@ message PingStreamResponse {
   int32 counter = 2;
 }
 
+message PingClientStreamRequest {
+  string value = 1;
+  int32 sleep_time_ms = 2;
+  uint32 error_code_returned = 3;
+}
+
+message PingClientStreamResponse {
+  int32 counter = 1;
+}
+
 service TestService {
   rpc PingEmpty(PingEmptyRequest) returns (PingEmptyResponse) {}
 
@@ -65,6 +75,6 @@ service TestService {
 
   rpc PingStream(stream PingStreamRequest) returns (stream PingStreamResponse) {}
 
-  rpc PingStreamSingleResponse(stream PingStreamRequest) returns (PingStreamResponse) {}
+  rpc PingClientStream(stream PingClientStreamRequest) returns (PingClientStreamResponse) {}
 
 }

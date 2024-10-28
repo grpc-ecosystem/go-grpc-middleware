@@ -340,7 +340,7 @@ func (s *ClientInterceptorTestSuite) TestBiStreamingReporting() {
 
 
 func (s *ClientInterceptorTestSuite) TestClientStream() {
-	ss, err := s.testClient.PingStreamSingleResponse(s.ctx)
+	ss, err := s.testClient.PingClientStream(s.ctx)
 	require.NoError(s.T(), err)
 
 	defer func() {
@@ -348,14 +348,14 @@ func (s *ClientInterceptorTestSuite) TestClientStream() {
 	}()
 
 	for i := 0; i < 100; i++ {
-		require.NoError(s.T(), ss.Send(&testpb.PingStreamRequest{}), "sending shouldn't fail")
+		require.NoError(s.T(), ss.Send(&testpb.PingClientStreamRequest{}), "sending shouldn't fail")
 	}
 
 	_, err = ss.CloseAndRecv()
 	require.NoError(s.T(), err)
 
 	s.mock.Equal(s.T(), []*mockReport{{
-		CallMeta:        CallMeta{Typ: ClientStream, Service: testpb.TestServiceFullName, Method: "PingStreamSingleResponse"},
+		CallMeta:        CallMeta{Typ: ClientStream, Service: testpb.TestServiceFullName, Method: "PingClientStream"},
 		postCalls:       []error{nil},
 		postMsgReceives: []error{nil},
 		postMsgSends:    make([]error, 100),

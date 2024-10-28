@@ -19,12 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TestService_PingEmpty_FullMethodName                = "/testing.testpb.v1.TestService/PingEmpty"
-	TestService_Ping_FullMethodName                     = "/testing.testpb.v1.TestService/Ping"
-	TestService_PingError_FullMethodName                = "/testing.testpb.v1.TestService/PingError"
-	TestService_PingList_FullMethodName                 = "/testing.testpb.v1.TestService/PingList"
-	TestService_PingStream_FullMethodName               = "/testing.testpb.v1.TestService/PingStream"
-	TestService_PingStreamSingleResponse_FullMethodName = "/testing.testpb.v1.TestService/PingStreamSingleResponse"
+	TestService_PingEmpty_FullMethodName        = "/testing.testpb.v1.TestService/PingEmpty"
+	TestService_Ping_FullMethodName             = "/testing.testpb.v1.TestService/Ping"
+	TestService_PingError_FullMethodName        = "/testing.testpb.v1.TestService/PingError"
+	TestService_PingList_FullMethodName         = "/testing.testpb.v1.TestService/PingList"
+	TestService_PingStream_FullMethodName       = "/testing.testpb.v1.TestService/PingStream"
+	TestService_PingClientStream_FullMethodName = "/testing.testpb.v1.TestService/PingClientStream"
 )
 
 // TestServiceClient is the client API for TestService service.
@@ -36,7 +36,7 @@ type TestServiceClient interface {
 	PingError(ctx context.Context, in *PingErrorRequest, opts ...grpc.CallOption) (*PingErrorResponse, error)
 	PingList(ctx context.Context, in *PingListRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[PingListResponse], error)
 	PingStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[PingStreamRequest, PingStreamResponse], error)
-	PingStreamSingleResponse(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[PingStreamRequest, PingStreamResponse], error)
+	PingClientStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[PingClientStreamRequest, PingClientStreamResponse], error)
 }
 
 type testServiceClient struct {
@@ -109,18 +109,18 @@ func (c *testServiceClient) PingStream(ctx context.Context, opts ...grpc.CallOpt
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type TestService_PingStreamClient = grpc.BidiStreamingClient[PingStreamRequest, PingStreamResponse]
 
-func (c *testServiceClient) PingStreamSingleResponse(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[PingStreamRequest, PingStreamResponse], error) {
+func (c *testServiceClient) PingClientStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[PingClientStreamRequest, PingClientStreamResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[2], TestService_PingStreamSingleResponse_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[2], TestService_PingClientStream_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[PingStreamRequest, PingStreamResponse]{ClientStream: stream}
+	x := &grpc.GenericClientStream[PingClientStreamRequest, PingClientStreamResponse]{ClientStream: stream}
 	return x, nil
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type TestService_PingStreamSingleResponseClient = grpc.ClientStreamingClient[PingStreamRequest, PingStreamResponse]
+type TestService_PingClientStreamClient = grpc.ClientStreamingClient[PingClientStreamRequest, PingClientStreamResponse]
 
 // TestServiceServer is the server API for TestService service.
 // All implementations must embed UnimplementedTestServiceServer
@@ -131,7 +131,7 @@ type TestServiceServer interface {
 	PingError(context.Context, *PingErrorRequest) (*PingErrorResponse, error)
 	PingList(*PingListRequest, grpc.ServerStreamingServer[PingListResponse]) error
 	PingStream(grpc.BidiStreamingServer[PingStreamRequest, PingStreamResponse]) error
-	PingStreamSingleResponse(grpc.ClientStreamingServer[PingStreamRequest, PingStreamResponse]) error
+	PingClientStream(grpc.ClientStreamingServer[PingClientStreamRequest, PingClientStreamResponse]) error
 	mustEmbedUnimplementedTestServiceServer()
 }
 
@@ -157,8 +157,8 @@ func (UnimplementedTestServiceServer) PingList(*PingListRequest, grpc.ServerStre
 func (UnimplementedTestServiceServer) PingStream(grpc.BidiStreamingServer[PingStreamRequest, PingStreamResponse]) error {
 	return status.Errorf(codes.Unimplemented, "method PingStream not implemented")
 }
-func (UnimplementedTestServiceServer) PingStreamSingleResponse(grpc.ClientStreamingServer[PingStreamRequest, PingStreamResponse]) error {
-	return status.Errorf(codes.Unimplemented, "method PingStreamSingleResponse not implemented")
+func (UnimplementedTestServiceServer) PingClientStream(grpc.ClientStreamingServer[PingClientStreamRequest, PingClientStreamResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method PingClientStream not implemented")
 }
 func (UnimplementedTestServiceServer) mustEmbedUnimplementedTestServiceServer() {}
 func (UnimplementedTestServiceServer) testEmbeddedByValue()                     {}
@@ -253,12 +253,12 @@ func _TestService_PingStream_Handler(srv interface{}, stream grpc.ServerStream) 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type TestService_PingStreamServer = grpc.BidiStreamingServer[PingStreamRequest, PingStreamResponse]
 
-func _TestService_PingStreamSingleResponse_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(TestServiceServer).PingStreamSingleResponse(&grpc.GenericServerStream[PingStreamRequest, PingStreamResponse]{ServerStream: stream})
+func _TestService_PingClientStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(TestServiceServer).PingClientStream(&grpc.GenericServerStream[PingClientStreamRequest, PingClientStreamResponse]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type TestService_PingStreamSingleResponseServer = grpc.ClientStreamingServer[PingStreamRequest, PingStreamResponse]
+type TestService_PingClientStreamServer = grpc.ClientStreamingServer[PingClientStreamRequest, PingClientStreamResponse]
 
 // TestService_ServiceDesc is the grpc.ServiceDesc for TestService service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -293,8 +293,8 @@ var TestService_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 		{
-			StreamName:    "PingStreamSingleResponse",
-			Handler:       _TestService_PingStreamSingleResponse_Handler,
+			StreamName:    "PingClientStream",
+			Handler:       _TestService_PingClientStream_Handler,
 			ClientStreams: true,
 		},
 	},
