@@ -338,7 +338,6 @@ func (s *ClientInterceptorTestSuite) TestBiStreamingReporting() {
 	}})
 }
 
-
 func (s *ClientInterceptorTestSuite) TestClientStream() {
 	ss, err := s.testClient.PingClientStream(s.ctx)
 	require.NoError(s.T(), err)

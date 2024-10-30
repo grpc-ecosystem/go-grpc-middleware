@@ -81,7 +81,6 @@ func (s *TestPingService) PingStream(stream TestService_PingStreamServer) error 
 	return nil
 }
 
-
 func (s *TestPingService) PingClientStream(stream TestService_PingClientStreamServer) error {
 	count := 0
 	for {

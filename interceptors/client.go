@@ -46,9 +46,9 @@ func StreamClientInterceptor(reportable ClientReportable) grpc.StreamClientInter
 type monitoredClientStream struct {
 	grpc.ClientStream
 
-	startTime time.Time
+	startTime       time.Time
 	hasServerStream bool
-	reporter  Reporter
+	reporter        Reporter
 }
 
 func (s *monitoredClientStream) SendMsg(m any) error {
@@ -75,5 +75,5 @@ func (s *monitoredClientStream) RecvMsg(m any) error {
 	} else {
 		s.reporter.PostCall(err, time.Since(s.startTime))
 	}
-	return err		
+	return err
 }
