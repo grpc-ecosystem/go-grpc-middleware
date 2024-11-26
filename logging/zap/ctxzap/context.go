@@ -3,7 +3,7 @@ package ctxzap
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -21,6 +21,8 @@ var (
 )
 
 // AddFields adds zap fields to the logger.
+//
+// This function is not safe to call concurrently.
 func AddFields(ctx context.Context, fields ...zapcore.Field) {
 	l, ok := ctx.Value(ctxMarkerKey).(*ctxLogger)
 	if !ok || l == nil {
