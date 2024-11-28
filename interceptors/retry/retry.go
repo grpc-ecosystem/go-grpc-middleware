@@ -100,14 +100,15 @@ func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientIntercepto
 				callOpts.onRetryCallback(parentCtx, attempt, lastErr)
 			}
 			var newStreamer grpc.ClientStream
-			newStreamer, lastErr = streamer(parentCtx, desc, cc, method, grpcOpts...)
+			newStreamer, lastErr = streamer(perStreamContext(parentCtx, callOpts, attempt), desc, cc, method, grpcOpts...)
 			if lastErr == nil {
 				retryingStreamer := &serverStreamingRetryingStream{
 					ClientStream: newStreamer,
 					callOpts:     callOpts,
 					parentCtx:    parentCtx,
 					streamerCall: func(ctx context.Context) (grpc.ClientStream, error) {
-						return streamer(ctx, desc, cc, method, grpcOpts...)
+						attempt++
+						return streamer(perStreamContext(ctx, callOpts, attempt), desc, cc, method, grpcOpts...)
 					},
 				}
 				return retryingStreamer, nil
@@ -294,6 +295,15 @@ func perCallContext(parentCtx context.Context, callOpts *options, attempt uint) 
 		ctx = mdClone.ToOutgoing(ctx)
 	}
 	return ctx, cancel
+}
+
+func perStreamContext(parentCtx context.Context, callOpts *options, attempt uint) context.Context {
+	ctx := parentCtx
+	if attempt > 0 && callOpts.includeHeader {
+		mdClone := metadata.ExtractOutgoing(ctx).Clone().Set(AttemptMetadataKey, fmt.Sprintf("%d", attempt))
+		ctx = mdClone.ToOutgoing(ctx)
+	}
+	return ctx
 }
 
 func contextErrToGrpcErr(err error) error {
