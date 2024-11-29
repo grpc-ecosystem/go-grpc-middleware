@@ -5,15 +5,20 @@ package prometheus
 
 import (
 	"context"
+	"net/netip"
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/prometheus/client_golang/prometheus"
+	grpcpeer "google.golang.org/grpc/peer"
 )
 
 type reporter struct {
-	clientMetrics   *ClientMetrics
-	serverMetrics   *ServerMetrics
+	clientMetrics *ClientMetrics
+	serverMetrics *ServerMetrics
+
+	grpcServerIP    string
+	grpcClientIP    string
 	typ             interceptors.GRPCType
 	service, method string
 	kind            Kind
@@ -28,9 +33,17 @@ func (r *reporter) PostCall(err error, rpcDuration time.Duration) {
 	// perform handling of metrics from code
 	switch r.kind {
 	case KindServer:
-		r.incrementWithExemplar(r.serverMetrics.serverHandledCounter, string(r.typ), r.service, r.method, code.String())
+		lvals := []string{string(r.typ), r.service, r.method, code.String()}
+		if r.serverMetrics.ipLabelsEnabled {
+			lvals = append(lvals, r.grpcServerIP, r.grpcClientIP)
+		}
+		r.incrementWithExemplar(r.serverMetrics.serverHandledCounter, lvals...)
 		if r.serverMetrics.serverHandledHistogram != nil {
-			r.observeWithExemplar(r.serverMetrics.serverHandledHistogram, rpcDuration.Seconds(), string(r.typ), r.service, r.method)
+			lvals = []string{string(r.typ), r.service, r.method}
+			if r.serverMetrics.ipLabelsEnabled {
+				lvals = append(lvals, r.grpcServerIP, r.grpcClientIP)
+			}
+			r.observeWithExemplar(r.serverMetrics.serverHandledHistogram, rpcDuration.Seconds(), lvals...)
 		}
 
 	case KindClient:
@@ -44,7 +57,11 @@ func (r *reporter) PostCall(err error, rpcDuration time.Duration) {
 func (r *reporter) PostMsgSend(_ any, _ error, sendDuration time.Duration) {
 	switch r.kind {
 	case KindServer:
-		r.incrementWithExemplar(r.serverMetrics.serverStreamMsgSent, string(r.typ), r.service, r.method)
+		lvals := []string{string(r.typ), r.service, r.method}
+		if r.serverMetrics.ipLabelsEnabled {
+			lvals = append(lvals, r.grpcServerIP, r.grpcClientIP)
+		}
+		r.incrementWithExemplar(r.serverMetrics.serverStreamMsgSent, lvals...)
 	case KindClient:
 		r.incrementWithExemplar(r.clientMetrics.clientStreamMsgSent, string(r.typ), r.service, r.method)
 		if r.clientMetrics.clientStreamSendHistogram != nil {
@@ -56,13 +73,25 @@ func (r *reporter) PostMsgSend(_ any, _ error, sendDuration time.Duration) {
 func (r *reporter) PostMsgReceive(_ any, _ error, recvDuration time.Duration) {
 	switch r.kind {
 	case KindServer:
-		r.incrementWithExemplar(r.serverMetrics.serverStreamMsgReceived, string(r.typ), r.service, r.method)
+		lvals := []string{string(r.typ), r.service, r.method}
+		if r.serverMetrics.ipLabelsEnabled {
+			lvals = append(lvals, r.grpcServerIP, r.grpcClientIP)
+		}
+		r.incrementWithExemplar(r.serverMetrics.serverStreamMsgReceived, lvals...)
 	case KindClient:
 		r.incrementWithExemplar(r.clientMetrics.clientStreamMsgReceived, string(r.typ), r.service, r.method)
 		if r.clientMetrics.clientStreamRecvHistogram != nil {
 			r.observeWithExemplar(r.clientMetrics.clientStreamRecvHistogram, recvDuration.Seconds(), string(r.typ), r.service, r.method)
 		}
 	}
+}
+
+func (r *reporter) incrementWithExemplar(c *prometheus.CounterVec, lvals ...string) {
+	c.WithLabelValues(lvals...).(prometheus.ExemplarAdder).AddWithExemplar(1, r.exemplar)
+}
+
+func (r *reporter) observeWithExemplar(h *prometheus.HistogramVec, value float64, lvals ...string) {
+	h.WithLabelValues(lvals...).(prometheus.ExemplarObserver).ObserveWithExemplar(value, r.exemplar)
 }
 
 type reportable struct {
@@ -86,10 +115,11 @@ func (rep *reportable) reporter(ctx context.Context, sm *ServerMetrics, cm *Clie
 	r := &reporter{
 		clientMetrics: cm,
 		serverMetrics: sm,
-		typ:           meta.Typ,
-		service:       meta.Service,
-		method:        meta.Method,
-		kind:          kind,
+
+		typ:     meta.Typ,
+		service: meta.Service,
+		method:  meta.Method,
+		kind:    kind,
 	}
 	if c.exemplarFn != nil {
 		r.exemplar = c.exemplarFn(ctx)
@@ -99,15 +129,28 @@ func (rep *reportable) reporter(ctx context.Context, sm *ServerMetrics, cm *Clie
 	case KindClient:
 		r.incrementWithExemplar(r.clientMetrics.clientStartedCounter, string(r.typ), r.service, r.method)
 	case KindServer:
-		r.incrementWithExemplar(r.serverMetrics.serverStartedCounter, string(r.typ), r.service, r.method)
+
+		lvals := []string{string(r.typ), r.service, r.method}
+		if r.serverMetrics.ipLabelsEnabled {
+			if peer, ok := grpcpeer.FromContext(ctx); ok {
+				// Fallback to net.Addr.String() when ParseAddrPort failed, because it already contains
+				// necessary information to be added to the label and we
+
+				// This is server side, so LocalAddr is server's address.
+				if addrPort, e := netip.ParseAddrPort(peer.LocalAddr.String()); e != nil {
+					r.grpcServerIP = peer.LocalAddr.String()
+				} else {
+					r.grpcServerIP = addrPort.Addr().String()
+				}
+				if addrPort, e := netip.ParseAddrPort(peer.Addr.String()); e != nil {
+					r.grpcClientIP = peer.Addr.String()
+				} else {
+					r.grpcClientIP = addrPort.Addr().String()
+				}
+			}
+			lvals = append(lvals, r.grpcServerIP, r.grpcClientIP)
+		}
+		r.incrementWithExemplar(r.serverMetrics.serverStartedCounter, lvals...)
 	}
 	return r, ctx
-}
-
-func (r *reporter) incrementWithExemplar(c *prometheus.CounterVec, lvals ...string) {
-	c.WithLabelValues(lvals...).(prometheus.ExemplarAdder).AddWithExemplar(1, r.exemplar)
-}
-
-func (r *reporter) observeWithExemplar(h *prometheus.HistogramVec, value float64, lvals ...string) {
-	h.WithLabelValues(lvals...).(prometheus.ExemplarObserver).ObserveWithExemplar(value, r.exemplar)
 }
