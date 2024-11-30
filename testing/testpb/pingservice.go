@@ -45,7 +45,7 @@ func (s *TestPingService) Ping(ctx context.Context, ping *PingRequest) (*PingRes
 
 func (s *TestPingService) PingError(_ context.Context, ping *PingErrorRequest) (*PingErrorResponse, error) {
 	code := codes.Code(ping.ErrorCodeReturned)
-	return nil, status.Error(code, "Userspace error")
+	return nil, WrapFieldsInError(status.Error(code, "Userspace error"), []any{"error-field", "plop"})
 }
 
 func (s *TestPingService) PingList(ping *PingListRequest, stream TestService_PingListServer) error {

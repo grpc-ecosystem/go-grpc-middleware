@@ -40,6 +40,9 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 	fields = fields.AppendUnique(Fields{"grpc.code", code.String()})
 	if err != nil {
 		fields = fields.AppendUnique(Fields{"grpc.error", fmt.Sprintf("%v", err)})
+		if c.opts.errorToFieldsFunc != nil {
+			fields = fields.AppendUnique(c.opts.errorToFieldsFunc(err))
+		}
 	}
 	if c.opts.fieldsFromCtxCallMetaFn != nil {
 		// fieldsFromCtxFn dups override the existing fields.
@@ -53,6 +56,9 @@ func (c *reporter) PostMsgSend(payload any, err error, duration time.Duration) {
 	fields := c.fields.WithUnique(ExtractFields(c.ctx))
 	if err != nil {
 		fields = fields.AppendUnique(Fields{"grpc.error", fmt.Sprintf("%v", err)})
+		if c.opts.errorToFieldsFunc != nil {
+			fields = fields.AppendUnique(c.opts.errorToFieldsFunc(err))
+		}
 	}
 	if c.opts.fieldsFromCtxCallMetaFn != nil {
 		// fieldsFromCtxFn dups override the existing fields.
@@ -104,6 +110,9 @@ func (c *reporter) PostMsgReceive(payload any, err error, duration time.Duration
 	fields := c.fields.WithUnique(ExtractFields(c.ctx))
 	if err != nil {
 		fields = fields.AppendUnique(Fields{"grpc.error", fmt.Sprintf("%v", err)})
+		if c.opts.errorToFieldsFunc != nil {
+			fields = fields.AppendUnique(c.opts.errorToFieldsFunc(err))
+		}
 	}
 	if c.opts.fieldsFromCtxCallMetaFn != nil {
 		// fieldsFromCtxFn dups override the existing fields.
