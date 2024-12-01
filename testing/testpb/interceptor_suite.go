@@ -11,6 +11,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"flag"
 	"math/big"
 	"net"
@@ -20,8 +21,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -148,6 +151,40 @@ func ExtractCtxTestNumber(ctx context.Context) *int {
 		return v
 	}
 	return &zero
+}
+
+type wrappedErrFields struct {
+	wrappedErr error
+	fields     []any
+}
+
+func (err *wrappedErrFields) Unwrap() error {
+	return err.wrappedErr
+}
+
+func (err *wrappedErrFields) Error() string {
+	// Ideally we print wrapped fields as well
+	return err.wrappedErr.Error()
+}
+
+func (err *wrappedErrFields) GRPCStatus() *status.Status {
+	if s, ok := status.FromError(err.wrappedErr); ok {
+		return s
+	}
+	return status.New(codes.Unknown, err.Error())
+}
+
+func WrapFieldsInError(err error, fields []any) error {
+	return &wrappedErrFields{err, fields}
+}
+
+func ExtractErrorFields(err error) []any {
+	var e *wrappedErrFields
+	ok := errors.As(err, &e)
+	if !ok {
+		return nil
+	}
+	return e.fields
 }
 
 // UnaryServerInterceptor returns a new unary server interceptors that adds query information logging.

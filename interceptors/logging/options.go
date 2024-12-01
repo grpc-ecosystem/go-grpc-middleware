@@ -57,6 +57,7 @@ var (
 type options struct {
 	levelFunc               CodeToLevel
 	loggableEvents          []LoggableEvent
+	errorToFieldsFunc       ErrorToFields
 	codeFunc                ErrorToCode
 	durationFieldFunc       DurationToFields
 	timestampFormat         string
@@ -88,6 +89,9 @@ func evaluateClientOpt(opts []Option) *options {
 
 // DurationToFields function defines how to produce duration fields for logging.
 type DurationToFields func(duration time.Duration) Fields
+
+// ErrorToFields function extract fields from error.
+type ErrorToFields func(err error) Fields
 
 // ErrorToCode function determines the error code of an error.
 // This makes using custom errors with grpc middleware easier.
@@ -166,6 +170,13 @@ func WithFieldsFromContextAndCallMeta(f fieldsFromCtxCallMetaFn) Option {
 func WithLogOnEvents(events ...LoggableEvent) Option {
 	return func(o *options) {
 		o.loggableEvents = events
+	}
+}
+
+// WithErrorFields allows to extract logging fields from an error.
+func WithErrorFields(f ErrorToFields) Option {
+	return func(o *options) {
+		o.errorToFieldsFunc = f
 	}
 }
 

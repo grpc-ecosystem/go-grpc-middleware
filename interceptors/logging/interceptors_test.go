@@ -205,9 +205,12 @@ func TestSuite(t *testing.T) {
 			logging.StreamClientInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel), logging.WithFieldsFromContext(customFields)),
 		),
 	}
+	errorFields := func(err error) logging.Fields {
+		return testpb.ExtractErrorFields(err)
+	}
 	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
-		grpc.StreamInterceptor(logging.StreamServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel), logging.WithFieldsFromContext(customFields))),
-		grpc.UnaryInterceptor(logging.UnaryServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel), logging.WithFieldsFromContext(customFields))),
+		grpc.StreamInterceptor(logging.StreamServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel), logging.WithFieldsFromContext(customFields), logging.WithErrorFields(errorFields))),
+		grpc.UnaryInterceptor(logging.UnaryServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel), logging.WithFieldsFromContext(customFields), logging.WithErrorFields(errorFields))),
 	}
 	suite.Run(t, s)
 }
@@ -367,6 +370,7 @@ func (s *loggingClientServerSuite) TestPingError_WithCustomLevels() {
 				AssertFieldNotEmpty(t, "grpc.request.deadline").
 				AssertField(t, "grpc.code", tcase.code.String()).
 				AssertField(t, "grpc.error", fmt.Sprintf("rpc error: code = %s desc = Userspace error", tcase.code.String())).
+				AssertField(t, "error-field", "plop").
 				AssertFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
 
 			clientFinishCallLogLine := lines[0]
