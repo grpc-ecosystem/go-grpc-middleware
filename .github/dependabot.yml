@@ -1,7 +1,23 @@
 # See https://docs.github.com/en/github/administering-a-repository/configuration-options-for-dependency-updates#package-ecosystem
 version: 2
 updates:
-  - package-ecosystem: "gomod"
-    directory: "/"
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "daily"
+      interval: weekly
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: gomod
+    directory: /examples
+    schedule:
+      interval: weekly
+  - package-ecosystem: gomod
+    directory: /interceptors/logging/examples
+    schedule:
+      interval: weekly
+  - package-ecosystem: gomod
+    directory: /providers/prometheus
+    schedule:
+      interval: weekly
