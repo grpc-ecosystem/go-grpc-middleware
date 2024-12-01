@@ -5,15 +5,13 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"runtime/debug"
 	"syscall"
 
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
@@ -43,30 +41,18 @@ const (
 	httpAddr  = ":8081"
 )
 
-// interceptorLogger adapts go-kit logger to interceptor logger.
+// interceptorLogger adapts slog logger to interceptor logger.
 // This code is simple enough to be copied and not imported.
-func interceptorLogger(l log.Logger) logging.Logger {
-	return logging.LoggerFunc(func(_ context.Context, lvl logging.Level, msg string, fields ...any) {
-		largs := append([]any{"msg", msg}, fields...)
-		switch lvl {
-		case logging.LevelDebug:
-			_ = level.Debug(l).Log(largs...)
-		case logging.LevelInfo:
-			_ = level.Info(l).Log(largs...)
-		case logging.LevelWarn:
-			_ = level.Warn(l).Log(largs...)
-		case logging.LevelError:
-			_ = level.Error(l).Log(largs...)
-		default:
-			panic(fmt.Sprintf("unknown level %v", lvl))
-		}
+func interceptorLogger(l *slog.Logger) logging.Logger {
+	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
+		l.Log(ctx, slog.Level(lvl), msg, fields...)
 	})
 }
 
 func main() {
 	// Setup logging.
-	logger := log.NewLogfmtLogger(os.Stderr)
-	rpcLogger := log.With(logger, "service", "gRPC/server", "component", component)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{}))
+	rpcLogger := logger.With("service", "gRPC/server", "component", component)
 	logTraceID := func(ctx context.Context) logging.Fields {
 		if span := trace.SpanContextFromContext(ctx); span.IsSampled() {
 			return logging.Fields{"traceID", span.TraceID().String()}
@@ -92,7 +78,7 @@ func main() {
 	// Set up OTLP tracing (stdout for debug).
 	exporter, err := stdout.New(stdout.WithPrettyPrint())
 	if err != nil {
-		level.Error(logger).Log("err", err)
+		logger.Error("failed to init exporter", "err", err)
 		os.Exit(1)
 	}
 	tp := sdktrace.NewTracerProvider(
@@ -129,7 +115,7 @@ func main() {
 	})
 	grpcPanicRecoveryHandler := func(p any) (err error) {
 		panicsTotal.Inc()
-		level.Error(rpcLogger).Log("msg", "recovered from panic", "panic", p, "stack", debug.Stack())
+		rpcLogger.Error("recovered from panic", "panic", p, "stack", debug.Stack())
 		return status.Errorf(codes.Internal, "%s", p)
 	}
 
@@ -158,7 +144,7 @@ func main() {
 		if err != nil {
 			return err
 		}
-		level.Info(logger).Log("msg", "starting gRPC server", "addr", l.Addr().String())
+		logger.Info("starting gRPC server", "addr", l.Addr().String())
 		return grpcSrv.Serve(l)
 	}, func(err error) {
 		grpcSrv.GracefulStop()
@@ -177,18 +163,18 @@ func main() {
 			},
 		))
 		httpSrv.Handler = m
-		level.Info(logger).Log("msg", "starting HTTP server", "addr", httpSrv.Addr)
+		logger.Info("starting HTTP server", "addr", httpSrv.Addr)
 		return httpSrv.ListenAndServe()
 	}, func(error) {
 		if err := httpSrv.Close(); err != nil {
-			level.Error(logger).Log("msg", "failed to stop web server", "err", err)
+			logger.Error("failed to stop web server", "err", err)
 		}
 	})
 
 	g.Add(run.SignalHandler(context.Background(), syscall.SIGINT, syscall.SIGTERM))
 
 	if err := g.Run(); err != nil {
-		level.Error(logger).Log("err", err)
+		logger.Error("program interrupted", "err", err)
 		os.Exit(1)
 	}
 }
