@@ -22,6 +22,9 @@ var (
 )
 
 type fieldsCtxMarker struct{}
+type fieldsCtxValue struct {
+	fields Fields
+}
 
 var (
 	// fieldsCtxMarkerKey is the Context value marker that is used by logging middleware to read and write logging fields into context.
@@ -161,28 +164,40 @@ NextAddField:
 // If there are no fields in the context, it returns an empty Fields value.
 // Extracted fields are useful to construct your own logger that has fields from gRPC interceptors.
 func ExtractFields(ctx context.Context) Fields {
-	t, ok := ctx.Value(fieldsCtxMarkerKey).(Fields)
+	t, ok := ctx.Value(fieldsCtxMarkerKey).(*fieldsCtxValue)
 	if !ok {
 		return nil
 	}
-	n := make(Fields, len(t))
-	copy(n, t)
+	n := make(Fields, len(t.fields))
+	copy(n, t.fields)
 	return n
 }
 
-// InjectFields allows adding fields to any existing Fields that will be used by the logging interceptor or can be
+// InjectFields returns a new context with merged fields that will be used by the logging interceptor or can be
 // extracted further in ExtractFields.
 // For explicitness, in case of duplicates, the newest field occurrence wins. This allows nested components to update
 // popular fields like grpc.component (e.g. server invoking gRPC client).
 //
 // Don't overuse mutation of fields to avoid surprises.
 func InjectFields(ctx context.Context, f Fields) context.Context {
-	return context.WithValue(ctx, fieldsCtxMarkerKey, f.WithUnique(ExtractFields(ctx)))
+	return context.WithValue(ctx, fieldsCtxMarkerKey, &fieldsCtxValue{fields: f.WithUnique(ExtractFields(ctx))})
 }
 
 // InjectLogField is like InjectFields, just for one field.
 func InjectLogField(ctx context.Context, key string, val any) context.Context {
 	return InjectFields(ctx, Fields{key, val})
+}
+
+// AddFields updates the fields already in the context that will be used by the logging interceptor or can be
+// extracted further in ExtractFields. For explicitness, in case of duplicates, the newest field occurrence wins.
+//
+// This function is not safe to call concurrently.
+func AddFields(ctx context.Context, f Fields) {
+	t, ok := ctx.Value(fieldsCtxMarkerKey).(*fieldsCtxValue)
+	if !ok {
+		return
+	}
+	t.fields = f.AppendUnique(t.fields)
 }
 
 // Logger requires Log method, similar to experimental slog, allowing logging interceptor to be interoperable. Official
