@@ -49,3 +49,14 @@ func TestFieldsDelete(t *testing.T) {
 	f.Delete("c")
 	require.Equal(t, Fields{}, f)
 }
+
+func TestAddFields(t *testing.T) {
+	c := InjectFields(context.Background(), Fields{"a", "2", "c", "3"})
+	f := ExtractFields(c)
+	require.Equal(t, Fields{"a", "2", "c", "3"}, f)
+	AddFields(c, Fields{"a", "1", "b", "2"})
+
+	// First context should have updated values.
+	f = ExtractFields(c)
+	require.Equal(t, Fields{"a", "1", "b", "2", "c", "3"}, f)
+}
