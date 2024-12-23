@@ -191,6 +191,9 @@ func InjectLogField(ctx context.Context, key string, val any) context.Context {
 // AddFields updates the fields already in the context that will be used by the logging interceptor or can be
 // extracted further in ExtractFields. For explicitness, in case of duplicates, the newest field occurrence wins.
 //
+// InjectFields should be used instead of AddFields where possible, as it does not require mutating the values
+// already in the context.
+//
 // This function is not safe to call concurrently.
 func AddFields(ctx context.Context, f Fields) {
 	t, ok := ctx.Value(fieldsCtxMarkerKey).(*fieldsCtxValue)
