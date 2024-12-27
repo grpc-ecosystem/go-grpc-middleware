@@ -27,6 +27,7 @@ var _ TestServiceServer = &TestPingService{}
 
 type TestPingService struct {
 	UnimplementedTestServiceServer
+	PingFunc func(ctx context.Context)
 }
 
 func (s *TestPingService) PingEmpty(_ context.Context, _ *PingEmptyRequest) (*PingEmptyResponse, error) {
@@ -34,6 +35,9 @@ func (s *TestPingService) PingEmpty(_ context.Context, _ *PingEmptyRequest) (*Pi
 }
 
 func (s *TestPingService) Ping(ctx context.Context, ping *PingRequest) (*PingResponse, error) {
+	if s.PingFunc != nil {
+		s.PingFunc(ctx)
+	}
 	// Modify the ctx value to verify the logger sees the value updated from the initial value
 	n := ExtractCtxTestNumber(ctx)
 	if n != nil {
