@@ -193,7 +193,12 @@ func TestSuite(t *testing.T) {
 		&baseLoggingSuite{
 			logger: newMockLogger(),
 			InterceptorTestSuite: &testpb.InterceptorTestSuite{
-				TestService: &testpb.TestPingService{},
+				TestService: &testpb.TestPingService{
+					PingFunc: func(ctx context.Context) {
+						// Modify the fields already in the context.
+						logging.AddFields(ctx, logging.Fields{"business-field", "baguette"})
+					},
+				},
 			},
 		},
 	}
@@ -255,7 +260,8 @@ func (s *loggingClientServerSuite) TestPing() {
 		AssertFieldNotEmpty(s.T(), "grpc.start_time").
 		AssertFieldNotEmpty(s.T(), "grpc.request.deadline").
 		AssertField(s.T(), "grpc.code", "OK").
-		AssertFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
+		AssertFieldNotEmpty(s.T(), "grpc.time_ms").
+		AssertField(s.T(), "business-field", "baguette").AssertNoMoreTags(s.T())
 
 	clientFinishCallLogLine := lines[0]
 	assert.Equal(s.T(), logging.LevelDebug, clientFinishCallLogLine.lvl)
