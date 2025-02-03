@@ -16,7 +16,7 @@ import (
 
 // UnaryServerInterceptor returns a new unary server interceptor that validates incoming messages.
 // If the request is invalid, clients may access a structured representation of the validation failure as an error detail.
-func UnaryServerInterceptor(validator *protovalidate.Validator, opts ...Option) grpc.UnaryServerInterceptor {
+func UnaryServerInterceptor(validator protovalidate.Validator, opts ...Option) grpc.UnaryServerInterceptor {
 	o := evaluateOpts(opts)
 
 	return func(
@@ -34,7 +34,7 @@ func UnaryServerInterceptor(validator *protovalidate.Validator, opts ...Option) 
 
 // StreamServerInterceptor returns a new streaming server interceptor that validates incoming messages.
 // If the request is invalid, clients may access a structured representation of the validation failure as an error detail.
-func StreamServerInterceptor(validator *protovalidate.Validator, opts ...Option) grpc.StreamServerInterceptor {
+func StreamServerInterceptor(validator protovalidate.Validator, opts ...Option) grpc.StreamServerInterceptor {
 	o := evaluateOpts(opts)
 	return func(
 		srv interface{},
@@ -54,7 +54,7 @@ func StreamServerInterceptor(validator *protovalidate.Validator, opts ...Option)
 type wrappedServerStream struct {
 	grpc.ServerStream
 
-	validator *protovalidate.Validator
+	validator protovalidate.Validator
 	options   *options
 }
 
@@ -65,7 +65,7 @@ func (w *wrappedServerStream) RecvMsg(m interface{}) error {
 	return validateMsg(m, w.validator, w.options)
 }
 
-func validateMsg(m interface{}, validator *protovalidate.Validator, opts *options) error {
+func validateMsg(m interface{}, validator protovalidate.Validator, opts *options) error {
 	msg, ok := m.(proto.Message)
 	if !ok {
 		return status.Errorf(codes.Internal, "unsupported message type: %T", m)
