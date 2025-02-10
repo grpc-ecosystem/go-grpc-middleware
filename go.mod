@@ -1,8 +1,6 @@
 module github.com/grpc-ecosystem/go-grpc-middleware/v2
 
-go 1.21.1
-
-toolchain go1.21.13
+go 1.21
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.4-20250130201111-63bb56e20495.1
