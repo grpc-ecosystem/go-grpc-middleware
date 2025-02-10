@@ -5,6 +5,7 @@ package retry
 
 import (
 	"context"
+	"math"
 	"math/rand"
 	"time"
 )
@@ -50,6 +51,31 @@ func BackoffExponential(scalar time.Duration) BackoffFunc {
 // BackoffExponential does, but adds jitter.
 func BackoffExponentialWithJitter(scalar time.Duration, jitterFraction float64) BackoffFunc {
 	return func(ctx context.Context, attempt uint) time.Duration {
+		exp := math.Exp2(float64(attempt))
+		dur := scalar * time.Duration(exp)
+		// Check for overflow in duration multiplication
+		if exp != 0 && dur/scalar != time.Duration(exp) {
+			return time.Duration(math.MaxInt64)
+		}
 		return jitterUp(scalar*time.Duration(exponentBase2(attempt)), jitterFraction)
+	}
+}
+
+func BackoffExponentialWithJitterBounded(scalar time.Duration, jitterFrac float64, maxBound time.Duration) BackoffFunc {
+	return func(ctx context.Context, attempt uint) time.Duration {
+		exp := exponentBase2(attempt)
+		dur := scalar * time.Duration(exp)
+		// Check for overflow in duration multiplication
+		if exp != 0 && dur/scalar != time.Duration(exp) {
+			return maxBound
+		}
+		// Apply random jitter between -jitterFrac and +jitterFrac
+		jitter := 1 + jitterFrac*(rand.Float64()*2-1)
+		jitteredDuration := time.Duration(float64(dur) * jitter)
+		// Check for overflow in jitter multiplication
+		if float64(dur)*jitter > float64(math.MaxInt64) {
+			return maxBound
+		}
+		return min(jitteredDuration, maxBound)
 	}
 }
