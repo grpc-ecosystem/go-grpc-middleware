@@ -25,8 +25,15 @@ func jitterUp(duration time.Duration, jitter float64) time.Duration {
 	return time.Duration(float64(duration) * (1 + multiplier))
 }
 
-// exponentBase2 computes 2^(a-1) where a >= 1. If a is 0, the result is 0.
+// exponentBase2 computes 2^(a-1) where a >= 1. If a is 0, the result is 1.
+// if a is greater than 62, the result is 2^62 to avoid overflowing int64
 func exponentBase2(a uint) uint {
+	if a == 0 {
+		return 1
+	}
+	if a > 62 {
+		return 1 << 62
+	}
 	return (1 << a) >> 1
 }
 
@@ -51,7 +58,7 @@ func BackoffExponential(scalar time.Duration) BackoffFunc {
 // BackoffExponential does, but adds jitter.
 func BackoffExponentialWithJitter(scalar time.Duration, jitterFraction float64) BackoffFunc {
 	return func(ctx context.Context, attempt uint) time.Duration {
-		exp := math.Exp2(float64(attempt))
+		exp := exponentBase2(attempt)
 		dur := scalar * time.Duration(exp)
 		// Check for overflow in duration multiplication
 		if exp != 0 && dur/scalar != time.Duration(exp) {
