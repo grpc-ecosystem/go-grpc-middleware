@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	"github.com/bufbuild/protovalidate-go"
+	protovalidate "github.com/bufbuild/protovalidate-go"
 	protovalidate_middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testvalidate"
 	testvalidatev1 "github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testvalidate/v1"
@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 func TestUnaryServerInterceptor(t *testing.T) {
@@ -45,9 +46,31 @@ func TestUnaryServerInterceptor(t *testing.T) {
 	t.Run("invalid_email", func(t *testing.T) {
 		_, err = interceptor(context.TODO(), testvalidate.BadUnaryRequest, info, handler)
 		assertEqualViolation(t, &validate.Violation{
-			FieldPath:    "message",
-			ConstraintId: "string.email",
-			Message:      "value must be a valid email address",
+			Field: &validate.FieldPath{
+				Elements: []*validate.FieldPathElement{
+					{
+						FieldNumber: proto.Int32(1),
+						FieldName:   proto.String("message"),
+						FieldType:   descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
+					},
+				},
+			},
+			Rule: &validate.FieldPath{
+				Elements: []*validate.FieldPathElement{
+					{
+						FieldNumber: proto.Int32(14),
+						FieldName:   proto.String("string"),
+						FieldType:   descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
+					},
+					{
+						FieldNumber: proto.Int32(12),
+						FieldName:   proto.String("email"),
+						FieldType:   descriptorpb.FieldDescriptorProto_TYPE_BOOL.Enum(),
+					},
+				},
+			},
+			ConstraintId: proto.String("string.email"),
+			Message:      proto.String("value must be a valid email address"),
 		}, err)
 	})
 
@@ -157,9 +180,31 @@ func TestStreamServerInterceptor(t *testing.T) {
 
 		_, err = out.Recv()
 		assertEqualViolation(t, &validate.Violation{
-			FieldPath:    "message",
-			ConstraintId: "string.email",
-			Message:      "value must be a valid email address",
+			Field: &validate.FieldPath{
+				Elements: []*validate.FieldPathElement{
+					{
+						FieldNumber: proto.Int32(1),
+						FieldName:   proto.String("message"),
+						FieldType:   descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
+					},
+				},
+			},
+			Rule: &validate.FieldPath{
+				Elements: []*validate.FieldPathElement{
+					{
+						FieldNumber: proto.Int32(14),
+						FieldName:   proto.String("string"),
+						FieldType:   descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
+					},
+					{
+						FieldNumber: proto.Int32(12),
+						FieldName:   proto.String("email"),
+						FieldType:   descriptorpb.FieldDescriptorProto_TYPE_BOOL.Enum(),
+					},
+				},
+			},
+			ConstraintId: proto.String("string.email"),
+			Message:      proto.String("value must be a valid email address"),
 		}, err)
 		assert.False(t, *called)
 	})
