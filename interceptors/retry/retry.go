@@ -45,7 +45,9 @@ func UnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterceptor 
 			}
 			callCtx, cancel := perCallContext(parentCtx, callOpts, attempt)
 			lastErr = invoker(callCtx, method, req, reply, cc, grpcOpts...)
-			cancel() // Clean up potential resources.
+			// Cancel the context immediately after invoking the next call in the chain to avoid
+			// holing onto its memory until this function returns.
+			cancel()
 			// TODO(mwitkow): Maybe dial and transport errors should be retriable?
 			if lastErr == nil {
 				return nil
