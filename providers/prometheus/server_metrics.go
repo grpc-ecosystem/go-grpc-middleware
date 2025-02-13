@@ -13,6 +13,7 @@ import (
 // ServerMetrics represents a collection of metrics to be registered on a
 // Prometheus metrics registry for a gRPC server.
 type ServerMetrics struct {
+	ipLabelsEnabled         bool
 	serverStartedCounter    *prometheus.CounterVec
 	serverHandledCounter    *prometheus.CounterVec
 	serverStreamMsgReceived *prometheus.CounterVec
@@ -27,29 +28,43 @@ type ServerMetrics struct {
 func NewServerMetrics(opts ...ServerMetricsOption) *ServerMetrics {
 	var config serverMetricsConfig
 	config.apply(opts)
-	return &ServerMetrics{
+
+	addIPLables := func(orig []string) []string {
+		if config.ipLabelsEnabled {
+			return serverMetricAddIPLabel(orig)
+		}
+		return orig
+	}
+
+	sm := &ServerMetrics{
+		ipLabelsEnabled: config.ipLabelsEnabled,
 		serverStartedCounter: prometheus.NewCounterVec(
 			config.counterOpts.apply(prometheus.CounterOpts{
 				Name: "grpc_server_started_total",
 				Help: "Total number of RPCs started on the server.",
-			}), []string{"grpc_type", "grpc_service", "grpc_method"}),
+			}), addIPLables([]string{"grpc_type", "grpc_service", "grpc_method"})),
 		serverHandledCounter: prometheus.NewCounterVec(
 			config.counterOpts.apply(prometheus.CounterOpts{
 				Name: "grpc_server_handled_total",
 				Help: "Total number of RPCs completed on the server, regardless of success or failure.",
-			}), []string{"grpc_type", "grpc_service", "grpc_method", "grpc_code"}),
+			}), addIPLables([]string{"grpc_type", "grpc_service", "grpc_method", "grpc_code"})),
 		serverStreamMsgReceived: prometheus.NewCounterVec(
 			config.counterOpts.apply(prometheus.CounterOpts{
 				Name: "grpc_server_msg_received_total",
 				Help: "Total number of RPC stream messages received on the server.",
-			}), []string{"grpc_type", "grpc_service", "grpc_method"}),
+			}), addIPLables([]string{"grpc_type", "grpc_service", "grpc_method"})),
 		serverStreamMsgSent: prometheus.NewCounterVec(
 			config.counterOpts.apply(prometheus.CounterOpts{
 				Name: "grpc_server_msg_sent_total",
 				Help: "Total number of gRPC stream messages sent by the server.",
-			}), []string{"grpc_type", "grpc_service", "grpc_method"}),
-		serverHandledHistogram: config.serverHandledHistogram,
+			}), addIPLables([]string{"grpc_type", "grpc_service", "grpc_method"})),
 	}
+	if config.serverHandledHistogramEnabled {
+		sm.serverHandledHistogram = newServerHandlingTimeHistogram(
+			config.ipLabelsEnabled, config.serverHandledHistogramOptions)
+	}
+
+	return sm
 }
 
 // Describe sends the super-set of all possible descriptors of metrics
@@ -95,15 +110,27 @@ func (m *ServerMetrics) InitializeMetrics(server reflection.ServiceInfoProvider)
 func (m *ServerMetrics) preRegisterMethod(serviceName string, mInfo *grpc.MethodInfo) {
 	methodName := mInfo.Name
 	methodType := string(typeFromMethodInfo(mInfo))
-	// These are just references (no increments), as just referencing will create the labels but not set values.
-	_, _ = m.serverStartedCounter.GetMetricWithLabelValues(methodType, serviceName, methodName)
-	_, _ = m.serverStreamMsgReceived.GetMetricWithLabelValues(methodType, serviceName, methodName)
-	_, _ = m.serverStreamMsgSent.GetMetricWithLabelValues(methodType, serviceName, methodName)
-	if m.serverHandledHistogram != nil {
-		_, _ = m.serverHandledHistogram.GetMetricWithLabelValues(methodType, serviceName, methodName)
+
+	lvals := []string{methodType, serviceName, methodName}
+	if m.ipLabelsEnabled {
+		// Because netip.Addr.String() returns "invalid IP" for zero Addr,
+		// we use this value with grpc_server and grpc_client.
+		lvals = append(lvals, "invalid IP", "invalid IP")
 	}
+	// These are just references (no increments), as just referencing will create the labels but not set values.
+	_, _ = m.serverStartedCounter.GetMetricWithLabelValues(lvals...)
+	_, _ = m.serverStreamMsgReceived.GetMetricWithLabelValues(lvals...)
+	_, _ = m.serverStreamMsgSent.GetMetricWithLabelValues(lvals...)
+	if m.serverHandledHistogram != nil {
+		_, _ = m.serverHandledHistogram.GetMetricWithLabelValues(lvals...)
+	}
+
 	for _, code := range interceptors.AllCodes {
-		_, _ = m.serverHandledCounter.GetMetricWithLabelValues(methodType, serviceName, methodName, code.String())
+		lvals = []string{methodType, serviceName, methodName, code.String()}
+		if m.ipLabelsEnabled {
+			lvals = append(lvals, "invalid IP", "invalid IP")
+		}
+		_, _ = m.serverHandledCounter.GetMetricWithLabelValues(lvals...)
 	}
 }
 
