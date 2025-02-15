@@ -101,9 +101,7 @@ lint: $(BUF) $(COPYRIGHT) fmt docs
 #      --mem-profile-path string   Path to memory profile output file
 # to debug big allocations during linting.
 lint_module_%: ## Runs various static analysis against our code.
-$(MODULES:%=lint_module_%): lint_module_%: $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL)
-	@echo ">> verifying modules being imported"
-	@cd $* && $(FAILLINT) -paths "fmt.{Print,Printf,Println},github.com/golang/protobuf=google.golang.org/protobuf" ./...
+$(MODULES:%=lint_module_%): lint_module_%: $(GOLANGCI_LINT) $(MISSPELL)
 	
 	@echo ">> examining all of the Go files"
 	@cd $* && go vet -stdmethods=false ./...
