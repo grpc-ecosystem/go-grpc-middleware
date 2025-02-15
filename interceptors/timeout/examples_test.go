@@ -15,7 +15,7 @@ import (
 
 // Initialization shows an initialization sequence with a custom client request timeout.
 func Example_initialization() {
-	clientConn, err := grpc.Dial(
+	clientConn, err := grpc.NewClient(
 		"ServerAddr",
 		grpc.WithUnaryInterceptor(
 			// Set your client request timeout.

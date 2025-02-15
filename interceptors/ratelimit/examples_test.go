@@ -59,8 +59,7 @@ func ExampleUnaryClientInterceptor() {
 	// Create stream rateLimiter, based on token bucket here.
 	// You can implement your own rate-limiter for the interface.
 	limiter := &alwaysPassLimiter{}
-	_, _ = grpc.DialContext(
-		context.Background(),
+	_, _ = grpc.NewClient(
 		":8080",
 		grpc.WithUnaryInterceptor(
 			ratelimit.UnaryClientInterceptor(limiter),
@@ -73,8 +72,7 @@ func ExampleStreamClientInterceptor() {
 	// Create stream rateLimiter, based on token bucket here.
 	// You can implement your own rate-limiter for the interface.
 	limiter := &alwaysPassLimiter{}
-	_, _ = grpc.DialContext(
-		context.Background(),
+	_, _ = grpc.NewClient(
 		":8080",
 		grpc.WithChainStreamInterceptor(
 			ratelimit.StreamClientInterceptor(limiter),

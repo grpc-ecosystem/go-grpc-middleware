@@ -13,18 +13,18 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var (
+type (
 	someKey struct{}
 	other   struct{}
 )
 
 func TestWrapServerStream(t *testing.T) {
-	ctx := context.WithValue(context.TODO(), someKey, 1)
+	ctx := context.WithValue(context.TODO(), someKey{}, 1)
 	fake := &fakeServerStream{ctx: ctx}
 	wrapped := WrapServerStream(fake)
-	assert.NotNil(t, wrapped.Context().Value(someKey), "values from fake must propagate to wrapper")
-	wrapped.WrappedContext = context.WithValue(wrapped.Context(), other, 2)
-	assert.NotNil(t, wrapped.Context().Value(other), "values from wrapper must be set")
+	assert.NotNil(t, wrapped.Context().Value(someKey{}), "values from fake must propagate to wrapper")
+	wrapped.WrappedContext = context.WithValue(wrapped.Context(), other{}, 2)
+	assert.NotNil(t, wrapped.Context().Value(other{}), "values from wrapper must be set")
 }
 
 type fakeServerStream struct {

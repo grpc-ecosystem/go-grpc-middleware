@@ -135,7 +135,7 @@ func startGrpcServer(t *testing.T, called *bool, ignoreMessages ...protoreflect.
 		return lis.Dial()
 	}
 
-	conn, err := grpc.DialContext(context.Background(),
+	conn, err := grpc.NewClient(
 		"bufnet",
 		grpc.WithContextDialer(dialer),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),

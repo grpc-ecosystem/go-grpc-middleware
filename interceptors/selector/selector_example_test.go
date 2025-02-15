@@ -40,7 +40,7 @@ func Example_ratelimit() {
 	)
 }
 
-var tokenInfoKey struct{}
+type tokenInfoKey struct{}
 
 func parseToken(token string) (struct{}, error) {
 	return struct{}{}, nil
@@ -65,7 +65,7 @@ func exampleAuthFunc(ctx context.Context) (context.Context, error) {
 	ctx = logging.InjectFields(ctx, logging.Fields{"auth.sub", userClaimFromToken(tokenInfo)})
 
 	// WARNING: In production define your own type to avoid context collisions.
-	return context.WithValue(ctx, tokenInfoKey, tokenInfo), nil
+	return context.WithValue(ctx, tokenInfoKey{}, tokenInfo), nil
 }
 
 func loginSkip(_ context.Context, c interceptors.CallMeta) bool {

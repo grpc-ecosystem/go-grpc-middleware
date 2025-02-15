@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -34,15 +33,10 @@ func TestPingServiceOnWire(t *testing.T) {
 		<-stopped
 	}()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
 	// This is the point where we hook up the interceptor.
-	clientConn, err := grpc.DialContext(
-		ctx,
+	clientConn, err := grpc.NewClient(
 		serverListener.Addr().String(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
 	)
 	require.NoError(t, err, "must not error on client Dial")
 
