@@ -115,7 +115,7 @@ func startGrpcServer(t *testing.T, called *bool, ignoreMessages ...protoreflect.
 	lis := bufconn.Listen(bufSize)
 
 	validator, err := protovalidate.New()
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	s := grpc.NewServer(
 		grpc.StreamInterceptor(
@@ -136,7 +136,7 @@ func startGrpcServer(t *testing.T, called *bool, ignoreMessages ...protoreflect.
 	}
 
 	conn, err := grpc.NewClient(
-		"bufnet",
+		"passthrough:///bufnet",
 		grpc.WithContextDialer(dialer),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
@@ -161,7 +161,7 @@ func TestStreamServerInterceptor(t *testing.T) {
 		)
 
 		out, err := client.SendStream(context.Background(), testvalidate.GoodStreamRequest)
-		assert.Nil(t, err)
+		require.Nil(t, err, "SendStream failed: %v", err)
 
 		_, err = out.Recv()
 		t.Log(err)
@@ -176,7 +176,7 @@ func TestStreamServerInterceptor(t *testing.T) {
 		)
 
 		out, err := client.SendStream(context.Background(), testvalidate.BadStreamRequest)
-		assert.Nil(t, err)
+		require.Nil(t, err, "SendStream failed: %v", err)
 
 		_, err = out.Recv()
 		assertEqualViolation(t, &validate.Violation{
@@ -216,7 +216,7 @@ func TestStreamServerInterceptor(t *testing.T) {
 		)
 
 		out, err := client.SendStream(context.Background(), testvalidate.BadStreamRequest)
-		assert.Nil(t, err)
+		require.Nil(t, err, "SendStream failed: %v", err)
 
 		_, err = out.Recv()
 		assert.Nil(t, err)

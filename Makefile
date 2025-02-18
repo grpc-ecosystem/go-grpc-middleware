@@ -47,13 +47,7 @@ fmt: $(GOIMPORTS)
 
 .PHONY: test
 test:
-	@echo "Running tests for all modules: $(MODULES)"
-	$(MAKE) $(MODULES:%=test_module_%)
-
-.PHONY: test_module_%
-$(MODULES:%=test_module_%): test_module_%:
-	@echo "Running tests for dir: $*"
-	cd $* && go test -v -race ./...
+	go test ./...
 
 .PHONY: deps
 deps:
