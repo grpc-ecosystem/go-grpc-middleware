@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var authedMarker struct{}
+type authedMarker struct{}
 
 var (
 	commonAuthToken   = "some_good_token"
@@ -41,12 +41,12 @@ func buildDummyAuthFunction(expectedScheme string, expectedToken string) func(ct
 		if token != expectedToken {
 			return nil, status.Error(codes.PermissionDenied, "buildDummyAuthFunction bad token")
 		}
-		return context.WithValue(ctx, authedMarker, "marker_exists"), nil
+		return context.WithValue(ctx, authedMarker{}, "marker_exists"), nil
 	}
 }
 
 func assertAuthMarkerExists(t *testing.T, ctx context.Context) {
-	assert.Equal(t, "marker_exists", ctx.Value(authedMarker).(string), "auth marker from buildDummyAuthFunction must be passed around")
+	assert.Equal(t, "marker_exists", ctx.Value(authedMarker{}).(string), "auth marker from buildDummyAuthFunction must be passed around")
 }
 
 type assertingPingService struct {

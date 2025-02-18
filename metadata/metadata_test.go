@@ -12,15 +12,15 @@ import (
 	grpcMetadata "google.golang.org/grpc/metadata"
 )
 
-var parentKey struct{}
+type parentKey struct{}
 
 var (
 	testPairs = []string{"singlekey", "uno", "multikey", "one", "multikey", "two", "multikey", "three"}
-	parentCtx = context.WithValue(context.TODO(), parentKey, "parentValue")
+	parentCtx = context.WithValue(context.TODO(), parentKey{}, "parentValue")
 )
 
 func assertRetainsParentContext(t *testing.T, ctx context.Context) {
-	x := ctx.Value(parentKey)
+	x := ctx.Value(parentKey{})
 	assert.EqualValues(t, "parentValue", x, "context must contain parentCtx")
 }
 

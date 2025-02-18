@@ -56,10 +56,7 @@ func (s *ServerInterceptorTestSuite) SetupSuite() {
 		_ = s.server.Serve(s.serverListener)
 	}()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
-	s.clientConn, err = grpc.DialContext(ctx, s.serverListener.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	s.clientConn, err = grpc.NewClient(s.serverListener.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(s.T(), err, "must not error on client Dial")
 	s.testClient = testpb.NewTestServiceClient(s.clientConn)
 }

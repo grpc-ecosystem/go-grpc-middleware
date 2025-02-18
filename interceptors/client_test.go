@@ -159,15 +159,10 @@ func (s *ClientInterceptorTestSuite) SetupSuite() {
 		s.stopped <- s.server.Serve(s.serverListener)
 	}()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
 	// This is the point where we hook up the interceptor.
-	s.clientConn, err = grpc.DialContext(
-		ctx,
+	s.clientConn, err = grpc.NewClient(
 		s.serverListener.Addr().String(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
 		grpc.WithUnaryInterceptor(UnaryClientInterceptor(s.mock)),
 		grpc.WithStreamInterceptor(StreamClientInterceptor(s.mock)),
 	)
