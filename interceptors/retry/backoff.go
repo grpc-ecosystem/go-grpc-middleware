@@ -27,7 +27,7 @@ func jitterUp(duration time.Duration, jitter float64) time.Duration {
 
 // exponentBase2 computes 2^(a-1) where a >= 1. If a is 0, the result is 1.
 // if a is greater than 62, the result is 2^62 to avoid overflowing int64
-func exponentBase2(a uint) uint {
+func exponentBase2(a uint) uint64 {
 	if a == 0 {
 		return 1
 	}
