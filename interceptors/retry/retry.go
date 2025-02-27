@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
-	"golang.org/x/net/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	grpcMetadata "google.golang.org/grpc/metadata"
@@ -320,7 +319,7 @@ func contextErrToGrpcErr(err error) error {
 }
 
 func logTrace(ctx context.Context, format string, a ...any) {
-	tr, ok := trace.FromContext(ctx)
+	tr, ok := traceFromCtx(ctx)
 	if !ok {
 		return
 	}
