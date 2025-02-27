@@ -5,8 +5,8 @@
 
 package retry
 
-// retrynotrace can be used to avoid importing golang.org/x/net/trace, which in
-// turn enables binaries using go-grpc-middleware for dead code elimination, which can
+// retrynotrace can be used to avoid importing golang.org/x/net/trace,
+// which allows for more aggressive deadcode elimination, which can
 // yield improvements in binary size when tracing is not needed.
 
 import (
