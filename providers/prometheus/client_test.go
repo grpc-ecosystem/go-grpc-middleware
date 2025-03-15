@@ -91,7 +91,7 @@ func (s *ClientInterceptorTestSuite) TestStreamingIncrementsMetrics() {
 	ss, err = s.Client.PingList(s.SimpleCtx(), &testpb.PingListRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)})
 	require.NoError(s.T(), err, "PingList must not fail immediately")
 
-	// Do a read, just to progate errors.
+	// Do a read, just to propagate errors.
 	_, err = ss.Recv()
 	st, _ := status.FromError(err)
 	require.Equal(s.T(), codes.FailedPrecondition, st.Code(), "Recv must return FailedPrecondition, otherwise the test is wrong")

@@ -75,7 +75,7 @@ func WithHistogramBuckets(buckets []float64) HistogramOption {
 // This function is helpful when specifying more than just the buckets, like using NativeHistograms.
 func WithHistogramOpts(opts *prometheus.HistogramOpts) HistogramOption {
 	// TODO: This isn't ideal either if new fields are added to prometheus.HistogramOpts.
-	// Maybe we can change the interface to accept abitrary HistogramOpts and
+	// Maybe we can change the interface to accept arbitrary HistogramOpts and
 	// only make sure to overwrite the necessary fields (name, labels).
 	return func(o *prometheus.HistogramOpts) {
 		o.Buckets = opts.Buckets

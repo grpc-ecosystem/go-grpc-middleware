@@ -9,7 +9,7 @@ description of the validation failure.
 
 It supports two ways of work:
 
-1. use new annotations that will be catched and processed by `protovalidate-go` package.
+1. use new annotations that will be caught and processed by `protovalidate-go` package.
 
 2. use legacy mode, annotations will be same as for `protoc-gen-validate` and `Validate()` method will be generated.
 
