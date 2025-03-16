@@ -88,7 +88,7 @@ func TestStreamServerInterceptor(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
-	t.Run("slected", func(t *testing.T) {
+	t.Run("selected", func(t *testing.T) {
 		info := &grpc.StreamServerInfo{
 			FullMethod: svcMethod,
 		}
