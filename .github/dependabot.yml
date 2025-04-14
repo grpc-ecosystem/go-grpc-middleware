@@ -6,18 +6,10 @@ updates:
     schedule:
       interval: weekly
   - package-ecosystem: gomod
-    directory: /
-    schedule:
-      interval: weekly
-  - package-ecosystem: gomod
-    directory: /examples
-    schedule:
-      interval: weekly
-  - package-ecosystem: gomod
-    directory: /interceptors/logging/examples
-    schedule:
-      interval: weekly
-  - package-ecosystem: gomod
-    directory: /providers/prometheus
+    directories: 
+      - /
+      - /examples
+      - /interceptors/logging/examples
+      - /providers/prometheus
     schedule:
       interval: weekly
