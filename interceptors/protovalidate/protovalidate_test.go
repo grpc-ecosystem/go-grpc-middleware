@@ -69,8 +69,8 @@ func TestUnaryServerInterceptor(t *testing.T) {
 					},
 				},
 			},
-			ConstraintId: proto.String("string.email"),
-			Message:      proto.String("value must be a valid email address"),
+			RuleId:  proto.String("string.email"),
+			Message: proto.String("value must be a valid email address"),
 		}, err)
 	})
 
@@ -203,8 +203,8 @@ func TestStreamServerInterceptor(t *testing.T) {
 					},
 				},
 			},
-			ConstraintId: proto.String("string.email"),
-			Message:      proto.String("value must be a valid email address"),
+			RuleId:  proto.String("string.email"),
+			Message: proto.String("value must be a valid email address"),
 		}, err)
 		assert.False(t, *called)
 	})
