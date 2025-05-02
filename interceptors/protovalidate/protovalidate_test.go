@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	protovalidate "github.com/bufbuild/protovalidate-go"
+	"buf.build/go/protovalidate"
 	protovalidate_middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testvalidate"
 	testvalidatev1 "github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testvalidate/v1"
@@ -69,8 +69,8 @@ func TestUnaryServerInterceptor(t *testing.T) {
 					},
 				},
 			},
-			ConstraintId: proto.String("string.email"),
-			Message:      proto.String("value must be a valid email address"),
+			RuleId:  proto.String("string.email"),
+			Message: proto.String("value must be a valid email address"),
 		}, err)
 	})
 
@@ -203,8 +203,8 @@ func TestStreamServerInterceptor(t *testing.T) {
 					},
 				},
 			},
-			ConstraintId: proto.String("string.email"),
-			Message:      proto.String("value must be a valid email address"),
+			RuleId:  proto.String("string.email"),
+			Message: proto.String("value must be a valid email address"),
 		}, err)
 		assert.False(t, *called)
 	})
