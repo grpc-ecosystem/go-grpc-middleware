@@ -127,6 +127,7 @@ type Option func(*config)
 
 type config struct {
 	exemplarFn exemplarFromCtxFn
+	labelsFn   labelsFromCtxFn
 }
 
 func (c *config) apply(opts []Option) {
@@ -139,5 +140,13 @@ func (c *config) apply(opts []Option) {
 func WithExemplarFromContext(exemplarFn exemplarFromCtxFn) Option {
 	return func(o *config) {
 		o.exemplarFn = exemplarFn
+	}
+}
+
+// WithLabelsFromContext sets function that will be used to extract labels from context for metrics.
+// This should be used in conjunction with WithContextLabels to define which labels to extract.
+func WithLabelsFromContext(labelsFn labelsFromCtxFn) Option {
+	return func(o *config) {
+		o.labelsFn = labelsFn
 	}
 }

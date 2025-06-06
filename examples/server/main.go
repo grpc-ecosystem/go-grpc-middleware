@@ -18,6 +18,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
@@ -65,6 +66,11 @@ func main() {
 		grpcprom.WithServerHandlingTimeHistogram(
 			grpcprom.WithHistogramBuckets([]float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120}),
 		),
+		// Add tenant_name as a context label. This server option is necessary
+		// to initialize the metrics with the labels that will be provided
+		// dynamically from the context. This should be used in tandem with
+		// WithLabelsFromContext in the interceptor options.
+		grpcprom.WithContextLabels("tenant_name"),
 	)
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(srvMetrics)
@@ -73,6 +79,21 @@ func main() {
 			return prometheus.Labels{"traceID": span.TraceID().String()}
 		}
 		return nil
+	}
+
+	// Extract the tenant name value from gRPC metadata
+	// and use it as a label on our metrics.
+	labelsFromContext := func(ctx context.Context) prometheus.Labels {
+		labels := prometheus.Labels{}
+
+		md := metadata.ExtractIncoming(ctx)
+		tenantName := md.Get("tenant-name")
+		if tenantName == "" {
+			tenantName = "unknown"
+		}
+		labels["tenant_name"] = tenantName
+
+		return labels
 	}
 
 	// Set up OTLP tracing (stdout for debug).
@@ -122,13 +143,19 @@ func main() {
 	grpcSrv := grpc.NewServer(
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(
-			srvMetrics.UnaryServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
+			srvMetrics.UnaryServerInterceptor(
+				grpcprom.WithExemplarFromContext(exemplarFromContext),
+				grpcprom.WithLabelsFromContext(labelsFromContext),
+			),
 			logging.UnaryServerInterceptor(interceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID)),
 			selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFn), selector.MatchFunc(allButHealthZ)),
 			recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
 		),
 		grpc.ChainStreamInterceptor(
-			srvMetrics.StreamServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
+			srvMetrics.StreamServerInterceptor(
+				grpcprom.WithExemplarFromContext(exemplarFromContext),
+				grpcprom.WithLabelsFromContext(labelsFromContext),
+			),
 			logging.StreamServerInterceptor(interceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID)),
 			selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFn), selector.MatchFunc(allButHealthZ)),
 			recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
