@@ -16,22 +16,28 @@ This repository offers ready-to-use middlewares that implements gRPC interceptor
 
 Additional great feature of interceptors is the fact we can chain those. For example below you can find example server side chain of interceptors with full observabiliy correlation, auth and panic recovery:
 
-```go mdox-exec="sed -n '122,136p' examples/server/main.go"
-		}
-		// NOTE: You can also pass the token in the context for further interceptors or gRPC service code.
-		return ctx, nil
-	}
-
-	// Setup auth matcher.
-	allButHealthZ := func(ctx context.Context, callMeta interceptors.CallMeta) bool {
-		return healthpb.Health_ServiceDesc.ServiceName != callMeta.Service
-	}
-
-	// Setup metric for panic recoveries.
-	panicsTotal := promauto.With(reg).NewCounter(prometheus.CounterOpts{
-		Name: "grpc_req_panics_recovered_total",
-		Help: "Total number of gRPC requests recovered from internal panic.",
-	})
+```go mdox-exec="sed -n '143,163p' examples/server/main.go"
+	grpcSrv := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+		grpc.ChainUnaryInterceptor(
+			srvMetrics.UnaryServerInterceptor(
+				grpcprom.WithExemplarFromContext(exemplarFromContext),
+				grpcprom.WithLabelsFromContext(labelsFromContext),
+			),
+			logging.UnaryServerInterceptor(interceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID)),
+			selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFn), selector.MatchFunc(allButHealthZ)),
+			recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
+		),
+		grpc.ChainStreamInterceptor(
+			srvMetrics.StreamServerInterceptor(
+				grpcprom.WithExemplarFromContext(exemplarFromContext),
+				grpcprom.WithLabelsFromContext(labelsFromContext),
+			),
+			logging.StreamServerInterceptor(interceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID)),
+			selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFn), selector.MatchFunc(allButHealthZ)),
+			recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
+		),
+	)
 ```
 
 This pattern offers clean and explicit shared functionality for all your gRPC methods. Full, buildable examples can be found in [examples](examples) directory.
