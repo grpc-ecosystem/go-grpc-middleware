@@ -14,8 +14,6 @@ type labelsFromCtxFn func(metadata context.Context) prometheus.Labels
 
 type serverMetricsConfig struct {
 	counterOpts counterOptions
-	// serverHandledHistogram can be nil.
-	serverHandledHistogram *prometheus.HistogramVec
 	// histogramOpts stores the options for creating the histogram with dynamic labels
 	histogramOpts histogramOptions
 	// enableHistogram indicates whether histogram should be created
