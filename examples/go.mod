@@ -1,8 +1,6 @@
 module github.com/grpc-ecosystem/go-grpc-middleware/examples/v2
 
-go 1.23.0
-
-toolchain go1.23.4
+go 1.23
 
 require (
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0
