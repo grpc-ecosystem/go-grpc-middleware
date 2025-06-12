@@ -16,17 +16,23 @@ This repository offers ready-to-use middlewares that implements gRPC interceptor
 
 Additional great feature of interceptors is the fact we can chain those. For example below you can find example server side chain of interceptors with full observabiliy correlation, auth and panic recovery:
 
-```go mdox-exec="sed -n '122,136p' examples/server/main.go"
+```go mdox-exec="sed -n '143,163p' examples/server/main.go"
 	grpcSrv := grpc.NewServer(
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(
-			srvMetrics.UnaryServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
+			srvMetrics.UnaryServerInterceptor(
+				grpcprom.WithExemplarFromContext(exemplarFromContext),
+				grpcprom.WithLabelsFromContext(labelsFromContext),
+			),
 			logging.UnaryServerInterceptor(interceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID)),
 			selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFn), selector.MatchFunc(allButHealthZ)),
 			recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
 		),
 		grpc.ChainStreamInterceptor(
-			srvMetrics.StreamServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
+			srvMetrics.StreamServerInterceptor(
+				grpcprom.WithExemplarFromContext(exemplarFromContext),
+				grpcprom.WithLabelsFromContext(labelsFromContext),
+			),
 			logging.StreamServerInterceptor(interceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID)),
 			selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFn), selector.MatchFunc(allButHealthZ)),
 			recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
