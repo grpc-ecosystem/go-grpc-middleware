@@ -72,37 +72,24 @@ func (c *reporter) PostMsgSend(payload any, err error, duration time.Duration) {
 	if err != nil || !has(c.opts.loggableEvents, PayloadSent) {
 		return
 	}
+	callType := "response"
 	if c.CallMeta.IsClient {
-		p, ok := payload.(proto.Message)
-		if !ok {
-			c.logger.Log(
-				c.ctx,
-				LevelError,
-				"payload is not a google.golang.org/protobuf/proto.Message; programmatic error?",
-				fields.AppendUnique(Fields{"grpc.request.type", fmt.Sprintf("%T", payload)})...,
-			)
-			return
-		}
-
-		fields = fields.AppendUnique(Fields{"grpc.send.duration", duration.String(), "grpc.request.content", p})
-		fields = fields.AppendUnique(c.opts.durationFieldFunc(duration))
-		c.logger.Log(c.ctx, logLvl, "request sent", fields...)
-	} else {
-		p, ok := payload.(proto.Message)
-		if !ok {
-			c.logger.Log(
-				c.ctx,
-				LevelError,
-				"payload is not a google.golang.org/protobuf/proto.Message; programmatic error?",
-				fields.AppendUnique(Fields{"grpc.response.type", fmt.Sprintf("%T", payload)})...,
-			)
-			return
-		}
-
-		fields = fields.AppendUnique(Fields{"grpc.send.duration", duration.String(), "grpc.response.content", p})
-		fields = fields.AppendUnique(c.opts.durationFieldFunc(duration))
-		c.logger.Log(c.ctx, logLvl, "response sent", fields...)
+		callType = "request"
 	}
+	p, ok := payload.(proto.Message)
+	if !ok {
+		c.logger.Log(
+			c.ctx,
+			LevelError,
+			"payload is not a google.golang.org/protobuf/proto.Message; programmatic error?",
+			fields.AppendUnique(Fields{fmt.Sprintf("grpc.%s.type", callType), fmt.Sprintf("%T", payload)})...,
+		)
+		return
+	}
+
+	fields = fields.AppendUnique(Fields{"grpc.send.duration", duration.String(), fmt.Sprintf("grpc.%s.content", callType), p})
+	fields = fields.AppendUnique(c.opts.durationFieldFunc(duration))
+	c.logger.Log(c.ctx, logLvl, fmt.Sprintf("%s sent", callType), fields...)
 }
 
 func (c *reporter) PostMsgReceive(payload any, err error, duration time.Duration) {
@@ -126,37 +113,24 @@ func (c *reporter) PostMsgReceive(payload any, err error, duration time.Duration
 	if err != nil || !has(c.opts.loggableEvents, PayloadReceived) {
 		return
 	}
-	if !c.CallMeta.IsClient {
-		p, ok := payload.(proto.Message)
-		if !ok {
-			c.logger.Log(
-				c.ctx,
-				LevelError,
-				"payload is not a google.golang.org/protobuf/proto.Message; programmatic error?",
-				fields.AppendUnique(Fields{"grpc.request.type", fmt.Sprintf("%T", payload)})...,
-			)
-			return
-		}
-
-		fields = fields.AppendUnique(Fields{"grpc.recv.duration", duration.String(), "grpc.request.content", p})
-		fields = fields.AppendUnique(c.opts.durationFieldFunc(duration))
-		c.logger.Log(c.ctx, logLvl, "request received", fields...)
-	} else {
-		p, ok := payload.(proto.Message)
-		if !ok {
-			c.logger.Log(
-				c.ctx,
-				LevelError,
-				"payload is not a google.golang.org/protobuf/proto.Message; programmatic error?",
-				fields.AppendUnique(Fields{"grpc.response.type", fmt.Sprintf("%T", payload)})...,
-			)
-			return
-		}
-
-		fields = fields.AppendUnique(Fields{"grpc.recv.duration", duration.String(), "grpc.response.content", p})
-		fields = fields.AppendUnique(c.opts.durationFieldFunc(duration))
-		c.logger.Log(c.ctx, logLvl, "response received", fields...)
+	callType := "request"
+	if c.CallMeta.IsClient {
+		callType = "response"
 	}
+	p, ok := payload.(proto.Message)
+	if !ok {
+		c.logger.Log(
+			c.ctx,
+			LevelError,
+			"payload is not a google.golang.org/protouf/proto.Message; programmatic error?",
+			fields.AppendUnique(Fields{fmt.Sprintf("grpc.%s.type", callType), fmt.Sprintf("%T", payload)})...,
+		)
+		return
+	}
+
+	fields = fields.AppendUnique(Fields{"grpc.recv.duration", duration.String(), fmt.Sprintf("grpc.%s.content", callType), p})
+	fields = fields.AppendUnique(c.opts.durationFieldFunc(duration))
+	c.logger.Log(c.ctx, logLvl, fmt.Sprintf("%s received", callType), fields...)
 }
 
 func reportable(logger Logger, opts *options) interceptors.CommonReportableFunc {
