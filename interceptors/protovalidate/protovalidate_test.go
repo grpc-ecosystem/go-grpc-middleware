@@ -22,7 +22,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -80,6 +79,33 @@ func TestUnaryServerInterceptor(t *testing.T) {
 		assert.Equal(t, codes.Internal, status.Code(err))
 	})
 
+	t.Run("not_protobuf_ignored", func(t *testing.T) {
+		// Test that WithIgnoreUnknownType option allows non-protobuf messages to pass through
+		interceptorWithIgnoreUnknown := protovalidate_middleware.UnaryServerInterceptor(validator,
+			protovalidate_middleware.WithIgnoreUnknownType(),
+		)
+		resp, err := interceptorWithIgnoreUnknown(context.Background(), "not protobuf", info, handler)
+		assert.Nil(t, err)
+		assert.Equal(t, "good", resp)
+	})
+
+	t.Run("combined_options", func(t *testing.T) {
+		// Test that both WithIgnoreUnknownType and WithIgnoreMessages can be used together
+		interceptorWithBothOptions := protovalidate_middleware.UnaryServerInterceptor(validator,
+			protovalidate_middleware.WithIgnoreUnknownType(),
+			protovalidate_middleware.WithIgnoreMessages(testvalidate.BadUnaryRequest.ProtoReflect().Type()),
+		)
+		// Test with non-protobuf message
+		resp, err := interceptorWithBothOptions(context.Background(), "not protobuf", info, handler)
+		assert.Nil(t, err)
+		assert.Equal(t, "good", resp)
+
+		// Test with ignored protobuf message
+		resp, err = interceptorWithBothOptions(context.Background(), testvalidate.BadUnaryRequest, info, handler)
+		assert.Nil(t, err)
+		assert.Equal(t, "good", resp)
+	})
+
 	interceptor = protovalidate_middleware.UnaryServerInterceptor(validator,
 		protovalidate_middleware.WithIgnoreMessages(testvalidate.BadUnaryRequest.ProtoReflect().Type()),
 	)
@@ -111,7 +137,7 @@ func (g *server) SendStream(
 
 const bufSize = 1024 * 1024
 
-func startGrpcServer(t *testing.T, called *bool, ignoreMessages ...protoreflect.MessageType) *grpc.ClientConn {
+func startGrpcServer(t *testing.T, called *bool, opts ...protovalidate_middleware.Option) *grpc.ClientConn {
 	lis := bufconn.Listen(bufSize)
 
 	validator, err := protovalidate.New()
@@ -119,9 +145,7 @@ func startGrpcServer(t *testing.T, called *bool, ignoreMessages ...protoreflect.
 
 	s := grpc.NewServer(
 		grpc.StreamInterceptor(
-			protovalidate_middleware.StreamServerInterceptor(validator,
-				protovalidate_middleware.WithIgnoreMessages(ignoreMessages...),
-			),
+			protovalidate_middleware.StreamServerInterceptor(validator, opts...),
 		),
 	)
 	testvalidatev1.RegisterTestValidateServiceServer(s, &server{called: called})
@@ -212,9 +236,45 @@ func TestStreamServerInterceptor(t *testing.T) {
 	t.Run("invalid_email_ignored", func(t *testing.T) {
 		called := proto.Bool(false)
 		client := testvalidatev1.NewTestValidateServiceClient(
-			startGrpcServer(t, called, testvalidate.BadStreamRequest.ProtoReflect().Type()),
+			startGrpcServer(t, called, protovalidate_middleware.WithIgnoreMessages(testvalidate.BadStreamRequest.ProtoReflect().Type())),
 		)
 
+		out, err := client.SendStream(context.Background(), testvalidate.BadStreamRequest)
+		require.Nil(t, err, "SendStream failed: %v", err)
+
+		_, err = out.Recv()
+		assert.Nil(t, err)
+		assert.True(t, *called)
+	})
+
+	t.Run("stream_with_ignore_unknown_type", func(t *testing.T) {
+		// Test that WithIgnoreUnknownType option can be used with streaming interceptors
+		// In practice, streaming messages are typically always protobuf, but we test
+		// that the option can be applied without issues
+		called := proto.Bool(false)
+		client := testvalidatev1.NewTestValidateServiceClient(
+			startGrpcServer(t, called, protovalidate_middleware.WithIgnoreUnknownType()),
+		)
+
+		// Test with valid protobuf message
+		out, err := client.SendStream(context.Background(), testvalidate.GoodStreamRequest)
+		require.Nil(t, err, "SendStream failed: %v", err)
+
+		_, err = out.Recv()
+		assert.Nil(t, err)
+		assert.True(t, *called, "Handler should be called with valid message")
+	})
+
+	t.Run("stream_combined_options", func(t *testing.T) {
+		called := proto.Bool(false)
+		client := testvalidatev1.NewTestValidateServiceClient(
+			startGrpcServer(t, called,
+				protovalidate_middleware.WithIgnoreUnknownType(),
+				protovalidate_middleware.WithIgnoreMessages(testvalidate.BadStreamRequest.ProtoReflect().Type()),
+			),
+		)
+
+		// Test with ignored protobuf message (should pass due to WithIgnoreMessages)
 		out, err := client.SendStream(context.Background(), testvalidate.BadStreamRequest)
 		require.Nil(t, err, "SendStream failed: %v", err)
 
