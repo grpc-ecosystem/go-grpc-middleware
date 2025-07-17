@@ -13,7 +13,8 @@ import (
 )
 
 type options struct {
-	ignoreMessages []protoreflect.FullName
+	ignoreMessages    []protoreflect.FullName
+	ignoreUnknownType bool
 }
 
 // An Option lets you add options to protovalidate interceptors using With* funcs.
@@ -40,6 +41,16 @@ func WithIgnoreMessages(msgs ...protoreflect.MessageType) Option {
 	slices.Sort(names)
 	return func(o *options) {
 		o.ignoreMessages = names
+	}
+}
+
+// WithIgnoreUnknownType sets the option to ignore unknown types.
+//
+// Use with caution and ensure validation is performed elsewhere.
+// This is useful for cases where your server is also a gRPC proxy.
+func WithIgnoreUnknownType() Option {
+	return func(o *options) {
+		o.ignoreUnknownType = true
 	}
 }
 
