@@ -73,7 +73,7 @@ func (c *reporter) PostMsgSend(payload any, err error, duration time.Duration) {
 		return
 	}
 	callType := "response"
-	if c.CallMeta.IsClient {
+	if c.IsClient {
 		callType = "request"
 	}
 	p, ok := payload.(proto.Message)
@@ -114,7 +114,7 @@ func (c *reporter) PostMsgReceive(payload any, err error, duration time.Duration
 		return
 	}
 	callType := "request"
-	if c.CallMeta.IsClient {
+	if c.IsClient {
 		callType = "response"
 	}
 	p, ok := payload.(proto.Message)

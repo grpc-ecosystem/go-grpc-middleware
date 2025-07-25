@@ -42,17 +42,15 @@ func has(events []LoggableEvent, event LoggableEvent) bool {
 	return false
 }
 
-var (
-	defaultOptions = &options{
-		loggableEvents:    []LoggableEvent{StartCall, FinishCall},
-		codeFunc:          DefaultErrorToCode,
-		durationFieldFunc: DefaultDurationToFields,
-		// levelFunc depends if it's client or server.
-		levelFunc:            nil,
-		timestampFormat:      time.RFC3339,
-		disableGrpcLogFields: nil,
-	}
-)
+var defaultOptions = &options{
+	loggableEvents:    []LoggableEvent{StartCall, FinishCall},
+	codeFunc:          DefaultErrorToCode,
+	durationFieldFunc: DefaultDurationToFields,
+	// levelFunc depends if it's client or server.
+	levelFunc:            nil,
+	timestampFormat:      time.RFC3339,
+	disableGrpcLogFields: nil,
+}
 
 type options struct {
 	levelFunc               CodeToLevel

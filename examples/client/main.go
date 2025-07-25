@@ -118,7 +118,6 @@ func main() {
 				return err
 			}
 		}
-
 	}, func(err error) {
 		cancel()
 	})

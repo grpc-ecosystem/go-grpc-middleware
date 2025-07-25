@@ -44,7 +44,8 @@ func StreamServerInterceptor(limiter Limiter) grpc.StreamServerInterceptor {
 // saving cost.
 func UnaryClientInterceptor(limiter Limiter) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn,
-		invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		invoker grpc.UnaryInvoker, opts ...grpc.CallOption,
+	) error {
 		if err := limiter.Limit(ctx); err != nil {
 			return status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_ratelimit middleware, please retry later. %s", method, err)
 		}

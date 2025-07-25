@@ -114,6 +114,7 @@ func (o *output) Append(lines ...LogLine) {
 
 	o.lines = append(o.lines, lines...)
 }
+
 func (o *output) Reset() {
 	o.m.Lock()
 	defer o.m.Unlock()
@@ -147,7 +148,7 @@ func (l *mockLogger) Log(_ context.Context, lvl logging.Level, msg string, args 
 			panic(err)
 		}
 		// Trim spaces for deterministic output (https://github.com/goolang/protobuf/issues/1269).
-		line.fields[args[i].(string)] = string(bytes.Replace(payload, []byte{' '}, []byte{}, -1))
+		line.fields[args[i].(string)] = string(bytes.ReplaceAll(payload, []byte{' '}, []byte{}))
 	}
 	l.o.Append(line)
 }
@@ -202,7 +203,7 @@ func TestSuite(t *testing.T) {
 			},
 		},
 	}
-	s.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
+	s.ClientOpts = []grpc.DialOption{
 		grpc.WithChainUnaryInterceptor(
 			logging.UnaryClientInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel), logging.WithFieldsFromContext(customFields)),
 		),
@@ -213,7 +214,7 @@ func TestSuite(t *testing.T) {
 	errorFields := func(err error) logging.Fields {
 		return testpb.ExtractErrorFields(err)
 	}
-	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
+	s.ServerOpts = []grpc.ServerOption{
 		grpc.StreamInterceptor(logging.StreamServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel), logging.WithFieldsFromContext(customFields), logging.WithErrorFields(errorFields))),
 		grpc.UnaryInterceptor(logging.UnaryServerInterceptor(s.logger, logging.WithLevels(customClientCodeToLevel), logging.WithFieldsFromContext(customFields), logging.WithErrorFields(errorFields))),
 	}
@@ -413,11 +414,11 @@ func TestCustomDurationSuite(t *testing.T) {
 			},
 		},
 	}
-	s.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
+	s.ClientOpts = []grpc.DialOption{
 		grpc.WithUnaryInterceptor(logging.UnaryClientInterceptor(s.logger, logging.WithDurationField(logging.DurationToDurationField))),
 		grpc.WithStreamInterceptor(logging.StreamClientInterceptor(s.logger, logging.WithDurationField(logging.DurationToDurationField))),
 	}
-	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
+	s.ServerOpts = []grpc.ServerOption{
 		grpc.StreamInterceptor(logging.StreamServerInterceptor(s.logger, logging.WithDurationField(logging.DurationToDurationField))),
 		grpc.UnaryInterceptor(logging.UnaryServerInterceptor(s.logger, logging.WithDurationField(logging.DurationToDurationField))),
 	}
@@ -520,7 +521,7 @@ func TestPayloadSuite(t *testing.T) {
 			},
 		},
 	}
-	s.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
+	s.ClientOpts = []grpc.DialOption{
 		grpc.WithUnaryInterceptor(logging.UnaryClientInterceptor(
 			s.logger,
 			logging.WithLogOnEvents(logging.PayloadReceived, logging.PayloadSent),
@@ -531,7 +532,7 @@ func TestPayloadSuite(t *testing.T) {
 			logging.WithLevels(logging.DefaultClientCodeToLevel),
 		)),
 	}
-	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
+	s.ServerOpts = []grpc.ServerOption{
 		grpc.StreamInterceptor(logging.StreamServerInterceptor(s.logger,
 			logging.WithLogOnEvents(logging.PayloadReceived, logging.PayloadSent),
 			logging.WithLevels(logging.DefaultServerCodeToLevel),
@@ -682,11 +683,11 @@ func TestCustomGrpcLogFieldsSuite(t *testing.T) {
 			},
 		},
 	}
-	s.InterceptorTestSuite.ClientOpts = []grpc.DialOption{
+	s.ClientOpts = []grpc.DialOption{
 		grpc.WithUnaryInterceptor(logging.UnaryClientInterceptor(s.logger, logging.WithDisableLoggingFields(logging.ComponentFieldKey, logging.MethodTypeFieldKey, logging.SystemTag[0], "custom-field-should-be-ignored"))),
 		grpc.WithStreamInterceptor(logging.StreamClientInterceptor(s.logger, logging.WithDisableLoggingFields(logging.ComponentFieldKey, logging.MethodTypeFieldKey, logging.SystemTag[0], "custom-field-should-be-ignored"))),
 	}
-	s.InterceptorTestSuite.ServerOpts = []grpc.ServerOption{
+	s.ServerOpts = []grpc.ServerOption{
 		grpc.StreamInterceptor(logging.StreamServerInterceptor(s.logger, logging.WithDisableLoggingFields(logging.ComponentFieldKey, logging.MethodTypeFieldKey, logging.SystemTag[0], "custom-field-should-be-ignored"))),
 		grpc.UnaryInterceptor(logging.UnaryServerInterceptor(s.logger, logging.WithDisableLoggingFields(logging.ComponentFieldKey, logging.MethodTypeFieldKey, logging.SystemTag[0], "custom-field-should-be-ignore"))),
 	}
