@@ -5,10 +5,20 @@ run:
   timeout: 5m
 
 linters:
+  enable:
+    - errcheck
+    - govet
+
   settings:
     errcheck:
       exclude-functions:
         - (github.com/go-kit/log.Logger).Log
+
+    govet:
+      disable:
+        - fieldalignment
+      enable-all: true
+
   exclusions:
     presets:
       - comments
@@ -20,6 +30,7 @@ formatters:
   enable:
     - gofumpt
     - goimports
+
   settings:
     gofumpt:
       extra-rules: true

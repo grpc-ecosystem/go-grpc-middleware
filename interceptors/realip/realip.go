@@ -111,8 +111,8 @@ func getRemoteIP(ctx context.Context, trustedPeers, trustedProxies []netip.Prefi
 	if len(trustedPeers) == 0 || !ipInNets(ip, trustedPeers) {
 		return ip
 	}
-	if ip := ipFromHeaders(ctx, headers, trustedProxies, proxyCnt); ip != noIP {
-		return ip
+	if resolvedIP := ipFromHeaders(ctx, headers, trustedProxies, proxyCnt); resolvedIP != noIP {
+		return resolvedIP
 	}
 	// No ip from the headers, return the peer ip.
 	return ip

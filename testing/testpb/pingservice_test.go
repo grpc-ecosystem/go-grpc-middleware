@@ -42,8 +42,8 @@ func TestPingServiceOnWire(t *testing.T) {
 
 	testClient := NewTestServiceClient(clientConn)
 	select {
-	case err := <-stopped:
-		t.Fatal("gRPC server stopped prematurely", err)
+	case clientConnErr := <-stopped:
+		t.Fatal("gRPC server stopped prematurely", clientConnErr)
 	default:
 	}
 
@@ -66,8 +66,8 @@ func TestPingServiceOnWire(t *testing.T) {
 	l, err := testClient.PingList(context.Background(), &PingListRequest{Value: "24"})
 	require.NoError(t, err)
 	for i := 0; i < ListResponseCount; i++ {
-		r, err := l.Recv()
-		require.NoError(t, err)
+		r, receiveError := l.Recv()
+		require.NoError(t, receiveError)
 		require.Equal(t, "24", r.Value)
 		require.Equal(t, int32(i), r.Counter)
 	}
