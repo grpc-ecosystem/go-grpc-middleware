@@ -41,28 +41,28 @@ func TestNiceMD_Del(t *testing.T) {
 func TestNiceMD_Add(t *testing.T) {
 	md := metadata.MD(grpcMetadata.Pairs(testPairs...))
 	md.Add("multikey", "four").Add("newkey", "something")
-	assert.EqualValues(t, []string{"one", "two", "three", "four"}, md["multikey"], "append should add a new four at the end")
-	assert.EqualValues(t, []string{"something"}, md["newkey"], "append should be able to create new keys")
+	assert.Equal(t, []string{"one", "two", "three", "four"}, md["multikey"], "append should add a new four at the end")
+	assert.Equal(t, []string{"something"}, md["newkey"], "append should be able to create new keys")
 }
 
 func TestNiceMD_Set(t *testing.T) {
 	md := metadata.MD(grpcMetadata.Pairs(testPairs...))
 	md.Set("multikey", "one").Set("newkey", "something").Set("newkey", "another")
-	assert.EqualValues(t, []string{"one"}, md["multikey"], "set should override existing multi keys")
-	assert.EqualValues(t, []string{"another"}, md["newkey"], "set should override new keys")
+	assert.Equal(t, []string{"one"}, md["multikey"], "set should override existing multi keys")
+	assert.Equal(t, []string{"another"}, md["newkey"], "set should override new keys")
 }
 
 func TestNiceMD_Clone(t *testing.T) {
 	md := metadata.MD(grpcMetadata.Pairs(testPairs...))
 	fullCopied := md.Clone()
-	assert.Equal(t, len(fullCopied), len(md), "clone full should copy all keys")
+	assert.Len(t, md, len(fullCopied), "clone full should copy all keys")
 	assert.Equal(t, "uno", fullCopied.Get("singlekey"), "full copied should have content")
 	subCopied := md.Clone("multikey")
 	assert.Len(t, subCopied, 1, "sub copied clone should only have one key")
 	assert.Empty(t, subCopied.Get("singlekey"), "there shouldn't be a singlekey in the subcopied")
 
 	// Test side effects and full copying:
-	assert.EqualValues(t, subCopied["multikey"], md["multikey"], "before overwrites multikey should have the same values")
+	assert.Equal(t, subCopied["multikey"], md["multikey"], "before overwrites multikey should have the same values")
 	subCopied["multikey"][1] = "modifiedtwo"
 	assert.NotEqual(t, subCopied["multikey"], md["multikey"], "before overwrites multikey should have the same values")
 }
