@@ -5,10 +5,16 @@ run:
   timeout: 5m
 
 linters:
+  enable:
+    - contextcheck
+    - errcheck
+    - fatcontext
+
   settings:
     errcheck:
       exclude-functions:
         - (github.com/go-kit/log.Logger).Log
+
   exclusions:
     presets:
       - comments
@@ -20,6 +26,7 @@ formatters:
   enable:
     - gofumpt
     - goimports
+
   settings:
     gofumpt:
       extra-rules: true
