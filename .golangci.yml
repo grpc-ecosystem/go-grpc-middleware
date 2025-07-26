@@ -22,7 +22,6 @@ linters:
         - commentedOutCode
         - deferInLoop
         - exitAfterDefer
-        - httpNoBody
         - importShadow
         - unnamedResult
       enable-all: true
