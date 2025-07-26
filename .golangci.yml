@@ -23,7 +23,6 @@ linters:
         - deferInLoop
         - exitAfterDefer
         - httpNoBody
-        - hugeParam
         - importShadow
         - unnamedResult
       enable-all: true
