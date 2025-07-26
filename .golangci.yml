@@ -5,10 +5,29 @@ run:
   timeout: 5m
 
 linters:
+  enable:
+    - errcheck
+    - gocritic
+
   settings:
     errcheck:
       exclude-functions:
         - (github.com/go-kit/log.Logger).Log
+
+    gocritic:
+      disabled-checks:
+        - assignOp
+        - appendAssign
+        - builtinShadow
+        - commentedOutCode
+        - deferInLoop
+        - exitAfterDefer
+        - httpNoBody
+        - hugeParam
+        - importShadow
+        - unnamedResult
+      enable-all: true
+
   exclusions:
     presets:
       - comments
@@ -20,6 +39,13 @@ formatters:
   enable:
     - gofumpt
     - goimports
+
   settings:
     gofumpt:
       extra-rules: true
+
+issues:
+  # Maximum issues count per one linter.
+  max-issues-per-linter: 0
+  # Maximum count of issues with the same text.
+  max-same-issues: 0
