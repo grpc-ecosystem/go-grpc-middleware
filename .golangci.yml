@@ -11,6 +11,7 @@ linters:
     - gocritic
     - misspell
     - testifylint
+    - usestdlibvars
 
   settings:
     errcheck:
