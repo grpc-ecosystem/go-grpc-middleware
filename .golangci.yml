@@ -25,7 +25,6 @@ linters:
         - commentedOutCode
         - deferInLoop
         - exitAfterDefer
-        - httpNoBody
         - hugeParam
         - importShadow
         - unnamedResult
