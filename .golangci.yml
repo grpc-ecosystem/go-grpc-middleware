@@ -19,7 +19,6 @@ linters:
 
     gocritic:
       disabled-checks:
-        - assignOp
         - appendAssign
         - builtinShadow
         - commentedOutCode

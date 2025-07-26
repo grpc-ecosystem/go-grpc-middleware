@@ -81,7 +81,7 @@ func ipFromHeaders(ctx context.Context, headers []string, trustedProxies []netip
 		a := strings.Split(getHeader(ctx, header), ",")
 		idx := len(a) - 1
 		if header == XForwardedFor {
-			idx = idx - int(trustedProxyCnt)
+			idx -= int(trustedProxyCnt)
 			if idx < 0 {
 				continue
 			}
