@@ -5,10 +5,18 @@ run:
   timeout: 5m
 
 linters:
+  enable:
+    - errcheck
+    - promlinter
+
   settings:
     errcheck:
       exclude-functions:
         - (github.com/go-kit/log.Logger).Log
+
+    promlinter:
+      strict: true
+
   exclusions:
     presets:
       - comments
