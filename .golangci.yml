@@ -13,6 +13,7 @@ linters:
     - gocritic
     - govet
     - misspell
+    - promlinter
     - testifylint
     - usestdlibvars
 
@@ -36,6 +37,9 @@ linters:
       disable:
         - fieldalignment
       enable-all: true
+
+    promlinter:
+      strict: true
 
     testifylint:
       disable:
