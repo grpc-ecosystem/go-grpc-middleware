@@ -6,8 +6,10 @@ run:
 
 linters:
   enable:
+    - contextcheck
     - errcheck
     - errorlint
+    - fatcontext
     - gocritic
     - misspell
     - testifylint
