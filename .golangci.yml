@@ -17,7 +17,6 @@ linters:
     gocritic:
       disabled-checks:
         - appendAssign
-        - builtinShadow
         - commentedOutCode
         - deferInLoop
         - exitAfterDefer

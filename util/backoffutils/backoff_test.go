@@ -22,18 +22,18 @@ func TestJitterUp(t *testing.T) {
 	variance := 0.10
 
 	// bound to check
-	max := 11000 * time.Millisecond
-	min := 9000 * time.Millisecond
-	high := scaleDuration(max, 0.98)
-	low := scaleDuration(min, 1.02)
+	maximum := 11000 * time.Millisecond
+	minimum := 9000 * time.Millisecond
+	high := scaleDuration(maximum, 0.98)
+	low := scaleDuration(minimum, 1.02)
 
 	highCount := 0
 	lowCount := 0
 
 	for i := 0; i < 1000; i++ {
 		out := backoffutils.JitterUp(duration, variance)
-		assert.True(t, out <= max, "value %s must be <= %s", out, max)
-		assert.True(t, out >= min, "value %s must be >= %s", out, min)
+		assert.True(t, out <= maximum, "value %s must be <= %s", out, maximum)
+		assert.True(t, out >= minimum, "value %s must be >= %s", out, minimum)
 
 		if out > high {
 			highCount++
