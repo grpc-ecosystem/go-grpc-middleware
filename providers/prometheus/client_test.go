@@ -4,6 +4,7 @@
 package prometheus
 
 import (
+	"errors"
 	"io"
 	"testing"
 
@@ -74,7 +75,7 @@ func (s *ClientInterceptorTestSuite) TestStreamingIncrementsMetrics() {
 	count := 0
 	for {
 		_, err = ss.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		require.NoError(s.T(), err, "reading pingList shouldn't fail")

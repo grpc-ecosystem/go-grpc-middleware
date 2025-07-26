@@ -9,6 +9,7 @@ package testpb
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"google.golang.org/grpc/codes"
@@ -70,7 +71,7 @@ func (s *TestPingService) PingStream(stream TestService_PingStreamServer) error 
 	count := 0
 	for {
 		ping, err := stream.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -89,7 +90,7 @@ func (s *TestPingService) PingClientStream(stream TestService_PingClientStreamSe
 	count := 0
 	for {
 		_, err := stream.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

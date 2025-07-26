@@ -5,6 +5,7 @@ package retry
 
 import (
 	"context"
+	"errors"
 	"io"
 	"time"
 
@@ -58,7 +59,7 @@ func Example_simpleCall() {
 
 	for {
 		_, err := stream.Recv() // retries happen here
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		} else if err != nil {
 			return

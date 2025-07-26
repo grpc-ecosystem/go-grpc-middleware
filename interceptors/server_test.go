@@ -5,6 +5,7 @@ package interceptors
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net"
 	"sync"
@@ -111,7 +112,7 @@ func (s *ServerInterceptorTestSuite) TestStreamingReports() {
 	count := 0
 	for {
 		_, err := ss.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		require.NoError(s.T(), err, "reading pingList shouldn't fail")
@@ -153,7 +154,7 @@ func (s *ServerInterceptorTestSuite) TestBiStreamingReporting() {
 		for s.ctx.Err() == nil {
 
 			_, err := ss.Recv()
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			require.NoError(s.T(), err, "reading pingStream shouldn't fail")

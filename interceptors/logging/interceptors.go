@@ -5,6 +5,7 @@ package logging
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -31,7 +32,7 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 	if !has(c.opts.loggableEvents, FinishCall) {
 		return
 	}
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		err = nil
 	}
 
