@@ -89,7 +89,7 @@ func TestContextLabels(t *testing.T) {
 	assert.Equal(t, "tenant456", labelMap["tenant_id"])
 
 	// Verify metric value
-	assert.Equal(t, float64(1), *metric.Counter.Value)
+	assert.InDelta(t, float64(1), *metric.Counter.Value, 0.0001, "Metric value should be 1")
 }
 
 func TestContextLabelsWithMissingValues(t *testing.T) {
@@ -162,10 +162,10 @@ func TestContextLabelsWithMissingValues(t *testing.T) {
 
 	// Check context labels - user_id should be present, missing_label should be empty
 	assert.Equal(t, "user123", labelMap["user_id"])
-	assert.Equal(t, "", labelMap["missing_label"])
+	assert.Empty(t, labelMap["missing_label"])
 
 	// Verify metric value
-	assert.Equal(t, float64(1), *metric.Counter.Value)
+	assert.InDelta(t, float64(1), *metric.Counter.Value, 0.0001, "Metric value should be 1")
 }
 
 func TestContextLabelsWithHistogram(t *testing.T) {

@@ -13,7 +13,6 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
@@ -89,60 +88,60 @@ type AuthTestSuite struct {
 
 func (s *AuthTestSuite) TestUnary_NoAuth() {
 	_, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing)
-	assert.Error(s.T(), err, "there must be an error")
-	assert.Equal(s.T(), codes.Unauthenticated, status.Code(err), "must error with unauthenticated")
+	s.Require().Error(err, "there must be an error")
+	s.Assert().Equal(codes.Unauthenticated, status.Code(err), "must error with unauthenticated")
 }
 
 func (s *AuthTestSuite) TestUnary_BadAuth() {
 	_, err := s.Client.Ping(ctxWithToken(s.SimpleCtx(), "bearer", "bad_token"), testpb.GoodPing)
-	assert.Error(s.T(), err, "there must be an error")
-	assert.Equal(s.T(), codes.PermissionDenied, status.Code(err), "must error with permission denied")
+	s.Require().Error(err, "there must be an error")
+	s.Assert().Equal(codes.PermissionDenied, status.Code(err), "must error with permission denied")
 }
 
 func (s *AuthTestSuite) TestUnary_PassesAuth() {
 	_, err := s.Client.Ping(ctxWithToken(s.SimpleCtx(), "bearer", commonAuthToken), testpb.GoodPing)
-	require.NoError(s.T(), err, "no error must occur")
+	s.Require().NoError(err, "no error must occur")
 }
 
 func (s *AuthTestSuite) TestUnary_PassesWithPerRpcCredentials() {
 	grpcCreds := oauth.TokenSource{TokenSource: &fakeOAuth2TokenSource{accessToken: commonAuthToken}}
 	client := s.NewClient(grpc.WithPerRPCCredentials(grpcCreds))
 	_, err := client.Ping(s.SimpleCtx(), testpb.GoodPing)
-	require.NoError(s.T(), err, "no error must occur")
+	s.Require().NoError(err, "no error must occur")
 }
 
 func (s *AuthTestSuite) TestStream_NoAuth() {
 	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList)
-	require.NoError(s.T(), err, "should not fail on establishing the stream")
+	s.Require().NoError(err, "should not fail on establishing the stream")
 	_, err = stream.Recv()
-	assert.Error(s.T(), err, "there must be an error")
-	assert.Equal(s.T(), codes.Unauthenticated, status.Code(err), "must error with unauthenticated")
+	s.Require().Error(err, "there must be an error")
+	s.Assert().Equal(codes.Unauthenticated, status.Code(err), "must error with unauthenticated")
 }
 
 func (s *AuthTestSuite) TestStream_BadAuth() {
 	stream, err := s.Client.PingList(ctxWithToken(s.SimpleCtx(), "bearer", "bad_token"), testpb.GoodPingList)
-	require.NoError(s.T(), err, "should not fail on establishing the stream")
+	s.Require().NoError(err, "should not fail on establishing the stream")
 	_, err = stream.Recv()
-	assert.Error(s.T(), err, "there must be an error")
-	assert.Equal(s.T(), codes.PermissionDenied, status.Code(err), "must error with permission denied")
+	s.Require().Error(err, "there must be an error")
+	s.Assert().Equal(codes.PermissionDenied, status.Code(err), "must error with permission denied")
 }
 
 func (s *AuthTestSuite) TestStream_PassesAuth() {
 	stream, err := s.Client.PingList(ctxWithToken(s.SimpleCtx(), "Bearer", commonAuthToken), testpb.GoodPingList)
-	require.NoError(s.T(), err, "should not fail on establishing the stream")
+	s.Require().NoError(err, "should not fail on establishing the stream")
 	pong, err := stream.Recv()
-	require.NoError(s.T(), err, "no error must occur")
-	require.NotNil(s.T(), pong, "pong must not be nil")
+	s.Require().NoError(err, "no error must occur")
+	s.Require().NotNil(pong, "pong must not be nil")
 }
 
 func (s *AuthTestSuite) TestStream_PassesWithPerRpcCredentials() {
 	grpcCreds := oauth.TokenSource{TokenSource: &fakeOAuth2TokenSource{accessToken: commonAuthToken}}
 	client := s.NewClient(grpc.WithPerRPCCredentials(grpcCreds))
 	stream, err := client.PingList(s.SimpleCtx(), testpb.GoodPingList)
-	require.NoError(s.T(), err, "should not fail on establishing the stream")
+	s.Require().NoError(err, "should not fail on establishing the stream")
 	pong, err := stream.Recv()
-	require.NoError(s.T(), err, "no error must occur")
-	require.NotNil(s.T(), pong, "pong must not be nil")
+	s.Require().NoError(err, "no error must occur")
+	s.Require().NotNil(pong, "pong must not be nil")
 }
 
 type authOverrideTestService struct {
@@ -175,15 +174,15 @@ type AuthOverrideTestSuite struct {
 
 func (s *AuthOverrideTestSuite) TestUnary_PassesAuth() {
 	_, err := s.Client.Ping(ctxWithToken(s.SimpleCtx(), "bearer", overrideAuthToken), testpb.GoodPing)
-	require.NoError(s.T(), err, "no error must occur")
+	s.Require().NoError(err, "no error must occur")
 }
 
 func (s *AuthOverrideTestSuite) TestStream_PassesAuth() {
 	stream, err := s.Client.PingList(ctxWithToken(s.SimpleCtx(), "Bearer", overrideAuthToken), testpb.GoodPingList)
-	require.NoError(s.T(), err, "should not fail on establishing the stream")
+	s.Require().NoError(err, "should not fail on establishing the stream")
 	pong, err := stream.Recv()
-	require.NoError(s.T(), err, "no error must occur")
-	require.NotNil(s.T(), pong, "pong must not be nil")
+	s.Require().NoError(err, "no error must occur")
+	s.Require().NotNil(pong, "pong must not be nil")
 }
 
 // fakeOAuth2TokenSource implements a fake oauth2.TokenSource for the purpose of credentials test.

@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -44,14 +43,14 @@ func (s *ClientInterceptorTestSuite) SetupTest() {
 
 func (s *ClientInterceptorTestSuite) TestUnaryIncrementsMetrics() {
 	_, err := s.Client.PingEmpty(s.SimpleCtx(), &testpb.PingEmptyRequest{})
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	requireValue(s.T(), 1, s.clientMetrics.clientStartedCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty"))
 	requireValue(s.T(), 1, s.clientMetrics.clientHandledCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty", "OK"))
 	requireValueHistCount(s.T(), 1, s.clientMetrics.clientHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty"))
 
 	_, err = s.Client.PingError(s.SimpleCtx(), &testpb.PingErrorRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)})
-	require.Error(s.T(), err)
+	s.Require().Error(err)
 	requireValue(s.T(), 1, s.clientMetrics.clientStartedCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingError"))
 	requireValue(s.T(), 1, s.clientMetrics.clientHandledCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingError", "FailedPrecondition"))
 	requireValueHistCount(s.T(), 1, s.clientMetrics.clientHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "PingError"))
@@ -59,17 +58,17 @@ func (s *ClientInterceptorTestSuite) TestUnaryIncrementsMetrics() {
 
 func (s *ClientInterceptorTestSuite) TestStartedStreamingIncrementsStarted() {
 	_, err := s.Client.PingList(s.SimpleCtx(), &testpb.PingListRequest{})
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	requireValue(s.T(), 1, s.clientMetrics.clientStartedCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 
 	_, err = s.Client.PingList(s.SimpleCtx(), &testpb.PingListRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)})
-	require.NoError(s.T(), err, "PingList must not fail immediately")
+	s.Require().NoError(err, "PingList must not fail immediately")
 	requireValue(s.T(), 2, s.clientMetrics.clientStartedCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 }
 
 func (s *ClientInterceptorTestSuite) TestStreamingIncrementsMetrics() {
 	ss, err := s.Client.PingList(s.SimpleCtx(), &testpb.PingListRequest{})
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	// Do a read, just for kicks.
 	count := 0
 	for {
@@ -77,10 +76,10 @@ func (s *ClientInterceptorTestSuite) TestStreamingIncrementsMetrics() {
 		if err == io.EOF {
 			break
 		}
-		require.NoError(s.T(), err, "reading pingList shouldn't fail")
+		s.Require().NoError(err, "reading pingList shouldn't fail")
 		count++
 	}
-	require.EqualValues(s.T(), testpb.ListResponseCount, count, "Number of received msg on the wire must match")
+	s.Require().Equal(testpb.ListResponseCount, count, "Number of received msg on the wire must match")
 
 	requireValue(s.T(), 1, s.clientMetrics.clientStartedCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 	requireValue(s.T(), 1, s.clientMetrics.clientHandledCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList", "OK"))
@@ -89,12 +88,12 @@ func (s *ClientInterceptorTestSuite) TestStreamingIncrementsMetrics() {
 	requireValueHistCount(s.T(), 1, s.clientMetrics.clientHandledHistogram.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 
 	ss, err = s.Client.PingList(s.SimpleCtx(), &testpb.PingListRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)})
-	require.NoError(s.T(), err, "PingList must not fail immediately")
+	s.Require().NoError(err, "PingList must not fail immediately")
 
 	// Do a read, just to propagate errors.
 	_, err = ss.Recv()
 	st, _ := status.FromError(err)
-	require.Equal(s.T(), codes.FailedPrecondition, st.Code(), "Recv must return FailedPrecondition, otherwise the test is wrong")
+	s.Require().Equal(codes.FailedPrecondition, st.Code(), "Recv must return FailedPrecondition, otherwise the test is wrong")
 
 	requireValue(s.T(), 2, s.clientMetrics.clientStartedCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 	requireValue(s.T(), 1, s.clientMetrics.clientHandledCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList", "FailedPrecondition"))

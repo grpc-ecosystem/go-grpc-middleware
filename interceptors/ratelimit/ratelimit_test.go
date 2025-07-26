@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -94,7 +95,7 @@ func TestUnaryServerInterceptor_RateLimitFail(t *testing.T) {
 		"rate limit exceeded",
 	)
 	assert.Nil(t, resp)
-	assert.EqualError(t, err, expErr.Error())
+	require.EqualError(t, err, expErr.Error())
 	assert.False(t, called)
 }
 
@@ -119,7 +120,7 @@ func TestStreamServerInterceptor_RateLimitFail(t *testing.T) {
 		"rate limit exceeded",
 	)
 
-	assert.EqualError(t, err, expErr.Error())
+	require.EqualError(t, err, expErr.Error())
 	assert.False(t, called)
 }
 
@@ -164,7 +165,7 @@ func TestUnaryClientInterceptor_RateLimitFail(t *testing.T) {
 		"FakeMethod",
 		"rate limit exceeded",
 	)
-	assert.EqualError(t, err, expErr.Error())
+	require.EqualError(t, err, expErr.Error())
 	assert.False(t, called)
 }
 
@@ -185,6 +186,6 @@ func TestStreamClientInterceptor_RateLimitFail(t *testing.T) {
 		"FakeMethod",
 		"rate limit exceeded",
 	)
-	assert.EqualError(t, err, expErr.Error())
+	require.EqualError(t, err, expErr.Error())
 	assert.False(t, called)
 }

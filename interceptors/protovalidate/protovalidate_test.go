@@ -28,7 +28,7 @@ import (
 
 func TestUnaryServerInterceptor(t *testing.T) {
 	validator, err := protovalidate.New()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	interceptor := protovalidate_middleware.UnaryServerInterceptor(validator)
 
@@ -39,8 +39,8 @@ func TestUnaryServerInterceptor(t *testing.T) {
 
 	t.Run("valid_email", func(t *testing.T) {
 		resp, err := interceptor(context.TODO(), testvalidate.GoodUnaryRequest, info, handler)
-		assert.Nil(t, err)
-		assert.Equal(t, resp, "good")
+		require.NoError(t, err)
+		assert.Equal(t, "good", resp)
 	})
 
 	t.Run("invalid_email", func(t *testing.T) {
@@ -76,7 +76,7 @@ func TestUnaryServerInterceptor(t *testing.T) {
 
 	t.Run("not_protobuf", func(t *testing.T) {
 		_, err = interceptor(context.Background(), "not protobuf", info, handler)
-		assert.EqualError(t, err, "rpc error: code = Internal desc = unsupported message type: string")
+		require.EqualError(t, err, "rpc error: code = Internal desc = unsupported message type: string")
 		assert.Equal(t, codes.Internal, status.Code(err))
 	})
 
@@ -86,8 +86,8 @@ func TestUnaryServerInterceptor(t *testing.T) {
 
 	t.Run("invalid_email_ignored", func(t *testing.T) {
 		resp, err := interceptor(context.TODO(), testvalidate.BadUnaryRequest, info, handler)
-		assert.Nil(t, err)
-		assert.Equal(t, resp, "good")
+		require.NoError(t, err)
+		assert.Equal(t, "good", resp)
 	})
 }
 
@@ -115,7 +115,7 @@ func startGrpcServer(t *testing.T, called *bool, ignoreMessages ...protoreflect.
 	lis := bufconn.Listen(bufSize)
 
 	validator, err := protovalidate.New()
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	s := grpc.NewServer(
 		grpc.StreamInterceptor(
@@ -161,11 +161,11 @@ func TestStreamServerInterceptor(t *testing.T) {
 		)
 
 		out, err := client.SendStream(context.Background(), testvalidate.GoodStreamRequest)
-		require.Nil(t, err, "SendStream failed: %v", err)
+		require.NoError(t, err, "SendStream failed: %v", err)
 
 		_, err = out.Recv()
 		t.Log(err)
-		assert.Nil(t, err)
+		require.NoError(t, err)
 		assert.True(t, *called)
 	})
 
@@ -176,7 +176,7 @@ func TestStreamServerInterceptor(t *testing.T) {
 		)
 
 		out, err := client.SendStream(context.Background(), testvalidate.BadStreamRequest)
-		require.Nil(t, err, "SendStream failed: %v", err)
+		require.NoError(t, err, "SendStream failed: %v", err)
 
 		_, err = out.Recv()
 		assertEqualViolation(t, &validate.Violation{
@@ -216,10 +216,10 @@ func TestStreamServerInterceptor(t *testing.T) {
 		)
 
 		out, err := client.SendStream(context.Background(), testvalidate.BadStreamRequest)
-		require.Nil(t, err, "SendStream failed: %v", err)
+		require.NoError(t, err, "SendStream failed: %v", err)
 
 		_, err = out.Recv()
-		assert.Nil(t, err)
+		require.NoError(t, err)
 		assert.True(t, *called)
 	})
 }
@@ -231,7 +231,7 @@ func assertEqualViolation(tb testing.TB, want *validate.Violation, got error) bo
 	details := st.Proto().GetDetails()
 	require.Len(tb, details, 1)
 	gotpb, unwrapErr := details[0].UnmarshalNew()
-	require.Nil(tb, unwrapErr)
+	require.NoError(tb, unwrapErr)
 	violations := &validate.Violations{
 		Violations: []*validate.Violation{want},
 	}
