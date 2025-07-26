@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package testing.testvalidate.v1;
 
-option go_package = "github.com/grpc-ecosystem/go-grpc-middleware/testing/testvalidate/v1;testvalidatev1";
-
 import "buf/validate/validate.proto";
+
+option go_package = "github.com/grpc-ecosystem/go-grpc-middleware/testing/testvalidate/v1;testvalidatev1";
 
 service TestValidateService {
   rpc Send(SendRequest) returns (SendResponse) {}
