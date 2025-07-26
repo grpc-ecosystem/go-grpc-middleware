@@ -21,15 +21,15 @@ var (
 	MethodTypeFieldKey   = "grpc.method_type"
 )
 
-type fieldsCtxMarker struct{}
-type fieldsCtxValue struct {
-	fields Fields
-}
-
-var (
-	// fieldsCtxMarkerKey is the Context value marker that is used by logging middleware to read and write logging fields into context.
-	fieldsCtxMarkerKey = &fieldsCtxMarker{}
+type (
+	fieldsCtxMarker struct{}
+	fieldsCtxValue  struct {
+		fields Fields
+	}
 )
+
+// fieldsCtxMarkerKey is the Context value marker that is used by logging middleware to read and write logging fields into context.
+var fieldsCtxMarkerKey = &fieldsCtxMarker{}
 
 func newCommonFields(kind string, c interceptors.CallMeta) Fields {
 	return Fields{

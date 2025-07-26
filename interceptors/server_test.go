@@ -150,10 +150,8 @@ func (s *ServerInterceptorTestSuite) TestBiStreamingReporting() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		for {
-			if s.ctx.Err() != nil {
-				break
-			}
+		for s.ctx.Err() == nil {
+
 			_, err := ss.Recv()
 			if err == io.EOF {
 				break

@@ -1,13 +1,25 @@
 ---
+version: "2"
 
 run:
-  deadline: 5m
+  timeout: 5m
 
-output:
-  sort-results: true
+linters:
+  settings:
+    errcheck:
+      exclude-functions:
+        - (github.com/go-kit/log.Logger).Log
+  exclusions:
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
 
-linters-settings:
-  errcheck:
-    exclude: errcheck_excludes.txt
-  gofumpt:
-    extra-rules: true
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    gofumpt:
+      extra-rules: true

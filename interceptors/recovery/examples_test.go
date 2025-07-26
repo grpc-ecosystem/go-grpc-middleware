@@ -13,9 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var (
-	customFunc recovery.RecoveryHandlerFunc
-)
+var customFunc recovery.RecoveryHandlerFunc
 
 // Initialization shows an initialization sequence with a custom recovery handler func.
 func Example_initialization() {

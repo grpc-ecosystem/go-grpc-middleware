@@ -35,7 +35,7 @@ func TestTimeoutUnaryClientInterceptor(t *testing.T) {
 		},
 		TestService: server,
 	}
-	its.Suite.SetT(t)
+	its.SetT(t)
 	its.SetupSuite()
 	defer its.TearDownSuite()
 

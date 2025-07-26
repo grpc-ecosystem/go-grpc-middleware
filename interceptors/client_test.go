@@ -71,7 +71,6 @@ func (m *mockReportable) Equal(t *testing.T, expected []*mockReport) {
 		}
 
 	}
-
 }
 
 func (m *mockReportable) requireOneReportWithRetry(ctx context.Context, t *testing.T, expected *mockReport) {
@@ -303,10 +302,8 @@ func (s *ClientInterceptorTestSuite) TestBiStreamingReporting() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		for {
-			if s.ctx.Err() != nil {
-				break
-			}
+		for s.ctx.Err() == nil {
+
 			_, err := ss.Recv()
 			if err == io.EOF {
 				break
