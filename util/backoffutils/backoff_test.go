@@ -32,8 +32,8 @@ func TestJitterUp(t *testing.T) {
 
 	for i := 0; i < 1000; i++ {
 		out := backoffutils.JitterUp(duration, variance)
-		assert.True(t, out <= max, "value %s must be <= %s", out, max)
-		assert.True(t, out >= min, "value %s must be >= %s", out, min)
+		assert.LessOrEqual(t, out, max, "value %s must be <= %s", out, max)
+		assert.GreaterOrEqual(t, out, min, "value %s must be >= %s", out, min)
 
 		if out > high {
 			highCount++
@@ -43,6 +43,6 @@ func TestJitterUp(t *testing.T) {
 		}
 	}
 
-	assert.True(t, highCount != 0, "at least one sample should reach to >%s", high)
-	assert.True(t, lowCount != 0, "at least one sample should to <%s", low)
+	assert.NotEqual(t, 0, highCount, "at least one sample should reach to >%s", high)
+	assert.NotEqual(t, 0, lowCount, "at least one sample should to <%s", low)
 }

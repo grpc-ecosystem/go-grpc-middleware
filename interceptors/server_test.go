@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -43,7 +42,7 @@ func (s *ServerInterceptorTestSuite) SetupSuite() {
 	s.mock = &mockReportable{}
 
 	s.serverListener, err = net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(s.T(), err, "must be able to allocate a port for serverListener")
+	s.Require().NoError(err, "must be able to allocate a port for serverListener")
 
 	// This is the point where we hook up the interceptor
 	s.server = grpc.NewServer(
@@ -57,7 +56,7 @@ func (s *ServerInterceptorTestSuite) SetupSuite() {
 	}()
 
 	s.clientConn, err = grpc.NewClient(s.serverListener.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	require.NoError(s.T(), err, "must not error on client Dial")
+	s.Require().NoError(err, "must not error on client Dial")
 	s.testClient = testpb.NewTestServiceClient(s.clientConn)
 }
 
@@ -86,7 +85,7 @@ func (s *ServerInterceptorTestSuite) TearDownTest() {
 
 func (s *ServerInterceptorTestSuite) TestUnaryReporting() {
 	_, err := s.testClient.PingEmpty(s.ctx, &testpb.PingEmptyRequest{}) // should return with code=OK
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	s.mock.Equal(s.T(), []*mockReport{{
 		CallMeta:        CallMeta{Typ: Unary, Service: testpb.TestServiceFullName, Method: "PingEmpty"},
 		postCalls:       []error{nil},
@@ -96,7 +95,7 @@ func (s *ServerInterceptorTestSuite) TestUnaryReporting() {
 	s.mock.reports = s.mock.reports[:0] // Reset.
 
 	_, err = s.testClient.PingError(s.ctx, &testpb.PingErrorRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
-	require.Error(s.T(), err)
+	s.Require().Error(err)
 	s.mock.Equal(s.T(), []*mockReport{{
 		CallMeta:        CallMeta{Typ: Unary, Service: testpb.TestServiceFullName, Method: "PingError"},
 		postCalls:       []error{status.Error(codes.FailedPrecondition, "Userspace error")},
@@ -114,10 +113,10 @@ func (s *ServerInterceptorTestSuite) TestStreamingReports() {
 		if err == io.EOF {
 			break
 		}
-		require.NoError(s.T(), err, "reading pingList shouldn't fail")
+		s.Require().NoError(err, "reading pingList shouldn't fail")
 		count++
 	}
-	require.EqualValues(s.T(), testpb.ListResponseCount, count, "Number of received msg on the wire must match")
+	s.Require().Equal(testpb.ListResponseCount, count, "Number of received msg on the wire must match")
 	s.mock.Equal(s.T(), []*mockReport{{
 		CallMeta:        CallMeta{Typ: ServerStream, Service: testpb.TestServiceFullName, Method: "PingList"},
 		postCalls:       []error{nil},
@@ -127,7 +126,7 @@ func (s *ServerInterceptorTestSuite) TestStreamingReports() {
 	s.mock.reports = s.mock.reports[:0] // Reset.
 
 	_, err := s.testClient.PingList(s.ctx, &testpb.PingListRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
-	require.NoError(s.T(), err, "PingList must not fail immediately")
+	s.Require().NoError(err, "PingList must not fail immediately")
 
 	s.mock.requireOneReportWithRetry(s.ctx, s.T(), &mockReport{
 		CallMeta:        CallMeta{Typ: ServerStream, Service: testpb.TestServiceFullName, Method: "PingList"},
@@ -138,7 +137,7 @@ func (s *ServerInterceptorTestSuite) TestStreamingReports() {
 
 func (s *ServerInterceptorTestSuite) TestBiStreamingReporting() {
 	ss, err := s.testClient.PingStream(s.ctx)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	wg := sync.WaitGroup{}
 
 	defer func() {
@@ -156,18 +155,18 @@ func (s *ServerInterceptorTestSuite) TestBiStreamingReporting() {
 			if err == io.EOF {
 				break
 			}
-			require.NoError(s.T(), err, "reading pingStream shouldn't fail")
+			s.Require().NoError(err, "reading pingStream shouldn't fail")
 			count++
 		}
 	}()
 	for i := 0; i < 100; i++ {
-		require.NoError(s.T(), ss.Send(&testpb.PingStreamRequest{}), "sending shouldn't fail")
+		s.Require().NoError(ss.Send(&testpb.PingStreamRequest{}), "sending shouldn't fail")
 	}
 
-	require.NoError(s.T(), ss.CloseSend())
+	s.Require().NoError(ss.CloseSend())
 	wg.Wait()
 
-	require.EqualValues(s.T(), count, 100, "Number of received msg on the wire must match")
+	s.Require().Equal(100, count, "Number of received msg on the wire must match")
 
 	s.mock.Equal(s.T(), []*mockReport{{
 		CallMeta:        CallMeta{Typ: BidiStream, Service: testpb.TestServiceFullName, Method: "PingStream"},

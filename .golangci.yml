@@ -5,10 +5,22 @@ run:
   timeout: 5m
 
 linters:
+  enable:
+    - errcheck
+    - testifylint
+
   settings:
     errcheck:
       exclude-functions:
         - (github.com/go-kit/log.Logger).Log
+
+    testifylint:
+      disable:
+        - go-require
+      enable-all: true
+      suite-extra-assert-call:
+        mode: "require"
+
   exclusions:
     presets:
       - comments
