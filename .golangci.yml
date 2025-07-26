@@ -8,6 +8,7 @@ linters:
   enable:
     - errcheck
     - errorlint
+    - gocritic
     - misspell
     - testifylint
 
@@ -15,6 +16,20 @@ linters:
     errcheck:
       exclude-functions:
         - (github.com/go-kit/log.Logger).Log
+
+    gocritic:
+      disabled-checks:
+        - assignOp
+        - appendAssign
+        - builtinShadow
+        - commentedOutCode
+        - deferInLoop
+        - exitAfterDefer
+        - httpNoBody
+        - hugeParam
+        - importShadow
+        - unnamedResult
+      enable-all: true
 
     testifylint:
       disable:
