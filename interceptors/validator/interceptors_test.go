@@ -5,6 +5,7 @@ package validator_test
 
 import (
 	"context"
+	"errors"
 	"io"
 	"testing"
 
@@ -38,7 +39,7 @@ func (s *ValidatorTestSuite) TestValidPasses_ServerStream() {
 	require.NoError(s.T(), err, "no error on stream establishment expected")
 	for {
 		_, err := stream.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		assert.NoError(s.T(), err, "no error on messages sent occurred")

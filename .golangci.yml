@@ -5,6 +5,9 @@ run:
   timeout: 5m
 
 linters:
+  enable:
+    - errcheck
+    - errorlint
   settings:
     errcheck:
       exclude-functions:
@@ -23,3 +26,9 @@ formatters:
   settings:
     gofumpt:
       extra-rules: true
+
+issues:
+  # Maximum issues count per one linter.
+  max-issues-per-linter: 0
+  # Maximum count of issues with the same text.
+  max-same-issues: 0
