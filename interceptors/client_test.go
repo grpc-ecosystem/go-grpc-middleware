@@ -248,7 +248,7 @@ func (s *ClientInterceptorTestSuite) TestListReporting() {
 	// Do a read, just for kicks.
 	count := 0
 	for {
-		_, err := ss.Recv()
+		_, err = ss.Recv()
 		if err == io.EOF {
 			break
 		}
