@@ -188,7 +188,6 @@ func ExtractErrorFields(err error) []any {
 // UnaryServerInterceptor returns a new unary server interceptors that adds query information logging.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		// newCtx := newContext(ctx, log, opts)
 		newCtx := ctx
 		resp, err := handler(newCtx, req)
 		return resp, err
