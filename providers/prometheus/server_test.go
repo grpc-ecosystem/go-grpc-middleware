@@ -21,7 +21,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	dto "github.com/prometheus/client_model/go"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -92,19 +91,19 @@ func (s *ServerInterceptorTestSuite) TestRegisterPresetsStuff() {
 		{"grpc_server_handled_total", []string{testpb.TestServiceFullName, "PingEmpty", "unary", "ResourceExhausted"}},
 	} {
 		lineCount := len(fetchPrometheusLines(s.T(), registry, testCase.metricName, testCase.existingLabels...))
-		assert.NotZero(s.T(), lineCount, "metrics must exist for test case %d", testID)
+		s.Assert().NotZero(lineCount, "metrics must exist for test case %d", testID)
 	}
 }
 
 func (s *ServerInterceptorTestSuite) TestUnaryIncrementsMetrics() {
 	_, err := s.Client.PingEmpty(s.SimpleCtx(), &testpb.PingEmptyRequest{})
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	requireValue(s.T(), 1, s.serverMetrics.serverStartedCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty"))
 	requireValue(s.T(), 1, s.serverMetrics.serverHandledCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty", "OK"))
 	requireValueHistCount(s.T(), 1, s.serverMetrics.serverHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty"))
 
 	_, err = s.Client.PingError(s.SimpleCtx(), &testpb.PingErrorRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)})
-	require.Error(s.T(), err)
+	s.Require().Error(err)
 	requireValue(s.T(), 1, s.serverMetrics.serverStartedCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingError"))
 	requireValue(s.T(), 1, s.serverMetrics.serverHandledCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingError", "FailedPrecondition"))
 	requireValueHistCount(s.T(), 1, s.serverMetrics.serverHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "PingError"))
@@ -112,12 +111,12 @@ func (s *ServerInterceptorTestSuite) TestUnaryIncrementsMetrics() {
 
 func (s *ServerInterceptorTestSuite) TestStartedStreamingIncrementsStarted() {
 	_, err := s.Client.PingList(s.SimpleCtx(), &testpb.PingListRequest{})
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	requireValueWithRetry(s.SimpleCtx(), s.T(), 1,
 		s.serverMetrics.serverStartedCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 
 	_, err = s.Client.PingList(s.SimpleCtx(), &testpb.PingListRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)})
-	require.NoError(s.T(), err, "PingList must not fail immediately")
+	s.Require().NoError(err, "PingList must not fail immediately")
 	requireValueWithRetry(s.SimpleCtx(), s.T(), 2,
 		s.serverMetrics.serverStartedCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 }
@@ -131,10 +130,10 @@ func (s *ServerInterceptorTestSuite) TestStreamingIncrementsMetrics() {
 		if errors.Is(err, io.EOF) {
 			break
 		}
-		require.NoError(s.T(), err, "reading pingList shouldn't fail")
+		s.Require().NoError(err, "reading pingList shouldn't fail")
 		count++
 	}
-	require.EqualValues(s.T(), testpb.ListResponseCount, count, "Number of received msg on the wire must match")
+	s.Require().Equal(testpb.ListResponseCount, count, "Number of received msg on the wire must match")
 
 	requireValueWithRetry(s.SimpleCtx(), s.T(), 1,
 		s.serverMetrics.serverStartedCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
@@ -148,7 +147,7 @@ func (s *ServerInterceptorTestSuite) TestStreamingIncrementsMetrics() {
 		s.serverMetrics.serverHandledHistogram.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 
 	_, err := s.Client.PingList(s.SimpleCtx(), &testpb.PingListRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
-	require.NoError(s.T(), err, "PingList must not fail immediately")
+	s.Require().NoError(err, "PingList must not fail immediately")
 
 	requireValueWithRetry(s.SimpleCtx(), s.T(), 2,
 		s.serverMetrics.serverStartedCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
@@ -164,7 +163,7 @@ func (s *ServerInterceptorTestSuite) TestContextCancelledTreatedAsStatus() {
 
 	stream, _ := s.Client.PingStream(ctx)
 	err := stream.Send(&testpb.PingStreamRequest{})
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	cancel()
 
 	requireValueWithRetry(s.SimpleCtx(), s.T(), 1,

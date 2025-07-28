@@ -11,6 +11,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/timeout"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
 
@@ -41,7 +42,7 @@ func TestTimeoutUnaryClientInterceptor(t *testing.T) {
 
 	// This call will take 0/100ms for respond, so the client timeout NOT exceed.
 	resp, err := its.Client.Ping(context.TODO(), &testpb.PingRequest{Value: "default_response_value"})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.Equal(t, "default_response_value", resp.Value)
 

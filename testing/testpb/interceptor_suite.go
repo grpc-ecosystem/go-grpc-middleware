@@ -18,7 +18,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -61,17 +60,17 @@ func (s *InterceptorTestSuite) SetupSuite() {
 	s.serverAddr = "127.0.0.1:0"
 	var err error
 	certPEM, keyPEM, err = generateCertAndKey([]string{"localhost", "example.com"})
-	require.NoError(s.T(), err, "unable to generate test certificate/key")
+	s.Require().NoError(err, "unable to generate test certificate/key")
 
 	go func() {
 		for {
 			var err error
 			s.ServerListener, err = net.Listen("tcp", s.serverAddr)
 			s.serverAddr = s.ServerListener.Addr().String()
-			require.NoError(s.T(), err, "must be able to allocate a port for serverListener")
+			s.Require().NoError(err, "must be able to allocate a port for serverListener")
 			if *flagTls {
 				cert, err := tls.X509KeyPair(certPEM, keyPEM)
-				require.NoError(s.T(), err, "unable to load test TLS certificate")
+				s.Require().NoError(err, "unable to load test TLS certificate")
 				creds := credentials.NewServerTLSFromCert(&cert)
 				s.ServerOpts = append(s.ServerOpts, grpc.Creds(creds))
 			}
@@ -116,6 +115,8 @@ func (s *InterceptorTestSuite) RestartServer(delayedStart time.Duration) <-chan 
 }
 
 func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) TestServiceClient {
+	s.T().Helper()
+
 	var err error
 	if *flagTls {
 		cp := x509.NewCertPool()
@@ -128,7 +129,7 @@ func (s *InterceptorTestSuite) NewClient(dialOpts ...grpc.DialOption) TestServic
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 	s.clientConn, err = grpc.NewClient(s.ServerAddr(), dialOpts...)
-	require.NoError(s.T(), err, "must not error on client Dial")
+	s.Require().NoError(err, "must not error on client Dial")
 	return NewTestServiceClient(s.clientConn)
 }
 

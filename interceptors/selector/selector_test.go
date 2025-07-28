@@ -10,6 +10,7 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
 
@@ -53,8 +54,8 @@ func TestUnaryServerInterceptor(t *testing.T) {
 			FullMethod: "FakeMethod",
 		}
 		resp, err := interceptor(context.Background(), nil, info, handler)
-		assert.Nil(t, err)
-		assert.Equal(t, resp, "good")
+		require.NoError(t, err)
+		assert.Equal(t, "good", resp)
 	})
 
 	t.Run("selected", func(t *testing.T) {
@@ -85,7 +86,7 @@ func TestStreamServerInterceptor(t *testing.T) {
 		}
 
 		err := interceptor(nil, &mockGRPCServerStream{ctx: context.Background()}, info, handler)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("selected", func(t *testing.T) {

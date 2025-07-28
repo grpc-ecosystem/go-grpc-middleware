@@ -149,7 +149,7 @@ func (s *ClientInterceptorTestSuite) SetupSuite() {
 	s.mock = &mockReportable{}
 
 	s.serverListener, err = net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(s.T(), err, "must be able to allocate a port for serverListener")
+	s.Require().NoError(err, "must be able to allocate a port for serverListener")
 
 	s.server = grpc.NewServer()
 	testpb.RegisterTestServiceServer(s.server, &testpb.TestPingService{})
@@ -166,7 +166,7 @@ func (s *ClientInterceptorTestSuite) SetupSuite() {
 		grpc.WithUnaryInterceptor(UnaryClientInterceptor(s.mock)),
 		grpc.WithStreamInterceptor(StreamClientInterceptor(s.mock)),
 	)
-	require.NoError(s.T(), err, "must not error on client Dial")
+	s.Require().NoError(err, "must not error on client Dial")
 	s.testClient = testpb.NewTestServiceClient(s.clientConn)
 }
 
@@ -200,7 +200,7 @@ func (s *ClientInterceptorTestSuite) TearDownTest() {
 
 func (s *ClientInterceptorTestSuite) TestUnaryReporting() {
 	_, err := s.testClient.PingEmpty(s.ctx, &testpb.PingEmptyRequest{}) // should return with code=OK
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	s.mock.Equal(s.T(), []*mockReport{{
 		CallMeta:        CallMeta{Typ: Unary, Service: testpb.TestServiceFullName, Method: "PingEmpty"},
 		postCalls:       []error{nil},
@@ -210,7 +210,7 @@ func (s *ClientInterceptorTestSuite) TestUnaryReporting() {
 	s.mock.reports = s.mock.reports[:0] // Reset.
 
 	_, err = s.testClient.PingError(s.ctx, &testpb.PingErrorRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)}) // should return with code=FailedPrecondition
-	require.Error(s.T(), err)
+	s.Require().Error(err)
 	s.mock.Equal(s.T(), []*mockReport{{
 		CallMeta:        CallMeta{Typ: Unary, Service: testpb.TestServiceFullName, Method: "PingError"},
 		postCalls:       []error{status.Error(codes.FailedPrecondition, "Userspace error")},
@@ -221,7 +221,7 @@ func (s *ClientInterceptorTestSuite) TestUnaryReporting() {
 
 func (s *ClientInterceptorTestSuite) TestStartedListReporting() {
 	_, err := s.testClient.PingList(s.ctx, &testpb.PingListRequest{})
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// Even without reading, we should get initial mockReport.
 	s.mock.Equal(s.T(), []*mockReport{{
@@ -230,7 +230,7 @@ func (s *ClientInterceptorTestSuite) TestStartedListReporting() {
 	}})
 
 	_, err = s.testClient.PingList(s.ctx, &testpb.PingListRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)})
-	require.NoError(s.T(), err, "PingList must not fail immediately")
+	s.Require().NoError(err, "PingList must not fail immediately")
 
 	// Even without reading, we should get initial mockReport.
 	s.mock.Equal(s.T(), []*mockReport{{
@@ -244,7 +244,7 @@ func (s *ClientInterceptorTestSuite) TestStartedListReporting() {
 
 func (s *ClientInterceptorTestSuite) TestListReporting() {
 	ss, err := s.testClient.PingList(s.ctx, &testpb.PingListRequest{})
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// Do a read, just for kicks.
 	count := 0
@@ -253,10 +253,10 @@ func (s *ClientInterceptorTestSuite) TestListReporting() {
 		if errors.Is(err, io.EOF) {
 			break
 		}
-		require.NoError(s.T(), err, "reading pingList shouldn't fail")
+		s.Require().NoError(err, "reading pingList shouldn't fail")
 		count++
 	}
-	require.EqualValues(s.T(), testpb.ListResponseCount, count, "Number of received msg on the wire must match")
+	s.Require().Equal(testpb.ListResponseCount, count, "Number of received msg on the wire must match")
 
 	s.mock.Equal(s.T(), []*mockReport{{
 		CallMeta:        CallMeta{Typ: ServerStream, Service: testpb.TestServiceFullName, Method: "PingList"},
@@ -267,19 +267,19 @@ func (s *ClientInterceptorTestSuite) TestListReporting() {
 	s.mock.reports = s.mock.reports[:0] // Reset.
 
 	ss, err = s.testClient.PingList(s.ctx, &testpb.PingListRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)})
-	require.NoError(s.T(), err, "PingList must not fail immediately")
+	s.Require().NoError(err, "PingList must not fail immediately")
 
 	// Do a read, just to propagate errors.
 	_, err = ss.Recv()
-	require.Error(s.T(), err)
+	s.Require().Error(err)
 	st, _ := status.FromError(err)
-	require.Equal(s.T(), codes.FailedPrecondition, st.Code(), "Recv must return FailedPrecondition, otherwise the test is wrong")
+	s.Require().Equal(codes.FailedPrecondition, st.Code(), "Recv must return FailedPrecondition, otherwise the test is wrong")
 
 	// Next same.
 	_, err = ss.Recv()
-	require.Error(s.T(), err)
+	s.Require().Error(err)
 	st, _ = status.FromError(err)
-	require.Equal(s.T(), codes.FailedPrecondition, st.Code(), "Recv must return FailedPrecondition, otherwise the test is wrong")
+	s.Require().Equal(codes.FailedPrecondition, st.Code(), "Recv must return FailedPrecondition, otherwise the test is wrong")
 
 	s.mock.Equal(s.T(), []*mockReport{{
 		CallMeta:        CallMeta{Typ: ServerStream, Service: testpb.TestServiceFullName, Method: "PingList"},
@@ -291,7 +291,7 @@ func (s *ClientInterceptorTestSuite) TestListReporting() {
 
 func (s *ClientInterceptorTestSuite) TestBiStreamingReporting() {
 	ss, err := s.testClient.PingStream(s.ctx)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	wg := sync.WaitGroup{}
 	defer func() {
@@ -316,13 +316,13 @@ func (s *ClientInterceptorTestSuite) TestBiStreamingReporting() {
 		}
 	}()
 	for i := 0; i < 100; i++ {
-		require.NoError(s.T(), ss.Send(&testpb.PingStreamRequest{}), "sending shouldn't fail")
+		s.Require().NoError(ss.Send(&testpb.PingStreamRequest{}), "sending shouldn't fail")
 	}
 
-	require.NoError(s.T(), ss.CloseSend())
+	s.Require().NoError(ss.CloseSend())
 	wg.Wait()
 
-	require.EqualValues(s.T(), 100, count, "Number of received msg on the wire must match")
+	s.Require().Equal(100, count, "Number of received msg on the wire must match")
 	s.mock.Equal(s.T(), []*mockReport{{
 		CallMeta:        CallMeta{Typ: BidiStream, Service: testpb.TestServiceFullName, Method: "PingStream"},
 		postCalls:       []error{nil},
@@ -333,18 +333,18 @@ func (s *ClientInterceptorTestSuite) TestBiStreamingReporting() {
 
 func (s *ClientInterceptorTestSuite) TestClientStream() {
 	ss, err := s.testClient.PingClientStream(s.ctx)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	defer func() {
 		_, _ = ss.CloseAndRecv()
 	}()
 
 	for i := 0; i < 100; i++ {
-		require.NoError(s.T(), ss.Send(&testpb.PingClientStreamRequest{}), "sending shouldn't fail")
+		s.Require().NoError(ss.Send(&testpb.PingClientStreamRequest{}), "sending shouldn't fail")
 	}
 
 	_, err = ss.CloseAndRecv()
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	s.mock.Equal(s.T(), []*mockReport{{
 		CallMeta:        CallMeta{Typ: ClientStream, Service: testpb.TestServiceFullName, Method: "PingClientStream"},
