@@ -4,11 +4,9 @@ package testing.testpb.v1;
 
 option go_package = ".;testpb";
 
-message PingEmptyRequest {
-}
+message PingEmptyRequest {}
 
-message PingEmptyResponse {
-}
+message PingEmptyResponse {}
 
 message PingRequest {
   string value = 1;
@@ -76,5 +74,4 @@ service TestService {
   rpc PingStream(stream PingStreamRequest) returns (stream PingStreamResponse) {}
 
   rpc PingClientStream(stream PingClientStreamRequest) returns (PingClientStreamResponse) {}
-
 }
