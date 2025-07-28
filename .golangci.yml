@@ -7,6 +7,7 @@ run:
 linters:
   enable:
     - errcheck
+    - errorlint
     - misspell
 
   settings:
@@ -29,3 +30,9 @@ formatters:
   settings:
     gofumpt:
       extra-rules: true
+
+issues:
+  # Maximum issues count per one linter.
+  max-issues-per-linter: 0
+  # Maximum count of issues with the same text.
+  max-same-issues: 0

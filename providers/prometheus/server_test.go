@@ -6,6 +6,7 @@ package prometheus
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -127,7 +128,7 @@ func (s *ServerInterceptorTestSuite) TestStreamingIncrementsMetrics() {
 	count := 0
 	for {
 		_, err := ss.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		require.NoError(s.T(), err, "reading pingList shouldn't fail")
@@ -238,7 +239,7 @@ func toFloat64HistCount(h prometheus.Observer) uint64 {
 
 	pb := &dto.Metric{}
 	if err := m.Write(pb); err != nil {
-		panic(fmt.Errorf("metric write failed, err=%v", err))
+		panic(fmt.Errorf("metric write failed: %w", err))
 	}
 
 	if pb.Histogram != nil {

@@ -5,6 +5,7 @@ package retry
 
 import (
 	"context"
+	"errors"
 	"io"
 	"strconv"
 	"strings"
@@ -299,7 +300,7 @@ func (s *RetrySuite) assertPingListWasCorrect(stream testpb.TestService_PingList
 	count := 0
 	for {
 		pong, err := stream.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		require.NoError(s.T(), err, "no errors during receive on client side")
