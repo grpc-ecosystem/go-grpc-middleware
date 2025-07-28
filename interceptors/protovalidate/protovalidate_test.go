@@ -38,8 +38,8 @@ func TestUnaryServerInterceptor(t *testing.T) {
 	info := &grpc.UnaryServerInfo{FullMethod: "FakeMethod"}
 
 	t.Run("valid_email", func(t *testing.T) {
-		resp, err := interceptor(context.TODO(), testvalidate.GoodUnaryRequest, info, handler)
-		require.NoError(t, err)
+		resp, interceptorError := interceptor(context.TODO(), testvalidate.GoodUnaryRequest, info, handler)
+		require.NoError(t, interceptorError)
 		assert.Equal(t, "good", resp)
 	})
 

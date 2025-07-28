@@ -9,6 +9,7 @@ linters:
     - errcheck
     - errorlint
     - gocritic
+    - govet
     - misspell
     - testifylint
 
@@ -26,6 +27,11 @@ linters:
         - hugeParam
         - importShadow
         - unnamedResult
+      enable-all: true
+
+    govet:
+      disable:
+        - fieldalignment
       enable-all: true
 
     testifylint:
