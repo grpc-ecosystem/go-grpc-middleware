@@ -36,7 +36,7 @@ func WithClientCounterOptions(opts ...CounterOption) ClientMetricsOption {
 func WithClientHandlingTimeHistogram(opts ...HistogramOption) ClientMetricsOption {
 	return func(o *clientMetricsConfig) {
 		o.clientHandledHistogram = prometheus.NewHistogramVec(
-			histogramOptions(opts).apply(prometheus.HistogramOpts{
+			histogramOptions(opts).apply(&prometheus.HistogramOpts{
 				Name:    "grpc_client_handling_seconds",
 				Help:    "Histogram of response latency (seconds) of the gRPC until it is finished by the application.",
 				Buckets: prometheus.DefBuckets,
@@ -51,7 +51,7 @@ func WithClientHandlingTimeHistogram(opts ...HistogramOption) ClientMetricsOptio
 func WithClientStreamRecvHistogram(opts ...HistogramOption) ClientMetricsOption {
 	return func(o *clientMetricsConfig) {
 		o.clientStreamRecvHistogram = prometheus.NewHistogramVec(
-			histogramOptions(opts).apply(prometheus.HistogramOpts{
+			histogramOptions(opts).apply(&prometheus.HistogramOpts{
 				Name:    "grpc_client_msg_recv_handling_seconds",
 				Help:    "Histogram of response latency (seconds) of the gRPC single message receive.",
 				Buckets: prometheus.DefBuckets,
@@ -66,7 +66,7 @@ func WithClientStreamRecvHistogram(opts ...HistogramOption) ClientMetricsOption 
 func WithClientStreamSendHistogram(opts ...HistogramOption) ClientMetricsOption {
 	return func(o *clientMetricsConfig) {
 		o.clientStreamSendHistogram = prometheus.NewHistogramVec(
-			histogramOptions(opts).apply(prometheus.HistogramOpts{
+			histogramOptions(opts).apply(&prometheus.HistogramOpts{
 				Name:    "grpc_client_msg_send_handling_seconds",
 				Help:    "Histogram of response latency (seconds) of the gRPC single message send.",
 				Buckets: prometheus.DefBuckets,
