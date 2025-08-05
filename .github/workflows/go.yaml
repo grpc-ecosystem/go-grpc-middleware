@@ -18,11 +18,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: stable
-
-      - uses: actions/cache@v4
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          cache-dependency-path: "**/go.sum"
 
       - name: Linting & vetting.
         run: make lint
@@ -43,11 +39,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
-
-      - uses: actions/cache@v4
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          cache-dependency-path: "**/go.sum"
 
       - name: Run unit tests.
         run: make test
