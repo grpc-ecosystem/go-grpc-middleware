@@ -16,6 +16,7 @@ linters:
     - promlinter
     - testifylint
     - usestdlibvars
+    - usetesting
 
   settings:
     errcheck:
