@@ -87,7 +87,7 @@ type testCase struct {
 	expectedIP     netip.Addr
 }
 
-func (c testCase) optsFromTesCase() []Option {
+func (c *testCase) optsFromTestCase() []Option {
 	return []Option{
 		WithTrustedPeers(c.trustedPeers),
 		WithTrustedProxies(c.trustedProxies),
@@ -96,8 +96,8 @@ func (c testCase) optsFromTesCase() []Option {
 	}
 }
 
-func testUnaryServerInterceptor(t *testing.T, c testCase) {
-	interceptor := UnaryServerInterceptorOpts(c.optsFromTesCase()...)
+func testUnaryServerInterceptor(t *testing.T, c *testCase) {
+	interceptor := UnaryServerInterceptorOpts(c.optsFromTestCase()...)
 	handler := func(ctx context.Context, req any) (any, error) {
 		ip, _ := FromContext(ctx)
 
@@ -121,8 +121,8 @@ func testUnaryServerInterceptor(t *testing.T, c testCase) {
 	assert.NoError(t, err)
 }
 
-func testStreamServerInterceptor(t *testing.T, c testCase) {
-	interceptor := StreamServerInterceptorOpts(c.optsFromTesCase()...)
+func testStreamServerInterceptor(t *testing.T, c *testCase) {
+	interceptor := StreamServerInterceptorOpts(c.optsFromTestCase()...)
 	handler := func(srv any, stream grpc.ServerStream) error {
 		ip, _ := FromContext(stream.Context())
 
@@ -147,7 +147,7 @@ func testStreamServerInterceptor(t *testing.T, c testCase) {
 
 func TestInterceptor(t *testing.T) {
 	t.Run("no peer", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			// Test that if there is no peer, we don't get an IP.
 			trustedPeers: localnet,
 			headerKeys:   []string{XForwardedFor},
@@ -165,7 +165,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("trusted peer header csv", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			// Test that if the remote peer is trusted and the header contains
 			// a comma separated list of valid IPs, we get right most one.
 			trustedPeers: localnet,
@@ -184,7 +184,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("trusted proxy list with XForwardedFor", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			// Test that if the remote peer is trusted and the header contains
 			// a comma separated list of valid IPs,
 			// we get the first going from right to left that is not in local net
@@ -205,7 +205,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("trusted proxy list private net with XForwardedFor", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			// Test that if the remote peer is trusted and the header contains
 			// a comma separated list of valid IPs,
 			// we get the first going from right to left that is not in private net
@@ -226,7 +226,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("trusted proxy count with XForwardedFor", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			// Test that if the remote peer is trusted and the header contains
 			// a comma separated list of valid IPs, we get right most one -1 proxiesCount.
 			trustedPeers: localnet,
@@ -246,7 +246,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("wrong trusted proxy count with XForwardedFor", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			// Test that if the remote peer is trusted and the header contains
 			// a comma separated list of valid IPs,
 			// we get peer ip as the proxiesCount is wrongly configured
@@ -267,7 +267,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("trusted peer single", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			// Test that if the remote peer is trusted and the header contains
 			// a single valid IP, we get that IP.
 			trustedPeers: localnet,
@@ -286,7 +286,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("trusted peer multiple", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			// Test that if the trusted peers list is larger than 1 network and
 			// the remote peer is in the third network, we get the right IP.
 			trustedPeers: privatenet,
@@ -305,7 +305,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("untrusted peer single", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			// Test that if the remote peer is not trusted and the header
 			// contains a single valid IP, we get that the peer IP.
 			trustedPeers: localnet,
@@ -324,7 +324,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("trusted peer multiple headers", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			// Test that if the peer is trusted and several headers are
 			// provided, the interceptor reads the IP from the first header in
 			// the list.
@@ -345,7 +345,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("trusted peer multiple header configured single provided", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			// Test that if the peer is trusted and several headers are
 			// configured, but only one is provided, the interceptor reads the
 			// IP from the provided header.
@@ -365,7 +365,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("trusted peer multiple header configured none provided", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			// Test that if the peer is trusted and several headers are, but no
 			// header is provided, the interceptor reads the IP from the peer.
 			//
@@ -384,7 +384,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("untrusted peer multiple headers", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			// Test that if the peer is not trusted, but several headers are
 			// provided, the interceptor reads the IP from peer.
 			trustedPeers: nil,
@@ -403,7 +403,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("untrusted peer multiple header configured single provided", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			// Test that if the peer is not trusted and several headers are
 			// configured, but only one is provided, the interceptor reads the
 			// IP from the peer.
@@ -426,7 +426,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("trusted peer malformed header", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			// Test that if the peer is trusted, but the provided headers
 			// contain malformed IP addresses, the interceptor reads the IP
 			// from the peer.
@@ -446,7 +446,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("ipv6 from grpc peer", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			trustedPeers: localnet,
 			headerKeys:   []string{},
 			peer:         localhost6Peer(),
@@ -460,7 +460,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("ipv6 from header", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			trustedPeers: privatenet,
 			headerKeys:   []string{XForwardedFor},
 			inputHeaders: map[string]string{
@@ -477,7 +477,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("unix", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			trustedPeers: localnet,
 			headerKeys:   []string{XRealIp},
 			peer: &peer.Peer{
@@ -493,7 +493,7 @@ func TestInterceptor(t *testing.T) {
 		})
 	})
 	t.Run("header casing", func(t *testing.T) {
-		tc := testCase{
+		tc := &testCase{
 			// Test that header casing is ignored.
 			trustedPeers: localnet,
 			headerKeys:   []string{XRealIp},

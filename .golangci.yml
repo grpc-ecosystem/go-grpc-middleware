@@ -29,7 +29,6 @@ linters:
         - builtinShadow
         - deferInLoop
         - exitAfterDefer
-        - hugeParam
         - importShadow
         - unnamedResult
       enable-all: true

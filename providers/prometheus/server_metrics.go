@@ -43,7 +43,7 @@ func NewServerMetrics(opts ...ServerMetricsOption) *ServerMetrics {
 	if config.enableHistogram {
 		histogramLabels := append(defaultLabels, config.contextLabels...)
 		serverHandledHistogram = prometheus.NewHistogramVec(
-			histogramOptions(config.histogramOpts).apply(prometheus.HistogramOpts{
+			histogramOptions(config.histogramOpts).apply(&prometheus.HistogramOpts{
 				Name:    "grpc_server_handling_seconds",
 				Help:    "Histogram of response latency (seconds) of gRPC that had been application-level handled by the server.",
 				Buckets: prometheus.DefBuckets,
