@@ -7,10 +7,11 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/grpc"
+
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
-	"google.golang.org/grpc"
 )
 
 func InterceptorLogger() logging.Logger {
@@ -25,7 +26,6 @@ func SkipHealthAndReflectionRequests(_ context.Context, c interceptors.CallMeta)
 }
 
 func ExampleInterceptorLogger() {
-
 	opts := []logging.Option{
 		logging.WithLogOnEvents(logging.StartCall, logging.FinishCall),
 	}

@@ -9,8 +9,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"google.golang.org/grpc"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
 // InterceptorLogger adapts standard Go logger to interceptor logger.

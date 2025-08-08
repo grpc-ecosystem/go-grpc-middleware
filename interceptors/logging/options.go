@@ -8,9 +8,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
 
 // LoggableEvent defines the events a log line can be added on.

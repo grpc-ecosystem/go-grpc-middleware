@@ -8,9 +8,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
 // InterceptorLogger adapts zerolog logger to interceptor logger.

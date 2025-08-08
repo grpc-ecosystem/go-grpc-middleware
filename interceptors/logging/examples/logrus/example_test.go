@@ -7,9 +7,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
 // InterceptorLogger adapts logrus logger to interceptor logger.
