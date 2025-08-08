@@ -7,9 +7,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/stretchr/testify/assert"
 	grpcMetadata "google.golang.org/grpc/metadata"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 )
 
 type parentKey struct{}

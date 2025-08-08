@@ -43,7 +43,7 @@ fmt: $(GOIMPORTS)
 	@for file in $(GO_FILES_TO_FMT) ; do \
 		./goimports.sh "$${file}"; \
 	done
-	@$(GOIMPORTS) -w $(GO_FILES_TO_FMT)
+	@$(GOIMPORTS) -local github.com/grpc-ecosystem/go-grpc-middleware -w $(GO_FILES_TO_FMT)
 
 .PHONY: test
 test:

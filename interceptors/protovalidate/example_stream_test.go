@@ -7,9 +7,10 @@ import (
 	"net"
 
 	"buf.build/go/protovalidate"
+	"google.golang.org/grpc"
+
 	protovalidate_middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	testvalidatev1 "github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testvalidate/v1"
-	"google.golang.org/grpc"
 )
 
 type StreamService struct {

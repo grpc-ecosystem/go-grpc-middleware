@@ -6,8 +6,9 @@ package selector
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"google.golang.org/grpc"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
 
 // Matcher allows matching.

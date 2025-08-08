@@ -8,12 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
 
 func TestContextLabels(t *testing.T) {

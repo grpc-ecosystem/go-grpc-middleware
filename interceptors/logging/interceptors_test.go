@@ -18,9 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -28,6 +25,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 type testDisposableFields map[string]string

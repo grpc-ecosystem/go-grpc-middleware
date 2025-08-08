@@ -8,9 +8,10 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"google.golang.org/grpc"
 	"k8s.io/klog/v2"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
 // verbosity https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md#what-method-to-use

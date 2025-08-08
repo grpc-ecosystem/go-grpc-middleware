@@ -6,8 +6,9 @@ package realip_test
 import (
 	"net/netip"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/realip"
 	"google.golang.org/grpc"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/realip"
 )
 
 // Simple example of a unary server initialization code.

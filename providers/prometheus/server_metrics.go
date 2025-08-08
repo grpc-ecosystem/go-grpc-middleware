@@ -4,10 +4,11 @@
 package prometheus
 
 import (
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 )
 
 // ServerMetrics represents a collection of metrics to be registered on a

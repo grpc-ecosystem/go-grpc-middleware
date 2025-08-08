@@ -8,11 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/timeout"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/timeout"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
 )
 
 type TimeoutTestServiceServer struct {
