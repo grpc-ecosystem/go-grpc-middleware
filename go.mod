@@ -3,13 +3,13 @@ module github.com/grpc-ecosystem/go-grpc-middleware/v2
 go 1.23.0
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250425153114-8976f5be98c1.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.7-20250717185734-6c6e0d3c608e.1
 	buf.build/go/protovalidate v0.12.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/net v0.40.0
 	golang.org/x/oauth2 v0.30.0
 	google.golang.org/grpc v1.74.2
-	google.golang.org/protobuf v1.36.6
+	google.golang.org/protobuf v1.36.7
 )
 
 require (
