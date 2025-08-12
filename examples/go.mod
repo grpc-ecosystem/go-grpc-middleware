@@ -5,7 +5,7 @@ go 1.23.0
 require (
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
-	github.com/oklog/run v1.1.0
+	github.com/oklog/run v1.2.0
 	github.com/prometheus/client_golang v1.20.5
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.56.0
 	go.opentelemetry.io/otel v1.36.0
