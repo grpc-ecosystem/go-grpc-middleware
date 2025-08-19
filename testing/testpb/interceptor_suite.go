@@ -161,6 +161,10 @@ func (err *wrappedErrFields) Unwrap() error {
 }
 
 func (err *wrappedErrFields) Error() string {
+	if err.wrappedErr == nil {
+		return ""
+	}
+
 	// Ideally we print wrapped fields as well
 	return err.wrappedErr.Error()
 }

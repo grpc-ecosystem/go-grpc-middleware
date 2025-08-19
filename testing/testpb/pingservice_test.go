@@ -5,10 +5,12 @@ package testpb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -87,5 +89,43 @@ func TestPingServiceOnWire(t *testing.T) {
 	case err := <-stopped:
 		t.Fatal("gRPC server stopped prematurely", err)
 	default:
+	}
+}
+
+func TestTestServicePing_PingError(t *testing.T) {
+	testCases := map[string]struct {
+		request   *PingErrorRequest
+		err       error
+		unwrapped error
+		msg       string
+	}{
+		"NotFound": {
+			request:   &PingErrorRequest{ErrorCodeReturned: uint32(codes.NotFound), Value: "not found"},
+			err:       &wrappedErrFields{wrappedErr: status.Error(codes.NotFound, "Userspace error"), fields: []any{"error-field", "plop"}},
+			unwrapped: status.Error(codes.NotFound, "Userspace error"),
+			msg:       "rpc error: code = NotFound desc = Userspace error",
+		},
+		"OK": {
+			request:   &PingErrorRequest{ErrorCodeReturned: uint32(codes.OK), Value: "ok"},
+			err:       &wrappedErrFields{wrappedErr: nil, fields: []any{"error-field", "plop"}},
+			unwrapped: nil,
+			msg:       "",
+		},
+	}
+
+	for name, testCase := range testCases {
+		t.Run(name, func(t *testing.T) {
+			svc := &TestPingService{}
+
+			_, err := svc.PingError(context.Background(), testCase.request)
+			require.Equal(t, testCase.err, err)
+
+			var we *wrappedErrFields
+			ok := errors.As(err, &we)
+			require.True(t, ok)
+
+			assert.Equal(t, testCase.unwrapped, we.Unwrap())
+			assert.Equal(t, testCase.msg, we.Error())
+		})
 	}
 }
