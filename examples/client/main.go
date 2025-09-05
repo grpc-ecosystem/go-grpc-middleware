@@ -61,6 +61,11 @@ func main() {
 		grpcprom.WithClientHandlingTimeHistogram(
 			grpcprom.WithHistogramBuckets([]float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120}),
 		),
+		// Add user_id as a context label. This user option is necessary
+		// to initialize the metrics with the labels that will be provided
+		// dynamically from the context. This should be used in tandem with
+		// WithLabelsFromContext in the interceptor options.
+		grpcprom.WithClientContextLabels("user_id"),
 	)
 	reg.MustRegister(clMetrics)
 	exemplarFromContext := func(ctx context.Context) prometheus.Labels {
@@ -68,6 +73,21 @@ func main() {
 			return prometheus.Labels{"traceID": span.TraceID().String()}
 		}
 		return nil
+	}
+
+	// Extract the user id value from gRPC metadata
+	// and use it as a label on our metrics.
+	labelsFromContext := func(ctx context.Context) prometheus.Labels {
+		labels := prometheus.Labels{}
+
+		md := metadata.ExtractOutgoing(ctx)
+		userID := md.Get("user-id")
+		if userID == "" {
+			userID = "unknown"
+		}
+		labels["user_id"] = userID
+
+		return labels
 	}
 
 	// Set up OTLP tracing (stdout for debug).
@@ -90,10 +110,16 @@ func main() {
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		grpc.WithChainUnaryInterceptor(
 			timeout.UnaryClientInterceptor(500*time.Millisecond),
-			clMetrics.UnaryClientInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
+			clMetrics.UnaryClientInterceptor(
+				grpcprom.WithExemplarFromContext(exemplarFromContext),
+				grpcprom.WithLabelsFromContext(labelsFromContext),
+			),
 			logging.UnaryClientInterceptor(interceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID))),
 		grpc.WithChainStreamInterceptor(
-			clMetrics.StreamClientInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
+			clMetrics.StreamClientInterceptor(
+				grpcprom.WithExemplarFromContext(exemplarFromContext),
+				grpcprom.WithLabelsFromContext(labelsFromContext),
+			),
 			logging.StreamClientInterceptor(interceptorLogger(rpcLogger), logging.WithFieldsFromContext(logTraceID))),
 	)
 	if err != nil {
@@ -113,7 +139,10 @@ func main() {
 			case <-time.After(1 * time.Second):
 			}
 
-			md := grpcMetadata.Pairs("authorization", "bearer yolo")
+			md := grpcMetadata.Pairs(
+				"authorization", "bearer yolo",
+				"user-id", "admin",
+			)
 			if _, err := cl.Ping(metadata.MD(md).ToOutgoing(ctx), &testpb.PingRequest{Value: "example"}); err != nil {
 				return err
 			}
