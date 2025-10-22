@@ -53,7 +53,7 @@ test:
 deps:
 	@echo "Running deps tidy for all modules: $(MODULES)"
 	for dir in $(MODULES) ; do \
-  		echo "$${dir}"; \
+		echo "$${dir}"; \
 		cd $${dir} && go mod tidy; \
 	done
 
@@ -66,6 +66,12 @@ docs: $(MDOX) ## Generates code snippets, doc formatting and check links.
 check-docs: $(MDOX) ## Generates code snippets and doc formatting and checks links.
 	@echo ">> checking docs $(PATH)"
 	@$(MDOX) fmt --check -l --links.validate.config-file=$(MDOX_VALIDATE_CONFIG) *.md
+
+.PHONY: tidy_module_%
+tidy_module_%:
+	@echo ">> running go mod tidy in $*"
+	@cd $* && go mod tidy
+	@$(call require_clean_work_tree,"tidy go.mod in $*")
 
 .PHONY: lint
 # PROTIP:
@@ -94,12 +100,12 @@ lint: $(BUF) $(COPYRIGHT) fmt docs
 #      --cpu-profile-path string   Path to CPU profile output file
 #      --mem-profile-path string   Path to memory profile output file
 # to debug big allocations during linting.
-lint_module_%: ## Runs various static analysis against our code.
+lint_module_%: tidy_module_% ## Runs various static analysis against our code.
 $(MODULES:%=lint_module_%): lint_module_%: $(GOLANGCI_LINT) $(MISSPELL)
-	
+
 	@echo ">> examining all of the Go files"
 	@cd $* && go vet -stdmethods=false ./...
-	
+
 	@echo ">> linting all of the Go files GOGC=${GOGC}"
 	@cd $* && $(GOLANGCI_LINT) run
 	@$(call require_clean_work_tree,"golangci lint")
