@@ -53,6 +53,12 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 }
 
 func (c *reporter) PostMsgSend(payload any, err error, duration time.Duration) {
+	logStartCall := !c.startCallLogged && has(c.opts.loggableEvents, StartCall)
+	logPayloadSend := err == nil && has(c.opts.loggableEvents, PayloadSent)
+	if !(logStartCall || logPayloadSend) {
+		return
+	}
+
 	logLvl := c.opts.levelFunc(c.opts.codeFunc(err))
 	fields := c.fields.WithUnique(ExtractFields(c.ctx))
 	if err != nil {
@@ -65,12 +71,12 @@ func (c *reporter) PostMsgSend(payload any, err error, duration time.Duration) {
 		// fieldsFromCtxFn dups override the existing fields.
 		fields = c.opts.fieldsFromCtxCallMetaFn(c.ctx, c.CallMeta).AppendUnique(fields)
 	}
-	if !c.startCallLogged && has(c.opts.loggableEvents, StartCall) {
+	if logStartCall {
 		c.startCallLogged = true
 		c.logger.Log(c.ctx, logLvl, "started call", fields.AppendUnique(c.opts.durationFieldFunc(duration))...)
 	}
 
-	if err != nil || !has(c.opts.loggableEvents, PayloadSent) {
+	if !logPayloadSend {
 		return
 	}
 	callType := "response"
@@ -94,6 +100,12 @@ func (c *reporter) PostMsgSend(payload any, err error, duration time.Duration) {
 }
 
 func (c *reporter) PostMsgReceive(payload any, err error, duration time.Duration) {
+	logStartCall := !c.startCallLogged && has(c.opts.loggableEvents, StartCall)
+	logPayloadReceived := err == nil && has(c.opts.loggableEvents, PayloadReceived)
+	if !(logStartCall || logPayloadReceived) {
+		return
+	}
+
 	logLvl := c.opts.levelFunc(c.opts.codeFunc(err))
 	fields := c.fields.WithUnique(ExtractFields(c.ctx))
 	if err != nil {
@@ -106,12 +118,12 @@ func (c *reporter) PostMsgReceive(payload any, err error, duration time.Duration
 		// fieldsFromCtxFn dups override the existing fields.
 		fields = c.opts.fieldsFromCtxCallMetaFn(c.ctx, c.CallMeta).AppendUnique(fields)
 	}
-	if !c.startCallLogged && has(c.opts.loggableEvents, StartCall) {
+	if logStartCall {
 		c.startCallLogged = true
 		c.logger.Log(c.ctx, logLvl, "started call", fields.AppendUnique(c.opts.durationFieldFunc(duration))...)
 	}
 
-	if err != nil || !has(c.opts.loggableEvents, PayloadReceived) {
+	if !logPayloadReceived {
 		return
 	}
 	callType := "request"
