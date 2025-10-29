@@ -55,7 +55,7 @@ func (c *reporter) PostCall(err error, duration time.Duration) {
 func (c *reporter) PostMsgSend(payload any, err error, duration time.Duration) {
 	logStartCall := !c.startCallLogged && has(c.opts.loggableEvents, StartCall)
 	logPayloadSend := err == nil && has(c.opts.loggableEvents, PayloadSent)
-	if !(logStartCall || logPayloadSend) {
+	if !logStartCall && !logPayloadSend {
 		return
 	}
 
@@ -102,7 +102,7 @@ func (c *reporter) PostMsgSend(payload any, err error, duration time.Duration) {
 func (c *reporter) PostMsgReceive(payload any, err error, duration time.Duration) {
 	logStartCall := !c.startCallLogged && has(c.opts.loggableEvents, StartCall)
 	logPayloadReceived := err == nil && has(c.opts.loggableEvents, PayloadReceived)
-	if !(logStartCall || logPayloadReceived) {
+	if !logStartCall && !logPayloadReceived {
 		return
 	}
 
