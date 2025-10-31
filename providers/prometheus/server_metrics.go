@@ -130,7 +130,6 @@ func (m *ServerMetrics) preRegisterMethod(serviceName string, mInfo *grpc.Method
 
 	// Build complete label value arrays
 	startedLabels := append([]string{methodType, serviceName, methodName}, contextLabels...)
-	handledLabels := append([]string{methodType, serviceName, methodName}, contextLabels...)
 	streamLabels := append([]string{methodType, serviceName, methodName}, contextLabels...)
 
 	// These are just references (no increments), as just referencing will create the labels but not set values.
@@ -141,7 +140,7 @@ func (m *ServerMetrics) preRegisterMethod(serviceName string, mInfo *grpc.Method
 		_, _ = m.serverHandledHistogram.GetMetricWithLabelValues(streamLabels...)
 	}
 	for _, code := range interceptors.AllCodes {
-		handledLabelsWithCode := append(handledLabels, code.String())
+		handledLabelsWithCode := append([]string{methodType, serviceName, methodName, code.String()}, contextLabels...)
 		_, _ = m.serverHandledCounter.GetMetricWithLabelValues(handledLabelsWithCode...)
 	}
 }
