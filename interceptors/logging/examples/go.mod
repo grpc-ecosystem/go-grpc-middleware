@@ -1,29 +1,28 @@
 module github.com/grpc-ecosystem/go-grpc-middleware/interceptors/logging/examples
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/go-kit/log v0.2.1
 	github.com/go-logr/logr v1.4.3
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0
-	github.com/rs/zerolog v1.29.0
-	github.com/sirupsen/logrus v1.9.0
-	go.uber.org/zap v1.24.0
-	google.golang.org/grpc v1.74.2
-	k8s.io/klog/v2 v2.90.1
+	github.com/rs/zerolog v1.34.0
+	github.com/sirupsen/logrus v1.9.3
+	go.uber.org/zap v1.27.0
+	google.golang.org/grpc v1.76.0
+	k8s.io/klog/v2 v2.130.1
 )
 
 require (
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
-	github.com/mattn/go-colorable v0.1.12 // indirect
-	github.com/mattn/go-isatty v0.0.14 // indirect
-	go.uber.org/atomic v1.7.0 // indirect
-	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/net v0.40.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250528174236-200df99c418a // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250804133106-a7a43d27e69b // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 )
 
 replace github.com/grpc-ecosystem/go-grpc-middleware/v2 => ../../../
