@@ -5,6 +5,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      actions:
+        patterns:
+          - "*"
   - package-ecosystem: gomod
     directories:
       - /
@@ -13,3 +17,12 @@ updates:
       - /examples
     schedule:
       interval: weekly
+    groups:
+      go:
+        patterns:
+          - "*"
+        applies-to: "version-updates"
+      go-security:
+        patterns:
+          - "*"
+        applies-to: "security-updates"
