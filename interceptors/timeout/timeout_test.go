@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type TimeoutTestServiceServer struct {
@@ -52,5 +54,7 @@ func TestTimeoutUnaryClientInterceptor(t *testing.T) {
 	// This call will take 300/100ms for respond, so the client timeout exceed.
 	resp2, err2 := its.Client.Ping(context.TODO(), &testpb.PingRequest{})
 	assert.Nil(t, resp2)
-	assert.EqualError(t, err2, "rpc error: code = DeadlineExceeded desc = context deadline exceeded")
+	st, ok := status.FromError(err2)
+	assert.True(t, ok)
+	assert.Equal(t, codes.DeadlineExceeded, st.Code())
 }
