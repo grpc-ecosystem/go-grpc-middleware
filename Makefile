@@ -7,6 +7,7 @@ MODULES          ?= $(PROVIDER_MODULES) $(PWD) $(PWD)/examples
 GO_FILES_TO_FMT  ?= $(shell find . -path -prune -o -name '*.go' -print)
 
 GOBIN             ?= $(firstword $(subst :, ,${GOPATH}))/bin
+MDOX_VALIDATE_CONFIG ?= .mdox.validate.yaml
 
 TMP_GOPATH        ?= /tmp/gopath
 
