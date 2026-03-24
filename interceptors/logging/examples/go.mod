@@ -1,6 +1,6 @@
 module github.com/grpc-ecosystem/go-grpc-middleware/interceptors/logging/examples
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/go-kit/log v0.2.1
@@ -19,11 +19,11 @@ require (
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/net v0.40.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250528174236-200df99c418a // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250603155806-513f23925822 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 )
 
 replace github.com/grpc-ecosystem/go-grpc-middleware/v2 => ../../../

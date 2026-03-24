@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	_ "log/slog"
 )
 
 var (
@@ -206,8 +207,7 @@ func AddFields(ctx context.Context, f Fields) {
 // Logger requires Log method, similar to experimental slog, allowing logging interceptor to be interoperable. Official
 // adapters for popular loggers are in `provider/` directory (separate modules). It's totally ok to copy simple function
 // implementation over.
-// TODO(bwplotka): Once slog is official, we could use slog method directly. Currently level is copied over, so we don't
-// depend on experimental module.
+// [Level] is an alias for [slog.Level], so you can use it in your own logger implementation.
 // interface used for all our interceptors.
 type Logger interface {
 	Log(ctx context.Context, level Level, msg string, fields ...any)
