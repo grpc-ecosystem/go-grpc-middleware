@@ -329,6 +329,27 @@ func (s *loggingClientServerSuite) TestPingList() {
 		AssertFieldNotEmpty(s.T(), "grpc.time_ms").AssertNoMoreTags(s.T())
 }
 
+func (s *loggingClientServerSuite) TestPingStream_EOFIsNotLoggedAsError() {
+	stream, err := s.Client.PingStream(s.SimpleCtx())
+	s.Require().NoError(err, "should not fail on establishing the stream")
+	s.Require().NoError(stream.CloseSend())
+	_, err = stream.Recv()
+	s.Require().ErrorIs(err, io.EOF)
+
+	lines := s.logger.o.Lines()
+	sort.Sort(lines)
+	s.Require().Len(lines, 4)
+
+	s.Assert().Equal("finished call", lines[0].msg)
+	s.Assert().Equal("started call", lines[1].msg)
+	s.Assert().Equal("finished call", lines[2].msg)
+	s.Assert().Equal("started call", lines[3].msg)
+	for _, line := range lines {
+		s.Assert().Equal(logging.LevelDebug, line.lvl)
+		s.Assert().NotContains(line.fields, "grpc.error")
+	}
+}
+
 func (s *loggingClientServerSuite) TestPingError_WithCustomLevels() {
 	for _, tcase := range []struct {
 		code  codes.Code

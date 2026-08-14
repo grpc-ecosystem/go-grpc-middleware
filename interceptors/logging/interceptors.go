@@ -58,6 +58,9 @@ func (c *reporter) PostMsgSend(payload any, err error, duration time.Duration) {
 	if !logStartCall && !logPayloadSend {
 		return
 	}
+	if errors.Is(err, io.EOF) {
+		err = nil
+	}
 
 	logLvl := c.opts.levelFunc(c.opts.codeFunc(err))
 	fields := c.fields.WithUnique(ExtractFields(c.ctx))
@@ -104,6 +107,9 @@ func (c *reporter) PostMsgReceive(payload any, err error, duration time.Duration
 	logPayloadReceived := err == nil && has(c.opts.loggableEvents, PayloadReceived)
 	if !logStartCall && !logPayloadReceived {
 		return
+	}
+	if errors.Is(err, io.EOF) {
+		err = nil
 	}
 
 	logLvl := c.opts.levelFunc(c.opts.codeFunc(err))
