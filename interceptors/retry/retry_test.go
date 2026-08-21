@@ -288,11 +288,17 @@ func (s *RetrySuite) TestServerStream_CallFailsOnDeadlineExceeded() {
 func (s *RetrySuite) TestServerStream_CallRetrySucceeds() {
 	restarted := s.RestartServer(retryTimeout)
 
-	_, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList,
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList,
 		WithMax(40),
 	)
 
 	s.Assert().NoError(err, "establishing the connection should succeed")
+	// Drain the stream so the underlying RPC fully completes before this test
+	// returns. Otherwise the server-side handler can keep running in the
+	// background and race with later tests that share s.srv state (e.g. by
+	// incrementing srv.reqCounter after a subsequent SetupTest reset it),
+	// causing flaky failures unrelated to those tests.
+	s.assertPingListWasCorrect(stream)
 	<-restarted
 }
 
