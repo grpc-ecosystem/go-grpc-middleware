@@ -3,3 +3,5 @@ version: 1
 validators:
   - regex: 'medium\.com'
     type: 'ignore'
+  - regex: 'gophers\.slack\.com'
+    type: 'ignore'
