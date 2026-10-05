@@ -50,32 +50,40 @@ func (r *reporter) PostCall(err error, rpcDuration time.Duration) {
 	}
 }
 
-func (r *reporter) PostMsgSend(_ any, _ error, sendDuration time.Duration) {
+func (r *reporter) PostMsgSend(_ any, err error, sendDuration time.Duration) {
 	switch r.kind {
 	case KindServer:
 		baseLabels := []string{string(r.typ), r.service, r.method}
 		allLabels := append(baseLabels, r.contextLabels...)
-		r.incrementWithExemplar(r.serverMetrics.serverStreamMsgSent, allLabels...)
+		if err == nil {
+			r.incrementWithExemplar(r.serverMetrics.serverStreamMsgSent, allLabels...)
+		}
 	case KindClient:
 		baseLabels := []string{string(r.typ), r.service, r.method}
 		allLabels := append(baseLabels, r.contextLabels...)
-		r.incrementWithExemplar(r.clientMetrics.clientStreamMsgSent, allLabels...)
+		if err == nil {
+			r.incrementWithExemplar(r.clientMetrics.clientStreamMsgSent, allLabels...)
+		}
 		if r.clientMetrics.clientStreamSendHistogram != nil {
 			r.observeWithExemplar(r.clientMetrics.clientStreamSendHistogram, sendDuration.Seconds(), allLabels...)
 		}
 	}
 }
 
-func (r *reporter) PostMsgReceive(_ any, _ error, recvDuration time.Duration) {
+func (r *reporter) PostMsgReceive(_ any, err error, recvDuration time.Duration) {
 	switch r.kind {
 	case KindServer:
 		baseLabels := []string{string(r.typ), r.service, r.method}
 		allLabels := append(baseLabels, r.contextLabels...)
-		r.incrementWithExemplar(r.serverMetrics.serverStreamMsgReceived, allLabels...)
+		if err == nil {
+			r.incrementWithExemplar(r.serverMetrics.serverStreamMsgReceived, allLabels...)
+		}
 	case KindClient:
 		baseLabels := []string{string(r.typ), r.service, r.method}
 		allLabels := append(baseLabels, r.contextLabels...)
-		r.incrementWithExemplar(r.clientMetrics.clientStreamMsgReceived, allLabels...)
+		if err == nil {
+			r.incrementWithExemplar(r.clientMetrics.clientStreamMsgReceived, allLabels...)
+		}
 		if r.clientMetrics.clientStreamRecvHistogram != nil {
 			r.observeWithExemplar(r.clientMetrics.clientStreamRecvHistogram, recvDuration.Seconds(), allLabels...)
 		}
