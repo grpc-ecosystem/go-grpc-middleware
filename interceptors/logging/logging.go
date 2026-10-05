@@ -5,9 +5,9 @@ package logging
 
 import (
 	"context"
+	_ "log/slog"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
-	_ "log/slog"
 )
 
 var (
