@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestServerInterceptorSuite(t *testing.T) {
@@ -101,12 +102,16 @@ func (s *ServerInterceptorTestSuite) TestUnaryIncrementsMetrics() {
 	requireValue(s.T(), 1, s.serverMetrics.serverStartedCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty"))
 	requireValue(s.T(), 1, s.serverMetrics.serverHandledCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty", "OK"))
 	requireValueHistCount(s.T(), 1, s.serverMetrics.serverHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty"))
+	requireValue(s.T(), 1, s.serverMetrics.serverStreamMsgSent.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty"))
+	requireValue(s.T(), 1, s.serverMetrics.serverStreamMsgReceived.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty"))
 
 	_, err = s.Client.PingError(s.SimpleCtx(), &testpb.PingErrorRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)})
 	s.Require().Error(err)
 	requireValue(s.T(), 1, s.serverMetrics.serverStartedCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingError"))
 	requireValue(s.T(), 1, s.serverMetrics.serverHandledCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingError", "FailedPrecondition"))
 	requireValueHistCount(s.T(), 1, s.serverMetrics.serverHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "PingError"))
+	requireValue(s.T(), 0, s.serverMetrics.serverStreamMsgSent.WithLabelValues("unary", testpb.TestServiceFullName, "PingError"))
+	requireValue(s.T(), 1, s.serverMetrics.serverStreamMsgReceived.WithLabelValues("unary", testpb.TestServiceFullName, "PingError"))
 }
 
 func (s *ServerInterceptorTestSuite) TestStartedStreamingIncrementsStarted() {
@@ -168,6 +173,86 @@ func (s *ServerInterceptorTestSuite) TestContextCancelledTreatedAsStatus() {
 
 	requireValueWithRetry(s.SimpleCtx(), s.T(), 1,
 		s.serverMetrics.serverHandledCounter.WithLabelValues("bidi_stream", testpb.TestServiceFullName, "PingStream", "Canceled"))
+}
+
+func TestServerStreamMessageCountersOnlyCountSuccessfulCalls(t *testing.T) {
+	invalidArgErr := status.Error(codes.InvalidArgument, "send failed")
+	invalidArgRecvErr := status.Error(codes.InvalidArgument, "receive failed")
+	testCases := []struct {
+		name         string
+		recvErrors   []error
+		sendErrors   []error
+		operation    string
+		operationErr error
+		callErr      error
+		handledCode  string
+		wantReceived int
+		wantSent     int
+	}{
+		{name: "receive EOF", recvErrors: []error{nil, nil, io.EOF}, operation: "receive", operationErr: io.EOF, handledCode: codes.OK.String(), wantReceived: 2},
+		{name: "receive invalid argument", recvErrors: []error{nil, nil, invalidArgRecvErr}, operation: "receive", operationErr: invalidArgRecvErr, callErr: invalidArgRecvErr, handledCode: codes.InvalidArgument.String(), wantReceived: 2},
+		{name: "receive canceled", recvErrors: []error{nil, nil, context.Canceled}, operation: "receive", operationErr: context.Canceled, callErr: context.Canceled, handledCode: codes.Canceled.String(), wantReceived: 2},
+		{name: "send invalid argument", sendErrors: []error{nil, nil, invalidArgErr}, operation: "send", operationErr: invalidArgErr, callErr: invalidArgErr, handledCode: codes.InvalidArgument.String(), wantSent: 2},
+		{name: "send canceled", sendErrors: []error{nil, nil, context.Canceled}, operation: "send", operationErr: context.Canceled, callErr: context.Canceled, handledCode: codes.Canceled.String(), wantSent: 2},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			metrics := NewServerMetrics()
+			const typ, service, method = "bidi_stream", "test.Service", "Stream"
+			received := metrics.serverStreamMsgReceived.WithLabelValues(typ, service, method)
+			sent := metrics.serverStreamMsgSent.WithLabelValues(typ, service, method)
+			requireValue(t, 0, received)
+			requireValue(t, 0, sent)
+			baseStream := &scriptedServerStream{ctx: context.Background(), recvErrors: tc.recvErrors, sendErrors: tc.sendErrors}
+			var operationErr error
+			callErr := metrics.StreamServerInterceptor()(nil, baseStream, &grpc.StreamServerInfo{FullMethod: "/test.Service/Stream", IsClientStream: true, IsServerStream: true}, func(_ any, stream grpc.ServerStream) error {
+				for range 3 {
+					var err error
+					if tc.operation == "receive" {
+						err = stream.RecvMsg(&struct{}{})
+					} else {
+						err = stream.SendMsg(&struct{}{})
+					}
+					if err != nil {
+						operationErr = err
+						if errors.Is(err, io.EOF) {
+							return nil
+						}
+						return err
+					}
+				}
+				return nil
+			})
+			require.Equal(t, tc.operationErr, operationErr)
+			require.Equal(t, tc.callErr, callErr)
+			requireValue(t, tc.wantReceived, received)
+			requireValue(t, tc.wantSent, sent)
+			requireValue(t, 1, metrics.serverStartedCounter.WithLabelValues(typ, service, method))
+			requireValue(t, 1, metrics.serverHandledCounter.WithLabelValues(typ, service, method, tc.handledCode))
+		})
+	}
+}
+
+type scriptedServerStream struct {
+	grpc.ServerStream
+	ctx        context.Context
+	recvErrors []error
+	sendErrors []error
+}
+
+func (s *scriptedServerStream) Context() context.Context { return s.ctx }
+
+func (s *scriptedServerStream) RecvMsg(any) error {
+	err := s.recvErrors[0]
+	s.recvErrors = s.recvErrors[1:]
+	return err
+}
+
+func (s *scriptedServerStream) SendMsg(any) error {
+	err := s.sendErrors[0]
+	s.sendErrors = s.sendErrors[1:]
+	return err
 }
 
 // fetchPrometheusLines does mocked HTTP GET request against real prometheus handler to get the same view that Prometheus

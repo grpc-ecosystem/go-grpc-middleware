@@ -4,11 +4,13 @@
 package prometheus
 
 import (
+	"context"
 	"errors"
 	"io"
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -49,12 +51,16 @@ func (s *ClientInterceptorTestSuite) TestUnaryIncrementsMetrics() {
 	requireValue(s.T(), 1, s.clientMetrics.clientStartedCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty"))
 	requireValue(s.T(), 1, s.clientMetrics.clientHandledCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty", "OK"))
 	requireValueHistCount(s.T(), 1, s.clientMetrics.clientHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty"))
+	requireValue(s.T(), 1, s.clientMetrics.clientStreamMsgSent.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty"))
+	requireValue(s.T(), 1, s.clientMetrics.clientStreamMsgReceived.WithLabelValues("unary", testpb.TestServiceFullName, "PingEmpty"))
 
 	_, err = s.Client.PingError(s.SimpleCtx(), &testpb.PingErrorRequest{ErrorCodeReturned: uint32(codes.FailedPrecondition)})
 	s.Require().Error(err)
 	requireValue(s.T(), 1, s.clientMetrics.clientStartedCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingError"))
 	requireValue(s.T(), 1, s.clientMetrics.clientHandledCounter.WithLabelValues("unary", testpb.TestServiceFullName, "PingError", "FailedPrecondition"))
 	requireValueHistCount(s.T(), 1, s.clientMetrics.clientHandledHistogram.WithLabelValues("unary", testpb.TestServiceFullName, "PingError"))
+	requireValue(s.T(), 1, s.clientMetrics.clientStreamMsgSent.WithLabelValues("unary", testpb.TestServiceFullName, "PingError"))
+	requireValue(s.T(), 0, s.clientMetrics.clientStreamMsgReceived.WithLabelValues("unary", testpb.TestServiceFullName, "PingError"))
 }
 
 func (s *ClientInterceptorTestSuite) TestStartedStreamingIncrementsStarted() {
@@ -84,7 +90,7 @@ func (s *ClientInterceptorTestSuite) TestStreamingIncrementsMetrics() {
 
 	requireValue(s.T(), 1, s.clientMetrics.clientStartedCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 	requireValue(s.T(), 1, s.clientMetrics.clientHandledCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList", "OK"))
-	requireValue(s.T(), testpb.ListResponseCount+1 /* + EOF */, s.clientMetrics.clientStreamMsgReceived.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
+	requireValue(s.T(), testpb.ListResponseCount, s.clientMetrics.clientStreamMsgReceived.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 	requireValue(s.T(), 1, s.clientMetrics.clientStreamMsgSent.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 	requireValueHistCount(s.T(), 1, s.clientMetrics.clientHandledHistogram.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 
@@ -95,10 +101,79 @@ func (s *ClientInterceptorTestSuite) TestStreamingIncrementsMetrics() {
 	_, err = ss.Recv()
 	st, _ := status.FromError(err)
 	s.Require().Equal(codes.FailedPrecondition, st.Code(), "Recv must return FailedPrecondition, otherwise the test is wrong")
+	requireValue(s.T(), testpb.ListResponseCount, s.clientMetrics.clientStreamMsgReceived.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 
 	requireValue(s.T(), 2, s.clientMetrics.clientStartedCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
 	requireValue(s.T(), 1, s.clientMetrics.clientHandledCounter.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList", "FailedPrecondition"))
 	requireValueHistCount(s.T(), 2, s.clientMetrics.clientHandledHistogram.WithLabelValues("server_stream", testpb.TestServiceFullName, "PingList"))
+}
+
+func TestClientStreamMessageCountersOnlyCountSuccessfulCalls(t *testing.T) {
+	invalidArgErr := status.Error(codes.InvalidArgument, "send failed")
+	invalidArgRecvErr := status.Error(codes.InvalidArgument, "receive failed")
+	testCases := []struct {
+		name        string
+		recvErrors  []error
+		sendErrors  []error
+		handledCode string
+	}{
+		{name: "EOF receive and canceled send", recvErrors: []error{nil, nil, io.EOF}, sendErrors: []error{nil, nil, context.Canceled}, handledCode: codes.OK.String()},
+		{name: "invalid argument receive and send", recvErrors: []error{nil, nil, invalidArgRecvErr}, sendErrors: []error{nil, nil, invalidArgErr}, handledCode: codes.InvalidArgument.String()},
+		{name: "canceled receive and send", recvErrors: []error{nil, nil, context.Canceled}, sendErrors: []error{nil, nil, context.Canceled}, handledCode: codes.Canceled.String()},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			metrics := NewClientMetrics(WithClientStreamSendHistogram(), WithClientStreamRecvHistogram())
+			const typ, service, method = "bidi_stream", "test.Service", "Stream"
+			received := metrics.clientStreamMsgReceived.WithLabelValues(typ, service, method)
+			sent := metrics.clientStreamMsgSent.WithLabelValues(typ, service, method)
+			requireValue(t, 0, received)
+			requireValue(t, 0, sent)
+			baseStream := &scriptedClientStream{ctx: context.Background(), recvErrors: tc.recvErrors, sendErrors: tc.sendErrors}
+			stream, err := metrics.StreamClientInterceptor()(context.Background(), &grpc.StreamDesc{ClientStreams: true, ServerStreams: true}, nil, "/test.Service/Stream", func(context.Context, *grpc.StreamDesc, *grpc.ClientConn, string, ...grpc.CallOption) (grpc.ClientStream, error) {
+				return baseStream, nil
+			})
+			require.NoError(t, err)
+
+			for _, wantErr := range tc.sendErrors {
+				err := stream.SendMsg(&struct{}{})
+				require.Equal(t, wantErr, err)
+			}
+			for _, wantErr := range tc.recvErrors {
+				err := stream.RecvMsg(&struct{}{})
+				require.Equal(t, wantErr, err)
+			}
+
+			requireValue(t, 2, received)
+			requireValue(t, 2, sent)
+			requireValue(t, 1, metrics.clientStartedCounter.WithLabelValues(typ, service, method))
+			requireValue(t, 1, metrics.clientHandledCounter.WithLabelValues(typ, service, method, tc.handledCode))
+			requireValueHistCount(t, 3, metrics.clientStreamSendHistogram.WithLabelValues(typ, service, method))
+			requireValueHistCount(t, 3, metrics.clientStreamRecvHistogram.WithLabelValues(typ, service, method))
+		})
+	}
+}
+
+type scriptedClientStream struct {
+	grpc.ClientStream
+	ctx        context.Context
+	recvErrors []error
+	sendErrors []error
+}
+
+func (s *scriptedClientStream) Context() context.Context { return s.ctx }
+
+func (s *scriptedClientStream) RecvMsg(any) error {
+	err := s.recvErrors[0]
+	s.recvErrors = s.recvErrors[1:]
+	return err
+}
+
+func (s *scriptedClientStream) SendMsg(any) error {
+	err := s.sendErrors[0]
+	s.sendErrors = s.sendErrors[1:]
+	return err
 }
 
 func (s *ClientInterceptorTestSuite) TestWithSubsystem() {
