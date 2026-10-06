@@ -42,9 +42,11 @@ func TestRecoverySuite(t *testing.T) {
 			TestService: &recoveryAssertService{TestServiceServer: &testpb.TestPingService{}},
 			ServerOpts: []grpc.ServerOption{
 				grpc.StreamInterceptor(
-					recovery.StreamServerInterceptor()),
+					recovery.StreamServerInterceptor(),
+				),
 				grpc.UnaryInterceptor(
-					recovery.UnaryServerInterceptor()),
+					recovery.UnaryServerInterceptor(),
+				),
 			},
 		},
 	}
@@ -97,9 +99,11 @@ func TestRecoveryOverrideSuite(t *testing.T) {
 			TestService: &recoveryAssertService{TestServiceServer: &testpb.TestPingService{}},
 			ServerOpts: []grpc.ServerOption{
 				grpc.StreamInterceptor(
-					recovery.StreamServerInterceptor(opts...)),
+					recovery.StreamServerInterceptor(opts...),
+				),
 				grpc.UnaryInterceptor(
-					recovery.UnaryServerInterceptor(opts...)),
+					recovery.UnaryServerInterceptor(opts...),
+				),
 			},
 		},
 	}

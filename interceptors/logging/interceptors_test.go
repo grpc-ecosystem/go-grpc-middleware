@@ -381,7 +381,8 @@ func (s *loggingClientServerSuite) TestPingError_WithCustomLevels() {
 		s.Run(tcase.msg, func() {
 			_, err := s.Client.PingError(
 				s.SimpleCtx(),
-				&testpb.PingErrorRequest{Value: "something", ErrorCodeReturned: uint32(tcase.code)})
+				&testpb.PingErrorRequest{Value: "something", ErrorCodeReturned: uint32(tcase.code)},
+			)
 			s.Require().Error(err, "each call here must return an error")
 			lines := s.logger.o.Lines()
 			sort.Sort(lines)
