@@ -52,25 +52,29 @@ func NewClientMetrics(opts ...ClientMetricsOption) *ClientMetrics {
 			config.counterOpts.apply(prometheus.CounterOpts{
 				Name: "grpc_client_started_total",
 				Help: "Total number of RPCs started on the client.",
-			}), startedLabels),
+			}), startedLabels,
+		),
 
 		clientHandledCounter: prometheus.NewCounterVec(
 			config.counterOpts.apply(prometheus.CounterOpts{
 				Name: "grpc_client_handled_total",
 				Help: "Total number of RPCs completed by the client, regardless of success or failure.",
-			}), handledLabels),
+			}), handledLabels,
+		),
 
 		clientStreamMsgReceived: prometheus.NewCounterVec(
 			config.counterOpts.apply(prometheus.CounterOpts{
 				Name: "grpc_client_msg_received_total",
 				Help: "Total number of RPC stream messages received by the client.",
-			}), streamLabels),
+			}), streamLabels,
+		),
 
 		clientStreamMsgSent: prometheus.NewCounterVec(
 			config.counterOpts.apply(prometheus.CounterOpts{
 				Name: "grpc_client_msg_sent_total",
 				Help: "Total number of gRPC stream messages sent by the client.",
-			}), streamLabels),
+			}), streamLabels,
+		),
 
 		clientHandledHistogram:    config.clientHandledHistogramFn(),
 		clientStreamRecvHistogram: config.clientStreamRecvHistogramFn(),

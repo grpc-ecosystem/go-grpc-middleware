@@ -57,22 +57,26 @@ func NewServerMetrics(opts ...ServerMetricsOption) *ServerMetrics {
 			config.counterOpts.apply(prometheus.CounterOpts{
 				Name: "grpc_server_started_total",
 				Help: "Total number of RPCs started on the server.",
-			}), startedLabels),
+			}), startedLabels,
+		),
 		serverHandledCounter: prometheus.NewCounterVec(
 			config.counterOpts.apply(prometheus.CounterOpts{
 				Name: "grpc_server_handled_total",
 				Help: "Total number of RPCs completed on the server, regardless of success or failure.",
-			}), handledLabels),
+			}), handledLabels,
+		),
 		serverStreamMsgReceived: prometheus.NewCounterVec(
 			config.counterOpts.apply(prometheus.CounterOpts{
 				Name: "grpc_server_msg_received_total",
 				Help: "Total number of RPC stream messages received on the server.",
-			}), streamLabels),
+			}), streamLabels,
+		),
 		serverStreamMsgSent: prometheus.NewCounterVec(
 			config.counterOpts.apply(prometheus.CounterOpts{
 				Name: "grpc_server_msg_sent_total",
 				Help: "Total number of gRPC stream messages sent by the server.",
-			}), streamLabels),
+			}), streamLabels,
+		),
 		serverHandledHistogram: serverHandledHistogram,
 		contextLabelNames:      config.contextLabels,
 	}

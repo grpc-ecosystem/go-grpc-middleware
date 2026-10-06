@@ -85,7 +85,8 @@ func ExampleWithPerRetryTimeout() {
 		ctx,
 		&testpb.PingRequest{},
 		WithMax(3),
-		WithPerRetryTimeout(1*time.Second))
+		WithPerRetryTimeout(1*time.Second),
+	)
 }
 
 // Scale duration by a factor.
