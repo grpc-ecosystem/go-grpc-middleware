@@ -442,6 +442,15 @@ type failingClientStream struct {
 	RecvMsgErr error
 }
 
+type contextClientStream struct {
+	*failingClientStream
+	ctx context.Context
+}
+
+func (s *contextClientStream) Context() context.Context {
+	return s.ctx
+}
+
 func (s *failingClientStream) Header() (metadata.MD, error) {
 	return nil, nil
 }
@@ -464,6 +473,60 @@ func (s *failingClientStream) SendMsg(m any) error {
 
 func (s *failingClientStream) RecvMsg(m any) error {
 	return s.RecvMsgErr
+}
+
+func TestStreamClientInterceptorConcurrentContextAndRetry(t *testing.T) {
+	t.Parallel()
+
+	type streamContextKey struct{}
+
+	const retryCount = 1000
+
+	attempts := 0
+	recvErr := status.Error(codes.Unavailable, "retry stream")
+	streamer := func(ctx context.Context, _ *grpc.StreamDesc, _ *grpc.ClientConn, _ string, _ ...grpc.CallOption) (grpc.ClientStream, error) {
+		attempts++
+
+		return &contextClientStream{
+			failingClientStream: &failingClientStream{RecvMsgErr: recvErr},
+			ctx:                 context.WithValue(ctx, streamContextKey{}, attempts),
+		}, nil
+	}
+	interceptor := StreamClientInterceptor(WithMax(retryCount), WithBackoff(BackoffLinear(0)))
+
+	stream, err := interceptor(t.Context(), &grpc.StreamDesc{ServerStreams: true}, nil, "/test/stream", streamer)
+	require.NoError(t, err)
+	require.Equal(t, 1, stream.Context().Value(streamContextKey{}))
+
+	start := make(chan struct{})
+	var workers sync.WaitGroup
+	workers.Add(2)
+
+	go func() {
+		defer workers.Done()
+
+		<-start
+
+		for range retryCount * 10 {
+			if stream.Context().Value(streamContextKey{}) == nil {
+				t.Error("Context lost the underlying stream context")
+				return
+			}
+		}
+	}()
+
+	go func() {
+		defer workers.Done()
+
+		<-start
+		assert.ErrorIs(t, stream.RecvMsg(nil), recvErr)
+	}()
+
+	close(start)
+	workers.Wait()
+
+	require.Equal(t, retryCount, attempts)
+	require.Equal(t, retryCount, stream.Context().Value(streamContextKey{}))
 }
 
 func TestStreamClientInterceptorAttemptMetadata(t *testing.T) {
