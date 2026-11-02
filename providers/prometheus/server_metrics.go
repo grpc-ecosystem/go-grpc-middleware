@@ -54,25 +54,25 @@ func NewServerMetrics(opts ...ServerMetricsOption) *ServerMetrics {
 
 	return &ServerMetrics{
 		serverStartedCounter: prometheus.NewCounterVec(
-			config.counterOpts.apply(prometheus.CounterOpts{
+			*config.counterOpts.apply(&prometheus.CounterOpts{
 				Name: "grpc_server_started_total",
 				Help: "Total number of RPCs started on the server.",
 			}), startedLabels,
 		),
 		serverHandledCounter: prometheus.NewCounterVec(
-			config.counterOpts.apply(prometheus.CounterOpts{
+			*config.counterOpts.apply(&prometheus.CounterOpts{
 				Name: "grpc_server_handled_total",
 				Help: "Total number of RPCs completed on the server, regardless of success or failure.",
 			}), handledLabels,
 		),
 		serverStreamMsgReceived: prometheus.NewCounterVec(
-			config.counterOpts.apply(prometheus.CounterOpts{
+			*config.counterOpts.apply(&prometheus.CounterOpts{
 				Name: "grpc_server_msg_received_total",
 				Help: "Total number of RPC stream messages received on the server.",
 			}), streamLabels,
 		),
 		serverStreamMsgSent: prometheus.NewCounterVec(
-			config.counterOpts.apply(prometheus.CounterOpts{
+			*config.counterOpts.apply(&prometheus.CounterOpts{
 				Name: "grpc_server_msg_sent_total",
 				Help: "Total number of gRPC stream messages sent by the server.",
 			}), streamLabels,
