@@ -442,15 +442,6 @@ type failingClientStream struct {
 	RecvMsgErr error
 }
 
-type contextClientStream struct {
-	*failingClientStream
-	ctx context.Context
-}
-
-func (s *contextClientStream) Context() context.Context {
-	return s.ctx
-}
-
 func (s *failingClientStream) Header() (metadata.MD, error) {
 	return nil, nil
 }
@@ -475,12 +466,21 @@ func (s *failingClientStream) RecvMsg(m any) error {
 	return s.RecvMsgErr
 }
 
+type contextClientStream struct {
+	*failingClientStream
+	ctx context.Context
+}
+
+func (s *contextClientStream) Context() context.Context {
+	return s.ctx
+}
+
 func TestStreamClientInterceptorConcurrentContextAndRetry(t *testing.T) {
 	t.Parallel()
 
 	type streamContextKey struct{}
 
-	const retryCount = 1000
+	const maxAttempts = 1000
 
 	attempts := 0
 	recvErr := status.Error(codes.Unavailable, "retry stream")
@@ -492,22 +492,21 @@ func TestStreamClientInterceptorConcurrentContextAndRetry(t *testing.T) {
 			ctx:                 context.WithValue(ctx, streamContextKey{}, attempts),
 		}, nil
 	}
-	interceptor := StreamClientInterceptor(WithMax(retryCount), WithBackoff(BackoffLinear(0)))
+
+	interceptor := StreamClientInterceptor(WithMax(maxAttempts), WithBackoff(BackoffLinear(0)))
 
 	stream, err := interceptor(t.Context(), &grpc.StreamDesc{ServerStreams: true}, nil, "/test/stream", streamer)
 	require.NoError(t, err)
+
+	_, err = stream.Header()
+	require.NoError(t, err)
 	require.Equal(t, 1, stream.Context().Value(streamContextKey{}))
 
-	start := make(chan struct{})
-	var workers sync.WaitGroup
-	workers.Add(2)
-
+	contextReadDone := make(chan struct{})
 	go func() {
-		defer workers.Done()
+		defer close(contextReadDone)
 
-		<-start
-
-		for range retryCount * 10 {
+		for range maxAttempts * 10 {
 			if stream.Context().Value(streamContextKey{}) == nil {
 				t.Error("Context lost the underlying stream context")
 				return
@@ -515,18 +514,12 @@ func TestStreamClientInterceptorConcurrentContextAndRetry(t *testing.T) {
 		}
 	}()
 
-	go func() {
-		defer workers.Done()
+	err = stream.RecvMsg(nil)
+	<-contextReadDone
 
-		<-start
-		assert.ErrorIs(t, stream.RecvMsg(nil), recvErr)
-	}()
-
-	close(start)
-	workers.Wait()
-
-	require.Equal(t, retryCount, attempts)
-	require.Equal(t, retryCount, stream.Context().Value(streamContextKey{}))
+	require.ErrorIs(t, err, recvErr)
+	require.Equal(t, maxAttempts, attempts)
+	require.Equal(t, maxAttempts, stream.Context().Value(streamContextKey{}))
 }
 
 func TestStreamClientInterceptorAttemptMetadata(t *testing.T) {
