@@ -25,9 +25,9 @@ type CounterOption func(*prometheus.CounterOpts)
 
 type counterOptions []CounterOption
 
-func (co counterOptions) apply(o prometheus.CounterOpts) prometheus.CounterOpts {
+func (co counterOptions) apply(o *prometheus.CounterOpts) *prometheus.CounterOpts {
 	for _, f := range co {
-		f(&o)
+		f(o)
 	}
 	return o
 }
