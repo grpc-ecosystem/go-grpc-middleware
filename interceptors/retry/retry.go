@@ -182,6 +182,10 @@ func (s *serverStreamingRetryingStream) Trailer() grpcMetadata.MD {
 	return s.getStream().Trailer()
 }
 
+func (s *serverStreamingRetryingStream) Context() context.Context {
+	return s.getStream().Context()
+}
+
 func (s *serverStreamingRetryingStream) RecvMsg(m any) error {
 	attemptRetry, lastErr := s.receiveMsgAndIndicateRetry(m)
 	if !attemptRetry {
