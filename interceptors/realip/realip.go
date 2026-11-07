@@ -85,7 +85,11 @@ func ipFromHeaders(ctx context.Context, headers []string, trustedProxies []netip
 			if idx < 0 {
 				continue
 			}
-			return ipFromXForwardedFoR(trustedProxies, a, idx)
+			// No ip from this header, try the next one.
+			if ip := ipFromXForwardedFoR(trustedProxies, a, idx); ip != noIP {
+				return ip
+			}
+			continue
 		}
 		h := strings.TrimSpace(a[idx])
 		ip, err := netip.ParseAddr(h)

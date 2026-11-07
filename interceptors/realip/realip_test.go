@@ -344,6 +344,48 @@ func TestInterceptor(t *testing.T) {
 			testStreamServerInterceptor(t, tc)
 		})
 	})
+	t.Run("trusted peer XForwardedFor first and not provided", func(t *testing.T) {
+		tc := &testCase{
+			// Test that if XForwardedFor is configured ahead of other headers
+			// but the request does not carry it, the headers after it are
+			// still read.
+			trustedPeers: localnet,
+			headerKeys:   []string{XForwardedFor, XRealIp},
+			inputHeaders: map[string]string{
+				XRealIp: publicIP.String(),
+			},
+			peer:       localhostPeer(),
+			expectedIP: publicIP,
+		}
+		t.Run("unary", func(t *testing.T) {
+			testUnaryServerInterceptor(t, tc)
+		})
+		t.Run("stream", func(t *testing.T) {
+			testStreamServerInterceptor(t, tc)
+		})
+	})
+	t.Run("trusted peer XForwardedFor first and fully trusted", func(t *testing.T) {
+		tc := &testCase{
+			// Test that if every XForwardedFor entry is a trusted proxy, so it
+			// yields no client IP, the headers configured after it are still
+			// read.
+			trustedPeers:   localnet,
+			trustedProxies: localnet,
+			headerKeys:     []string{XForwardedFor, XRealIp},
+			inputHeaders: map[string]string{
+				XForwardedFor: localhost.String(),
+				XRealIp:       publicIP.String(),
+			},
+			peer:       localhostPeer(),
+			expectedIP: publicIP,
+		}
+		t.Run("unary", func(t *testing.T) {
+			testUnaryServerInterceptor(t, tc)
+		})
+		t.Run("stream", func(t *testing.T) {
+			testStreamServerInterceptor(t, tc)
+		})
+	})
 	t.Run("trusted peer multiple header configured single provided", func(t *testing.T) {
 		tc := &testCase{
 			// Test that if the peer is trusted and several headers are
