@@ -17,10 +17,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 var (
@@ -562,4 +564,51 @@ func TestStreamClientInterceptorAttemptMetadata(t *testing.T) {
 	require.ErrorIs(t, err, recvMsgErr)
 
 	require.Equal(t, retryCount, attempt)
+}
+
+func retryInfoErr(t *testing.T, delay time.Duration) error {
+	st, err := status.New(codes.Unavailable, "try later").WithDetails(&errdetails.RetryInfo{RetryDelay: durationpb.New(delay)})
+	require.NoError(t, err)
+	return st.Err()
+}
+
+func TestUnaryClientInterceptorRespectsRetryInfo(t *testing.T) {
+	const delay = 100 * time.Millisecond
+	calls := 0
+	invoker := func(context.Context, string, any, any, *grpc.ClientConn, ...grpc.CallOption) error {
+		calls++
+		if calls == 1 {
+			return retryInfoErr(t, delay)
+		}
+		return nil
+	}
+
+	interceptor := UnaryClientInterceptor(WithMax(2), WithBackoff(BackoffLinear(0)))
+	start := time.Now()
+	err := interceptor(t.Context(), "/test/unary", nil, nil, nil, invoker)
+	require.NoError(t, err)
+	require.Equal(t, 2, calls)
+	require.GreaterOrEqual(t, time.Since(start), delay)
+}
+
+func TestStreamClientInterceptorRespectsRetryInfo(t *testing.T) {
+	const delay = 100 * time.Millisecond
+	recvErr := retryInfoErr(t, delay)
+	attempts := 0
+	streamer := func(context.Context, *grpc.StreamDesc, *grpc.ClientConn, string, ...grpc.CallOption) (grpc.ClientStream, error) {
+		attempts++
+		if attempts == 1 {
+			return &failingClientStream{RecvMsgErr: recvErr}, nil
+		}
+		return &failingClientStream{RecvMsgErr: io.EOF}, nil
+	}
+
+	interceptor := StreamClientInterceptor(WithMax(2), WithBackoff(BackoffLinear(0)))
+	stream, err := interceptor(t.Context(), &grpc.StreamDesc{ServerStreams: true}, nil, "/test/stream", streamer)
+	require.NoError(t, err)
+
+	start := time.Now()
+	require.ErrorIs(t, stream.RecvMsg(nil), io.EOF)
+	require.Equal(t, 2, attempts)
+	require.GreaterOrEqual(t, time.Since(start), delay)
 }

@@ -60,6 +60,9 @@ func WithMax(maxRetries uint) CallOption {
 }
 
 // WithBackoff sets the `BackoffFunc` used to control time between retries.
+//
+// If the server returns a google.rpc.RetryInfo error detail, the interceptor waits at least
+// its RetryDelay before the next attempt.
 func WithBackoff(bf BackoffFunc) CallOption {
 	return CallOption{applyFunc: func(o *options) {
 		o.backoffFunc = bf

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	grpcMetadata "google.golang.org/grpc/metadata"
@@ -37,7 +38,7 @@ func UnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterceptor 
 		}
 		var lastErr error
 		for attempt := uint(0); attempt < callOpts.max; attempt++ {
-			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
+			if err := waitRetryBackoff(attempt, parentCtx, lastErr, callOpts); err != nil {
 				return err
 			}
 			if attempt > 0 {
@@ -95,7 +96,7 @@ func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientIntercepto
 
 		var lastErr error
 		for attempt := uint(0); attempt < callOpts.max; attempt++ {
-			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
+			if err := waitRetryBackoff(attempt, parentCtx, lastErr, callOpts); err != nil {
 				return nil, err
 			}
 			if attempt > 0 {
@@ -193,7 +194,7 @@ func (s *serverStreamingRetryingStream) RecvMsg(m any) error {
 	}
 	// We start off from attempt 1, because zeroth was already made on normal SendMsg().
 	for attempt := uint(1); attempt < s.callOpts.max; attempt++ {
-		if err := waitRetryBackoff(attempt, s.parentCtx, s.callOpts); err != nil {
+		if err := waitRetryBackoff(attempt, s.parentCtx, lastErr, s.callOpts); err != nil {
 			return err
 		}
 		s.callOpts.onRetryCallback(s.parentCtx, attempt, lastErr)
@@ -257,10 +258,13 @@ func (s *serverStreamingRetryingStream) reestablishStreamAndResendBuffer(callCtx
 	return newStream, nil
 }
 
-func waitRetryBackoff(attempt uint, parentCtx context.Context, callOpts *options) error {
+func waitRetryBackoff(attempt uint, parentCtx context.Context, lastErr error, callOpts *options) error {
 	var waitTime time.Duration = 0
 	if attempt > 0 {
 		waitTime = callOpts.backoffFunc(parentCtx, attempt)
+		if d := serverRetryDelay(lastErr); d > waitTime {
+			waitTime = d
+		}
 	}
 	if waitTime > 0 {
 		logTrace(parentCtx, "grpc_retry attempt: %d, backoff for %v", attempt, waitTime)
@@ -275,6 +279,23 @@ func waitRetryBackoff(attempt uint, parentCtx context.Context, callOpts *options
 		}
 	}
 	return nil
+}
+
+// serverRetryDelay returns the delay the server asked for in a google.rpc.RetryInfo detail, or 0.
+func serverRetryDelay(err error) time.Duration {
+	if err == nil {
+		return 0
+	}
+	st, ok := status.FromError(err)
+	if !ok {
+		return 0
+	}
+	for _, d := range st.Details() {
+		if ri, ok := d.(*errdetails.RetryInfo); ok {
+			return ri.GetRetryDelay().AsDuration()
+		}
+	}
+	return 0
 }
 
 func isRetriable(err error, callOpts *options) bool {
