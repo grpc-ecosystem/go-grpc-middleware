@@ -1,6 +1,6 @@
 # Go gRPC Middleware
 
-[![go](https://github.com/grpc-ecosystem/go-grpc-middleware/workflows/go/badge.svg?branch=v2)](https://github.com/grpc-ecosystem/go-grpc-middleware/actions?query=branch%3Av2) [![Go Report Card](https://goreportcard.com/badge/github.com/grpc-ecosystem/go-grpc-middleware)](https://goreportcard.com/report/github.com/grpc-ecosystem/go-grpc-middleware) [![GoDoc](http://img.shields.io/badge/GoDoc-Reference-blue.svg)](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware/v2) [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE) [![Slack](https://img.shields.io/badge/slack-%23grpc--middleware-brightgreen)](https://gophers.slack.com/archives/CNJL30P4P)
+[![go](https://github.com/grpc-ecosystem/go-grpc-middleware/actions/workflows/go.yaml/badge.svg?branch=main)](https://github.com/grpc-ecosystem/go-grpc-middleware/actions/workflows/go.yaml?query=branch%3Amain) [![Go Reference](https://pkg.go.dev/badge/github.com/grpc-ecosystem/go-grpc-middleware/v2.svg)](https://pkg.go.dev/github.com/grpc-ecosystem/go-grpc-middleware/v2) [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE) [![Slack](https://img.shields.io/badge/slack-%23grpc--middleware-brightgreen)](https://gophers.slack.com/archives/CNJL30P4P)
 
 This repository holds [gRPC Go](https://github.com/grpc/grpc-go) Middlewares: interceptors, helpers and utilities.
 
@@ -44,7 +44,7 @@ This pattern offers clean and explicit shared functionality for all your gRPC me
 
 ## Interceptors
 
-This list covers known interceptors that users use for their Go microservices (both in this repo and external). Click on each to see extended examples in `examples_test.go` (also available in [pkg.go.dev](https://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware/v2))
+This list covers known interceptors that users use for their Go microservices (both in this repo and external). Click on each to see extended examples in `examples_test.go` (also available in [pkg.go.dev](https://pkg.go.dev/github.com/grpc-ecosystem/go-grpc-middleware/v2))
 
 All paths should work with `go get <path>`.
 
@@ -119,14 +119,14 @@ go get github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus
 - All "deciders", so functions that decide what to do based on gRPC service name and method (aka "fullMethodName") are removed (!). Use [`github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector`](interceptors/selector) interceptor to select what method, type or service should use what interceptor.
 - No more snake case package names. We have now single word meaningful package names. If you have collision in package names we recommend adding grpc prefix e.g. `grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"`.
 - All the options (if any) are in the form of `<package_name>.With<Option Name>`, with extensibility to add more of them.
-- `v2` is the main (default) development branch.
+- `v2` is the current major version, developed on the `main` (default) branch.
 
 ## For Maintainers: Release Process
 
 This assumes we want to release minor version of any module:
 
 1. Understand what has been change and what groups within [versions](versions.yaml) has to be updated.
-2. Update group version on v2 branch accordingly.
+2. Update group version on the `main` branch accordingly.
 3. Create new tag for *each module* that has to be released. For the main module `github.com/grpc-ecosystem/go-grpc-middleware/v2` the tag has no prefix (e.g. v2.20.1). For providers (sub modules), the tag version has to have form e.g. `providers/<provider/v1.2.3`. See https://github.com/golang/go/wiki/Modules#faqs--multi-module-repositories for details.
 4. Once all tags are pushed, draft and create release on GitHub page, mentioning all changed tags in the title. Use auto-generation of notes and remove those that are not relevant for users (e.g. fixing docs).
 
