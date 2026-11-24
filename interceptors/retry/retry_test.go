@@ -31,6 +31,23 @@ var (
 	retryTimeout    = 50 * time.Millisecond
 )
 
+// waitRecorder replaces the real backoff wait: it records the requested
+// durations instead of sleeping, so tests don't depend on wall time.
+type waitRecorder struct {
+	waits []time.Duration
+}
+
+func (w *waitRecorder) waitFunc(_ context.Context, waitTime time.Duration) error {
+	w.waits = append(w.waits, waitTime)
+	return nil
+}
+
+func withWaitFunc(f func(ctx context.Context, waitTime time.Duration) error) CallOption {
+	return CallOption{applyFunc: func(o *options) {
+		o.waitFunc = f
+	}}
+}
+
 type failingService struct {
 	testpb.TestServiceServer
 	mu sync.Mutex
@@ -97,15 +114,18 @@ func TestRetrySuite(t *testing.T) {
 	service := &failingService{
 		TestServiceServer: &testpb.TestPingService{},
 	}
+	waiter := &waitRecorder{}
 	unaryInterceptor := UnaryClientInterceptor(
 		WithCodes(retriableErrors...),
 		WithMax(3),
 		WithBackoff(BackoffLinear(retryTimeout)),
+		withWaitFunc(waiter.waitFunc),
 	)
 	streamInterceptor := StreamClientInterceptor(
 		WithCodes(retriableErrors...),
 		WithMax(3),
 		WithBackoff(BackoffLinear(retryTimeout)),
+		withWaitFunc(waiter.waitFunc),
 	)
 	s := &RetrySuite{
 		srv: service,
@@ -279,7 +299,12 @@ func (s *RetrySuite) TestServerStream_CallFailsOnDeadlineExceeded() {
 	restarted := s.RestartServer(3 * retryTimeout)
 	ctx, cancel := context.WithTimeout(context.TODO(), retryTimeout)
 	defer cancel()
-	_, err := s.Client.PingList(ctx, testpb.GoodPingList)
+	// A wait that never completes on its own, so the parent deadline is what
+	// interrupts the backoff between attempts.
+	_, err := s.Client.PingList(ctx, testpb.GoodPingList, withWaitFunc(func(ctx context.Context, _ time.Duration) error {
+		<-ctx.Done()
+		return contextErrToGrpcErr(ctx.Err())
+	}))
 
 	s.Require().Error(err, "establishing the connection should not succeed")
 	s.Assert().Equal(codes.DeadlineExceeded, status.Code(err))
@@ -289,12 +314,19 @@ func (s *RetrySuite) TestServerStream_CallFailsOnDeadlineExceeded() {
 
 func (s *RetrySuite) TestServerStream_CallRetrySucceeds() {
 	restarted := s.RestartServer(retryTimeout)
+	s.srv.resetFailingConfiguration(3, codes.Unavailable, noSleep)
 
-	_, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList,
+	// WaitForReady parks the first attempt until the connection has
+	// re-established after the restart; the failing service then exercises
+	// the retry path until its third request succeeds.
+	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList,
 		WithMax(40),
+		grpc.WaitForReady(true),
 	)
+	s.Require().NoError(err, "establishing the connection should succeed")
+	s.assertPingListWasCorrect(stream)
+	s.Require().EqualValues(3, s.srv.requestCount(), "three requests should have been made")
 
-	s.Assert().NoError(err, "establishing the connection should succeed")
 	<-restarted
 }
 
@@ -556,7 +588,8 @@ func TestStreamClientInterceptorAttemptMetadata(t *testing.T) {
 		}, nil
 	}
 
-	streamClientInterceptor := StreamClientInterceptor(WithCodes(codes.Unavailable), WithMax(uint(retryCount)))
+	waiter := &waitRecorder{}
+	streamClientInterceptor := StreamClientInterceptor(WithCodes(codes.Unavailable), WithMax(uint(retryCount)), withWaitFunc(waiter.waitFunc))
 	clientStream, err := streamClientInterceptor(context.Background(), &grpc.StreamDesc{}, nil, "some_method", testStreamer)
 	require.NoError(t, err)
 
@@ -583,12 +616,12 @@ func TestUnaryClientInterceptorRespectsRetryInfo(t *testing.T) {
 		return nil
 	}
 
-	interceptor := UnaryClientInterceptor(WithMax(2), WithBackoff(BackoffLinear(0)))
-	start := time.Now()
+	waiter := &waitRecorder{}
+	interceptor := UnaryClientInterceptor(WithMax(2), WithBackoff(BackoffLinear(0)), withWaitFunc(waiter.waitFunc))
 	err := interceptor(t.Context(), "/test/unary", nil, nil, nil, invoker)
 	require.NoError(t, err)
 	require.Equal(t, 2, calls)
-	require.GreaterOrEqual(t, time.Since(start), delay)
+	require.Equal(t, []time.Duration{delay}, waiter.waits)
 }
 
 func TestStreamClientInterceptorRespectsRetryInfo(t *testing.T) {
@@ -603,12 +636,21 @@ func TestStreamClientInterceptorRespectsRetryInfo(t *testing.T) {
 		return &failingClientStream{RecvMsgErr: io.EOF}, nil
 	}
 
-	interceptor := StreamClientInterceptor(WithMax(2), WithBackoff(BackoffLinear(0)))
+	waiter := &waitRecorder{}
+	interceptor := StreamClientInterceptor(WithMax(2), WithBackoff(BackoffLinear(0)), withWaitFunc(waiter.waitFunc))
 	stream, err := interceptor(t.Context(), &grpc.StreamDesc{ServerStreams: true}, nil, "/test/stream", streamer)
 	require.NoError(t, err)
 
-	start := time.Now()
 	require.ErrorIs(t, stream.RecvMsg(nil), io.EOF)
 	require.Equal(t, 2, attempts)
-	require.GreaterOrEqual(t, time.Since(start), delay)
+	require.Equal(t, []time.Duration{delay}, waiter.waits)
+}
+
+func TestDefaultWait(t *testing.T) {
+	require.NoError(t, defaultWait(t.Context(), time.Millisecond))
+
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Millisecond)
+	defer cancel()
+	err := defaultWait(ctx, time.Hour)
+	require.Equal(t, codes.DeadlineExceeded, status.Code(err))
 }

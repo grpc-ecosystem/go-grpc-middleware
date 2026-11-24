@@ -268,17 +268,23 @@ func waitRetryBackoff(attempt uint, parentCtx context.Context, lastErr error, ca
 	}
 	if waitTime > 0 {
 		logTrace(parentCtx, "grpc_retry attempt: %d, backoff for %v", attempt, waitTime)
-		timer := time.NewTimer(waitTime)
-		select {
-		case <-parentCtx.Done():
-			if !timer.Stop() {
-				<-timer.C
-			}
-			return contextErrToGrpcErr(parentCtx.Err())
-		case <-timer.C:
-		}
+		return callOpts.waitFunc(parentCtx, waitTime)
 	}
 	return nil
+}
+
+// defaultWait blocks until waitTime elapses or ctx is done, whichever happens first.
+func defaultWait(ctx context.Context, waitTime time.Duration) error {
+	timer := time.NewTimer(waitTime)
+	select {
+	case <-ctx.Done():
+		if !timer.Stop() {
+			<-timer.C
+		}
+		return contextErrToGrpcErr(ctx.Err())
+	case <-timer.C:
+		return nil
+	}
 }
 
 // serverRetryDelay returns the delay the server asked for in a google.rpc.RetryInfo detail, or 0.
