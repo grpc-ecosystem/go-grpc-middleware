@@ -6,10 +6,15 @@ package zap_test
 import (
 	"context"
 	"fmt"
+	"net"
+	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 // InterceptorLogger adapts zap logger to interceptor logger.
@@ -85,4 +90,52 @@ func ExampleInterceptorLogger() {
 		),
 	)
 	// Output:
+}
+
+type healthServer struct {
+	healthpb.UnimplementedHealthServer
+}
+
+func (healthServer) Check(ctx context.Context, req *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
+	// Update the fields in the context that the logging interceptor already holds.
+	// A context derived with InjectFields here would not reach the interceptor.
+	logging.AddFields(ctx, logging.Fields{"health.service", req.GetService()})
+	return &healthpb.HealthCheckResponse{Status: healthpb.HealthCheckResponse_SERVING}, nil
+}
+
+func ExampleInterceptorLogger_handlerFields() {
+	core, entries := observer.New(zap.InfoLevel)
+	server := grpc.NewServer(grpc.UnaryInterceptor(logging.UnaryServerInterceptor(
+		InterceptorLogger(zap.New(core)),
+		logging.WithLogOnEvents(logging.StartCall, logging.FinishCall),
+	)))
+	healthpb.RegisterHealthServer(server, healthServer{})
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		panic(err)
+	}
+	go func() { _ = server.Serve(listener) }()
+	defer server.Stop()
+
+	conn, err := grpc.NewClient(listener.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		panic(err)
+	}
+	defer func() { _ = conn.Close() }()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err = healthpb.NewHealthClient(conn).Check(ctx, &healthpb.HealthCheckRequest{Service: "widgets"})
+	if err != nil {
+		panic(err)
+	}
+
+	// Print only the field of interest, not the timing and network fields.
+	for _, entry := range entries.All() {
+		fmt.Printf("%s: %v\n", entry.Message, entry.ContextMap()["health.service"])
+	}
+
+	// Output:
+	// started call: <nil>
+	// finished call: widgets
 }
