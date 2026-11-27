@@ -28,6 +28,7 @@ var (
 			logTrace(ctx, "grpc_retry attempt: %d, backoff for %v", attempt, err)
 		}),
 		retriableFunc: newRetriableFuncForCodes(DefaultRetriableCodes),
+		waitFunc:      defaultWait,
 	}
 )
 
@@ -121,6 +122,10 @@ type options struct {
 	backoffFunc     BackoffFunc
 	onRetryCallback OnRetryCallback
 	retriableFunc   RetriableFunc
+	// waitFunc performs the wait between retries, honouring ctx cancellation.
+	// It is defaultWait outside of tests, which replace it to avoid sleeping
+	// on the wall clock.
+	waitFunc func(ctx context.Context, waitTime time.Duration) error
 }
 
 // CallOption is a grpc.CallOption that is local to grpc_retry.
